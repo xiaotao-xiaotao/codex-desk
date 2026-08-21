@@ -27,8 +27,30 @@ export function createThreadTrendView({ t }) {
   const controls = document.querySelector("#trend-controls");
   const chart = document.querySelector("#thread-trend-chart");
   const total = document.querySelector("#trend-total");
+  const trendSection = chart.closest(".trend-section");
   let response = null;
   let selectedMetric = "messages";
+  let chartExpanded = false;
+
+  function updateChartAccessibility() {
+    const actionKey = chartExpanded ? "trendCollapse" : "trendExpand";
+    chart.tabIndex = 0;
+    chart.setAttribute("role", "button");
+    chart.setAttribute("aria-expanded", String(chartExpanded));
+    chart.setAttribute("aria-label", `${t("trendTitle")}：${t(actionKey)}`);
+    chart.title = t(actionKey);
+  }
+
+  function toggleChartExpanded() {
+    chartExpanded = !chartExpanded;
+    trendSection.classList.toggle("is-chart-expanded", chartExpanded);
+    updateChartAccessibility();
+
+    // 覆盖层完成布局后再按实际可用尺寸重绘，保证放大后的文字与坐标轴清晰。
+    window.requestAnimationFrame(() => {
+      if (response) renderChart();
+    });
+  }
 
   function renderControls() {
     controls.replaceChildren();
@@ -66,12 +88,13 @@ export function createThreadTrendView({ t }) {
     const values = points.map((point) => Number(point[selectedMetric] ?? 0));
     const valueMax = Math.max(...values, 1);
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
-    const width = 760;
-    const height = 144;
+    // 放大时使用容器的真实尺寸，避免固定 viewBox 被拉伸后导致文字和坐标轴失真。
+    const width = Math.max(760, Math.round(chart.clientWidth) || 760);
+    const height = Math.max(108, Math.round(chart.clientHeight) || 108);
     const left = 35;
     const right = 12;
-    const top = 11;
-    const bottom = 30;
+    const top = 8;
+    const bottom = 24;
     const plotWidth = width - left - right;
     const plotHeight = height - top - bottom;
     const valueToY = (value) => top + plotHeight - (value / axisMax) * plotHeight;
@@ -127,10 +150,12 @@ export function createThreadTrendView({ t }) {
 
   function render() {
     renderControls();
+    updateChartAccessibility();
     renderChart();
   }
 
   function showLoading() {
+    updateChartAccessibility();
     if (response) return;
     chart.replaceChildren();
     const loading = document.createElement("p");
@@ -140,6 +165,7 @@ export function createThreadTrendView({ t }) {
   }
 
   function showError() {
+    updateChartAccessibility();
     chart.replaceChildren();
     const error = document.createElement("p");
     error.className = "trend-empty trend-empty-error";
@@ -153,5 +179,22 @@ export function createThreadTrendView({ t }) {
     render();
   }
 
+  chart.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    toggleChartExpanded();
+  });
+  chart.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    toggleChartExpanded();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && chartExpanded) toggleChartExpanded();
+  });
+  window.addEventListener("resize", () => {
+    if (chartExpanded && response) renderChart();
+  });
+
+  updateChartAccessibility();
   return { render, setData, showLoading, showError };
 }

@@ -3,6 +3,7 @@ mod quota;
 mod threads;
 mod tray;
 
+use std::path::Path;
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
@@ -21,6 +22,64 @@ async fn search_threads(
     page: u32,
 ) -> Result<threads::ThreadSearchResult, String> {
     threads::search_threads(&state, &query, page).await
+}
+
+#[tauri::command]
+async fn list_threads_for_selection(
+    state: State<'_, app_server::AppServerState>,
+    query: String,
+) -> Result<Vec<threads::ThreadSummary>, String> {
+    threads::list_threads_for_selection(&state, &query).await
+}
+
+#[tauri::command]
+async fn export_threads(
+    state: State<'_, app_server::AppServerState>,
+    thread_ids: Vec<String>,
+    output_path: String,
+) -> Result<threads::ThreadExportSummary, String> {
+    threads::export_threads_to_path(&state, &thread_ids, Path::new(&output_path)).await
+}
+
+#[tauri::command]
+fn choose_export_path(
+    window: WebviewWindow,
+    default_file_name: String,
+    filter_name: String,
+) -> Option<String> {
+    let filter_name = if filter_name.trim().is_empty() {
+        "JSON".to_owned()
+    } else {
+        filter_name
+    };
+    rfd::FileDialog::new()
+        // 绑定父窗口后，Windows 会把“另存为”作为 Desk 的模态子窗口置于最前。
+        .set_parent(&window)
+        .add_filter(&filter_name, &["json"])
+        .set_file_name(&default_file_name)
+        .save_file()
+        .map(|path| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+async fn import_threads(
+    state: State<'_, app_server::AppServerState>,
+    trend_state: State<'_, threads::ThreadTrendState>,
+    bundle_json: String,
+    imported_title_prefix: String,
+    imported_history_intro: String,
+) -> Result<threads::ThreadImportResult, String> {
+    let result = threads::import_threads(
+        &state,
+        &bundle_json,
+        &imported_title_prefix,
+        &imported_history_intro,
+    )
+    .await?;
+    if result.imported > 0 {
+        trend_state.invalidate().await;
+    }
+    Ok(result)
 }
 
 #[tauri::command]
@@ -53,6 +112,22 @@ fn hide_window(window: WebviewWindow) -> Result<(), String> {
     window
         .hide()
         .map_err(|error| format!("无法最小化悬浮窗：{error}"))
+}
+
+#[tauri::command]
+fn toggle_window_maximized(window: WebviewWindow) -> Result<(), String> {
+    if window
+        .is_maximized()
+        .map_err(|error| format!("无法读取窗口最大化状态：{error}"))?
+    {
+        window
+            .unmaximize()
+            .map_err(|error| format!("无法还原窗口尺寸：{error}"))
+    } else {
+        window
+            .maximize()
+            .map_err(|error| format!("无法最大化窗口：{error}"))
+    }
 }
 
 #[tauri::command]
@@ -90,7 +165,9 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
     }
     // 原生侧同时调整尺寸与位置，避免 WebView 权限或平台差异导致前端处理失效。
     window
-        .set_resizable(true)
+        // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
+        .unmaximize()
+        .and_then(|_| window.set_resizable(true))
         .and_then(|_| window.set_size(Size::Logical(LogicalSize::new(width, height))))
         .and_then(|_| window.set_position(Position::Physical(target_position)))
         .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
@@ -122,10 +199,15 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             read_quota,
             search_threads,
+            list_threads_for_selection,
+            export_threads,
+            choose_export_path,
+            import_threads,
             read_thread,
             read_thread_trends,
             start_dragging,
             hide_window,
+            toggle_window_maximized,
             resize_float_window,
             quit_app,
             tray::set_tray_language

@@ -1,11 +1,19 @@
 use crate::app_server::AppServerState;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::HashSet;
+use std::path::Path;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
 const RECENT_THREAD_LIMIT: usize = 100;
+const THREAD_LIST_BATCH_SIZE: usize = 100;
 const THREAD_PAGE_SIZE: usize = 10;
+const MAX_TRANSFER_THREADS: usize = 5_000;
+const MAX_TRANSFER_BUNDLE_BYTES: usize = 64 * 1_024 * 1_024;
+const MAX_THREAD_TITLE_LENGTH: usize = 160;
+const TRANSFER_FORMAT: &str = "codex-desk-thread-bundle";
+const TRANSFER_VERSION: u32 = 1;
 // 详情弹窗保留更完整的上下文，同时限制超长会话占用过多内存与渲染空间。
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
@@ -14,7 +22,7 @@ const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ThreadSummary {
+pub struct ThreadSummary {
     id: String,
     title: String,
     /// 会话首次创建时间；用于和最后更新时间并列展示，避免旧会话被误判为新建。
@@ -33,11 +41,62 @@ pub struct ThreadSearchResult {
     total_pages: usize,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ThreadMessage {
     role: String,
     text: String,
+}
+
+/// 由 Codex Desk 导出的可移植会话包。该格式只携带可见对话文本与时间元数据，
+/// 不包含认证信息、插件配置或本机文件路径，避免跨设备复制敏感运行时状态。
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadTransferBundle {
+    format: String,
+    version: u32,
+    exported_at: u64,
+    threads: Vec<ThreadTransfer>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadTransfer {
+    source_thread_id: String,
+    title: String,
+    created_at: Option<Value>,
+    updated_at: Option<Value>,
+    messages: Vec<ThreadMessage>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThreadTransferFailure {
+    title: String,
+    error: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThreadExportResult {
+    bundle: String,
+    exported: usize,
+    failures: Vec<ThreadTransferFailure>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThreadExportSummary {
+    exported: usize,
+    failures: Vec<ThreadTransferFailure>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThreadImportResult {
+    total: usize,
+    pub imported: usize,
+    failures: Vec<ThreadTransferFailure>,
 }
 
 #[derive(Default, Serialize)]
@@ -94,6 +153,13 @@ impl Default for ThreadTrendState {
     }
 }
 
+impl ThreadTrendState {
+    /// 会话被批量导入后，旧趋势缓存已不再代表当前本机线程列表。
+    pub async fn invalidate(&self) {
+        *self.cached.lock().await = None;
+    }
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ThreadDetail {
@@ -116,9 +182,134 @@ pub async fn search_threads(
     if query.chars().count() > 120 {
         return Err("搜索关键词不能超过 120 个字符".to_owned());
     }
-    let threads = list_recent_threads(state).await?;
+    let threads = list_all_threads(state).await?;
     let threads = filter_threads(threads, query);
     Ok(paginate_threads(threads, page as usize))
+}
+
+/// 返回当前筛选条件下的全部会话，供“全选筛选结果”直接取得稳定的会话标识。
+/// 页面展示只渲染当前页，批量选择状态则由前端按此列表跨页保存。
+pub async fn list_threads_for_selection(
+    state: &AppServerState,
+    query: &str,
+) -> Result<Vec<ThreadSummary>, String> {
+    let query = query.trim();
+    if query.chars().count() > 120 {
+        return Err("搜索关键词不能超过 120 个字符".to_owned());
+    }
+    Ok(filter_threads(list_all_threads(state).await?, query))
+}
+
+/// 将选中的本机会话导出为 Desk 自有 JSON 包。单条会话读取失败不会中止其他会话，
+/// 以便批量导出后可针对失败项单独重试。
+pub async fn export_threads(
+    state: &AppServerState,
+    thread_ids: &[String],
+) -> Result<ThreadExportResult, String> {
+    let thread_ids = normalize_transfer_thread_ids(thread_ids)?;
+    let mut threads = Vec::with_capacity(thread_ids.len());
+    let mut failures = Vec::new();
+
+    for thread_id in thread_ids {
+        match read_transfer_thread(state, &thread_id).await {
+            Ok(thread) => threads.push(thread),
+            Err(error) => failures.push(ThreadTransferFailure {
+                title: thread_id,
+                error,
+            }),
+        }
+    }
+
+    if threads.is_empty() {
+        return Err("没有可导出的会话，请检查所选会话是否仍存在".to_owned());
+    }
+
+    let exported = threads.len();
+    let bundle = serde_json::to_string_pretty(&ThreadTransferBundle {
+        format: TRANSFER_FORMAT.to_owned(),
+        version: TRANSFER_VERSION,
+        exported_at: unix_timestamp_seconds(),
+        threads,
+    })
+    .map_err(|error| format!("无法生成导出文件：{error}"))?;
+
+    Ok(ThreadExportResult {
+        bundle,
+        exported,
+        failures,
+    })
+}
+
+/// 导出包仅写入由原生“另存为”窗口返回的路径，避免前端下载 API 绕过用户对保存位置的选择。
+pub async fn export_threads_to_path(
+    state: &AppServerState,
+    thread_ids: &[String],
+    output_path: &Path,
+) -> Result<ThreadExportSummary, String> {
+    let result = export_threads(state, thread_ids).await?;
+    tokio::fs::write(output_path, result.bundle.as_bytes())
+        .await
+        .map_err(|error| format!("无法写入导出文件：{error}"))?;
+
+    Ok(ThreadExportSummary {
+        exported: result.exported,
+        failures: result.failures,
+    })
+}
+
+/// 将 Desk 会话包逐条写入本机 Codex 的线程历史。导入后的线程拥有新的本机 ID，
+/// 但会通过本地化标题前缀标明来源，从而可在 `codex resume` 中直接识别。
+pub async fn import_threads(
+    state: &AppServerState,
+    bundle_json: &str,
+    imported_title_prefix: &str,
+    imported_history_intro: &str,
+) -> Result<ThreadImportResult, String> {
+    if bundle_json.len() > MAX_TRANSFER_BUNDLE_BYTES {
+        return Err("导入文件过大，最大支持 64 MB".to_owned());
+    }
+    let bundle: ThreadTransferBundle = serde_json::from_str(bundle_json)
+        .map_err(|error| format!("无法识别 Codex Desk 导出文件：{error}"))?;
+    if bundle.format != TRANSFER_FORMAT || bundle.version != TRANSFER_VERSION {
+        return Err("该文件不是受支持的 Codex Desk 会话导出包".to_owned());
+    }
+    if bundle.threads.is_empty() {
+        return Err("导入文件中没有会话".to_owned());
+    }
+    if bundle.threads.len() > MAX_TRANSFER_THREADS {
+        return Err(format!("单次最多导入 {MAX_TRANSFER_THREADS} 个会话"));
+    }
+
+    let mut imported = 0;
+    let mut failures = Vec::new();
+    for transfer in bundle.threads {
+        let fallback_title = transfer.title.clone();
+        match import_transfer_thread(
+            state,
+            transfer,
+            imported_title_prefix,
+            imported_history_intro,
+        )
+        .await
+        {
+            Ok(()) => imported += 1,
+            Err(error) => failures.push(ThreadTransferFailure {
+                title: fallback_title,
+                error,
+            }),
+        }
+    }
+
+    // 导入线程会被当前 app-server 加载并持有写入权。批量导入结束后关闭这条连接，
+    // 让 CLI 可以立即恢复新会话；前端随后的会话刷新会按需建立下一条连接。
+    // AppServerState 由 Mutex 管理，因此整个程序任一时刻最多存在一条 app-server 连接。
+    state.shutdown().await;
+
+    Ok(ThreadImportResult {
+        total: imported + failures.len(),
+        imported,
+        failures,
+    })
 }
 
 /// 聚合最近七个自然日的会话活动。每条数据按回合时间归属到对应日期，
@@ -162,6 +353,46 @@ async fn list_recent_threads(state: &AppServerState) -> Result<Vec<ThreadSummary
     Ok(normalize_threads(&result))
 }
 
+/// 搜索和“全选筛选结果”使用完整分页列表，而趋势图仍只读取最近会话，
+/// 防止历史过多时把趋势聚合放大为不必要的全量详情读取。
+async fn list_all_threads(state: &AppServerState) -> Result<Vec<ThreadSummary>, String> {
+    let mut cursor = None;
+    let mut threads = Vec::new();
+
+    loop {
+        let result = state
+            .request(
+                "thread/list",
+                json!({
+                    "cursor": cursor,
+                    "limit": THREAD_LIST_BATCH_SIZE,
+                    "sortKey": "updated_at",
+                    "sortDirection": "desc",
+                    "archived": false,
+                    "useStateDbOnly": true,
+                }),
+            )
+            .await?;
+        let page = normalize_threads(&result);
+        let page_is_empty = page.is_empty();
+        threads.extend(page);
+        cursor = next_thread_cursor(&result);
+        if page_is_empty || cursor.is_none() {
+            break;
+        }
+    }
+
+    Ok(threads)
+}
+
+fn next_thread_cursor(result: &Value) -> Option<Value> {
+    ["nextCursor", "next_cursor"]
+        .iter()
+        .find_map(|key| result.get(*key).cloned())
+        .filter(|cursor| !cursor.is_null())
+        .filter(|cursor| cursor.as_str().is_none_or(|value| !value.is_empty()))
+}
+
 /// 读取一个会话的消息、结构化操作和汇总指标；不解析本地 JSONL 文件。
 pub async fn read_thread(state: &AppServerState, thread_id: &str) -> Result<ThreadDetail, String> {
     if !is_valid_thread_id(thread_id) {
@@ -174,6 +405,177 @@ pub async fn read_thread(state: &AppServerState, thread_id: &str) -> Result<Thre
         )
         .await?;
     normalize_thread_detail(&result)
+}
+
+async fn read_transfer_thread(
+    state: &AppServerState,
+    thread_id: &str,
+) -> Result<ThreadTransfer, String> {
+    let result = state
+        .request(
+            "thread/read",
+            json!({ "threadId": thread_id, "includeTurns": true }),
+        )
+        .await?;
+    let thread = result.get("thread").ok_or("Codex 未返回可导出的会话详情")?;
+    let source_thread_id = thread
+        .get("id")
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+        .ok_or("Codex 未返回可导出的会话标识")?
+        .to_owned();
+    let created_at = ["createdAt", "created_at"]
+        .iter()
+        .find_map(|key| thread.get(*key).cloned());
+    let updated_at = ["updatedAt", "updated_at", "createdAt", "created_at"]
+        .iter()
+        .find_map(|key| thread.get(*key).cloned());
+
+    Ok(ThreadTransfer {
+        source_thread_id,
+        title: thread_title(thread),
+        created_at,
+        updated_at,
+        messages: transfer_messages_from_thread(thread),
+    })
+}
+
+async fn import_transfer_thread(
+    state: &AppServerState,
+    transfer: ThreadTransfer,
+    imported_title_prefix: &str,
+    imported_history_intro: &str,
+) -> Result<(), String> {
+    validate_transfer_thread(&transfer)?;
+    let created = state.request("thread/start", json!({})).await?;
+    let thread_id = created
+        .get("thread")
+        .and_then(|thread| thread.get("id"))
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+        .ok_or("Codex 未返回新建会话标识")?
+        .to_owned();
+
+    let import_result = async {
+        state
+            .request(
+                "thread/name/set",
+                json!({
+                    "threadId": thread_id,
+                    "name": imported_thread_name(imported_title_prefix, &transfer.title),
+                }),
+            )
+            .await?;
+        // App Server 的 inject_items 仅保证模型可见，不能作为 CLI 可浏览的持久化回合。
+        // 因此将完整历史作为只读用户回合写入；CLI 可直接查看这条原文，并在下一轮
+        // 对话中沿用上下文。导入回合限制为只读且禁止网络，避免批量导入触发实际修改。
+        state
+            .request(
+                "turn/start",
+                json!({
+                    "threadId": thread_id,
+                    "input": [{
+                        "type": "text",
+                        "text": imported_history_text(imported_history_intro, &transfer),
+                    }],
+                    "approvalPolicy": "untrusted",
+                    "sandboxPolicy": { "type": "readOnly", "networkAccess": false },
+                }),
+            )
+            .await?;
+        Ok::<(), String>(())
+    }
+    .await;
+
+    if let Err(error) = import_result {
+        // 只回滚本次刚创建、尚未交付给用户的新会话，避免半成品出现在 CLI 会话列表。
+        let _ = state
+            .request("thread/delete", json!({ "threadId": thread_id }))
+            .await;
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn validate_transfer_thread(transfer: &ThreadTransfer) -> Result<(), String> {
+    if transfer.source_thread_id.trim().is_empty() {
+        return Err("导入会话缺少来源标识".to_owned());
+    }
+    if transfer.title.trim().is_empty() {
+        return Err("导入会话缺少标题".to_owned());
+    }
+    if transfer.messages.iter().any(|message| {
+        !matches!(message.role.as_str(), "user" | "assistant") || message.text.trim().is_empty()
+    }) {
+        return Err("导入会话包含不受支持的消息格式".to_owned());
+    }
+    Ok(())
+}
+
+fn imported_history_text(intro: &str, transfer: &ThreadTransfer) -> String {
+    let mut history = format!("{}\n\n# {}\n", intro.trim(), transfer.title.trim());
+    for message in &transfer.messages {
+        let role = if message.role == "user" {
+            "User"
+        } else {
+            "Codex"
+        };
+        history.push_str(&format!("\n## {role}\n{}\n", message.text.trim()));
+    }
+    history
+}
+
+fn imported_thread_name(prefix: &str, title: &str) -> String {
+    format!("{prefix}{}", title.trim())
+        .chars()
+        .take(MAX_THREAD_TITLE_LENGTH)
+        .collect()
+}
+
+fn normalize_transfer_thread_ids(thread_ids: &[String]) -> Result<Vec<String>, String> {
+    if thread_ids.is_empty() {
+        return Err("请至少选择一个会话".to_owned());
+    }
+    if thread_ids.len() > MAX_TRANSFER_THREADS {
+        return Err(format!("单次最多导出 {MAX_TRANSFER_THREADS} 个会话"));
+    }
+    let mut seen = HashSet::new();
+    let ids = thread_ids
+        .iter()
+        .filter(|id| is_valid_thread_id(id))
+        .filter(|id| seen.insert((*id).clone()))
+        .cloned()
+        .collect::<Vec<_>>();
+    if ids.is_empty() {
+        return Err("没有有效的会话标识".to_owned());
+    }
+    Ok(ids)
+}
+
+fn transfer_messages_from_thread(thread: &Value) -> Vec<ThreadMessage> {
+    thread
+        .get("turns")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .flat_map(|turn| {
+            turn.get("items")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+        })
+        .filter_map(thread_message_from_item)
+        .collect()
+}
+
+fn thread_title(thread: &Value) -> String {
+    ["name", "title", "preview"]
+        .iter()
+        .find_map(|key| thread.get(*key).and_then(Value::as_str))
+        .unwrap_or("未命名会话")
+        .chars()
+        .take(MAX_THREAD_TITLE_LENGTH)
+        .collect()
 }
 
 fn normalize_threads(result: &Value) -> Vec<ThreadSummary> {
@@ -209,7 +611,6 @@ fn normalize_threads(result: &Value) -> Vec<ThreadSummary> {
                 updated_at,
             })
         })
-        .take(RECENT_THREAD_LIMIT)
         .collect()
 }
 
@@ -465,6 +866,12 @@ fn day_key_from_timestamp(timestamp: f64) -> Option<String> {
         timestamp
     } as i64;
     Some(day_key_from_unix_day(seconds.div_euclid(86_400)))
+}
+
+fn unix_timestamp_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_secs())
 }
 
 /// 将 Unix 日序号转换为 ISO 日期，避免为了看板引入额外日期库。
@@ -822,6 +1229,61 @@ mod tests {
         assert_eq!(threads.len(), 1);
         assert_eq!(threads[0].created_at, Some(json!(1_787_213_528_i64)));
         assert_eq!(threads[0].updated_at, Some(json!(1_787_275_415_i64)));
+    }
+
+    #[test]
+    fn transfer_only_keeps_displayable_user_and_codex_messages() {
+        let messages = transfer_messages_from_thread(&json!({
+            "turns": [{
+                "items": [
+                    { "type": "userMessage", "content": [{ "type": "text", "text": "导出这段对话" }] },
+                    { "type": "commandExecution", "command": "git status" },
+                    { "type": "agentMessage", "text": "已准备导出。" }
+                ]
+            }]
+        }));
+
+        assert_eq!(messages.len(), 2);
+        assert_eq!(messages[0].role, "user");
+        assert_eq!(messages[1].role, "assistant");
+    }
+
+    #[test]
+    fn imported_history_keeps_title_and_message_order() {
+        let transfer = ThreadTransfer {
+            source_thread_id: "thr_source_12345678".to_owned(),
+            title: "登录问题排查".to_owned(),
+            created_at: None,
+            updated_at: None,
+            messages: vec![
+                ThreadMessage {
+                    role: "user".to_owned(),
+                    text: "登录失败".to_owned(),
+                },
+                ThreadMessage {
+                    role: "assistant".to_owned(),
+                    text: "请检查令牌。".to_owned(),
+                },
+            ],
+        };
+
+        let history = imported_history_text("导入记录", &transfer);
+        assert!(history.starts_with("导入记录\n\n# 登录问题排查"));
+        assert!(history.find("## User").unwrap() < history.find("## Codex").unwrap());
+        assert!(history.contains("登录失败"));
+        assert!(history.contains("请检查令牌。"));
+    }
+
+    #[test]
+    fn imported_name_uses_localized_prefix() {
+        assert_eq!(
+            imported_thread_name("[Imported by Codex Desk] ", "Session title"),
+            "[Imported by Codex Desk] Session title"
+        );
+        assert_eq!(
+            imported_thread_name("【由 Codex Desk 导入】", "会话标题"),
+            "【由 Codex Desk 导入】会话标题"
+        );
     }
 
     #[test]

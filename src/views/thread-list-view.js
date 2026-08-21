@@ -1,7 +1,7 @@
 /**
  * 会话列表的分页、空态和复制按钮都在此处渲染；查询策略仍由页面控制器决定。
  */
-export function createThreadListView({ t, formatUpdated, copyText, onOpenThread }) {
+export function createThreadListView({ t, formatUpdated, copyText, onOpenThread, onSelectionChange }) {
   const threadList = document.querySelector("#thread-list");
   const threadSearch = document.querySelector("#thread-search");
   const searchResult = document.querySelector("#search-result");
@@ -10,7 +10,7 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread 
   const nextPageButton = document.querySelector("#next-page");
   const pageIndicator = document.querySelector("#page-indicator");
 
-  function renderThreads(threads, emptyMessage) {
+  function renderThreads(threads, emptyMessage, selectedThreadIds = new Set()) {
     threadList.replaceChildren();
     if (threads.length === 0) {
       const empty = document.createElement("div");
@@ -27,6 +27,7 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread 
       item.setAttribute("role", "button");
       item.setAttribute("aria-label", t("viewingThread", { title: thread.title }));
       item.innerHTML = `
+        <label class="thread-select"><input type="checkbox" /><span class="visually-hidden"></span></label>
         <span class="thread-title"></span>
         <div class="thread-meta">
           <div class="thread-id-line"><code></code><button class="id-copy-button" type="button">${t("copyId")}</button></div>
@@ -34,6 +35,17 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread 
           <time class="thread-created-at"></time>
         </div>
       `;
+      const selectionInput = item.querySelector(".thread-select input");
+      const selectionLabel = item.querySelector(".thread-select .visually-hidden");
+      selectionInput.checked = selectedThreadIds.has(thread.id);
+      selectionInput.setAttribute("aria-label", t("selectThread", { title: thread.title }));
+      selectionLabel.textContent = t("selectThread", { title: thread.title });
+      selectionInput.addEventListener("click", (event) => event.stopPropagation());
+      selectionInput.addEventListener("keydown", (event) => event.stopPropagation());
+      selectionInput.addEventListener("change", (event) => {
+        event.stopPropagation();
+        onSelectionChange(thread, selectionInput.checked);
+      });
       item.querySelector(".thread-title").textContent = thread.title;
       const id = item.querySelector("code");
       id.textContent = `${thread.id.slice(0, 8)}…`;

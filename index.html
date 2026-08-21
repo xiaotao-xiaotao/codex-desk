@@ -24,6 +24,9 @@
             </div>
           </div>
           <div class="header-actions">
+            <button id="collapse-button" class="icon-button" type="button" title="收起为悬浮球" aria-label="收起为悬浮球">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+            </button>
             <div class="language-picker">
               <button id="language-button" class="icon-button" type="button" title="语言：跟随系统" aria-label="语言：跟随系统" aria-expanded="false" aria-controls="language-menu">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2M7 5c0 5-2 8-4 10M5 11c1.5 1.8 3.3 3.1 5.5 4M14 20l4-11 4 11M15.2 16h5.6" /></svg>
@@ -42,9 +45,6 @@
             </button>
             <button id="minimize-button" class="icon-button" type="button" title="最小化到系统托盘" aria-label="最小化到系统托盘">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
-            </button>
-            <button id="collapse-button" class="icon-button" type="button" title="收起为悬浮球" aria-label="收起为悬浮球">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
             </button>
             <button id="refresh-button" class="icon-button" type="button" title="立即刷新" aria-label="立即刷新">
               <svg class="refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 16.24 7.76L13 11h7V4z" /></svg>
@@ -90,12 +90,22 @@
               <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
             </div>
             <div class="thread-tools">
+              <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
               <label class="thread-search">
                 <span class="visually-hidden" data-i18n="searchThreads">搜索最近会话</span>
                 <input id="thread-search" type="search" placeholder="搜索标题或会话 ID" data-i18n-placeholder="searchPlaceholder" autocomplete="off" />
               </label>
-              <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
+              <div class="thread-transfer-actions">
+                <button id="import-threads" class="thread-action-button" type="button" data-i18n="importThreads">导入</button>
+                <button id="export-threads" class="thread-action-button thread-action-button-primary" type="button" data-i18n="exportThreads" disabled>导出</button>
+              </div>
             </div>
+          </div>
+          <div id="thread-selection-bar" class="thread-selection-bar" hidden>
+            <button id="select-page-threads" class="selection-button" type="button" data-i18n="selectPage">全选本页</button>
+            <button id="select-all-threads" class="selection-button" type="button" data-i18n="selectAllResults">全选筛选结果</button>
+            <button id="clear-thread-selection" class="selection-button selection-button-muted" type="button" data-i18n="clearSelection">清除</button>
+            <span id="selected-thread-count" class="selected-thread-count" aria-live="polite"></span>
           </div>
           <div id="thread-list" class="thread-list" aria-live="polite"></div>
           <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
@@ -108,6 +118,7 @@
         <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
       </section>
     </main>
+    <input id="import-file-input" type="file" accept="application/json,.codex-desk.json" hidden />
     <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="dialog-title">
       <section class="dialog-content">
         <header class="dialog-header">

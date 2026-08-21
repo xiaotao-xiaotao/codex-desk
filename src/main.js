@@ -16,6 +16,7 @@ const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
 const status = document.querySelector("#status");
 const panel = document.querySelector(".panel");
+const panelHeader = document.querySelector(".panel-header");
 const languageButton = document.querySelector("#language-button");
 const languageMenu = document.querySelector("#language-menu");
 const languageOptions = document.querySelectorAll("[data-language]");
@@ -25,6 +26,14 @@ const minimizeButton = document.querySelector("#minimize-button");
 const collapseButton = document.querySelector("#collapse-button");
 const refreshButton = document.querySelector("#refresh-button");
 const quitButton = document.querySelector("#quit-button");
+const importThreadsButton = document.querySelector("#import-threads");
+const exportThreadsButton = document.querySelector("#export-threads");
+const importFileInput = document.querySelector("#import-file-input");
+const threadSelectionBar = document.querySelector("#thread-selection-bar");
+const selectPageThreadsButton = document.querySelector("#select-page-threads");
+const selectAllThreadsButton = document.querySelector("#select-all-threads");
+const clearThreadSelectionButton = document.querySelector("#clear-thread-selection");
+const selectedThreadCount = document.querySelector("#selected-thread-count");
 
 const i18n = createI18n();
 const theme = createThemeController();
@@ -42,6 +51,7 @@ const threadListView = createThreadListView({
   formatUpdated,
   copyText: copyToClipboard,
   onOpenThread: openThread,
+  onSelectionChange: setThreadSelected,
 });
 
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
@@ -52,6 +62,10 @@ let searchTimer = null;
 let searchRequestVersion = 0;
 let trendRequestVersion = 0;
 let currentThreadPage = 1;
+let currentPageThreads = [];
+let currentThreadEmptyMessage = "";
+let selectedThreadIds = new Set();
+let transferInProgress = false;
 let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
 let orbDragStart = null;
 let panelDragStart = null;
@@ -61,6 +75,155 @@ let suppressPanelClick = false;
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
+}
+
+function renderCurrentThreadPage() {
+  threadListView.renderThreads(currentPageThreads, currentThreadEmptyMessage, selectedThreadIds);
+}
+
+function updateTransferControls() {
+  const selectedCount = selectedThreadIds.size;
+  const hasVisibleThreads = currentPageThreads.length > 0;
+  threadSelectionBar.hidden = !hasVisibleThreads && selectedCount === 0;
+  selectedThreadCount.textContent = t("selectedThreads", { count: selectedCount });
+  exportThreadsButton.disabled = transferInProgress || selectedCount === 0;
+  importThreadsButton.disabled = transferInProgress;
+  selectPageThreadsButton.disabled = transferInProgress || !hasVisibleThreads;
+  selectAllThreadsButton.disabled = transferInProgress || !hasVisibleThreads;
+  clearThreadSelectionButton.disabled = transferInProgress || selectedCount === 0;
+}
+
+function setThreadSelected(thread, selected) {
+  if (selected) selectedThreadIds.add(thread.id);
+  else selectedThreadIds.delete(thread.id);
+  updateTransferControls();
+}
+
+function clearThreadSelection() {
+  selectedThreadIds = new Set();
+  renderCurrentThreadPage();
+  updateTransferControls();
+}
+
+function transferFailureSuffix(failures) {
+  return failures.length === 0
+    ? ""
+    : t("transferFailedSuffix", { count: failures.length });
+}
+
+function createExportFileName() {
+  const date = new Date().toISOString().slice(0, 10);
+  return `${t("exportFileName")}-${date}.codex-desk.json`;
+}
+
+async function exportSelectedThreads() {
+  if (selectedThreadIds.size === 0) {
+    setStatus(t("noThreadsSelected"), "error");
+    return;
+  }
+  transferInProgress = true;
+  updateTransferControls();
+  try {
+    setStatus(t("selectingExportLocation"));
+    const outputPath = await invoke("choose_export_path", {
+      defaultFileName: createExportFileName(),
+      filterName: t("exportFileDialogFilter"),
+    });
+    if (!outputPath) {
+      renderSyncedStatus();
+      return;
+    }
+    setStatus(t("preparingExport", { count: selectedThreadIds.size }));
+    const result = await invoke("export_threads", {
+      threadIds: [...selectedThreadIds],
+      outputPath,
+    });
+    setStatus(t("exportCompleted", {
+      count: result.exported,
+      failed: transferFailureSuffix(result.failures),
+    }));
+    clearThreadSelection();
+  } catch (error) {
+    console.error(error);
+    setStatus(t("exportFailed", { error: String(error) }), "error");
+  } finally {
+    transferInProgress = false;
+    updateTransferControls();
+  }
+}
+
+async function importTransferFile(file) {
+  const maxBytes = 64 * 1_024 * 1_024;
+  if (!file) return;
+  if (file.size === 0) {
+    setStatus(t("importFileInvalid"), "error");
+    return;
+  }
+  if (file.size > maxBytes) {
+    setStatus(t("importFileTooLarge"), "error");
+    return;
+  }
+
+  transferInProgress = true;
+  updateTransferControls();
+  setStatus(t("importReading"));
+  try {
+    const bundleJson = await file.text();
+    let threadCount = 0;
+    try {
+      const preview = JSON.parse(bundleJson);
+      threadCount = Array.isArray(preview?.threads) ? preview.threads.length : 0;
+    } catch {
+      // 文件格式由原生层统一校验；这里仅用于在可识别的批量包上显示配额提示。
+    }
+    if (threadCount > 0 && !window.confirm(t("importConfirmation", { count: threadCount }))) {
+      renderSyncedStatus();
+      return;
+    }
+    setStatus(t("importingThreads"));
+    const result = await invoke("import_threads", {
+      bundleJson,
+      importedTitlePrefix: t("importedThreadTitlePrefix"),
+      importedHistoryIntro: t("importedHistoryIntro"),
+    });
+    setStatus(t("importCompleted", {
+      count: result.imported,
+      total: result.total,
+      failed: transferFailureSuffix(result.failures),
+    }), result.imported === 0 ? "error" : "normal");
+    if (result.imported > 0) {
+      currentThreadPage = 1;
+      await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+      void refreshThreadTrends(true);
+    }
+  } catch (error) {
+    console.error(error);
+    setStatus(t("readFailed", { error: String(error) }), "error");
+  } finally {
+    transferInProgress = false;
+    updateTransferControls();
+  }
+}
+
+async function selectAllFilteredThreads() {
+  if (transferInProgress) return;
+  transferInProgress = true;
+  updateTransferControls();
+  setStatus(t("selectingThreads"));
+  try {
+    const threads = await invoke("list_threads_for_selection", {
+      query: threadListView.getSearchQuery().trim(),
+    });
+    selectedThreadIds = new Set(threads.map((thread) => thread.id));
+    renderCurrentThreadPage();
+    renderSyncedStatus();
+  } catch (error) {
+    console.error(error);
+    setStatus(t("readFailed", { error: String(error) }), "error");
+  } finally {
+    transferInProgress = false;
+    updateTransferControls();
+  }
 }
 
 function renderSyncedStatus() {
@@ -123,6 +286,8 @@ function applyLanguage() {
   dialogView.updateLanguage();
   trendView.render();
   renderTheme();
+  renderCurrentThreadPage();
+  updateTransferControls();
   if (latestQuota && !refreshing) quotaView.render(latestQuota);
   else if (!refreshing) setStatus(t("readingLocalData"));
   if (expanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
@@ -183,17 +348,23 @@ async function searchThreads(query, page = 1) {
     const data = await invoke("search_threads", { query: keyword, page });
     if (requestVersion !== searchRequestVersion) return;
     currentThreadPage = data.page;
-    threadListView.renderThreads(data.threads, keyword ? t("noMatches") : t("noThreads"));
+    currentPageThreads = data.threads;
+    currentThreadEmptyMessage = keyword ? t("noMatches") : t("noThreads");
+    renderCurrentThreadPage();
     threadListView.renderPagination(data.page, data.totalPages);
     threadListView.setSearchResult(keyword
       ? t("searchMatches", { total: data.total })
-      : t("searchTotal", { total: data.total, limit: data.limit }));
+      : t("searchTotal", { total: data.total }));
+    updateTransferControls();
   } catch (error) {
     if (requestVersion !== searchRequestVersion) return;
     console.error(error);
-    threadListView.renderThreads([], t("threadReadFailed"));
+    currentPageThreads = [];
+    currentThreadEmptyMessage = t("threadReadFailed");
+    renderCurrentThreadPage();
     threadListView.hidePagination();
     threadListView.setSearchResult(String(error));
+    updateTransferControls();
   }
 }
 
@@ -299,6 +470,16 @@ function setupWindowDragging() {
   }, true);
 }
 
+async function toggleWindowMaximized() {
+  if (!expanded) return;
+  try {
+    await invoke("toggle_window_maximized");
+  } catch (error) {
+    console.error("切换窗口最大化失败", error);
+    setStatus(t("windowMaximizeFailed", { error: String(error) }), "error");
+  }
+}
+
 async function bootstrap() {
   applyLanguage();
   setupLanguageControls();
@@ -307,14 +488,36 @@ async function bootstrap() {
     renderTheme();
   });
   theme.onSystemThemeChange(renderTheme);
+  panelHeader.addEventListener("dblclick", (event) => {
+    if (event.button !== 0) return;
+    // 右侧图标组保留各自的双击/点击行为，标题栏其余区域遵循原生窗口的最大化习惯。
+    if (event.target.closest(".header-actions")) return;
+    event.preventDefault();
+    void toggleWindowMaximized();
+  });
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshQuota(true));
   quitButton.addEventListener("click", () => invoke("quit_app"));
+  importThreadsButton.addEventListener("click", () => importFileInput.click());
+  exportThreadsButton.addEventListener("click", exportSelectedThreads);
+  selectPageThreadsButton.addEventListener("click", () => {
+    currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
+    renderCurrentThreadPage();
+    updateTransferControls();
+  });
+  selectAllThreadsButton.addEventListener("click", selectAllFilteredThreads);
+  clearThreadSelectionButton.addEventListener("click", clearThreadSelection);
+  importFileInput.addEventListener("change", async () => {
+    const [file] = importFileInput.files;
+    importFileInput.value = "";
+    await importTransferFile(file);
+  });
   setupWindowDragging();
   threadListView.onSearchInput(() => {
     window.clearTimeout(searchTimer);
     currentThreadPage = 1;
+    clearThreadSelection();
     searchTimer = window.setTimeout(() => searchThreads(threadListView.getSearchQuery(), 1), 260);
   });
   threadListView.onPreviousPage(() => searchThreads(threadListView.getSearchQuery(), currentThreadPage - 1));
