@@ -1,0 +1,6 @@
+# 当前网络无法建立到 crates.io 的 TLS 连接，项目级切换到可访问的稀疏镜像。
+[source.crates-io]
+replace-with = "rsproxy"
+
+[source.rsproxy]
+registry = "sparse+https://rsproxy.cn/index/"

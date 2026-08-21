@@ -1,0 +1,15 @@
+[package]
+name = "codex-desk"
+version = "0.1.0"
+description = "Codex 本地桌面控制台"
+authors = ["local"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = ["tray-icon"] }
+tokio = { version = "1", features = ["io-util", "process", "sync", "time"] }

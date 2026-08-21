@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "允许主悬浮窗口调用应用内额度读取命令。",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

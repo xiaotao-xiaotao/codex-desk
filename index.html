@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Codex 桌面控制台</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main id="app" class="float-app is-compact">
+      <button id="quota-orb" class="quota-orb" type="button" aria-label="展开 Codex 额度详情" title="短按展开，按住后拖动">
+        <span class="orb-ring" aria-hidden="true"></span>
+        <span class="orb-value" id="orb-value">--</span>
+        <span class="orb-label" data-i18n="remaining">剩余</span>
+      </button>
+
+      <section class="panel" aria-live="polite">
+        <header class="panel-header">
+          <div>
+            <div class="title-row">
+              <h1 data-i18n="appTitle">Codex 桌面控制台</h1>
+              <p class="eyebrow"><span class="status-dot"></span><span data-i18n="secureAccess">本机安全访问</span></p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <div class="language-picker">
+              <button id="language-button" class="icon-button" type="button" title="语言：跟随系统" aria-label="语言：跟随系统" aria-expanded="false" aria-controls="language-menu">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2M7 5c0 5-2 8-4 10M5 11c1.5 1.8 3.3 3.1 5.5 4M14 20l4-11 4 11M15.2 16h5.6" /></svg>
+              </button>
+              <div id="language-menu" class="language-menu" role="menu" hidden>
+                <button type="button" role="menuitem" data-language="system">跟随系统</button>
+                <button type="button" role="menuitem" data-language="zh-CN">简体中文</button>
+                <button type="button" role="menuitem" data-language="zh-TW">繁體中文</button>
+                <button type="button" role="menuitem" data-language="en">English</button>
+                <button type="button" role="menuitem" data-language="ja">日本語</button>
+                <button type="button" role="menuitem" data-language="ko">한국어</button>
+              </div>
+            </div>
+            <button id="theme-button" class="icon-button" type="button" title="主题：跟随系统" aria-label="主题：跟随系统">
+              <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+            </button>
+            <button id="minimize-button" class="icon-button" type="button" title="最小化到系统托盘" aria-label="最小化到系统托盘">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
+            </button>
+            <button id="collapse-button" class="icon-button" type="button" title="收起为悬浮球" aria-label="收起为悬浮球">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+            </button>
+            <button id="refresh-button" class="icon-button" type="button" title="立即刷新" aria-label="立即刷新">
+              <svg class="refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 16.24 7.76L13 11h7V4z" /></svg>
+            </button>
+            <button id="quit-button" class="icon-button icon-button-close" type="button" title="退出程序" aria-label="退出程序">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="dashboard-section quota-section" aria-labelledby="quota-heading">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker" data-i18n="accountUsage">账户用量</p>
+              <div class="quota-title-row">
+                <h2 id="quota-heading" data-i18n="quotaOverview">额度概览</h2>
+                <span id="quota-window-name" class="quota-window-name" data-i18n="quotaWindow">额度窗口</span>
+              </div>
+            </div>
+            <span id="credits" class="badge" hidden></span>
+          </div>
+          <div id="quota-list" class="quota-list" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-section sessions-section" aria-labelledby="threads-heading">
+          <div class="section-heading sessions-heading">
+            <div>
+              <p class="section-kicker" data-i18n="localHistory">本地历史</p>
+              <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
+            </div>
+            <div class="thread-tools">
+              <label class="thread-search">
+                <span class="visually-hidden" data-i18n="searchThreads">搜索最近会话</span>
+                <input id="thread-search" type="search" placeholder="搜索标题或会话 ID" data-i18n-placeholder="searchPlaceholder" autocomplete="off" />
+              </label>
+              <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
+            </div>
+          </div>
+          <div id="thread-list" class="thread-list" aria-live="polite"></div>
+          <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
+            <button id="previous-page" class="pagination-button" type="button" data-i18n="previousPage">上一页</button>
+            <span id="page-indicator" class="page-indicator"></span>
+            <button id="next-page" class="pagination-button" type="button" data-i18n="nextPage">下一页</button>
+          </nav>
+        </section>
+
+        <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
+      </section>
+    </main>
+    <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="dialog-title">
+      <section class="dialog-content">
+        <header class="dialog-header">
+          <div>
+            <p class="section-kicker" data-i18n="threadDetail">会话详情</p>
+            <h2 id="dialog-title">会话详情</h2>
+            <p id="dialog-meta" class="dialog-meta"></p>
+          </div>
+          <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
+        </header>
+        <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
+        <div id="message-list" class="message-list" aria-live="polite"></div>
+      </section>
+    </dialog>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
