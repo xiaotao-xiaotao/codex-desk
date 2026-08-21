@@ -1,4 +1,6 @@
+mod app_server;
 mod quota;
+mod threads;
 mod tray;
 
 use tauri::{
@@ -6,25 +8,36 @@ use tauri::{
 };
 
 #[tauri::command]
-async fn read_quota(state: State<'_, quota::AppServerState>) -> Result<quota::QuotaSnapshot, String> {
+async fn read_quota(
+    state: State<'_, app_server::AppServerState>,
+) -> Result<quota::QuotaSnapshot, String> {
     quota::read_quota(&state).await
 }
 
 #[tauri::command]
 async fn search_threads(
-    state: State<'_, quota::AppServerState>,
+    state: State<'_, app_server::AppServerState>,
     query: String,
     page: u32,
-) -> Result<quota::ThreadSearchResult, String> {
-    quota::search_threads(&state, &query, page).await
+) -> Result<threads::ThreadSearchResult, String> {
+    threads::search_threads(&state, &query, page).await
 }
 
 #[tauri::command]
 async fn read_thread(
-    state: State<'_, quota::AppServerState>,
+    state: State<'_, app_server::AppServerState>,
     thread_id: String,
-) -> Result<quota::ThreadDetail, String> {
-    quota::read_thread(&state, &thread_id).await
+) -> Result<threads::ThreadDetail, String> {
+    threads::read_thread(&state, &thread_id).await
+}
+
+#[tauri::command]
+async fn read_thread_trends(
+    state: State<'_, app_server::AppServerState>,
+    trend_state: State<'_, threads::ThreadTrendState>,
+    force_refresh: bool,
+) -> Result<threads::ThreadTrendResponse, String> {
+    threads::read_thread_trends(&state, &trend_state, force_refresh).await
 }
 
 #[tauri::command]
@@ -44,9 +57,12 @@ fn hide_window(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), String> {
-    // 展开后使用看板尺寸，容纳额度、会话搜索与详情入口；紧凑态仍为悬浮球。
-    // 10 条会话卡片可完整显示，收紧展开高度以去除底部多余空白。
-    let (width, height) = if expanded { (920.0, 640.0) } else { (84.0, 84.0) };
+    // 展开后为趋势图保留完整坐标轴空间，同时维持 5 行 × 2 列会话卡片布局；紧凑态仍为悬浮球。
+    let (width, height) = if expanded {
+        (1100.0, 760.0)
+    } else {
+        (84.0, 84.0)
+    };
     let previous_size = window
         .outer_size()
         .map_err(|error| format!("无法读取悬浮窗尺寸：{error}"))?;
@@ -87,12 +103,17 @@ fn quit_app(app: AppHandle) {
 
 fn main() {
     tauri::Builder::default()
-        .manage(quota::AppServerState::default())
+        .manage(app_server::AppServerState::default())
+        .manage(threads::ThreadTrendState::default())
         .setup(|app| {
             tray::setup(app)?;
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(error) = app_handle.state::<quota::AppServerState>().warm_up().await {
+                if let Err(error) = app_handle
+                    .state::<app_server::AppServerState>()
+                    .warm_up()
+                    .await
+                {
                     eprintln!("Codex app-server 预热失败，将在读取数据时重试：{error}");
                 }
             });
@@ -102,6 +123,7 @@ fn main() {
             read_quota,
             search_threads,
             read_thread,
+            read_thread_trends,
             start_dragging,
             hide_window,
             resize_float_window,

@@ -1,4 +1,4 @@
-use crate::quota;
+use crate::app_server;
 use tauri::{
     menu::{MenuBuilder, MenuItem, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -68,7 +68,7 @@ pub fn close_app_server_and_exit(app: AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {
         app_handle
-            .state::<quota::AppServerState>()
+            .state::<app_server::AppServerState>()
             .shutdown()
             .await;
         app_handle.exit(0);
@@ -81,7 +81,9 @@ pub fn setup(app: &mut App) -> tauri::Result<()> {
     let show = MenuItemBuilder::with_id("show", "显示").build(app)?;
     let refresh = MenuItemBuilder::with_id("refresh", "刷新").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "退出").build(app)?;
-    let menu = MenuBuilder::new(app).items(&[&show, &refresh, &quit]).build()?;
+    let menu = MenuBuilder::new(app)
+        .items(&[&show, &refresh, &quit])
+        .build()?;
     app.manage(TrayMenuItems {
         show: show.clone(),
         refresh: refresh.clone(),

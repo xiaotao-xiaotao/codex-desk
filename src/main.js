@@ -7,6 +7,7 @@ import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
 import { createThreadListView } from "./views/thread-list-view.js";
+import { createThreadTrendView } from "./views/thread-trend-view.js";
 
 const AUTO_REFRESH_INTERVAL_MS = 60_000;
 const DRAG_THRESHOLD_PX = 4;
@@ -35,6 +36,7 @@ const { formatQuotaWindow, formatResetTime, formatUpdated } = createDateFormatte
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetTime });
 const dialogView = createThreadDialogView({ t, formatUpdated, copyText: copyToClipboard });
+const trendView = createThreadTrendView({ t });
 const threadListView = createThreadListView({
   t,
   formatUpdated,
@@ -48,6 +50,7 @@ let latestQuota = null;
 let refreshing = false;
 let searchTimer = null;
 let searchRequestVersion = 0;
+let trendRequestVersion = 0;
 let currentThreadPage = 1;
 let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
 let orbDragStart = null;
@@ -118,6 +121,7 @@ function applyLanguage() {
   });
 
   dialogView.updateLanguage();
+  trendView.render();
   renderTheme();
   if (latestQuota && !refreshing) quotaView.render(latestQuota);
   else if (!refreshing) setStatus(t("readingLocalData"));
@@ -130,7 +134,7 @@ function selectLanguage(nextLanguage) {
   applyLanguage();
 }
 
-async function refreshQuota() {
+async function refreshQuota(forceTrendRefresh = false) {
   if (refreshing) return;
   refreshing = true;
   let refreshSucceeded = false;
@@ -141,7 +145,10 @@ async function refreshQuota() {
     nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
     quotaView.render(latestQuota);
     refreshSucceeded = true;
-    if (expanded) await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+    if (expanded) {
+      await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+      void refreshThreadTrends(forceTrendRefresh);
+    }
   } catch (error) {
     console.error(error);
     quotaView.showReadFailure(Boolean(latestQuota));
@@ -150,6 +157,20 @@ async function refreshQuota() {
     refreshing = false;
     refreshButton.classList.remove("is-loading");
     if (refreshSucceeded) renderSyncedStatus();
+  }
+}
+
+async function refreshThreadTrends(forceRefresh = false) {
+  const requestVersion = ++trendRequestVersion;
+  trendView.showLoading();
+  try {
+    const data = await invoke("read_thread_trends", { forceRefresh });
+    if (requestVersion !== trendRequestVersion) return;
+    trendView.setData(data);
+  } catch (error) {
+    if (requestVersion !== trendRequestVersion) return;
+    console.error(error);
+    trendView.showError();
   }
 }
 
@@ -164,7 +185,9 @@ async function searchThreads(query, page = 1) {
     currentThreadPage = data.page;
     threadListView.renderThreads(data.threads, keyword ? t("noMatches") : t("noThreads"));
     threadListView.renderPagination(data.page, data.totalPages);
-    threadListView.setSearchResult(keyword ? t("searchMatches", { total: data.total }) : t("searchTotal", { total: data.total }));
+    threadListView.setSearchResult(keyword
+      ? t("searchMatches", { total: data.total })
+      : t("searchTotal", { total: data.total, limit: data.limit }));
   } catch (error) {
     if (requestVersion !== searchRequestVersion) return;
     console.error(error);
@@ -199,7 +222,7 @@ async function setExpanded(nextExpanded) {
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
   if (expanded) {
     currentThreadPage = 1;
-    await refreshQuota();
+    await refreshQuota(true);
   }
 }
 
@@ -286,7 +309,7 @@ async function bootstrap() {
   theme.onSystemThemeChange(renderTheme);
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
-  refreshButton.addEventListener("click", refreshQuota);
+  refreshButton.addEventListener("click", () => refreshQuota(true));
   quitButton.addEventListener("click", () => invoke("quit_app"));
   setupWindowDragging();
   threadListView.onSearchInput(() => {

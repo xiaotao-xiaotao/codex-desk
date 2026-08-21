@@ -28,13 +28,26 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread 
       item.setAttribute("aria-label", t("viewingThread", { title: thread.title }));
       item.innerHTML = `
         <span class="thread-title"></span>
-        <div class="thread-meta"><div class="thread-id-line"><code></code><button class="id-copy-button" type="button">${t("copyId")}</button></div><time></time></div>
+        <div class="thread-meta">
+          <div class="thread-id-line"><code></code><button class="id-copy-button" type="button">${t("copyId")}</button></div>
+          <time class="thread-updated-at"></time>
+          <time class="thread-created-at"></time>
+        </div>
       `;
       item.querySelector(".thread-title").textContent = thread.title;
       const id = item.querySelector("code");
       id.textContent = `${thread.id.slice(0, 8)}…`;
       id.title = `${t("copyId")}：${thread.id}`;
-      item.querySelector("time").textContent = formatUpdated(thread.updatedAt);
+      const updatedAt = item.querySelector(".thread-updated-at");
+      updatedAt.textContent = t("updated", { value: formatUpdated(thread.updatedAt) });
+      updatedAt.dateTime = String(thread.updatedAt ?? "");
+      const createdAt = item.querySelector(".thread-created-at");
+      if (thread.createdAt) {
+        createdAt.textContent = t("created", { value: formatUpdated(thread.createdAt) });
+        createdAt.dateTime = String(thread.createdAt);
+      } else {
+        createdAt.hidden = true;
+      }
 
       const copyIdButton = item.querySelector(".id-copy-button");
       copyIdButton.addEventListener("click", async (event) => {

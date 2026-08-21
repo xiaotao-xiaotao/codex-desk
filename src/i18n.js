@@ -39,6 +39,174 @@ const TRANSLATIONS = {
   },
 };
 
+// 会话洞察独立于页面基础文案维护，后续新增数据卡片时无需展开每个页面翻译对象。
+const ANALYTICS_TRANSLATIONS = {
+  "zh-CN": {
+    insightMessages: "消息",
+    insightToolCalls: "工具",
+    insightFileChanges: "文件变更",
+    insightIssues: "异常",
+    recentActivity: "近期操作",
+    activitySummaryHint: "展开查看结构化记录",
+    noStructuredActivity: "此会话暂未记录可展示的工具、文件或异常操作。",
+    activityStatusCompleted: "完成",
+    activityStatusInProgress: "进行中",
+    activityStatusFailed: "失败",
+    activityStatusInterrupted: "中断",
+    activityStatusUnknown: "未知",
+    trendKicker: "活动洞察",
+    trendTitle: "近 7 天趋势",
+    trendMessages: "消息",
+    trendToolCalls: "工具",
+    trendFileChanges: "文件变更",
+    trendIssues: "异常",
+    trendLoading: "正在聚合近 7 天会话数据…",
+    trendUnavailable: "趋势数据暂时不可用。",
+    trendNoData: "近 7 天暂无可展示的会话活动。",
+    trendTotal: "近 {days} 天合计 {total}",
+  },
+  "zh-TW": {
+    insightMessages: "訊息",
+    insightToolCalls: "工具",
+    insightFileChanges: "檔案變更",
+    insightIssues: "異常",
+    recentActivity: "近期操作",
+    activitySummaryHint: "展開檢視結構化記錄",
+    noStructuredActivity: "此工作階段暫未記錄可顯示的工具、檔案或異常操作。",
+    activityStatusCompleted: "完成",
+    activityStatusInProgress: "進行中",
+    activityStatusFailed: "失敗",
+    activityStatusInterrupted: "中斷",
+    activityStatusUnknown: "未知",
+    trendKicker: "活動洞察",
+    trendTitle: "近 7 天趨勢",
+    trendMessages: "訊息",
+    trendToolCalls: "工具",
+    trendFileChanges: "檔案變更",
+    trendIssues: "異常",
+    trendLoading: "正在彙整近 7 天工作階段資料…",
+    trendUnavailable: "趨勢資料暫時無法使用。",
+    trendNoData: "近 7 天暫無可顯示的工作階段活動。",
+    trendTotal: "近 {days} 天合計 {total}",
+  },
+  en: {
+    insightMessages: "Messages",
+    insightToolCalls: "Tools",
+    insightFileChanges: "File changes",
+    insightIssues: "Issues",
+    recentActivity: "Recent activity",
+    activitySummaryHint: "Show structured events",
+    noStructuredActivity: "No tools, file changes, or issues were recorded for this session.",
+    activityStatusCompleted: "Completed",
+    activityStatusInProgress: "In progress",
+    activityStatusFailed: "Failed",
+    activityStatusInterrupted: "Interrupted",
+    activityStatusUnknown: "Unknown",
+    trendKicker: "ACTIVITY INSIGHTS",
+    trendTitle: "Last 7 days",
+    trendMessages: "Messages",
+    trendToolCalls: "Tools",
+    trendFileChanges: "File changes",
+    trendIssues: "Issues",
+    trendLoading: "Aggregating the last 7 days…",
+    trendUnavailable: "Trend data is temporarily unavailable.",
+    trendNoData: "No session activity to show in the last 7 days.",
+    trendTotal: "{total} in {days} days",
+  },
+  ja: {
+    insightMessages: "メッセージ",
+    insightToolCalls: "ツール",
+    insightFileChanges: "ファイル変更",
+    insightIssues: "問題",
+    recentActivity: "最近の操作",
+    activitySummaryHint: "構造化ログを表示",
+    noStructuredActivity: "このセッションには表示できるツール、ファイル変更、問題の記録がありません。",
+    activityStatusCompleted: "完了",
+    activityStatusInProgress: "進行中",
+    activityStatusFailed: "失敗",
+    activityStatusInterrupted: "中断",
+    activityStatusUnknown: "不明",
+    trendKicker: "アクティビティ分析",
+    trendTitle: "過去 7 日間の推移",
+    trendMessages: "メッセージ",
+    trendToolCalls: "ツール",
+    trendFileChanges: "ファイル変更",
+    trendIssues: "問題",
+    trendLoading: "過去 7 日間のデータを集計中…",
+    trendUnavailable: "推移データを一時的に取得できません。",
+    trendNoData: "過去 7 日間に表示できるセッション活動はありません。",
+    trendTotal: "過去 {days} 日間の合計 {total}",
+  },
+  ko: {
+    insightMessages: "메시지",
+    insightToolCalls: "도구",
+    insightFileChanges: "파일 변경",
+    insightIssues: "문제",
+    recentActivity: "최근 작업",
+    activitySummaryHint: "구조화된 기록 펼치기",
+    noStructuredActivity: "이 세션에는 표시할 도구, 파일 변경 또는 문제 기록이 없습니다.",
+    activityStatusCompleted: "완료",
+    activityStatusInProgress: "진행 중",
+    activityStatusFailed: "실패",
+    activityStatusInterrupted: "중단됨",
+    activityStatusUnknown: "알 수 없음",
+    trendKicker: "활동 인사이트",
+    trendTitle: "최근 7일 추이",
+    trendMessages: "메시지",
+    trendToolCalls: "도구",
+    trendFileChanges: "파일 변경",
+    trendIssues: "문제",
+    trendLoading: "최근 7일 데이터를 집계하는 중…",
+    trendUnavailable: "추이 데이터를 일시적으로 사용할 수 없습니다.",
+    trendNoData: "최근 7일 동안 표시할 세션 활동이 없습니다.",
+    trendTotal: "최근 {days}일 합계 {total}",
+  },
+};
+
+// 会话清单文案明确时间字段和消息总数，避免误读为会话数量。
+const SESSION_ANALYTICS_TRANSLATIONS = {
+  "zh-CN": {
+    recentThreads: "最近更新的会话",
+    searchThreads: "搜索最近更新的会话",
+    searchTotal: "已加载 {total} 个会话（最多 {limit} 个）",
+    updated: "最后更新：{value}",
+    created: "创建：{value}",
+    threadTruncated: "该会话较长，仅显示最近 500 条消息。",
+  },
+  "zh-TW": {
+    recentThreads: "最近更新的工作階段",
+    searchThreads: "搜尋最近更新的工作階段",
+    searchTotal: "已載入 {total} 個工作階段（最多 {limit} 個）",
+    updated: "最後更新：{value}",
+    created: "建立：{value}",
+    threadTruncated: "此工作階段較長，僅顯示最近 500 則訊息。",
+  },
+  en: {
+    recentThreads: "Recently updated sessions",
+    searchThreads: "Search recently updated sessions",
+    searchTotal: "Loaded {total} sessions (up to {limit})",
+    updated: "Last updated: {value}",
+    created: "Created: {value}",
+    threadTruncated: "This session is long; only the latest 500 messages are shown.",
+  },
+  ja: {
+    recentThreads: "最近更新したセッション",
+    searchThreads: "最近更新したセッションを検索",
+    searchTotal: "読み込み済み {total} セッション（最大 {limit}）",
+    updated: "最終更新：{value}",
+    created: "作成：{value}",
+    threadTruncated: "このセッションは長いため、最新 500 件のメッセージのみ表示します。",
+  },
+  ko: {
+    recentThreads: "최근 업데이트된 세션",
+    searchThreads: "최근 업데이트된 세션 검색",
+    searchTotal: "{total}개 세션 로드됨(최대 {limit}개)",
+    updated: "마지막 업데이트: {value}",
+    created: "생성: {value}",
+    threadTruncated: "세션이 길어 최근 메시지 500개만 표시합니다.",
+  },
+};
+
 function resolveSystemLanguage() {
   const locales = navigator.languages?.length ? navigator.languages : [navigator.language];
   for (const locale of locales) {
@@ -68,7 +236,14 @@ export function createI18n() {
     return option?.labelKey ?? "languageSystem";
   };
   const t = (key, values = {}) => {
-    const text = TRANSLATIONS[getLanguage()][key] ?? TRANSLATIONS["zh-CN"][key] ?? key;
+    const language = getLanguage();
+    const text = SESSION_ANALYTICS_TRANSLATIONS[language]?.[key]
+      ?? ANALYTICS_TRANSLATIONS[language]?.[key]
+      ?? TRANSLATIONS[language][key]
+      ?? SESSION_ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]
+      ?? ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]
+      ?? TRANSLATIONS["zh-CN"][key]
+      ?? key;
     return text.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
   };
   const setMode = (nextMode) => {

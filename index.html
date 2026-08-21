@@ -69,6 +69,20 @@
           <div id="quota-list" class="quota-list" aria-live="polite"></div>
         </section>
 
+        <section class="dashboard-section trend-section" aria-labelledby="trend-heading">
+          <div class="section-heading trend-heading">
+            <div>
+              <p class="section-kicker" data-i18n="trendKicker">活动洞察</p>
+              <h2 id="trend-heading" data-i18n="trendTitle">近 7 天趋势</h2>
+            </div>
+            <div class="trend-heading-actions">
+              <span id="trend-total" class="trend-total"></span>
+              <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
+            </div>
+          </div>
+          <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
+        </section>
+
         <section class="dashboard-section sessions-section" aria-labelledby="threads-heading">
           <div class="section-heading sessions-heading">
             <div>
@@ -105,6 +119,13 @@
           <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
         </header>
         <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
+        <section class="dialog-insights" aria-label="会话洞察">
+          <div id="thread-insights" class="insight-list"></div>
+          <details class="activity-disclosure">
+            <summary><span data-i18n="recentActivity">近期操作</span><span class="activity-summary-hint" data-i18n="activitySummaryHint">展开查看结构化记录</span></summary>
+            <div id="thread-activity" class="activity-list"></div>
+          </details>
+        </section>
         <div id="message-list" class="message-list" aria-live="polite"></div>
       </section>
     </dialog>

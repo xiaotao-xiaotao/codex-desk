@@ -1,3 +1,5 @@
+import { createThreadInsightsView } from "./thread-insights-view.js";
+
 /**
  * 会话详情视图保留已打开的详情数据，以便切换语言时可重新渲染角色与复制按钮。
  */
@@ -8,6 +10,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   const dialogStatus = document.querySelector("#dialog-status");
   const messageList = document.querySelector("#message-list");
   const dialogCloseButton = document.querySelector("#dialog-close");
+  const insightsView = createThreadInsightsView({ t });
   let currentDetail = null;
 
   function showStatus(message, error = false) {
@@ -70,6 +73,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     dialogTitle.textContent = thread.title;
     dialogMeta.textContent = t("updated", { value: formatUpdated(thread.updatedAt) });
     messageList.replaceChildren();
+    insightsView.clear();
     showStatus(t("readingThread"));
     threadDialog.showModal();
   }
@@ -79,6 +83,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     dialogTitle.textContent = detail.title;
     dialogMeta.textContent = t("updated", { value: formatUpdated(detail.updatedAt) });
     dialogStatus.hidden = true;
+    insightsView.render(detail);
     renderMessages(detail);
   }
 
@@ -94,8 +99,10 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     }
     if (currentDetail) {
       dialogMeta.textContent = t("updated", { value: formatUpdated(currentDetail.updatedAt) });
+      insightsView.render(currentDetail);
       renderMessages(currentDetail);
     } else {
+      insightsView.clear();
       showStatus(t("readingThread"));
     }
   }
