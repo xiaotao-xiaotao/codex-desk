@@ -17,7 +17,9 @@ Codex Desk 面向已经安装并登录 Codex CLI 的开发者，在桌面悬浮�
 前往 [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases) 下载最新安装包：
 
 - Windows：下载 `.exe` 安装包（Windows 10/11）
-- macOS：下载对应架构的 `.app` 或 `.dmg`（分发前通常需要签名和公证）
+- macOS：当前未提供预构建安装包，需要在 macOS 环境中自行构建 `.app` 或 `.dmg`。如果要分发给其他用户，通常还需要进行 Apple 签名和公证。
+
+macOS 构建命令见下方[开发启动](#开发启动)和[打包](#打包)章节。
 
 首次启动前，请确保已单独安装并登录 [Codex CLI](https://github.com/openai/codex)。
 

@@ -19,7 +19,9 @@ If Codex Desk helps you manage your sessions, please consider giving the project
 Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases):
 
 - **Windows**: download the `.exe` installer for Windows 10/11.
-- **macOS**: download the matching `.app` or `.dmg` package. Distribution to other users usually requires Apple signing and notarization.
+- **macOS**: prebuilt installers are not currently provided. Build the `.app` or `.dmg` package yourself on a macOS environment. Distribution to other users usually requires Apple signing and notarization.
+
+See the [Development](#development) and [Build](#build) sections below for macOS build commands.
 
 Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
 
