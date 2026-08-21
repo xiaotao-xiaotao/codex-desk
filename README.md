@@ -2,6 +2,26 @@
 
 一个跨 Windows 与 macOS 的 Codex 本地桌面控制台：启动后显示置顶额度球，展开后提供额度概览、会话浏览、近 7 天活动趋势、会话详情洞察及跨设备会话导入导出。
 
+## 界面预览
+
+以下截图展示悬浮额度球、会话总览与会话详情界面。
+
+<p align="center">
+  <img src="docs/screenshots/floating-orb.png" alt="Codex Desk 悬浮额度球" width="240" />
+</p>
+
+### 展开总览
+
+![Codex Desk 浅色模式总览](docs/screenshots/dashboard-light.png)
+
+### 会话详情
+
+![Codex Desk 会话详情](docs/screenshots/session-details.png)
+
+### 暗黑模式
+
+![Codex Desk 暗黑模式总览](docs/screenshots/dashboard-dark.png)
+
 ## 功能概览
 
 - **额度概览**：展示当前套餐、额度窗口、已用比例和重置时间。
