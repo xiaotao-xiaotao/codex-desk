@@ -116,7 +116,10 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .id-copy-button:hover { border-color: #9fc5fa; background: #edf5ff; }
 .id-copy-button:disabled { cursor: default; opacity: .75; }
 .thread-meta time { display: block; max-width: 100%; overflow: hidden; color: #7f8a97; font-size: .59rem; line-height: 1.1; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-.thread-empty { display: grid; min-height: 88px; place-items: center; padding: 18px; border: 1px dashed #d9dde5; border-radius: 10px; color: #7d8792; font-size: .84rem; text-align: center; }
+.thread-empty { display: grid; grid-column: 1 / -1; grid-row: 1 / -1; align-content: center; justify-items: center; gap: 10px; min-height: 0; padding: 24px; border: 1px dashed #ccd6e2; border-radius: 8px; color: #7d8792; background: #fafcff; text-align: center; }
+.thread-empty-icon { position: relative; width: 36px; height: 30px; border: 1px solid currentColor; border-radius: 7px; opacity: .68; }
+.thread-empty-icon::before { position: absolute; top: 8px; left: 9px; width: 17px; height: 2px; border-radius: 999px; background: currentColor; box-shadow: 0 6px 0 currentColor, 0 12px 0 currentColor; content: ""; }
+.thread-empty-message { margin: 0; font-size: .78rem; line-height: 1.5; }
 .thread-pagination { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .pagination-button { padding: 4px 8px; border: 1px solid #d9dde5; border-radius: 7px; color: #4b5a6d; background: #fff; cursor: pointer; font-size: .68rem; }
 .pagination-button:hover { border-color: #9fc5fa; color: #1677ff; background: #f5f9ff; }
@@ -268,7 +271,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 :root[data-theme="dark"] .selection-button:hover { border-color: #4787c8; background: #1b3857; }
 :root[data-theme="dark"] .selection-button-muted { border-color: #3a4758; color: #aab7c7; background: #18212c; }
 :root[data-theme="dark"] .selected-thread-count { color: #8dc5ff; background: #152f4f; }
-:root[data-theme="dark"] .thread-empty { border-color: #3a4758; color: #9aa9ba; }
+:root[data-theme="dark"] .thread-empty { border-color: #3a4758; color: #9aa9ba; background: #121a24; }
 :root[data-theme="dark"] .pagination-button { color: #b9c6d5; }
 :root[data-theme="dark"] .pagination-button:disabled { border-color: #24303d; color: #596777; background: #121820; }
 :root[data-theme="dark"] .page-indicator { color: #9aa9ba; }

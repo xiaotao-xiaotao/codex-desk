@@ -13,9 +13,16 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
   function renderThreads(threads, emptyMessage, selectedThreadIds = new Set()) {
     threadList.replaceChildren();
     if (threads.length === 0) {
-      const empty = document.createElement("div");
+      const empty = document.createElement("section");
       empty.className = "thread-empty";
-      empty.textContent = emptyMessage;
+      empty.setAttribute("role", "status");
+      const icon = document.createElement("span");
+      icon.className = "thread-empty-icon";
+      icon.setAttribute("aria-hidden", "true");
+      const message = document.createElement("p");
+      message.className = "thread-empty-message";
+      message.textContent = emptyMessage;
+      empty.append(icon, message);
       threadList.append(empty);
       return;
     }

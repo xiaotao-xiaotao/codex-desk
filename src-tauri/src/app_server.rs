@@ -9,6 +9,10 @@ use tokio::{
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
 
+// 由桌面端托管的 Codex app-server 不需要独立控制台窗口。
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 type ResponseLines = tokio::io::Lines<BufReader<ChildStdout>>;
 
 /// 与本机 Codex app-server 保持的一条 JSON-RPC 连接。
@@ -92,6 +96,9 @@ impl CodexAppServer {
             command.args(["app-server", "--stdio"]);
             command
         };
+
+        #[cfg(target_os = "windows")]
+        command.creation_flags(CREATE_NO_WINDOW);
 
         let mut child = command
             .stdin(Stdio::piped())
