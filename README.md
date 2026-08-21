@@ -1,6 +1,25 @@
 # Codex Desk
 
-一个跨 Windows 与 macOS 的 Codex 本地桌面控制台：启动后显示置顶额度球，展开后提供额度概览、会话浏览、近 7 天活动趋势、会话详情洞察及跨设备会话导入导出。
+[English](README.en.md)
+
+[![Latest Release](https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver)](https://github.com/xiaotao-xiaotao/codex-desk/releases)
+[![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
+
+**一个轻量、常驻桌面的 Codex 本地控制台。**
+
+Codex Desk 面向已经安装并登录 Codex CLI 的开发者，在桌面悬浮显示额度状态，并提供本地会话浏览、趋势分析、详情洞察和跨设备迁移。数据通过本机 `codex app-server --stdio` 获取，不上传到第三方服务。
+
+如果它帮你更方便地管理 Codex 会话，欢迎点一个 **Star**，也欢迎通过 Issue 提交建议。
+
+## 下载
+
+前往 [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases) 下载最新安装包：
+
+- Windows：下载 `.exe` 安装包（Windows 10/11）
+- macOS：下载对应架构的 `.app` 或 `.dmg`（分发前通常需要签名和公证）
+
+首次启动前，请确保已单独安装并登录 [Codex CLI](https://github.com/openai/codex)。
 
 ## 界面预览
 
