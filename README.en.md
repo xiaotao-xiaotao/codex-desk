@@ -52,6 +52,18 @@ Before launching the app, install and sign in to [Codex CLI](https://github.com/
 
 ![Codex Desk dark dashboard](docs/screenshots/dashboard-dark.png)
 
+### English interface
+
+![Codex Desk English homepage](docs/screenshots/dashboard-en.png)
+
+## Multilingual support
+
+The app provides five interface languages: Simplified Chinese, Traditional Chinese, English, Japanese, and Korean.
+
+- In **System** mode, the app selects a language based on your operating system language.
+- You can also switch languages manually from the language menu in the top-right corner.
+- Your language preference is stored locally and restored on the next launch.
+
 ## Import and export
 
 Import and export are intended for migrating or backing up **conversation text**, not for backing up the complete local Codex runtime state. Export files are unencrypted JSON; store them carefully and do not upload them to untrusted locations.
