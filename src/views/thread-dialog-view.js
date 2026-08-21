@@ -1,5 +1,7 @@
 import { createThreadInsightsView } from "./thread-insights-view.js";
 
+const DIALOG_TITLE_MAX_LENGTH = 52;
+
 /**
  * 会话详情视图保留已打开的详情数据，以便切换语言时可重新渲染角色与复制按钮。
  */
@@ -17,6 +19,18 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     dialogStatus.textContent = message;
     dialogStatus.dataset.kind = error ? "error" : "normal";
     dialogStatus.hidden = false;
+  }
+
+  function setDialogTitle(title) {
+    const normalizedTitle = String(title ?? "").replace(/\s+/g, " ").trim();
+    const titleCharacters = Array.from(normalizedTitle);
+    const displayTitle = titleCharacters.length > DIALOG_TITLE_MAX_LENGTH
+      ? `${titleCharacters.slice(0, DIALOG_TITLE_MAX_LENGTH).join("")}…`
+      : normalizedTitle;
+    // 保留完整标题，避免摘要模式丢失原始会话上下文。
+    dialogTitle.textContent = displayTitle;
+    dialogTitle.title = normalizedTitle;
+    dialogTitle.ariaLabel = normalizedTitle;
   }
 
   function renderMessages(detail) {
@@ -70,7 +84,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
 
   function openLoading(thread) {
     currentDetail = null;
-    dialogTitle.textContent = thread.title;
+    setDialogTitle(thread.title);
     dialogMeta.textContent = t("updated", { value: formatUpdated(thread.updatedAt) });
     messageList.replaceChildren();
     insightsView.clear();
@@ -80,7 +94,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
 
   function showDetail(detail) {
     currentDetail = detail;
-    dialogTitle.textContent = detail.title;
+    setDialogTitle(detail.title);
     dialogMeta.textContent = t("updated", { value: formatUpdated(detail.updatedAt) });
     dialogStatus.hidden = true;
     insightsView.render(detail);
@@ -95,6 +109,8 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     dialogCloseButton.ariaLabel = t("closeThreadDetail");
     if (!threadDialog.open) {
       dialogTitle.textContent = t("threadDetail");
+      dialogTitle.removeAttribute("title");
+      dialogTitle.removeAttribute("aria-label");
       return;
     }
     if (currentDetail) {
