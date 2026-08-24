@@ -9,6 +9,13 @@ on:
 permissions:
   contents: write
 
+# GitHub 托管 Runner 偶发访问 crates.io 过慢；放宽 Cargo 的低速判定并增加重试，
+# 避免依赖下载的瞬时网络抖动中断整个平台构建。
+env:
+  CARGO_NET_RETRY: "10"
+  CARGO_HTTP_TIMEOUT: "600"
+  CARGO_HTTP_LOW_SPEED_LIMIT: "1"
+
 jobs:
   build-macos:
     name: 构建 ${{ matrix.name }}
