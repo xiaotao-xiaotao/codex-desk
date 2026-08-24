@@ -21,3 +21,13 @@ export function writeStoredValue(key, value) {
     // 无持久化权限时静默降级为“仅本次会话有效”。
   }
 }
+
+/** 读取本机可丢弃的 JSON 缓存；格式异常时始终使用调用方的安全默认值。 */
+export function readStoredJson(key, fallback) {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value === null ? fallback : JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}

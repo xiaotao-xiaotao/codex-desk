@@ -6,9 +6,9 @@
 [![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
 
-**A lightweight desktop control center for Codex.**
+**Keep track of Codex CLI quota and quickly resume local sessions.**
 
-Codex Desk is designed for developers who use Codex CLI. It keeps a floating usage indicator on your desktop and provides local session browsing, activity trends, session insights, and cross-device session migration.
+Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, local session browsing, activity trends, session insights, and cross-device session migration.
 
 All data is read through the local `codex app-server --stdio` process. Codex Desk does not upload your data to a third-party service, read or save `auth.json`, or call account APIs.
 
@@ -25,14 +25,22 @@ See the [Development](#development) and [Build](#build) sections below for macOS
 
 Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
 
+### First launch in two steps
+
+1. Install and sign in to Codex CLI: `npm install -g @openai/codex`, then run `codex` to complete sign-in.
+2. Launch Codex Desk. If quota is unavailable, use the top-right **Diagnose Codex CLI** button to check the CLI, `app-server`, and quota access. Diagnostic results can be copied into an Issue.
+
 ## Features
 
 - **Usage overview**: view the current plan, quota window, usage percentage, and reset time.
+- **Quota alerts**: after you explicitly enable native notifications, get one alert per reset window at 80%, 90%, and 100% usage.
 - **Seven-day activity trends**: switch between messages, tool calls, file changes, and errors in a code-drawn line chart.
 - **Local sessions**: browse non-archived local sessions, search by title or session ID, and view creation and update times.
 - **Session details and insights**: inspect user messages and Codex replies, copy individual messages, and review aggregate activity metrics.
+- **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
 - **Local data boundary**: data is obtained from the local Codex app server; local JSONL files and authentication data are not parsed or stored by the app.
+- **Local diagnostics**: diagnostics only check the local CLI, `app-server`, and quota access; no auth file is read and no data is uploaded.
 
 ## Screenshots
 
@@ -102,8 +110,10 @@ Build artifacts are generated under `src-tauri/target/release/bundle/`. Windows 
 ## Usage
 
 - Click the floating usage orb to show or hide the dashboard.
+- Use the top-right diagnostic button to verify the local connection and optionally enable 80% / 90% / 100% quota alerts.
 - Switch trend metrics below the quota section.
 - Search, inspect, import, or export local sessions from the session list.
+- Copy `codex resume <session ID>` from a session detail page to continue it in the terminal.
 - Drag the title area to reposition the floating window.
 - The app refreshes automatically every 60 seconds; use the refresh button for an immediate update.
 - Closing the window hides it. Use the system tray menu to show the dashboard again.

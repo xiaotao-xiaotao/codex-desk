@@ -24,6 +24,9 @@
             </div>
           </div>
           <div class="header-actions">
+            <button id="diagnostics-button" class="icon-button" type="button" title="诊断 Codex CLI" aria-label="诊断 Codex CLI">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 10v5M12 7.5h.01" /></svg>
+            </button>
             <button id="collapse-button" class="icon-button" type="button" title="收起为悬浮球" aria-label="收起为悬浮球">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
             </button>
@@ -125,7 +128,10 @@
           <div>
             <p class="section-kicker" data-i18n="threadDetail">会话详情</p>
             <h2 id="dialog-title">会话详情</h2>
-            <p id="dialog-meta" class="dialog-meta"></p>
+            <div class="dialog-meta-row">
+              <p id="dialog-meta" class="dialog-meta"></p>
+              <button id="resume-thread-button" class="resume-thread-button" type="button"></button>
+            </div>
           </div>
           <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
         </header>
@@ -138,6 +144,28 @@
           </details>
         </section>
         <div id="message-list" class="message-list" aria-live="polite"></div>
+      </section>
+    </dialog>
+    <dialog id="diagnostics-dialog" class="diagnostics-dialog" aria-labelledby="diagnostics-title">
+      <section class="diagnostics-content">
+        <header class="diagnostics-header">
+          <div>
+            <p class="section-kicker" data-i18n="diagnosticsKicker">本机连接</p>
+            <h2 id="diagnostics-title" data-i18n="diagnostics">Codex 环境诊断</h2>
+          </div>
+          <button id="diagnostics-close" class="dialog-close" type="button" aria-label="关闭诊断">×</button>
+        </header>
+        <p id="diagnostics-intro" class="diagnostics-intro" data-i18n="diagnosticsIntro">仅检查本机 Codex CLI、app-server 和当前登录态，不会读取认证文件或上传数据。</p>
+        <div id="diagnostics-results" class="diagnostics-results" aria-live="polite"></div>
+        <p id="diagnostics-error" class="diagnostics-error" hidden></p>
+        <div class="diagnostics-alerts">
+          <div><strong data-i18n="quotaAlerts">额度提醒</strong><span id="quota-alerts-description"></span></div>
+          <button id="quota-alerts-toggle" class="selection-button" type="button"></button>
+        </div>
+        <footer class="diagnostics-actions">
+          <button id="diagnostics-copy" class="selection-button" type="button" disabled></button>
+          <button id="diagnostics-run" class="thread-action-button thread-action-button-primary" type="button"></button>
+        </footer>
       </section>
     </dialog>
     <script type="module" src="/src/main.js"></script>

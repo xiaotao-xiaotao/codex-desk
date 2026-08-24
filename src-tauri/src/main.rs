@@ -9,15 +9,51 @@ mod threads;
 mod tray;
 
 use std::path::Path;
+use serde::Serialize;
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CodexDiagnostics {
+    cli_version: Option<String>,
+    app_server_ready: bool,
+    quota_available: bool,
+    error: Option<String>,
+}
 
 #[tauri::command]
 async fn read_quota(
     state: State<'_, app_server::AppServerState>,
 ) -> Result<quota::QuotaSnapshot, String> {
     quota::read_quota(&state).await
+}
+
+/// 仅检查本机 CLI、app-server 和当前登录态，不读取认证文件也不上传诊断信息。
+#[tauri::command]
+async fn diagnose_codex(
+    state: State<'_, app_server::AppServerState>,
+) -> Result<CodexDiagnostics, String> {
+    let cli_version = app_server::read_cli_version().await;
+    let app_server_ready = state.warm_up().await;
+    let quota = if app_server_ready.is_ok() {
+        quota::read_quota(&state).await.map(|_| ())
+    } else {
+        Err(app_server_ready.as_ref().expect_err("已确认启动失败").to_owned())
+    };
+    let error = cli_version
+        .as_ref()
+        .err()
+        .or_else(|| app_server_ready.as_ref().err())
+        .or_else(|| quota.as_ref().err())
+        .cloned();
+    Ok(CodexDiagnostics {
+        cli_version: cli_version.ok(),
+        app_server_ready: app_server_ready.is_ok(),
+        quota_available: quota.is_ok(),
+        error,
+    })
 }
 
 #[tauri::command]
@@ -187,6 +223,7 @@ fn main() {
     tauri::Builder::default()
         .manage(app_server::AppServerState::default())
         .manage(threads::ThreadTrendState::default())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             tray::setup(app)?;
             let app_handle = app.handle().clone();
@@ -203,6 +240,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             read_quota,
+            diagnose_codex,
             search_threads,
             list_threads_for_selection,
             export_threads,

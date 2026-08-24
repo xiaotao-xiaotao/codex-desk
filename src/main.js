@@ -4,7 +4,9 @@ import { LANGUAGE_OPTIONS, createI18n } from "./i18n.js";
 import { THEME_ICONS, createThemeController } from "./theme.js";
 import { copyText } from "./utils/clipboard.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
+import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createQuotaView } from "./views/quota-view.js";
+import { createDiagnosticsDialogView } from "./views/diagnostics-dialog-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
 import { createThreadListView } from "./views/thread-list-view.js";
 import { createThreadTrendView } from "./views/thread-trend-view.js";
@@ -44,6 +46,14 @@ const { formatQuotaWindow, formatResetTime, formatUpdated } = createDateFormatte
 });
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetTime });
+const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
+const diagnosticsView = createDiagnosticsDialogView({
+  t,
+  invoke,
+  copyText: copyToClipboard,
+  quotaAlerts,
+  getLatestQuota: () => latestQuota,
+});
 const dialogView = createThreadDialogView({ t, formatUpdated, copyText: copyToClipboard });
 const trendView = createThreadTrendView({ t });
 const threadListView = createThreadListView({
@@ -272,6 +282,7 @@ function applyLanguage() {
   collapseButton.title = collapseButton.ariaLabel = t("collapse");
   refreshButton.title = refreshButton.ariaLabel = t("refresh");
   quitButton.title = quitButton.ariaLabel = t("quit");
+  diagnosticsView.updateLanguage();
   orb.title = t("orbTitle");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
@@ -309,6 +320,7 @@ async function refreshQuota(forceTrendRefresh = false) {
     latestQuota = await invoke("read_quota");
     nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
     quotaView.render(latestQuota);
+    await quotaAlerts.notify(latestQuota);
     refreshSucceeded = true;
     if (expanded) {
       await searchThreads(threadListView.getSearchQuery(), currentThreadPage);

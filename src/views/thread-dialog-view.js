@@ -12,6 +12,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   const dialogStatus = document.querySelector("#dialog-status");
   const messageList = document.querySelector("#message-list");
   const dialogCloseButton = document.querySelector("#dialog-close");
+  const resumeThreadButton = document.querySelector("#resume-thread-button");
   const insightsView = createThreadInsightsView({ t });
   let currentDetail = null;
 
@@ -86,6 +87,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     currentDetail = null;
     setDialogTitle(thread.title);
     dialogMeta.textContent = t("updated", { value: formatUpdated(thread.updatedAt) });
+    updateResumeButton(thread.id);
     messageList.replaceChildren();
     insightsView.clear();
     showStatus(t("readingThread"));
@@ -96,6 +98,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     currentDetail = detail;
     setDialogTitle(detail.title);
     dialogMeta.textContent = t("updated", { value: formatUpdated(detail.updatedAt) });
+    updateResumeButton(detail.id);
     dialogStatus.hidden = true;
     insightsView.render(detail);
     renderMessages(detail);
@@ -105,8 +108,16 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     showStatus(t("readFailed", { error: String(error) }), true);
   }
 
+  function updateResumeButton(threadId) {
+    resumeThreadButton.hidden = !threadId;
+    resumeThreadButton.dataset.threadId = threadId ?? "";
+    resumeThreadButton.textContent = t("resumeThread");
+    resumeThreadButton.title = `codex resume ${threadId ?? ""}`;
+  }
+
   function updateLanguage() {
     dialogCloseButton.ariaLabel = t("closeThreadDetail");
+    resumeThreadButton.textContent = t("resumeThread");
     if (!threadDialog.open) {
       dialogTitle.textContent = t("threadDetail");
       dialogTitle.removeAttribute("title");
@@ -124,6 +135,22 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   }
 
   dialogCloseButton.addEventListener("click", () => threadDialog.close());
+  resumeThreadButton.addEventListener("click", async () => {
+    const threadId = resumeThreadButton.dataset.threadId;
+    if (!threadId) return;
+    resumeThreadButton.disabled = true;
+    try {
+      // 只复制官方 CLI 恢复命令，不直接拉起终端，避免应用替用户执行本机命令。
+      await copyText(`codex resume ${threadId}`);
+      resumeThreadButton.textContent = t("resumeThreadCopied");
+    } catch {
+      resumeThreadButton.textContent = t("copyFailedLong");
+    }
+    window.setTimeout(() => {
+      resumeThreadButton.disabled = false;
+      resumeThreadButton.textContent = t("resumeThread");
+    }, 1_500);
+  });
   threadDialog.addEventListener("click", (event) => {
     if (event.target === threadDialog) threadDialog.close();
   });

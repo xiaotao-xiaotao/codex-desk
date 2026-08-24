@@ -81,6 +81,41 @@ impl AppServerState {
     }
 }
 
+/// 诊断时独立读取 CLI 版本，便于把“未安装”与“已安装但未登录”区分开。
+pub async fn read_cli_version() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    let mut command = {
+        let mut command = Command::new("cmd");
+        command.args(["/C", "codex.cmd", "--version"]);
+        command
+    };
+    #[cfg(not(target_os = "windows"))]
+    let mut command = Command::new("codex");
+
+    #[cfg(not(target_os = "windows"))]
+    command.arg("--version");
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let output = timeout(Duration::from_secs(5), command.output())
+        .await
+        .map_err(|_| "读取 Codex CLI 版本超时".to_owned())?
+        .map_err(|error| format!("无法执行 codex --version：{error}"))?;
+    if !output.status.success() {
+        let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        return Err(if detail.is_empty() {
+            "codex --version 未能正常执行".to_owned()
+        } else {
+            detail
+        });
+    }
+    let version = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    (!version.is_empty())
+        .then_some(version)
+        .ok_or_else(|| "Codex CLI 未返回版本信息".to_owned())
+}
+
 impl CodexAppServer {
     async fn connect() -> Result<Self, String> {
         #[cfg(target_os = "windows")]
@@ -118,7 +153,7 @@ impl CodexAppServer {
             .request(
                 1,
                 "initialize",
-                json!({ "clientInfo": { "name": "codex-desk", "version": "0.1.0" } }),
+                json!({ "clientInfo": { "name": "codex-desk", "version": "1.0.1" } }),
             )
             .await?;
         // initialized 是通知，不会返回 JSON-RPC 响应。

@@ -38,8 +38,9 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .icon-button.is-loading svg { animation: rotate .65s linear infinite; }
 
 .dashboard-section { flex: 0 0 auto; padding: 9px 10px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
-.quota-section { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: stretch; gap: 8px; margin-bottom: 5px; padding: 5px 8px; }
-.quota-section .section-heading { align-self: center; margin: 0; }
+.quota-section { display: grid; grid-template-columns: minmax(170px, max-content) minmax(0, 1fr); align-items: stretch; gap: 8px; margin-bottom: 5px; padding: 5px 8px; }
+/* 左侧栏按当前语言的最长内容扩展，避免英文和日语的额度徽标被固定宽度挤压。 */
+.quota-section .section-heading { align-self: center; align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; margin: 0; }
 .trend-section { flex: 0 0 auto; margin-bottom: 5px; padding: 6px 10px 4px; }
 .trend-heading { align-items: flex-end; margin-bottom: 2px; }
 .trend-heading-actions { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 8px; }
@@ -65,7 +66,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .section-kicker { margin: 0 0 1px; color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 .quota-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 5px; }
 .quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
-.badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; }
+.badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
 .quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 /* 仅返回一个额度窗口时，让它占满右侧区域，避免进度条后留下无效空白。 */
 .quota-list > .quota-card:only-child { grid-column: 1 / -1; }
@@ -136,12 +137,17 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .dialog-header h2 { max-width: min(820px, calc(100vw - 150px)); overflow: hidden; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
 .dialog-meta, .dialog-status { color: #8a94a0; font-size: .79rem; }
 .dialog-meta { margin: 7px 0 0; }
+.dialog-meta-row { display: flex; align-items: center; gap: 8px; }
+.resume-thread-button { flex: 0 0 auto; margin-top: 7px; padding: 3px 7px; border: 1px solid #d9e4f7; border-radius: 6px; color: #3979c9; background: #f7faff; cursor: pointer; font-size: .63rem; font-weight: 700; line-height: 1.2; }
+.resume-thread-button:hover { border-color: #9fc5fa; background: #eef6ff; }
+.resume-thread-button:disabled { cursor: default; opacity: .72; }
 .dialog-status { flex: 0 0 auto; margin: 18px 28px 0; }
-.dialog-insights { flex: 0 0 auto; padding: 14px 28px 12px; border-bottom: 1px solid #edf0f3; background: linear-gradient(180deg, #fff, #fbfcfe); }
-.insight-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.insight-metric { min-width: 0; padding: 8px 10px; border: 1px solid #e4eaf2; border-radius: 9px; background: #fff; }
-.insight-metric strong { display: block; overflow: hidden; color: #2d3b4c; font-size: 1.12rem; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
-.insight-metric span { display: block; margin-top: 3px; color: #7a8797; font-size: .66rem; font-weight: 650; }
+/* 洞察仅用于快速扫读，压缩卡片高度以优先保留会话消息的可视空间。 */
+.dialog-insights { flex: 0 0 auto; padding: 8px 20px 7px; border-bottom: 1px solid #edf0f3; background: linear-gradient(180deg, #fff, #fbfcfe); }
+.insight-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.insight-metric { min-width: 0; padding: 6px 8px; border: 1px solid #e4eaf2; border-radius: 8px; background: #fff; }
+.insight-metric strong { display: block; overflow: hidden; color: #2d3b4c; font-size: 1rem; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.insight-metric span { display: block; margin-top: 1px; color: #7a8797; font-size: .61rem; font-weight: 650; }
 .insight-metric-blue { border-color: #d7e8ff; background: #f7fbff; }
 .insight-metric-blue strong { color: #1677ff; }
 .insight-metric-violet { border-color: #e5ddff; background: #faf8ff; }
@@ -183,6 +189,30 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .message-user .message-role { color: #3979c9; }
 .message-assistant { justify-self: start; }
 .dialog-hint { width: 100%; margin: 0; padding: 13px 14px; border: 1px dashed #d5dce5; border-radius: 10px; color: #7d8792; background: #fff; font-size: .86rem; }
+
+.diagnostics-dialog { width: min(520px, calc(100% - 32px)); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
+.diagnostics-dialog::backdrop { background: rgba(15, 23, 42, .38); }
+.diagnostics-content { padding: 12px 16px 16px; }
+.diagnostics-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.diagnostics-header h2 { margin-top: 2px; }
+/* 诊断信息密度较高，标题区使用更小的关闭按钮和间距，避免首屏被无效留白占据。 */
+.diagnostics-header .dialog-close { width: 30px; height: 30px; font-size: 1.35rem; }
+.diagnostics-intro { margin: 9px 0 10px; color: #6f7b88; font-size: .74rem; line-height: 1.45; }
+.diagnostics-results { display: grid; gap: 7px; min-height: 34px; color: #7d8792; font-size: .76rem; }
+.diagnostic-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid #e7edf3; border-radius: 8px; background: #fbfcfe; }
+.diagnostic-row span { color: #526173; }
+.diagnostic-row strong { max-width: 65%; overflow: hidden; font-size: .72rem; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.diagnostic-row .is-ready { color: #13795b; }
+.diagnostic-row .is-unavailable { color: #cf1322; }
+.diagnostics-error { margin: 10px 0 0; color: #b54708; font-size: .72rem; line-height: 1.5; }
+.diagnostics-alerts { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 14px; padding: 11px 0; border-top: 1px solid #edf1f5; }
+.diagnostics-alerts div { display: grid; gap: 3px; }
+.diagnostics-alerts strong { color: #344154; font-size: .75rem; }
+.diagnostics-alerts span { color: #7d8792; font-size: .68rem; }
+.diagnostics-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 4px; }
+/* 底部操作仅用于辅助排障，使用紧凑尺寸以免视觉权重超过诊断结果。 */
+.diagnostics-actions .selection-button { padding: 3px 7px; font-size: .6rem; }
+.diagnostics-actions .thread-action-button { min-height: 25px; padding: 0 7px; font-size: .6rem; }
 
 /* WebView2 与 WKWebView 共用 WebKit 滚动条伪元素；Firefox 则使用 scrollbar-color。 */
 .thread-list::-webkit-scrollbar, .message-list::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -314,3 +344,13 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 :root[data-theme="dark"] .message-role { color: #aab7c7; }
 :root[data-theme="dark"] .message-user { border-color: #245a96; background: #122b47; }
 :root[data-theme="dark"] .message-user .message-role { color: #8dc5ff; }
+:root[data-theme="dark"] .resume-thread-button { border-color: #294f78; color: #8dc5ff; background: #152b43; }
+:root[data-theme="dark"] .resume-thread-button:hover { border-color: #3b82d0; background: #1b3857; }
+:root[data-theme="dark"] .diagnostics-dialog { border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
+:root[data-theme="dark"] .diagnostics-dialog::backdrop { background: rgba(0, 0, 0, .58); }
+:root[data-theme="dark"] .diagnostics-intro, :root[data-theme="dark"] .diagnostics-alerts span { color: #9aa9ba; }
+:root[data-theme="dark"] .diagnostic-row { border-color: #2c3948; background: #18212c; }
+:root[data-theme="dark"] .diagnostic-row span, :root[data-theme="dark"] .diagnostics-alerts strong { color: #d5dfeb; }
+:root[data-theme="dark"] .diagnostic-row .is-ready { color: #77d9b5; }
+:root[data-theme="dark"] .diagnostic-row .is-unavailable { color: #ff7875; }
+:root[data-theme="dark"] .diagnostics-alerts { border-top-color: #2a3544; }
