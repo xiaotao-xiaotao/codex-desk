@@ -113,7 +113,7 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 
 ## 运行要求
 
-- Node.js 20 或更高版本
+- Node.js 24 或更高版本
 - Rust（仅开发、打包所需）：使用 `rustup` 安装稳定版工具链
 - 已安装并登录 Codex CLI；本应用通过 `codex app-server --stdio` 读取额度和会话数据，不读取或保存 `auth.json`
 - Windows 需要 WebView2（Windows 10/11 通常已内置）

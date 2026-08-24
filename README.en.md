@@ -88,7 +88,7 @@ Only Codex Desk v1 bundles are supported. The app does not import Codex JSONL fi
 
 ## Requirements
 
-- Node.js 20 or later
+- Node.js 24 or later
 - Rust stable toolchain (only required for development and packaging), installed with `rustup`
 - Codex CLI installed and signed in
 - WebView2 on Windows (normally included with Windows 10/11)
