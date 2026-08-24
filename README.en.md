@@ -19,11 +19,19 @@ If Codex Desk helps you manage your sessions, please consider giving the project
 Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases):
 
 - **Windows**: download the `.exe` installer for Windows 10/11.
-- **macOS**: prebuilt installers are not currently provided. Build the `.app` or `.dmg` package yourself on a macOS environment. Distribution to other users usually requires Apple signing and notarization.
-
-See the [Development](#development) and [Build](#build) sections below for macOS build commands.
+- **macOS**: download the `.dmg` installer that matches your Mac's chip.
+- **Linux**: download the `.deb` package for Debian/Ubuntu, or the `.AppImage` package for most other desktop distributions.
 
 Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
+
+### macOS installation
+
+1. From [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases), download the `.dmg` for your chip: choose the filename containing `aarch64` for Apple silicon (M-series), or `x64` for Intel Macs. You can check your chip in **About This Mac**.
+2. Open the `.dmg` and drag `Codex Desk.app` into the **Applications** folder.
+3. The current packages are not yet Apple-signed or notarized. Only if you downloaded the package from this project's Releases page, `Control`-click `Codex Desk` in **Applications**, choose **Open**, then confirm **Open** once more if macOS blocks it.
+4. If it is still blocked, go to **System Settings → Privacy & Security** and select **Open Anyway** beside the security notice.
+
+After installation, you still need to install and sign in to Codex CLI separately; Codex Desk does not include or replace it.
 
 ### First launch in two steps
 

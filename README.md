@@ -17,11 +17,19 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 前往 [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases) 下载最新安装包：
 
 - Windows：下载 `.exe` 安装包（Windows 10/11）
-- macOS：当前未提供预构建安装包，需要在 macOS 环境中自行构建 `.app` 或 `.dmg`。如果要分发给其他用户，通常还需要进行 Apple 签名和公证。
-
-macOS 构建命令见下方[开发启动](#开发启动)和[打包](#打包)章节。
+- macOS：下载与芯片匹配的 `.dmg` 安装包。
+- Linux：Debian/Ubuntu 下载 `.deb`；其他常见桌面发行版可下载 `.AppImage`。
 
 首次启动前，请确保已单独安装并登录 [Codex CLI](https://github.com/openai/codex)。
+
+### macOS 安装说明
+
+1. 在 [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases) 下载对应芯片的 `.dmg`：M 系列芯片选择文件名含 `aarch64` 的安装包，Intel 芯片选择含 `x64` 的安装包。可在“关于本机”中查看芯片类型。
+2. 双击打开 `.dmg`，将 `Codex Desk.app` 拖到“应用程序（Applications）”文件夹。
+3. 当前安装包尚未完成 Apple 签名和公证。仅当确认安装包来自本项目 Releases 时，如被 macOS 拦截，请在“应用程序”中按住 `Control` 点击 `Codex Desk`，选择“打开”，再点击一次“打开”。
+4. 如果仍被拦截，前往“系统设置 → 隐私与安全性”，在安全提示旁点击“仍要打开”。
+
+完成安装后，仍需单独安装并登录 Codex CLI；Codex Desk 不会替代或内置 Codex CLI。
 
 ### 首次启动只需两步
 
