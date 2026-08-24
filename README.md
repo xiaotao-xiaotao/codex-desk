@@ -6,6 +6,10 @@
 [![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
 
+<p align="center">
+  <img src="docs/screenshots/social-preview-1280x640.jpg" alt="Codex Desk quota monitoring and local session dashboard" width="100%" />
+</p>
+
 **Keep track of Codex CLI quota and quickly resume local sessions.**
 
 Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, local session browsing, activity trends, session insights, and cross-device session migration.
