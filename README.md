@@ -1,168 +1,131 @@
 # Codex Desk
 
-[English](README.en.md)
+[中文](README.zh-CN.md)
 
 [![Latest Release](https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver)](https://github.com/xiaotao-xiaotao/codex-desk/releases)
 [![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
 
-**实时掌控 Codex CLI 额度，快速找回本地会话。**
+**Keep track of Codex CLI quota and quickly resume local sessions.**
 
-Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮显示额度状态，提供额度阈值提醒、本地会话浏览、趋势分析、详情洞察和跨设备迁移。数据仅通过本机 `codex app-server --stdio` 获取，不上传到第三方服务。
+Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, local session browsing, activity trends, session insights, and cross-device session migration.
 
-如果它帮你更方便地管理 Codex 会话，欢迎点一个 **Star**，也欢迎通过 Issue 提交建议。
+All data is read through the local `codex app-server --stdio` process. Codex Desk does not upload your data to a third-party service, read or save `auth.json`, or call account APIs.
 
-## 下载
+If Codex Desk helps you manage your sessions, please consider giving the project a **Star**. Feedback and bug reports are welcome through [Issues](https://github.com/xiaotao-xiaotao/codex-desk/issues).
 
-前往 [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases) 下载最新安装包：
+## Download
 
-- Windows：下载 `.exe` 安装包（Windows 10/11）
-- macOS：下载与芯片匹配的 `.dmg` 安装包。
-- Linux：Debian/Ubuntu 下载 `.deb`；其他常见桌面发行版可下载 `.AppImage`。
+Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases):
 
-首次启动前，请确保已单独安装并登录 [Codex CLI](https://github.com/openai/codex)。
+- **Windows**: download the `.exe` installer for Windows 10/11.
+- **macOS**: download the `.dmg` installer that matches your Mac's chip.
+- **Linux**: download the `.deb` package for Debian/Ubuntu, or the `.AppImage` package for most other desktop distributions.
 
-### macOS 安装说明
+Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
 
-1. 在 [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases) 下载对应芯片的 `.dmg`：M 系列芯片选择文件名含 `aarch64` 的安装包，Intel 芯片选择含 `x64` 的安装包。可在“关于本机”中查看芯片类型。
-2. 双击打开 `.dmg`，将 `Codex Desk.app` 拖到“应用程序（Applications）”文件夹。
-3. 当前安装包尚未完成 Apple 签名和公证。仅当确认安装包来自本项目 Releases 时，如被 macOS 拦截，请在“应用程序”中按住 `Control` 点击 `Codex Desk`，选择“打开”，再点击一次“打开”。
-4. 如果仍被拦截，前往“系统设置 → 隐私与安全性”，在安全提示旁点击“仍要打开”。
+### macOS installation
 
-完成安装后，仍需单独安装并登录 Codex CLI；Codex Desk 不会替代或内置 Codex CLI。
+1. From [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases), download the `.dmg` for your chip: choose the filename containing `aarch64` for Apple silicon (M-series), or `x64` for Intel Macs. You can check your chip in **About This Mac**.
+2. Open the `.dmg` and drag `Codex Desk.app` into the **Applications** folder.
+3. The current packages are not yet Apple-signed or notarized. Only if you downloaded the package from this project's Releases page, `Control`-click `Codex Desk` in **Applications**, choose **Open**, then confirm **Open** once more if macOS blocks it.
+4. If it is still blocked, go to **System Settings → Privacy & Security** and select **Open Anyway** beside the security notice.
 
-### 首次启动只需两步
+After installation, you still need to install and sign in to Codex CLI separately; Codex Desk does not include or replace it.
 
-1. 安装并登录 Codex CLI：`npm install -g @openai/codex`，随后执行 `codex` 完成登录。
-2. 启动 Codex Desk；若看不到额度，点击右上角的“诊断 Codex CLI”按钮即可检查 CLI、`app-server` 和额度访问状态，并可复制诊断信息提交 Issue。
+### First launch in two steps
 
-## 界面预览
+1. Install and sign in to Codex CLI: `npm install -g @openai/codex`, then run `codex` to complete sign-in.
+2. Launch Codex Desk. If quota is unavailable, use the top-right **Diagnose Codex CLI** button to check the CLI, `app-server`, and quota access. Diagnostic results can be copied into an Issue.
 
-以下截图展示悬浮额度球、会话总览与会话详情界面。
+## Features
+
+- **Usage overview**: view the current plan, quota window, usage percentage, and reset time.
+- **Quota alerts**: after you explicitly enable native notifications, get one alert per reset window at 80%, 90%, and 100% usage.
+- **Seven-day activity trends**: switch between messages, tool calls, file changes, and errors in a code-drawn line chart.
+- **Local sessions**: browse non-archived local sessions, search by title or session ID, and view creation and update times.
+- **Session details and insights**: inspect user messages and Codex replies, copy individual messages, and review aggregate activity metrics.
+- **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
+- **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
+- **Local data boundary**: data is obtained from the local Codex app server; local JSONL files and authentication data are not parsed or stored by the app.
+- **Local diagnostics**: diagnostics only check the local CLI, `app-server`, and quota access; no auth file is read and no data is uploaded.
+
+## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/floating-orb.png" alt="Codex Desk 悬浮额度球" width="240" />
+  <img src="docs/screenshots/floating-orb.png" alt="Codex Desk floating usage orb" width="240" />
 </p>
 
-### 展开总览
+### Dashboard
 
-![Codex Desk 浅色模式总览](docs/screenshots/dashboard-light.png)
+![Codex Desk light dashboard](docs/screenshots/dashboard-light.png)
 
-### 会话详情
+### Session details
 
-![Codex Desk 会话详情](docs/screenshots/session-details.png)
+![Codex Desk session details](docs/screenshots/session-details.png)
 
-### Codex CLI 诊断
+### Codex CLI diagnostics
 
-![Codex Desk Codex CLI 诊断](docs/screenshots/diagnostics-dialog.png)
+![Codex Desk Codex CLI diagnostics](docs/screenshots/diagnostics-dialog.png)
 
-### 暗黑模式
+### Dark mode
 
-![Codex Desk 暗黑模式总览](docs/screenshots/dashboard-dark.png)
+![Codex Desk dark dashboard](docs/screenshots/dashboard-dark.png)
 
-## 多语言支持
+## Multilingual support
 
-应用支持以下界面语言：简体中文、繁體中文、English、日本語和한국어。
+The app provides five interface languages: Simplified Chinese, Traditional Chinese, English, Japanese, and Korean.
 
-- 选择“跟随系统”时，应用会根据操作系统语言自动选择界面语言。
-- 也可以在应用右上角的语言菜单中手动切换。
-- 语言偏好会保存在本机，下次启动时继续使用。
+- In **System** mode, the app selects a language based on your operating system language.
+- You can also switch languages manually from the language menu in the top-right corner.
+- Your language preference is stored locally and restored on the next launch.
 
-## 功能概览
+## Import and export
 
-- **额度概览**：展示当前套餐、额度窗口、已用比例和重置时间。
-- **额度提醒**：用户主动启用系统通知后，在额度达到 80%、90% 或 100% 时提醒；每个重置窗口的每个阈值只提醒一次。
-- **近 7 天趋势**：以代码绘制可切换的折线趋势图，可查看消息、工具调用、文件变更和异常四个维度。
-- **本地会话**：读取本机非归档的持久化会话，每页展示 10 个；支持按标题或会话 ID 模糊搜索，并同时显示创建时间与最后更新时间。
-- **会话详情与洞察**：查看用户消息和 Codex 回复、复制单条内容，并汇总消息数、工具调用数、文件变更数和异常数；可展开查看最近 30 条结构化操作记录。
-- **快速继续会话**：在会话详情中一键复制 `codex resume <会话 ID>`，可直接粘贴到终端继续工作。
-- **会话导入导出**：可选择单个会话、当前页或全部筛选结果，导出为可移植的 Codex Desk 会话包；可在另一台已登录 Codex CLI 的设备中导入为新会话。
-- **本机诊断与数据边界**：诊断只检查本机 CLI、`app-server` 和额度读取状态；所有数据均通过本机 `codex app-server --stdio` 获取，不读取或解析本地 JSONL、不会读取或保存 `auth.json`，也不会调用账号信息接口。
+Import and export are intended for migrating or backing up **conversation text**, not for backing up the complete local Codex runtime state. Export files are unencrypted JSON; store them carefully and do not upload them to untrusted locations.
 
-## 统计口径
+Only Codex Desk v1 bundles are supported. The app does not import Codex JSONL files or arbitrary JSON files. A single file is limited to 64 MB, and one operation supports up to 5,000 sessions.
 
-- 趋势图展示最近 7 个自然日。消息按所属回合的时间归档；回合时间缺失时，才使用会话最后更新时间作为回退。
-- 趋势只读取最近更新的最多 100 个本机非归档会话，避免为历史会话进行大量详情读取；会话列表、搜索和导出不受这个 100 条范围限制。
-- 趋势的“消息”仅统计可识别的用户消息和 Codex 回复。每个会话最多纳入最新 500 条消息，与详情页的消息展示上限一致。
-- 详情页上方的四项洞察基于该会话返回的全部可识别回合汇总；因此其中的消息数可能大于详情区域实际显示的 500 条消息。
-- 趋势数据缓存 60 秒；手动刷新会跳过缓存并重新聚合。
+## Requirements
 
-## 会话导入与导出
+- Node.js 24 or later
+- Rust stable toolchain (only required for development and packaging), installed with `rustup`
+- Codex CLI installed and signed in
+- WebView2 on Windows (normally included with Windows 10/11)
 
-导入导出用于迁移或备份**对话文本**，不是对 Codex 本地运行状态的完整备份。文件为未加密的 JSON，请妥善保存，不要上传到不可信位置。
-
-### 导出会话
-
-1. 展开看板，在“本地历史”区域用每张会话卡片左侧的复选框选择会话。
-2. 可点击“全选本页”，或先搜索后点击“全选筛选结果”跨页选择全部匹配项；“清除”会取消当前选择。
-3. 选中至少一个会话后点击“导出”，在系统“另存为”窗口中选择位置和文件名。
-4. 默认文件名包含导出日期，扩展名为 `.codex-desk.json`。完成后，底部状态栏会显示成功数量；个别会话读取失败不会中断其余会话的导出。
-
-导出包格式为 `codex-desk-thread-bundle` v1，包含导出时间、原会话 ID、标题、创建/更新时间及可识别的用户消息和 Codex 回复。不包含认证信息、插件或 Skill 配置、本机文件路径、工具调用、命令执行记录、文件变更、补丁和详情洞察数据。
-
-### 导入会话
-
-1. 在“本地历史”区域点击“导入”，选择由 Codex Desk 导出的 `.codex-desk.json` 文件。
-2. 应用会显示待导入会话数量和可能产生少量额度消耗的确认提示；确认后开始导入。
-3. 每条成功导入的数据都会创建一个**新的**本机 Codex 会话，标题带有当前界面语言对应的“由 Codex Desk 导入”前缀，并写入一条只读、禁网的历史上下文回合。
-4. 导入完成后会自动刷新会话列表和趋势图；新会话也可在 `codex resume` 中通过标题前缀识别。
-
-导入不会覆盖、合并或删除原会话，也不会复用原会话 ID；重复导入同一个文件会创建重复的新会话。原始创建/更新时间仅保留在导出文件中，导入后的新会话以实际导入时间为准。
-
-仅支持由 Codex Desk 导出的 v1 会话包，不支持直接导入 Codex JSONL、任意 JSON 或其他工具的导出文件。单个文件最大 64 MB，单次最多导入或导出 5,000 个会话。
-
-## 运行要求
-
-- Node.js 24 或更高版本
-- Rust（仅开发、打包所需）：使用 `rustup` 安装稳定版工具链
-- 已安装并登录 Codex CLI；本应用通过 `codex app-server --stdio` 读取额度和会话数据，不读取或保存 `auth.json`
-- Windows 需要 WebView2（Windows 10/11 通常已内置）
-
-> **ChatGPT 客户端不能替代 Codex CLI。** 即使已安装并登录 ChatGPT 桌面客户端，它也不会提供 `codex` 命令或 `app-server` 标准输入输出协议；未单独安装 Codex CLI 时，Codex Desk 无法读取额度、会话和趋势，也无法执行会话导入导出。安装 Codex CLI 后可使用同一个 ChatGPT/OpenAI 账号登录。
-
-## 开发启动
+## Development
 
 ```powershell
-Set-Location "<Codex Desk 项目目录>"
 npm install
 npm run tauri dev
 ```
 
-如果 PowerShell 提示找不到 `cargo`，说明 Rust 安装目录尚未加入 `PATH`。先将实际安装目录加入当前终端；例如本机自定义安装在 D 盘时：
-
-```powershell
-$toolchainBin = "$env:USERPROFILE\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin"
-$env:Path = "$toolchainBin;D:\Software\Rust\cargo\bin;$env:Path"
-npm run tauri dev
-```
-
-建议随后将 Rust 的 `cargo\bin` 目录加入用户 `PATH`，避免每次都要设置。
-
-macOS 的同一项目可直接执行：
+On macOS, the same commands can be run from the project directory:
 
 ```bash
-cd <Codex Desk 项目目录>
 npm install
 npm run tauri dev
 ```
 
-## 打包
+## Build
 
 ```powershell
 npm run tauri build
 ```
 
-输出位置：`src-tauri/target/release/bundle/`。Windows 可得到安装包，macOS 可构建 `.app`/`.dmg`；向其他 macOS 用户分发前通常需要 Apple 签名和公证。
+Build artifacts are generated under `src-tauri/target/release/bundle/`. Windows builds include an installer; macOS builds can produce `.app` and `.dmg` packages.
 
-## 使用方式
+## Usage
 
-- 点击额度球：展开或收起本地看板。
-- 展开后可在额度区域下方查看近 7 天趋势，点击“消息 / 工具 / 文件变更 / 异常”切换指标。
-- 在右上角“诊断 Codex CLI”中可检查本地连接；可选择启用额度 80% / 90% / 100% 的系统提醒。
-- 本地会话支持按标题或会话 ID 模糊搜索；可勾选后导入、导出，点击会话可查看详情，复制会话 ID 或单条消息内容。
-- 会话详情可复制 `codex resume <会话 ID>` 命令，在终端继续对应会话。
-- 会话详情最多展示最新 500 条可识别消息；上方洞察区展示汇总指标，展开“近期操作”可查看结构化记录。
-- 应用启动后会常驻一个本机 `codex app-server` 进程；额度、会话、详情和趋势请求会严格串行复用该连接，退出应用时会将其关闭。
-- 展开后可拖动标题区域改变悬浮位置。
-- 每 60 秒自动刷新，点击刷新按钮可立即更新。
-- 点击关闭按钮只隐藏悬浮窗；从系统托盘菜单“显示额度”可再次打开。
+- Click the floating usage orb to show or hide the dashboard.
+- Use the top-right diagnostic button to verify the local connection and optionally enable 80% / 90% / 100% quota alerts.
+- Switch trend metrics below the quota section.
+- Search, inspect, import, or export local sessions from the session list.
+- Copy `codex resume <session ID>` from a session detail page to continue it in the terminal.
+- Drag the title area to reposition the floating window.
+- The app refreshes automatically every 60 seconds; use the refresh button for an immediate update.
+- Closing the window hides it. Use the system tray menu to show the dashboard again.
+
+## License
+
+See [LICENSE](LICENSE).
