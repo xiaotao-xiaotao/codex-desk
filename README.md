@@ -52,13 +52,13 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 
 ![Codex Desk 会话详情](docs/screenshots/session-details.png)
 
+### Codex CLI 诊断
+
+![Codex Desk Codex CLI 诊断](docs/screenshots/diagnostics-dialog.png)
+
 ### 暗黑模式
 
 ![Codex Desk 暗黑模式总览](docs/screenshots/dashboard-dark.png)
-
-### 英文界面
-
-![Codex Desk 英文版首页](docs/screenshots/dashboard-en.png)
 
 ## 多语言支持
 

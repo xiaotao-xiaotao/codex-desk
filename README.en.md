@@ -64,13 +64,13 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 ![Codex Desk session details](docs/screenshots/session-details.png)
 
+### Codex CLI diagnostics
+
+![Codex Desk Codex CLI diagnostics](docs/screenshots/diagnostics-dialog.png)
+
 ### Dark mode
 
 ![Codex Desk dark dashboard](docs/screenshots/dashboard-dark.png)
-
-### English interface
-
-![Codex Desk English homepage](docs/screenshots/dashboard-en.png)
 
 ## Multilingual support
 
