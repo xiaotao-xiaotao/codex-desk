@@ -5,13 +5,24 @@
 export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
   const orb = document.querySelector("#quota-orb");
   const orbValue = document.querySelector("#orb-value");
+  const orbLabel = document.querySelector("#orb-label");
   const quotaList = document.querySelector("#quota-list");
   const credits = document.querySelector("#credits");
+
+  function formatOrbWindow(durationMinutes) {
+    const minutes = Number(durationMinutes);
+    if (!Number.isFinite(minutes) || minutes <= 0) return t("quotaWindow");
+    if (minutes % 1_440 === 0) return t("compactQuotaWindowDays", { count: minutes / 1_440 });
+    if (minutes % 60 === 0) return t("compactQuotaWindowHours", { count: minutes / 60 });
+    return t("quotaWindowMinutes", { count: minutes });
+  }
 
   function render(quota) {
     const primary = quota.windows?.[0];
     const remaining = primary ? Math.round(primary.remainingPercent) : null;
     orbValue.textContent = remaining === null ? "--" : `${remaining}%`;
+    // 悬浮球只呈现当前主额度窗口，Pro 等无短周期额度时会自然回退为 7 天窗口。
+    orbLabel.textContent = primary ? formatOrbWindow(primary.durationMinutes) : t("remaining");
     orb.style.setProperty("--quota-progress", `${remaining === null ? 0 : remaining}%`);
     credits.hidden = !quota.resetCredits;
     credits.textContent = t("resetCredits", { credits: quota.resetCredits });

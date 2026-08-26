@@ -292,11 +292,11 @@ const DIALOG_SEARCH_TRANSLATIONS = {
 
 // 额度区域采用独立短文案，保证进度与重置时间在不同语言下都能紧凑呈现。
 const QUOTA_LABEL_TRANSLATIONS = {
-  "zh-CN": { usedPercent: "已使用 {used}%", resetTime: "下次重置时间：{value}" },
-  "zh-TW": { usedPercent: "已使用 {used}%", resetTime: "下次重設時間：{value}" },
-  en: { usedPercent: "{used}% used", resetTime: "Next reset: {value}" },
-  ja: { resetCredits: "リセットクレジット：{credits}", usedPercent: "使用済み {used}%", resetTime: "次回リセット：{value}" },
-  ko: { usedPercent: "{used}% 사용", resetTime: "다음 재설정: {value}" },
+  "zh-CN": { compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小时", usedPercent: "已使用 {used}%", resetTime: "下次重置时间：{value}" },
+  "zh-TW": { compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小時", usedPercent: "已使用 {used}%", resetTime: "下次重設時間：{value}" },
+  en: { compactQuotaWindowDays: "{count}d", compactQuotaWindowHours: "{count}h", usedPercent: "{used}% used", resetTime: "Next reset: {value}" },
+  ja: { compactQuotaWindowDays: "{count}日", compactQuotaWindowHours: "{count}時間", resetCredits: "リセットクレジット：{credits}", usedPercent: "使用済み {used}%", resetTime: "次回リセット：{value}" },
+  ko: { compactQuotaWindowDays: "{count}일", compactQuotaWindowHours: "{count}시간", usedPercent: "{used}% 사용", resetTime: "다음 재설정: {value}" },
 };
 
 function resolveSystemLanguage() {
