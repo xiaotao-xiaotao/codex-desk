@@ -15,7 +15,7 @@ export function renderCopyIconButton(button, { label, state = "idle" }) {
 }
 
 /**
- * 用于诊断、继续命令等独立操作：保留文字以明确说明将复制的内容。
+ * 用于诊断等独立操作：保留文字以明确说明将复制的内容。
  */
 export function renderCopyTextButton(button, { label, state = "idle" }) {
   button.classList.remove("copy-icon-button");

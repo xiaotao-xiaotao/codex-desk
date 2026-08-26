@@ -47,7 +47,7 @@ const ANALYTICS_TRANSLATIONS = {
     insightFileChanges: "文件变更",
     insightIssues: "异常",
     recentActivity: "近期操作",
-    activitySummaryHint: "展开查看结构化记录",
+    activitySummaryHint: "可收起",
     noStructuredActivity: "此会话暂未记录可展示的工具、文件或异常操作。",
     activityStatusCompleted: "完成",
     activityStatusInProgress: "进行中",
@@ -73,7 +73,7 @@ const ANALYTICS_TRANSLATIONS = {
     insightFileChanges: "檔案變更",
     insightIssues: "異常",
     recentActivity: "近期操作",
-    activitySummaryHint: "展開檢視結構化記錄",
+    activitySummaryHint: "可收合",
     noStructuredActivity: "此工作階段暫未記錄可顯示的工具、檔案或異常操作。",
     activityStatusCompleted: "完成",
     activityStatusInProgress: "進行中",
@@ -99,7 +99,7 @@ const ANALYTICS_TRANSLATIONS = {
     insightFileChanges: "File changes",
     insightIssues: "Issues",
     recentActivity: "Recent activity",
-    activitySummaryHint: "Show structured events",
+    activitySummaryHint: "Collapsible",
     noStructuredActivity: "No tools, file changes, or issues were recorded for this session.",
     activityStatusCompleted: "Completed",
     activityStatusInProgress: "In progress",
@@ -125,7 +125,7 @@ const ANALYTICS_TRANSLATIONS = {
     insightFileChanges: "ファイル変更",
     insightIssues: "問題",
     recentActivity: "最近の操作",
-    activitySummaryHint: "構造化ログを表示",
+    activitySummaryHint: "折りたたみ可能",
     noStructuredActivity: "このセッションには表示できるツール、ファイル変更、問題の記録がありません。",
     activityStatusCompleted: "完了",
     activityStatusInProgress: "進行中",
@@ -151,7 +151,7 @@ const ANALYTICS_TRANSLATIONS = {
     insightFileChanges: "파일 변경",
     insightIssues: "문제",
     recentActivity: "최근 작업",
-    activitySummaryHint: "구조화된 기록 펼치기",
+    activitySummaryHint: "접기 가능",
     noStructuredActivity: "이 세션에는 표시할 도구, 파일 변경 또는 문제 기록이 없습니다.",
     activityStatusCompleted: "완료",
     activityStatusInProgress: "진행 중",
@@ -238,19 +238,19 @@ const TRANSFER_TRANSLATIONS = {
 
 const PRODUCT_TRANSLATIONS = {
   "zh-CN": {
-    diagnostics: "Codex 环境诊断", diagnosticsKicker: "本机连接", openDiagnostics: "诊断 Codex CLI", closeDiagnostics: "关闭诊断", diagnosticsIntro: "仅检查本机 Codex CLI、app-server 和当前登录态，不会读取认证文件或上传数据。", diagnosticsChecking: "正在检查…", diagnosticCli: "Codex CLI", diagnosticAppServer: "本地 app-server", diagnosticQuota: "额度读取", diagnosticReady: "正常", diagnosticUnavailable: "不可用", diagnosticVersion: "版本：{version}", diagnosticAdvice: "请安装并登录 Codex CLI 后重新检查。", runDiagnostics: "重新检查", copyDiagnostics: "复制诊断", diagnosticsCopied: "诊断已复制", quotaAlerts: "额度提醒", quotaAlertsEnabled: "已启用：80% / 90% / 100%", quotaAlertsDisabled: "未启用", enableQuotaAlerts: "启用提醒", disableQuotaAlerts: "关闭提醒", notificationDenied: "系统未允许通知权限，请在系统设置中为 Codex Desk 打开通知。", quotaAlertTitle: "Codex 额度提醒", quotaAlertBody: "当前已使用 {used}% · {remaining}", resumeThread: "复制继续命令", resumeThreadCopied: "继续命令已复制",
+    diagnostics: "Codex 环境诊断", diagnosticsKicker: "本机连接", openDiagnostics: "诊断 Codex CLI", closeDiagnostics: "关闭诊断", diagnosticsIntro: "仅检查本机 Codex CLI、app-server 和当前登录态，不会读取认证文件或上传数据。", diagnosticsChecking: "正在检查…", diagnosticCli: "Codex CLI", diagnosticAppServer: "本地 app-server", diagnosticQuota: "额度读取", diagnosticReady: "正常", diagnosticUnavailable: "不可用", diagnosticVersion: "版本：{version}", diagnosticAdvice: "请安装并登录 Codex CLI 后重新检查。", runDiagnostics: "重新检查", copyDiagnostics: "复制诊断", diagnosticsCopied: "诊断已复制", quotaAlerts: "额度提醒", quotaAlertsEnabled: "已启用：80% / 90% / 100%", quotaAlertsDisabled: "未启用", enableQuotaAlerts: "启用提醒", disableQuotaAlerts: "关闭提醒", notificationDenied: "系统未允许通知权限，请在系统设置中为 Codex Desk 打开通知。", quotaAlertTitle: "Codex 额度提醒", quotaAlertBody: "当前已使用 {used}% · {remaining}",
   },
   "zh-TW": {
-    diagnostics: "Codex 環境診斷", diagnosticsKicker: "本機連線", openDiagnostics: "診斷 Codex CLI", closeDiagnostics: "關閉診斷", diagnosticsIntro: "僅檢查本機 Codex CLI、app-server 與目前登入狀態，不會讀取驗證檔案或上傳資料。", diagnosticsChecking: "正在檢查…", diagnosticCli: "Codex CLI", diagnosticAppServer: "本機 app-server", diagnosticQuota: "額度讀取", diagnosticReady: "正常", diagnosticUnavailable: "不可用", diagnosticVersion: "版本：{version}", diagnosticAdvice: "請安裝並登入 Codex CLI 後重新檢查。", runDiagnostics: "重新檢查", copyDiagnostics: "複製診斷", diagnosticsCopied: "診斷已複製", quotaAlerts: "額度提醒", quotaAlertsEnabled: "已啟用：80% / 90% / 100%", quotaAlertsDisabled: "未啟用", enableQuotaAlerts: "啟用提醒", disableQuotaAlerts: "關閉提醒", notificationDenied: "系統未允許通知權限，請在系統設定中為 Codex Desk 開啟通知。", quotaAlertTitle: "Codex 額度提醒", quotaAlertBody: "目前已使用 {used}% · {remaining}", resumeThread: "複製繼續指令", resumeThreadCopied: "繼續指令已複製",
+    diagnostics: "Codex 環境診斷", diagnosticsKicker: "本機連線", openDiagnostics: "診斷 Codex CLI", closeDiagnostics: "關閉診斷", diagnosticsIntro: "僅檢查本機 Codex CLI、app-server 與目前登入狀態，不會讀取驗證檔案或上傳資料。", diagnosticsChecking: "正在檢查…", diagnosticCli: "Codex CLI", diagnosticAppServer: "本機 app-server", diagnosticQuota: "額度讀取", diagnosticReady: "正常", diagnosticUnavailable: "不可用", diagnosticVersion: "版本：{version}", diagnosticAdvice: "請安裝並登入 Codex CLI 後重新檢查。", runDiagnostics: "重新檢查", copyDiagnostics: "複製診斷", diagnosticsCopied: "診斷已複製", quotaAlerts: "額度提醒", quotaAlertsEnabled: "已啟用：80% / 90% / 100%", quotaAlertsDisabled: "未啟用", enableQuotaAlerts: "啟用提醒", disableQuotaAlerts: "關閉提醒", notificationDenied: "系統未允許通知權限，請在系統設定中為 Codex Desk 開啟通知。", quotaAlertTitle: "Codex 額度提醒", quotaAlertBody: "目前已使用 {used}% · {remaining}",
   },
   en: {
-    diagnostics: "Codex diagnostics", diagnosticsKicker: "LOCAL CONNECTION", openDiagnostics: "Diagnose Codex CLI", closeDiagnostics: "Close diagnostics", diagnosticsIntro: "Checks your local Codex CLI, app-server, and sign-in state only. No auth file is read or data uploaded.", diagnosticsChecking: "Checking…", diagnosticCli: "Codex CLI", diagnosticAppServer: "Local app-server", diagnosticQuota: "Quota access", diagnosticReady: "Ready", diagnosticUnavailable: "Unavailable", diagnosticVersion: "Version: {version}", diagnosticAdvice: "Install and sign in to Codex CLI, then run the check again.", runDiagnostics: "Run again", copyDiagnostics: "Copy diagnostics", diagnosticsCopied: "Diagnostics copied", quotaAlerts: "Quota alerts", quotaAlertsEnabled: "Enabled: 80% / 90% / 100%", quotaAlertsDisabled: "Disabled", enableQuotaAlerts: "Enable alerts", disableQuotaAlerts: "Disable alerts", notificationDenied: "Notifications are not allowed. Enable them for Codex Desk in system settings.", quotaAlertTitle: "Codex quota alert", quotaAlertBody: "{used}% used · {remaining}", resumeThread: "Copy resume command", resumeThreadCopied: "Resume command copied",
+    diagnostics: "Codex diagnostics", diagnosticsKicker: "LOCAL CONNECTION", openDiagnostics: "Diagnose Codex CLI", closeDiagnostics: "Close diagnostics", diagnosticsIntro: "Checks your local Codex CLI, app-server, and sign-in state only. No auth file is read or data uploaded.", diagnosticsChecking: "Checking…", diagnosticCli: "Codex CLI", diagnosticAppServer: "Local app-server", diagnosticQuota: "Quota access", diagnosticReady: "Ready", diagnosticUnavailable: "Unavailable", diagnosticVersion: "Version: {version}", diagnosticAdvice: "Install and sign in to Codex CLI, then run the check again.", runDiagnostics: "Run again", copyDiagnostics: "Copy diagnostics", diagnosticsCopied: "Diagnostics copied", quotaAlerts: "Quota alerts", quotaAlertsEnabled: "Enabled: 80% / 90% / 100%", quotaAlertsDisabled: "Disabled", enableQuotaAlerts: "Enable alerts", disableQuotaAlerts: "Disable alerts", notificationDenied: "Notifications are not allowed. Enable them for Codex Desk in system settings.", quotaAlertTitle: "Codex quota alert", quotaAlertBody: "{used}% used · {remaining}",
   },
   ja: {
-    diagnostics: "Codex 診断", diagnosticsKicker: "ローカル接続", openDiagnostics: "Codex CLI を診断", closeDiagnostics: "診断を閉じる", diagnosticsIntro: "ローカルの Codex CLI、app-server、ログイン状態のみを確認します。認証ファイルの読み取りやデータ送信は行いません。", diagnosticsChecking: "確認中…", diagnosticCli: "Codex CLI", diagnosticAppServer: "ローカル app-server", diagnosticQuota: "クォータ取得", diagnosticReady: "正常", diagnosticUnavailable: "利用不可", diagnosticVersion: "バージョン：{version}", diagnosticAdvice: "Codex CLI をインストールしてログイン後、もう一度確認してください。", runDiagnostics: "再確認", copyDiagnostics: "診断をコピー", diagnosticsCopied: "診断をコピーしました", quotaAlerts: "クォータ通知", quotaAlertsEnabled: "有効：80% / 90% / 100%", quotaAlertsDisabled: "無効", enableQuotaAlerts: "通知を有効化", disableQuotaAlerts: "通知を無効化", notificationDenied: "通知が許可されていません。システム設定で Codex Desk の通知を有効にしてください。", quotaAlertTitle: "Codex クォータ通知", quotaAlertBody: "使用済み {used}% · {remaining}", resumeThread: "再開コマンドをコピー", resumeThreadCopied: "再開コマンドをコピーしました",
+    diagnostics: "Codex 診断", diagnosticsKicker: "ローカル接続", openDiagnostics: "Codex CLI を診断", closeDiagnostics: "診断を閉じる", diagnosticsIntro: "ローカルの Codex CLI、app-server、ログイン状態のみを確認します。認証ファイルの読み取りやデータ送信は行いません。", diagnosticsChecking: "確認中…", diagnosticCli: "Codex CLI", diagnosticAppServer: "ローカル app-server", diagnosticQuota: "クォータ取得", diagnosticReady: "正常", diagnosticUnavailable: "利用不可", diagnosticVersion: "バージョン：{version}", diagnosticAdvice: "Codex CLI をインストールしてログイン後、もう一度確認してください。", runDiagnostics: "再確認", copyDiagnostics: "診断をコピー", diagnosticsCopied: "診断をコピーしました", quotaAlerts: "クォータ通知", quotaAlertsEnabled: "有効：80% / 90% / 100%", quotaAlertsDisabled: "無効", enableQuotaAlerts: "通知を有効化", disableQuotaAlerts: "通知を無効化", notificationDenied: "通知が許可されていません。システム設定で Codex Desk の通知を有効にしてください。", quotaAlertTitle: "Codex クォータ通知", quotaAlertBody: "使用済み {used}% · {remaining}",
   },
   ko: {
-    diagnostics: "Codex 진단", diagnosticsKicker: "로컬 연결", openDiagnostics: "Codex CLI 진단", closeDiagnostics: "진단 닫기", diagnosticsIntro: "로컬 Codex CLI, app-server 및 로그인 상태만 확인합니다. 인증 파일을 읽거나 데이터를 업로드하지 않습니다.", diagnosticsChecking: "확인 중…", diagnosticCli: "Codex CLI", diagnosticAppServer: "로컬 app-server", diagnosticQuota: "할당량 읽기", diagnosticReady: "정상", diagnosticUnavailable: "사용 불가", diagnosticVersion: "버전: {version}", diagnosticAdvice: "Codex CLI를 설치하고 로그인한 뒤 다시 확인하세요.", runDiagnostics: "다시 확인", copyDiagnostics: "진단 복사", diagnosticsCopied: "진단을 복사했습니다", quotaAlerts: "할당량 알림", quotaAlertsEnabled: "활성화됨: 80% / 90% / 100%", quotaAlertsDisabled: "비활성화됨", enableQuotaAlerts: "알림 켜기", disableQuotaAlerts: "알림 끄기", notificationDenied: "알림이 허용되지 않았습니다. 시스템 설정에서 Codex Desk 알림을 켜세요.", quotaAlertTitle: "Codex 할당량 알림", quotaAlertBody: "{used}% 사용 · {remaining}", resumeThread: "재개 명령 복사", resumeThreadCopied: "재개 명령을 복사했습니다",
+    diagnostics: "Codex 진단", diagnosticsKicker: "로컬 연결", openDiagnostics: "Codex CLI 진단", closeDiagnostics: "진단 닫기", diagnosticsIntro: "로컬 Codex CLI, app-server 및 로그인 상태만 확인합니다. 인증 파일을 읽거나 데이터를 업로드하지 않습니다.", diagnosticsChecking: "확인 중…", diagnosticCli: "Codex CLI", diagnosticAppServer: "로컬 app-server", diagnosticQuota: "할당량 읽기", diagnosticReady: "정상", diagnosticUnavailable: "사용 불가", diagnosticVersion: "버전: {version}", diagnosticAdvice: "Codex CLI를 설치하고 로그인한 뒤 다시 확인하세요.", runDiagnostics: "다시 확인", copyDiagnostics: "진단 복사", diagnosticsCopied: "진단을 복사했습니다", quotaAlerts: "할당량 알림", quotaAlertsEnabled: "활성화됨: 80% / 90% / 100%", quotaAlertsDisabled: "비활성화됨", enableQuotaAlerts: "알림 켜기", disableQuotaAlerts: "알림 끄기", notificationDenied: "알림이 허용되지 않았습니다. 시스템 설정에서 Codex Desk 알림을 켜세요.", quotaAlertTitle: "Codex 할당량 알림", quotaAlertBody: "{used}% 사용 · {remaining}",
   },
 };
 
@@ -274,19 +274,19 @@ const ACCOUNT_TRANSLATIONS = {
 
 const DIALOG_SEARCH_TRANSLATIONS = {
   "zh-CN": {
-    searchThreadMessages: "搜索当前会话", searchThreadMessagesPlaceholder: "搜索当前会话内容", previousSearchMatch: "上一个匹配项", nextSearchMatch: "下一个匹配项", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "无匹配", threadTruncated: "该会话较长，仅搜索并显示最近 500 条消息。", enterReadingMode: "进入阅读模式", exitReadingMode: "退出阅读模式",
+    searchThreadMessages: "搜索当前会话", searchThreadMessagesPlaceholder: "搜索当前会话内容", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "无匹配", threadTruncated: "该会话较长，仅搜索并显示最近 500 条消息。",
   },
   "zh-TW": {
-    searchThreadMessages: "搜尋目前工作階段", searchThreadMessagesPlaceholder: "搜尋目前工作階段內容", previousSearchMatch: "上一個符合項目", nextSearchMatch: "下一個符合項目", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "沒有符合項目", threadTruncated: "此工作階段較長，僅搜尋並顯示最近 500 則訊息。", enterReadingMode: "進入閱讀模式", exitReadingMode: "離開閱讀模式",
+    searchThreadMessages: "搜尋目前工作階段", searchThreadMessagesPlaceholder: "搜尋目前工作階段內容", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "沒有符合項目", threadTruncated: "此工作階段較長，僅搜尋並顯示最近 500 則訊息。",
   },
   en: {
-    searchThreadMessages: "Search this session", searchThreadMessagesPlaceholder: "Search messages", previousSearchMatch: "Previous match", nextSearchMatch: "Next match", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "No matches", threadTruncated: "This session is long; only the latest 500 messages can be searched and displayed.", enterReadingMode: "Enter reading mode", exitReadingMode: "Exit reading mode",
+    searchThreadMessages: "Search this session", searchThreadMessagesPlaceholder: "Search messages", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "No matches", threadTruncated: "This session is long; only the latest 500 messages can be searched and displayed.",
   },
   ja: {
-    searchThreadMessages: "このセッションを検索", searchThreadMessagesPlaceholder: "メッセージを検索", previousSearchMatch: "前の一致", nextSearchMatch: "次の一致", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "一致なし", threadTruncated: "このセッションは長いため、最新 500 件のメッセージのみ検索・表示できます。", enterReadingMode: "閲覧モードに入る", exitReadingMode: "閲覧モードを終了",
+    searchThreadMessages: "このセッションを検索", searchThreadMessagesPlaceholder: "メッセージを検索", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "一致なし", threadTruncated: "このセッションは長いため、最新 500 件のメッセージのみ検索・表示できます。",
   },
   ko: {
-    searchThreadMessages: "현재 세션 검색", searchThreadMessagesPlaceholder: "메시지 검색", previousSearchMatch: "이전 일치 항목", nextSearchMatch: "다음 일치 항목", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "일치 항목 없음", threadTruncated: "이 세션은 길어서 최근 500개 메시지만 검색하고 표시합니다.", enterReadingMode: "읽기 모드로 전환", exitReadingMode: "읽기 모드 종료",
+    searchThreadMessages: "현재 세션 검색", searchThreadMessagesPlaceholder: "메시지 검색", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "일치 항목 없음", threadTruncated: "이 세션은 길어서 최근 500개 메시지만 검색하고 표시합니다.",
   },
 };
 

@@ -122,40 +122,38 @@
       </section>
     </main>
     <input id="import-file-input" type="file" accept="application/json,.codex-desk.json" hidden />
-    <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="dialog-title">
+    <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="thread-dialog-heading">
+      <header class="thread-dialog-toolbar">
+        <h2 id="thread-dialog-heading" data-i18n="threadDetail">会话详情</h2>
+        <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
+      </header>
       <section class="dialog-content">
-        <header class="dialog-header">
-          <div>
-            <p class="section-kicker" data-i18n="threadDetail">会话详情</p>
-            <h2 id="dialog-title">会话详情</h2>
-            <div class="dialog-meta-row">
+        <aside class="dialog-sidebar">
+          <header class="dialog-header">
+            <div>
+              <h3 id="dialog-title">会话详情</h3>
               <p id="dialog-meta" class="dialog-meta"></p>
-              <button id="resume-thread-button" class="resume-command-copy" type="button"></button>
             </div>
+          </header>
+          <section class="dialog-insights" aria-label="会话洞察">
+            <div id="thread-insights" class="insight-list"></div>
+          </section>
+          <div class="dialog-search" role="search">
+            <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
+            <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
+            <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
           </div>
-          <div class="dialog-header-actions">
-            <button id="thread-reading-mode-button" class="dialog-reading-button" type="button" aria-label="进入阅读模式">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4" /></svg>
-            </button>
-            <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
-          </div>
-        </header>
-        <div class="dialog-search" role="search">
-          <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
-          <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
-          <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
-          <button id="dialog-search-previous" class="dialog-search-button" type="button" aria-label="上一个匹配项">↑</button>
-          <button id="dialog-search-next" class="dialog-search-button" type="button" aria-label="下一个匹配项">↓</button>
-        </div>
-        <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
-        <section class="dialog-insights" aria-label="会话洞察">
-          <div id="thread-insights" class="insight-list"></div>
-          <details class="activity-disclosure">
-            <summary><span data-i18n="recentActivity">近期操作</span><span class="activity-summary-hint" data-i18n="activitySummaryHint">展开查看结构化记录</span></summary>
-            <div id="thread-activity" class="activity-list"></div>
-          </details>
+          <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
+          <section class="dialog-activity-panel" aria-label="近期操作">
+            <details class="activity-disclosure" open>
+              <summary><span data-i18n="recentActivity">近期操作</span><span class="activity-summary-hint" data-i18n="activitySummaryHint">可收起</span></summary>
+              <div id="thread-activity" class="activity-list"></div>
+            </details>
+          </section>
+        </aside>
+        <section class="dialog-messages-pane" aria-label="聊天消息">
+          <div id="message-list" class="message-list" aria-live="polite"></div>
         </section>
-        <div id="message-list" class="message-list" aria-live="polite"></div>
       </section>
     </dialog>
     <dialog id="diagnostics-dialog" class="diagnostics-dialog" aria-labelledby="diagnostics-title">

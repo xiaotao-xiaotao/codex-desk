@@ -6,8 +6,6 @@ export function createThreadMessageSearch({
   t,
   input,
   result,
-  previousButton,
-  nextButton,
   onChange,
 }) {
   let messages = [];
@@ -32,10 +30,6 @@ export function createThreadMessageSearch({
     const hasKeyword = Boolean(input.value.trim());
     const hasMatches = matchedIndexes.length > 0;
     input.ariaLabel = t("searchThreadMessages");
-    previousButton.title = previousButton.ariaLabel = t("previousSearchMatch");
-    nextButton.title = nextButton.ariaLabel = t("nextSearchMatch");
-    previousButton.disabled = !hasMatches;
-    nextButton.disabled = !hasMatches;
     result.textContent = !hasKeyword
       ? ""
       : hasMatches
@@ -108,8 +102,5 @@ export function createThreadMessageSearch({
     event.preventDefault();
     moveToMatch(event.shiftKey ? -1 : 1);
   });
-  previousButton.addEventListener("click", () => moveToMatch(-1));
-  nextButton.addEventListener("click", () => moveToMatch(1));
-
   return { reset, setMessages, getState, appendHighlightedText, updateLanguage: renderControls };
 }

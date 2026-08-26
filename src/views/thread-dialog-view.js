@@ -1,6 +1,6 @@
 import { createThreadInsightsView } from "./thread-insights-view.js";
 import { createThreadMessageSearch } from "./thread-message-search.js";
-import { renderCopyIconButton, renderCopyTextButton } from "../utils/copy-icon-button.js";
+import { renderCopyIconButton } from "../utils/copy-icon-button.js";
 
 const DIALOG_TITLE_MAX_LENGTH = 52;
 
@@ -14,21 +14,14 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   const dialogStatus = document.querySelector("#dialog-status");
   const messageList = document.querySelector("#message-list");
   const dialogCloseButton = document.querySelector("#dialog-close");
-  const readingModeButton = document.querySelector("#thread-reading-mode-button");
-  const resumeThreadButton = document.querySelector("#resume-thread-button");
   const searchInput = document.querySelector("#dialog-search-input");
   const searchResult = document.querySelector("#dialog-search-result");
-  const searchPreviousButton = document.querySelector("#dialog-search-previous");
-  const searchNextButton = document.querySelector("#dialog-search-next");
   const insightsView = createThreadInsightsView({ t });
   let currentDetail = null;
-  let readingMode = false;
   const messageSearch = createThreadMessageSearch({
     t,
     input: searchInput,
     result: searchResult,
-    previousButton: searchPreviousButton,
-    nextButton: searchNextButton,
     onChange: ({ focusCurrentMatch }) => {
       if (currentDetail) renderMessages(currentDetail, { focusCurrentMatch });
     },
@@ -52,19 +45,19 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     dialogTitle.ariaLabel = normalizedTitle;
   }
 
+  function setDialogMeta(updatedAt) {
+    const value = formatUpdated(updatedAt);
+    const label = t("updated", { value });
+    dialogMeta.textContent = label;
+    dialogMeta.title = label;
+    dialogMeta.setAttribute("aria-label", label);
+  }
+
   function focusActiveMatch() {
     const { activeMessageIndex } = messageSearch.getState();
     if (activeMessageIndex === undefined) return;
     const message = messageList.querySelector(`[data-message-index="${activeMessageIndex}"]`);
     message?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-
-  function renderReadingMode() {
-    threadDialog.classList.toggle("is-reading-mode", readingMode);
-    readingModeButton.classList.toggle("is-active", readingMode);
-    readingModeButton.setAttribute("aria-pressed", String(readingMode));
-    readingModeButton.title = readingMode ? t("exitReadingMode") : t("enterReadingMode");
-    readingModeButton.ariaLabel = readingModeButton.title;
   }
 
   function renderMessages(detail, { focusCurrentMatch = false } = {}) {
@@ -125,12 +118,9 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
 
   function openLoading(thread) {
     currentDetail = null;
-    readingMode = false;
-    renderReadingMode();
     messageSearch.reset();
     setDialogTitle(thread.title);
-    dialogMeta.textContent = t("updated", { value: formatUpdated(thread.updatedAt) });
-    updateResumeButton(thread.id);
+    setDialogMeta(thread.updatedAt);
     messageList.replaceChildren();
     insightsView.clear();
     showStatus(t("readingThread"));
@@ -141,8 +131,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     currentDetail = detail;
     messageSearch.setMessages(detail.messages, { resetActiveMatch: true });
     setDialogTitle(detail.title);
-    dialogMeta.textContent = t("updated", { value: formatUpdated(detail.updatedAt) });
-    updateResumeButton(detail.id);
+    setDialogMeta(detail.updatedAt);
     dialogStatus.hidden = true;
     insightsView.render(detail);
     renderMessages(detail);
@@ -152,16 +141,8 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     showStatus(t("readFailed", { error: String(error) }), true);
   }
 
-  function updateResumeButton(threadId) {
-    resumeThreadButton.hidden = !threadId;
-    resumeThreadButton.dataset.threadId = threadId ?? "";
-    renderCopyTextButton(resumeThreadButton, { label: t("resumeThread") });
-  }
-
   function updateLanguage() {
     dialogCloseButton.ariaLabel = t("closeThreadDetail");
-    renderReadingMode();
-    renderCopyTextButton(resumeThreadButton, { label: t("resumeThread") });
     if (!threadDialog.open) {
       dialogTitle.textContent = t("threadDetail");
       dialogTitle.removeAttribute("title");
@@ -169,7 +150,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
       return;
     }
     if (currentDetail) {
-      dialogMeta.textContent = t("updated", { value: formatUpdated(currentDetail.updatedAt) });
+      setDialogMeta(currentDetail.updatedAt);
       insightsView.render(currentDetail);
       messageSearch.setMessages(currentDetail.messages);
       renderMessages(currentDetail);
@@ -181,33 +162,8 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   }
 
   dialogCloseButton.addEventListener("click", () => threadDialog.close());
-  readingModeButton.addEventListener("click", () => {
-    readingMode = !readingMode;
-    renderReadingMode();
-  });
-  resumeThreadButton.addEventListener("click", async () => {
-    const threadId = resumeThreadButton.dataset.threadId;
-    if (!threadId) return;
-    resumeThreadButton.disabled = true;
-    try {
-      // 只复制官方 CLI 恢复命令，不直接拉起终端，避免应用替用户执行本机命令。
-      await copyText(`codex resume ${threadId}`);
-      renderCopyTextButton(resumeThreadButton, { label: t("resumeThreadCopied"), state: "copied" });
-    } catch {
-      renderCopyTextButton(resumeThreadButton, { label: t("copyFailedLong"), state: "failed" });
-    }
-    window.setTimeout(() => {
-      resumeThreadButton.disabled = false;
-      renderCopyTextButton(resumeThreadButton, { label: t("resumeThread") });
-    }, 1_500);
-  });
   threadDialog.addEventListener("click", (event) => {
     if (event.target === threadDialog) threadDialog.close();
   });
-  threadDialog.addEventListener("close", () => {
-    readingMode = false;
-    renderReadingMode();
-  });
-
   return { openLoading, showDetail, showReadFailure, updateLanguage };
 }
