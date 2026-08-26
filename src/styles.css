@@ -66,13 +66,14 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .section-kicker { margin: 0 0 1px; color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 /* 趋势与会话区采用“分类｜主标题”的单行结构，节省高度且保持信息层级。 */
 .section-title-row { display: flex; align-items: center; min-width: 0; gap: 4px; }
-.section-title-row .section-kicker { margin: 0; }
+.section-title-row .section-kicker { margin: 0; color: #1f2937; font-size: .87rem; font-weight: 700; letter-spacing: 0; }
 .section-title-row .section-kicker::after { margin-left: 5px; color: #d4dce5; content: "｜"; }
+.section-title-row h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 .quota-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
-/* 账户用量仅作为分类提示，额度概览保持为该区域的视觉主标题。 */
-.quota-title-row .section-kicker { margin: 0; color: #98a4b2; font-size: .56rem; font-weight: 600; letter-spacing: .05em; }
+/* 账户用量、活动洞察与本地历史作为区域主标题，原概览名称退为辅助说明。 */
+.quota-title-row .section-kicker { margin: 0; color: #1f2937; font-size: .87rem; font-weight: 700; letter-spacing: 0; }
 .quota-title-row .section-kicker::after { margin-left: 6px; color: #d4dce5; content: "｜"; }
-.quota-section h2 { font-size: .87rem; }
+.quota-section h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 .quota-section .badge { margin-left: 6px; padding: 2px 5px; font-size: .6rem; }
 .quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
 .badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
@@ -318,9 +319,12 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 :root[data-theme="dark"] .dialog-hint,
 :root[data-theme="dark"] .quota-value span,
 :root[data-theme="dark"] .quota-reset-time { color: #9aa9ba; }
-:root[data-theme="dark"] .quota-title-row .section-kicker { color: #78889b; }
+:root[data-theme="dark"] .quota-title-row .section-kicker,
+:root[data-theme="dark"] .section-title-row .section-kicker { color: #e6edf3; }
 :root[data-theme="dark"] .quota-title-row .section-kicker::after { color: #46576a; }
 :root[data-theme="dark"] .section-title-row .section-kicker::after { color: #46576a; }
+:root[data-theme="dark"] .quota-section h2,
+:root[data-theme="dark"] .section-title-row h2 { color: #9aa9ba; }
 :root[data-theme="dark"] .thread-search input { color: #e6edf3; background: #111820; }
 :root[data-theme="dark"] .thread-search input::placeholder { color: #718096; }
 :root[data-theme="dark"] .icon-button { color: #aab7c7; }
