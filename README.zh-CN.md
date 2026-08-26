@@ -41,24 +41,28 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 以下截图展示悬浮额度球、会话总览与会话详情界面。
 
 <p align="center">
-  <img src="docs/screenshots/floating-orb.png" alt="Codex Desk 悬浮额度球" width="240" />
+  <img src="docs/screenshots/quota-orb-dark-zh.png" alt="Codex Desk 深色悬浮额度球" width="120" />
 </p>
 
 ### 展开总览
 
-![Codex Desk 浅色模式总览](docs/screenshots/dashboard-light.png)
-
-### 会话详情
-
-![Codex Desk 会话详情](docs/screenshots/session-details.png)
-
-### Codex CLI 诊断
-
-![Codex Desk Codex CLI 诊断](docs/screenshots/diagnostics-dialog.png)
+![Codex Desk 浅色模式总览](docs/screenshots/dashboard-light-zh.png)
 
 ### 暗黑模式
 
-![Codex Desk 暗黑模式总览](docs/screenshots/dashboard-dark.png)
+![Codex Desk 暗黑模式总览](docs/screenshots/dashboard-dark-zh.png)
+
+### 会话详情
+
+![Codex Desk 会话详情](docs/screenshots/session-details-zh.png)
+
+### Codex CLI 诊断
+
+![Codex Desk Codex CLI 诊断](docs/screenshots/diagnostics-dialog-zh.png)
+
+### 个人中心
+
+![Codex Desk 个人中心](docs/screenshots/account-dialog-zh.png)
 
 ## 多语言支持
 
