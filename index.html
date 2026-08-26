@@ -55,9 +55,7 @@
             <button id="refresh-button" class="icon-button" type="button" title="立即刷新" aria-label="立即刷新">
               <svg class="refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 16.24 7.76L13 11h7V4z" /></svg>
             </button>
-            <button id="quit-button" class="icon-button icon-button-close" type="button" title="退出程序" aria-label="退出程序">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
-            </button>
+            <button id="quit-button" class="close-icon-button" type="button" title="退出程序" aria-label="退出程序"></button>
           </div>
         </header>
 
@@ -110,7 +108,7 @@
             <button id="clear-thread-selection" class="selection-button selection-button-muted" type="button" data-i18n="clearSelection">清除</button>
             <span id="selected-thread-count" class="selected-thread-count" aria-live="polite"></span>
           </div>
-          <div id="thread-list" class="thread-list" aria-live="polite"></div>
+          <div id="thread-list" class="thread-list app-scrollable" aria-live="polite"></div>
           <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
             <button id="previous-page" class="pagination-button" type="button" data-i18n="previousPage">上一页</button>
             <span id="page-indicator" class="page-indicator"></span>
@@ -125,7 +123,7 @@
     <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="thread-dialog-heading">
       <header class="thread-dialog-toolbar">
         <h2 id="thread-dialog-heading" data-i18n="threadDetail">会话详情</h2>
-        <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
+        <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
       </header>
       <section class="dialog-content">
         <aside class="dialog-sidebar">
@@ -147,12 +145,12 @@
           <section class="dialog-activity-panel" aria-label="近期操作">
             <details class="activity-disclosure" open>
               <summary><span data-i18n="recentActivity">近期操作</span><span class="activity-summary-hint" data-i18n="activitySummaryHint">可收起</span></summary>
-              <div id="thread-activity" class="activity-list"></div>
+              <div id="thread-activity" class="activity-list app-scrollable"></div>
             </details>
           </section>
         </aside>
         <section class="dialog-messages-pane" aria-label="聊天消息">
-          <div id="message-list" class="message-list" aria-live="polite"></div>
+          <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
         </section>
       </section>
     </dialog>
@@ -163,7 +161,7 @@
             <p class="section-kicker" data-i18n="diagnosticsKicker">本机连接</p>
             <h2 id="diagnostics-title" data-i18n="diagnostics">Codex 环境诊断</h2>
           </div>
-          <button id="diagnostics-close" class="dialog-close" type="button" aria-label="关闭诊断">×</button>
+          <button id="diagnostics-close" class="close-icon-button" type="button" aria-label="关闭诊断"></button>
         </header>
         <p id="diagnostics-intro" class="diagnostics-intro" data-i18n="diagnosticsIntro">仅检查本机 Codex CLI、app-server 和当前登录态，不会读取认证文件或上传数据。</p>
         <div id="diagnostics-results" class="diagnostics-results" aria-live="polite"></div>
@@ -182,14 +180,10 @@
       <section class="account-content">
         <header class="account-header">
           <div>
-            <p class="section-kicker" data-i18n="accountKicker">当前登录账号</p>
             <h2 id="account-title" data-i18n="personalCenter">个人中心</h2>
           </div>
-          <button id="account-close" class="dialog-close" type="button" aria-label="关闭个人中心">×</button>
+          <button id="account-close" class="close-icon-button" type="button" aria-label="关闭个人中心"></button>
         </header>
-        <div class="account-identity" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.75-3.45 3.08-5.25 6.5-5.25s5.75 1.8 6.5 5.25" /></svg>
-        </div>
         <dl class="account-details">
           <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
           <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>

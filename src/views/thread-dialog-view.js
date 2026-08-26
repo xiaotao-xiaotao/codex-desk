@@ -1,6 +1,7 @@
 import { createThreadInsightsView } from "./thread-insights-view.js";
 import { createThreadMessageSearch } from "./thread-message-search.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
+import { renderCloseIconButton } from "../utils/close-icon-button.js";
 
 const DIALOG_TITLE_MAX_LENGTH = 52;
 
@@ -142,7 +143,7 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   }
 
   function updateLanguage() {
-    dialogCloseButton.ariaLabel = t("closeThreadDetail");
+    renderCloseIconButton(dialogCloseButton, { label: t("closeThreadDetail") });
     if (!threadDialog.open) {
       dialogTitle.textContent = t("threadDetail");
       dialogTitle.removeAttribute("title");

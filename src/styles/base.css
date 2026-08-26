@@ -1,0 +1,146 @@
+:root { font-family: Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif; color: #1f2329; background: transparent; }
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+button, input { font: inherit; }
+.float-app { position: relative; width: 100%; height: 100%; }
+
+.quota-orb { --quota-progress: 0%; position: absolute; z-index: 3; inset: 0; width: 64px; height: 64px; margin: auto; padding: 0; border: 0; border-radius: 50%; color: #fff; background: conic-gradient(#1677ff var(--quota-progress), #e5eaf2 0); box-shadow: 0 5px 14px rgba(15, 38, 80, .2); cursor: pointer; transition: transform .2s ease, opacity .18s ease; }
+.quota-orb:hover { transform: scale(1.045); }
+.quota-orb:active { transform: scale(.98); }
+.orb-ring { position: absolute; inset: 4px; border-radius: 50%; background: #fff; }
+.orb-value, .orb-label { position: absolute; z-index: 1; right: 0; left: 0; }
+.orb-value { top: 17px; color: #1677ff; font-size: 16px; font-weight: 750; letter-spacing: -.5px; }
+.orb-label { top: 38px; overflow: hidden; color: #7d8792; font-size: 8px; font-weight: 650; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; }
+
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 10px; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
+.is-expanded .panel { opacity: 1; pointer-events: auto; transform: scale(1); }
+.is-expanded .quota-orb { opacity: 0; pointer-events: none; transform: scale(.78); }
+.panel-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; padding: 6px 10px; border: 1px solid #e7e9ee; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); cursor: grab; user-select: none; }
+.panel-header:active { cursor: grabbing; }
+.title-row { display: flex; align-items: baseline; gap: 7px; }
+.eyebrow { display: flex; align-items: center; gap: 4px; margin: 0; color: #1677ff; font-size: .62rem; font-weight: 700; }
+.eyebrow .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #52c41a; box-shadow: 0 0 0 3px #edf9e8; }
+h1 { margin: 0; color: #171a1f; font-size: 1.04rem; letter-spacing: -.035em; }
+h2 { margin: 0; color: #1f2329; font-size: .87rem; }
+.header-actions { display: flex; align-items: center; gap: 2px; overflow: visible; background: transparent; }
+.language-picker { position: relative; }
+.language-menu { position: absolute; z-index: 10; top: calc(100% + 7px); right: -1px; display: grid; width: 142px; padding: 4px; border: 1px solid #dfe5ec; border-radius: 9px; background: #fff; box-shadow: 0 10px 28px rgba(31, 35, 41, .16); }
+.language-menu[hidden] { display: none; }
+.language-menu button { padding: 7px 9px; border: 0; border-radius: 6px; color: #4b5a6d; background: transparent; cursor: pointer; font-size: .73rem; text-align: left; }
+.language-menu button:hover, .language-menu button.is-active { color: #1677ff; background: #f0f6ff; }
+.language-menu button.is-active::after { float: right; content: "✓"; font-weight: 800; }
+.icon-button { display: grid; width: 27px; height: 27px; padding: 0; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: #fff; cursor: pointer; transition: background .15s, color .15s; }
+.icon-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.icon-button .refresh-icon { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.icon-button:hover { border-color: #b7d4ff; color: #1677ff; background: #f5f9ff; }
+.icon-button.is-loading svg { animation: rotate .65s linear infinite; }
+/* 刷新按钮加载时使用的唯一动画，紧邻其调用处维护。 */
+@keyframes rotate { to { transform: rotate(360deg); } }
+
+.dashboard-section { flex: 0 0 auto; padding: 9px 10px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
+.quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 5px; padding: 6px 9px; }
+/* 概览信息收进卡片上方的紧凑标题行，横向空间优先留给两个额度窗口。 */
+.quota-section .section-heading { align-items: center; margin: 0; }
+.trend-section { flex: 0 0 auto; margin-bottom: 5px; padding: 5px 10px 3px; }
+.trend-heading { align-items: flex-end; margin-bottom: 2px; }
+.trend-heading-actions { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 8px; }
+/* 合计文本与指标标签共用 24px 的视觉行高，避免字号不同时出现上下错位。 */
+.trend-total { display: inline-flex; min-height: 24px; align-items: center; color: #718096; font-size: .68rem; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+.trend-controls { display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; }
+.trend-control { display: inline-flex; min-height: 24px; align-items: center; gap: 4px; padding: 3px 6px; border: 1px solid #e3e8ef; border-radius: 999px; color: #718096; background: #fff; cursor: pointer; font-size: .62rem; line-height: 1; transition: color .15s, border-color .15s, background .15s; }
+.trend-control:hover { border-color: #b7d4ff; color: #3979c9; background: #f7fbff; }
+.trend-control.is-active { border-color: #c8dcf8; color: #2d5d9c; background: #f3f8ff; font-weight: 700; }
+.trend-control-dot { width: 6px; height: 6px; border-radius: 50%; }
+/* 趋势图需保留足够高度以辨识折线和日期标签；列表空间不足时交由其内部滚动承接。 */
+.thread-trend-chart { display: grid; height: 88px; min-height: 88px; margin-top: 1px; place-items: center; }
+.thread-trend-chart svg { display: block; width: 100%; height: 100%; overflow: hidden; }
+.thread-trend-chart { cursor: zoom-in; }
+.trend-section.is-chart-expanded { position: absolute; z-index: 20; inset: 0; display: flex; flex-direction: column; margin: 0; padding: 15px 16px 18px; border-radius: 17px; background: #fff; box-shadow: 0 18px 44px rgba(15, 23, 42, .16); }
+.trend-section.is-chart-expanded .thread-trend-chart { flex: 1 1 auto; height: auto; min-height: 0; margin-top: 9px; cursor: zoom-out; }
+.trend-grid line { stroke: #eaf0f6; stroke-width: 1; }
+.trend-grid text, .trend-labels text { fill: #98a4b2; font-size: 10px; font-family: Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif; }
+.trend-empty { margin: 0; color: #8a94a0; font-size: .74rem; }
+.trend-empty-error { color: #cf1322; }
+.sessions-section { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.section-kicker { margin: 0 0 1px; color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
+/* 趋势与会话区采用“分类｜主标题”的单行结构，节省高度且保持信息层级。 */
+.section-title-row { display: flex; align-items: center; min-width: 0; gap: 4px; }
+.section-title-row .section-kicker { margin: 0; color: #1f2937; font-size: .87rem; font-weight: 700; letter-spacing: 0; }
+.section-title-row .section-kicker::after { margin-left: 5px; color: #d4dce5; content: "｜"; }
+.section-title-row h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
+.quota-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+/* 账户用量、活动洞察与本地历史作为区域主标题，原概览名称退为辅助说明。 */
+.quota-title-row .section-kicker { margin: 0; color: #1f2937; font-size: .87rem; font-weight: 700; letter-spacing: 0; }
+.quota-title-row .section-kicker::after { margin-left: 6px; color: #d4dce5; content: "｜"; }
+.quota-section h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
+.quota-section .badge { margin-left: 6px; padding: 2px 5px; font-size: .6rem; }
+.quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
+.badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
+.quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+/* 仅返回一个额度窗口时，让它占满右侧区域，避免进度条后留下无效空白。 */
+.quota-list > .quota-card:only-child { grid-column: 1 / -1; }
+.quota-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "value" "progress" "reset"; row-gap: 2px; padding: 5px 9px; border: 1px solid #dfe8fb; border-radius: 9px; background: linear-gradient(120deg, #f4f8ff, #fff 68%); box-shadow: inset 3px 0 0 #1677ff; }
+.quota-card h3 { grid-area: title; margin: 0; color: #4c5b70; font-size: .66rem; font-weight: 700; line-height: 1.15; }
+.quota-value { grid-area: value; display: flex; align-items: baseline; gap: 4px; margin-top: 1px; }
+.quota-value strong { color: #1677ff; font-size: 1.24rem; line-height: 1; letter-spacing: -.055em; }
+.quota-value span, .quota-reset-time { color: #6f7b88; font-size: .61rem; }
+.quota-used { margin-left: 5px; color: #7c8896; }
+.progress-track { grid-area: progress; height: 5px; margin-top: 3px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
+.quota-reset-time { grid-area: reset; justify-self: end; margin: 1px 0 0; line-height: 1.3; text-align: right; }
+.progress-track span { display: block; height: 100%; border-radius: inherit; background: #1677ff; transition: width .35s ease; }
+
+.sessions-section { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 16px rgba(31, 35, 41, .035); }
+.sessions-section .section-heading { min-height: 31px; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid #edf1f5; }
+.thread-tools { display: flex; align-items: center; gap: 7px; }
+.thread-search input { width: 200px; height: 29px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 8px; outline: 0; color: #1f2937; background: #fff; font-size: .7rem; transition: border-color .18s ease, box-shadow .18s ease; }
+.thread-search input::placeholder { color: #a8b0bb; }
+.thread-search input:focus { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .12); }
+.thread-transfer-actions { display: flex; overflow: hidden; border: 1px solid #d7e2f0; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .025); }
+.thread-action-button { min-height: 29px; padding: 0 9px; border: 0; border-right: 1px solid #e1e8f0; color: #3979c9; background: #fff; cursor: pointer; font-size: .67rem; font-weight: 700; }
+.thread-action-button:last-child { border-right: 0; }
+.thread-action-button:hover:not(:disabled) { color: #1668c6; background: #f2f7ff; }
+.thread-action-button-primary { color: #1668c6; background: #edf5ff; }
+.thread-action-button-primary:hover:not(:disabled) { color: #0958d9; background: #dcecff; }
+.thread-action-button:disabled { cursor: default; opacity: .48; }
+.search-result { min-width: 82px; color: #78828d; font-size: .67rem; text-align: right; }
+.thread-selection-bar { position: relative; z-index: 1; display: flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 27px; margin: -1px 0 6px; padding: 2px 0 4px; border-bottom: 1px solid #edf1f5; background: #fff; }
+.thread-selection-bar[hidden] { display: none; }
+.selection-button { padding: 3px 7px; border: 1px solid #dbe3ec; border-radius: 6px; color: #526173; background: #fff; cursor: pointer; font-size: .6rem; font-weight: 650; transition: color .15s, border-color .15s, background .15s; }
+.selection-button:hover { border-color: #9fc5fa; color: #1668c6; background: #f5f9ff; }
+.selection-button-muted { color: #7a8796; }
+.selected-thread-count { padding: 2px 6px; border-radius: 999px; color: #1668c6; background: #edf5ff; font-size: .61rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.thread-list { position: relative; z-index: 0; display: grid; flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(54px, 1fr)); gap: 8px; min-height: 0; overflow-y: auto; padding: 0; }
+.thread-item { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr); grid-template-rows: minmax(30px, 1fr) auto; align-items: center; column-gap: 7px; row-gap: 4px; min-height: 0; padding: 5px 10px; border: 1px solid #e7edf3; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .025); cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s, transform .15s; }
+.thread-item:hover, .thread-item:focus-visible { border-color: #bad6fb; outline: 0; background: #fbfdff; box-shadow: none; transform: none; }
+/* 选中态只保留描边，且不参与悬停位移，避免压住上方的批量操作分隔线。 */
+.thread-item:has(.thread-select input:checked) { border-color: #9fc5fa; background: #f5f9ff; box-shadow: none; transform: none; }
+.thread-select { display: grid; grid-column: 1; grid-row: 1; width: 16px; height: 16px; align-self: start; place-items: center; cursor: pointer; }
+/* 桌面 WebView 的原生复选框在部分主题下会变成深色方块，因此统一自绘为浅色描边。 */
+.thread-select input { width: 12px; height: 12px; margin: 0; appearance: none; -webkit-appearance: none; border: 1.5px solid #b6c1cf; border-radius: 3px; background: #fff; cursor: pointer; transition: border-color .15s, background-color .15s, box-shadow .15s; }
+.thread-select input:hover { border-color: #5d9bf1; }
+.thread-select input:checked { border-color: #1677ff; background-color: #1677ff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.25 8.15 2.9 2.85 6.6-6.15' fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.15'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 8px; }
+.thread-select input:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(22, 119, 255, .18); }
+.thread-title { display: -webkit-box; grid-column: 2; grid-row: 1; align-self: start; overflow: hidden; padding-right: 24px; overflow-wrap: anywhere; color: #263242; font-size: .75rem; font-weight: 650; line-height: 1.24; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+/* 复选框与标题同处首行，元信息跨整张卡片并从左边缘开始，便于快速扫读。 */
+.thread-meta { display: flex; grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; align-items: center; gap: 7px; }
+.thread-id-line { display: flex; flex: 0 0 auto; min-width: 0; }
+.thread-meta code { display: block; overflow: hidden; color: #7d8998; font-family: "Cascadia Code", Consolas, monospace; font-size: .57rem; text-overflow: ellipsis; white-space: nowrap; }
+.thread-meta time { display: inline-flex; min-width: 0; align-items: center; gap: 7px; overflow: hidden; color: #7f8a97; font-size: .59rem; font-variant-numeric: tabular-nums; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.thread-meta time::before { width: 1px; height: 10px; flex: 0 0 1px; background: #d8e0e8; content: ""; }
+/* 复制只在当前卡片被操作时显现，不干扰常态阅读，也不会遮挡预留了右侧空间的标题。 */
+.thread-item .id-copy-button { position: absolute; top: 6px; right: 10px; opacity: 0; pointer-events: none; transition: color .15s, background .15s, opacity .15s; }
+.thread-item:hover .id-copy-button,
+.thread-item:focus-within .id-copy-button { opacity: 1; pointer-events: auto; }
+.thread-empty { display: grid; grid-column: 1 / -1; grid-row: 1 / -1; align-content: center; justify-items: center; gap: 10px; min-height: 0; padding: 24px; border: 1px dashed #ccd6e2; border-radius: 8px; color: #7d8792; background: #fafcff; text-align: center; }
+.thread-empty-icon { position: relative; width: 36px; height: 30px; border: 1px solid currentColor; border-radius: 7px; opacity: .68; }
+.thread-empty-icon::before { position: absolute; top: 8px; left: 9px; width: 17px; height: 2px; border-radius: 999px; background: currentColor; box-shadow: 0 6px 0 currentColor, 0 12px 0 currentColor; content: ""; }
+.thread-empty-message { margin: 0; font-size: .78rem; line-height: 1.5; }
+.thread-pagination { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.pagination-button { padding: 4px 8px; border: 1px solid #d9dde5; border-radius: 7px; color: #4b5a6d; background: #fff; cursor: pointer; font-size: .68rem; }
+.pagination-button:hover { border-color: #9fc5fa; color: #1677ff; background: #f5f9ff; }
+.pagination-button:disabled { border-color: #edf0f3; color: #b0b8c3; background: #fafbfc; cursor: default; }
+.page-indicator { min-width: 40px; color: #7f8a97; font-size: .68rem; text-align: center; }
+.status { flex: 0 0 auto; min-height: 13px; margin-top: 4px; color: #637286; font-size: .64rem; }
+.status[data-kind="error"], .dialog-status[data-kind="error"] { color: #cf1322; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }

@@ -1,0 +1,14 @@
+/*
+ * 应用内统一滚动条。
+ * 使用 .app-scrollable 作为唯一入口，避免各个列表分别维护 WebView2 的兼容样式。
+ */
+.app-scrollable { scrollbar-color: #b8c2ce transparent; scrollbar-width: thin; }
+.app-scrollable::-webkit-scrollbar { width: 9px; height: 9px; }
+.app-scrollable::-webkit-scrollbar-track { margin: 5px 0; border-radius: 999px; background: transparent; }
+.app-scrollable::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: #b8c2ce; background-clip: content-box; }
+.app-scrollable::-webkit-scrollbar-thumb:hover { background: #8f9cac; background-clip: content-box; }
+.app-scrollable::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+:root[data-theme="dark"] .app-scrollable { scrollbar-color: #526176 transparent; }
+:root[data-theme="dark"] .app-scrollable::-webkit-scrollbar-thumb { background: #526176; background-clip: content-box; }
+:root[data-theme="dark"] .app-scrollable::-webkit-scrollbar-thumb:hover { background: #71829a; background-clip: content-box; }

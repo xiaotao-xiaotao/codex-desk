@@ -1,0 +1,35 @@
+.diagnostics-dialog { width: min(520px, calc(100% - 32px)); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
+.diagnostics-dialog::backdrop { background: rgba(15, 23, 42, .38); }
+.diagnostics-content { padding: 12px 16px 16px; }
+.diagnostics-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.diagnostics-header h2 { margin-top: 2px; }
+/* 诊断信息密度较高，标题区使用更小的关闭按钮和间距，避免首屏被无效留白占据。 */
+.diagnostics-intro { margin: 9px 0 10px; color: #6f7b88; font-size: .74rem; line-height: 1.45; }
+.diagnostics-results { display: grid; gap: 7px; min-height: 34px; color: #7d8792; font-size: .76rem; }
+.diagnostic-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid #e7edf3; border-radius: 8px; background: #fbfcfe; }
+.diagnostic-row span { color: #526173; }
+.diagnostic-row strong { max-width: 65%; overflow: hidden; font-size: .72rem; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.diagnostic-row .is-ready { color: #13795b; }
+.diagnostic-row .is-unavailable { color: #cf1322; }
+.diagnostics-error { margin: 10px 0 0; color: #b54708; font-size: .72rem; line-height: 1.5; }
+.diagnostics-alerts { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 14px; padding: 11px 0; border-top: 1px solid #edf1f5; }
+.diagnostics-alerts div { display: grid; gap: 3px; }
+.diagnostics-alerts strong { color: #344154; font-size: .75rem; }
+.diagnostics-alerts span { color: #7d8792; font-size: .68rem; }
+.diagnostics-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; }
+/* 底部操作仅用于辅助排障，复制诊断与重新检查保持为一个紧凑的操作组。 */
+.diagnostics-actions .copy-text-button { padding: 3px 7px; font-size: .6rem; }
+.diagnostics-actions .thread-action-button { min-height: 25px; padding: 0 7px; font-size: .6rem; }
+
+.account-dialog { width: min(380px, calc(100% - 32px)); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
+.account-dialog::backdrop { background: rgba(15, 23, 42, .38); }
+.account-content { padding: 16px; }
+.account-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.account-header h2 { margin: 0; }
+.account-header .close-icon-button { margin-top: -6px; margin-right: -6px; }
+.account-details { display: grid; gap: 7px; margin: 14px 0 0; }
+.account-details div { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 39px; padding: 8px 10px; border: 1px solid #e7edf3; border-radius: 8px; background: #fbfcfe; }
+.account-details dt { flex: 0 0 auto; color: #738095; font-size: .67rem; font-weight: 650; }
+.account-details dd { min-width: 0; margin: 0; overflow: hidden; color: #344154; font-size: .72rem; font-weight: 650; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.account-details div:first-child dd { color: #1677ff; }
+.account-message { margin: 10px 1px 0; color: #cf1322; font-size: .68rem; line-height: 1.45; }

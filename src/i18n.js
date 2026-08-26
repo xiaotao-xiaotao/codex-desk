@@ -256,19 +256,19 @@ const PRODUCT_TRANSLATIONS = {
 
 const ACCOUNT_TRANSLATIONS = {
   "zh-CN": {
-    personalCenter: "个人中心", accountKicker: "当前登录账号", openPersonalCenter: "打开个人中心", closePersonalCenter: "关闭个人中心", accountEmail: "登录邮箱", accountPlan: "订阅方案", accountType: "登录方式", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 密钥", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登录", accountReadFailed: "读取账号信息失败：{error}",
+    personalCenter: "个人中心", openPersonalCenter: "打开个人中心", closePersonalCenter: "关闭个人中心", accountEmail: "登录邮箱", accountPlan: "订阅方案", accountType: "登录方式", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 密钥", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登录", accountReadFailed: "读取账号信息失败：{error}",
   },
   "zh-TW": {
-    personalCenter: "個人中心", accountKicker: "目前登入帳號", openPersonalCenter: "開啟個人中心", closePersonalCenter: "關閉個人中心", accountEmail: "登入信箱", accountPlan: "訂閱方案", accountType: "登入方式", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 金鑰", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登入", accountReadFailed: "讀取帳號資訊失敗：{error}",
+    personalCenter: "個人中心", openPersonalCenter: "開啟個人中心", closePersonalCenter: "關閉個人中心", accountEmail: "登入信箱", accountPlan: "訂閱方案", accountType: "登入方式", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 金鑰", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登入", accountReadFailed: "讀取帳號資訊失敗：{error}",
   },
   en: {
-    personalCenter: "Account", accountKicker: "CURRENT ACCOUNT", openPersonalCenter: "Open account", closePersonalCenter: "Close account", accountEmail: "Email", accountPlan: "Plan", accountType: "Sign-in method", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API key", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "Not signed in", accountReadFailed: "Could not read account: {error}",
+    personalCenter: "Account", openPersonalCenter: "Open account", closePersonalCenter: "Close account", accountEmail: "Email", accountPlan: "Plan", accountType: "Sign-in method", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API key", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "Not signed in", accountReadFailed: "Could not read account: {error}",
   },
   ja: {
-    personalCenter: "アカウント", accountKicker: "現在のログインアカウント", openPersonalCenter: "アカウントを開く", closePersonalCenter: "アカウントを閉じる", accountEmail: "メールアドレス", accountPlan: "プラン", accountType: "ログイン方法", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API キー", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未ログイン", accountReadFailed: "アカウント情報の読み込みに失敗しました：{error}",
+    personalCenter: "アカウント", openPersonalCenter: "アカウントを開く", closePersonalCenter: "アカウントを閉じる", accountEmail: "メールアドレス", accountPlan: "プラン", accountType: "ログイン方法", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API キー", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未ログイン", accountReadFailed: "アカウント情報の読み込みに失敗しました：{error}",
   },
   ko: {
-    personalCenter: "개인 센터", accountKicker: "현재 로그인 계정", openPersonalCenter: "개인 센터 열기", closePersonalCenter: "개인 센터 닫기", accountEmail: "로그인 이메일", accountPlan: "구독 플랜", accountType: "로그인 방식", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 키", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "로그인되지 않음", accountReadFailed: "계정 정보를 읽지 못했습니다: {error}",
+    personalCenter: "개인 센터", openPersonalCenter: "개인 센터 열기", closePersonalCenter: "개인 센터 닫기", accountEmail: "로그인 이메일", accountPlan: "구독 플랜", accountType: "로그인 방식", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 키", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "로그인되지 않음", accountReadFailed: "계정 정보를 읽지 못했습니다: {error}",
   },
 };
 

@@ -1,3 +1,5 @@
+import { renderCloseIconButton } from "../utils/close-icon-button.js";
+
 /**
  * 个人中心按需读取当前登录账户，仅保留用于展示的邮箱、套餐和登录方式。
  * 不缓存认证数据，也不会将 app-server 返回的原始响应传到页面。
@@ -25,7 +27,7 @@ export function createAccountDialogView({ t, invoke }) {
 
   function render() {
     openButton.title = openButton.ariaLabel = t("openPersonalCenter");
-    closeButton.ariaLabel = t("closePersonalCenter");
+    renderCloseIconButton(closeButton, { label: t("closePersonalCenter") });
     if (loading) {
       email.textContent = plan.textContent = accountType.textContent = t("accountLoading");
       message.hidden = true;

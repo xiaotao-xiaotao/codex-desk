@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { LANGUAGE_OPTIONS, createI18n } from "./i18n.js";
 import { THEME_ICONS, createThemeController } from "./theme.js";
 import { copyText } from "./utils/clipboard.js";
+import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createAccountDialogView } from "./views/account-dialog-view.js";
@@ -283,7 +284,7 @@ function applyLanguage() {
   minimizeButton.title = minimizeButton.ariaLabel = t("minimize");
   collapseButton.title = collapseButton.ariaLabel = t("collapse");
   refreshButton.title = refreshButton.ariaLabel = t("refresh");
-  quitButton.title = quitButton.ariaLabel = t("quit");
+  renderCloseIconButton(quitButton, { label: t("quit") });
   diagnosticsView.updateLanguage();
   accountView.updateLanguage();
   orb.title = t("orbTitle");

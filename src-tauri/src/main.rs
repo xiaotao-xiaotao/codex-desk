@@ -18,7 +18,10 @@ use tauri::{
 const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
 // 为趋势图与五行会话卡片保留可读空间，避免默认展开时依赖列表滚动。
 const EXPANDED_WINDOW_HEIGHT: f64 = 820.0;
-const COLLAPSED_WINDOW_SIZE: f64 = 84.0;
+// 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
+const WINDOW_WORK_AREA_MARGIN: i32 = 12;
+// 收起态仅容纳 64px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
+const COLLAPSED_WINDOW_SIZE: f64 = 72.0;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -187,7 +190,7 @@ fn toggle_window_maximized(window: WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), String> {
     // 展开后为趋势图与会话卡片保留完整阅读空间；紧凑态仍为悬浮球。
-    let (width, height) = if expanded {
+    let (preferred_width, preferred_height) = if expanded {
         (EXPANDED_WINDOW_WIDTH, EXPANDED_WINDOW_HEIGHT)
     } else {
         (COLLAPSED_WINDOW_SIZE, COLLAPSED_WINDOW_SIZE)
@@ -201,6 +204,25 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
     let scale_factor = window
         .scale_factor()
         .map_err(|error| format!("无法读取屏幕缩放比例：{error}"))?;
+    // 不能只钳制坐标：当固定尺寸大于工作区时，窗口仍会从底部溢出。
+    // 这里先按当前显示器的实际工作区缩小逻辑尺寸，再计算位置，兼容高 DPI 缩放。
+    let (width, height) = if expanded {
+        if let Some(monitor) = window.current_monitor().ok().flatten() {
+            let work_area = monitor.work_area();
+            let available_width =
+                (work_area.size.width as i32 - WINDOW_WORK_AREA_MARGIN * 2).max(1) as f64;
+            let available_height =
+                (work_area.size.height as i32 - WINDOW_WORK_AREA_MARGIN * 2).max(1) as f64;
+            (
+                preferred_width.min(available_width / scale_factor),
+                preferred_height.min(available_height / scale_factor),
+            )
+        } else {
+            (preferred_width, preferred_height)
+        }
+    } else {
+        (preferred_width, preferred_height)
+    };
     let target_width = (width * scale_factor).round() as i32;
     let target_height = (height * scale_factor).round() as i32;
     // 以悬浮球/当前窗口的中心为锚点缩放，而非固定左上角，展开不会只向右下延伸。
