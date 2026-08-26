@@ -204,11 +204,11 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
         target_position.x = target_position.x.clamp(work_area.position.x, max_x);
         target_position.y = target_position.y.clamp(work_area.position.y, max_y);
     }
-    // 原生侧同时调整尺寸与位置，避免 WebView 权限或平台差异导致前端处理失效。
+    // 窗口保持不可手动缩放，避免 Windows 在拖至屏幕边缘时显示 Snap 贴靠预览；
+    // 程序仍可通过原生 API 切换展开和收起尺寸。
     window
         // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
         .unmaximize()
-        .and_then(|_| window.set_resizable(true))
         .and_then(|_| window.set_size(Size::Logical(LogicalSize::new(width, height))))
         .and_then(|_| window.set_position(Position::Physical(target_position)))
         .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
