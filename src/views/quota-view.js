@@ -6,30 +6,26 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
   const orb = document.querySelector("#quota-orb");
   const orbValue = document.querySelector("#orb-value");
   const quotaList = document.querySelector("#quota-list");
-  const quotaWindowName = document.querySelector("#quota-window-name");
   const credits = document.querySelector("#credits");
 
   function render(quota) {
     const primary = quota.windows?.[0];
     const remaining = primary ? Math.round(primary.remainingPercent) : null;
-    quotaWindowName.textContent = formatQuotaWindow(primary?.durationMinutes);
     orbValue.textContent = remaining === null ? "--" : `${remaining}%`;
     orb.style.setProperty("--quota-progress", `${remaining === null ? 0 : remaining}%`);
     credits.hidden = !quota.resetCredits;
     credits.textContent = t("resetCredits", { credits: quota.resetCredits });
 
     quotaList.replaceChildren();
-    for (const [index, window] of (quota.windows || []).entries()) {
+    for (const window of (quota.windows || [])) {
       const remainingPercent = Math.round(window.remainingPercent);
       const progress = Math.max(0, Math.min(100, window.remainingPercent));
       const item = document.createElement("article");
       item.className = "quota-card";
 
-      if (index > 0) {
-        const name = document.createElement("h3");
-        name.textContent = formatQuotaWindow(window.durationMinutes);
-        item.append(name);
-      }
+      // 每个额度窗口都展示名称，避免首个窗口因复用标题区而与其他卡片层级不一致。
+      const name = document.createElement("h3");
+      name.textContent = formatQuotaWindow(window.durationMinutes);
 
       const value = document.createElement("div");
       value.className = "quota-value";
@@ -44,7 +40,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
         used: Math.round(window.usedPercent),
         remaining: formatResetTime(window.resetsAt),
       });
-      item.append(value, track, description);
+      item.append(name, value, track, description);
       quotaList.append(item);
     }
   }

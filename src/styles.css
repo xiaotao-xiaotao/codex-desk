@@ -38,8 +38,8 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .icon-button.is-loading svg { animation: rotate .65s linear infinite; }
 
 .dashboard-section { flex: 0 0 auto; padding: 9px 10px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
-.quota-section { display: grid; grid-template-columns: minmax(170px, max-content) minmax(0, 1fr); align-items: stretch; gap: 8px; margin-bottom: 5px; padding: 5px 8px; }
-/* 左侧栏按当前语言的最长内容扩展，避免英文和日语的额度徽标被固定宽度挤压。 */
+.quota-section { display: grid; grid-template-columns: minmax(158px, max-content) minmax(0, 1fr); align-items: stretch; gap: 10px; margin-bottom: 5px; padding: 6px 9px; }
+/* 左侧仅承担概览信息；两个额度窗口均在右侧以同一层级呈现。 */
 .quota-section .section-heading { align-self: center; align-items: flex-start; flex-direction: column; justify-content: center; gap: 5px; margin: 0; }
 .trend-section { flex: 0 0 auto; margin-bottom: 5px; padding: 6px 10px 4px; }
 .trend-heading { align-items: flex-end; margin-bottom: 2px; }
@@ -67,16 +67,16 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .quota-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 3px 5px; }
 .quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
 .badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
-.quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 /* 仅返回一个额度窗口时，让它占满右侧区域，避免进度条后留下无效空白。 */
 .quota-list > .quota-card:only-child { grid-column: 1 / -1; }
-.quota-card { padding: 5px 8px; border: 1px solid #dfe8fb; border-radius: 8px; background: linear-gradient(135deg, #f6f9ff, #fff); }
-.quota-card h3 { margin: 0 0 2px; color: #4c5b70; font-size: .66rem; font-weight: 650; line-height: 1.15; }
-.quota-value { display: flex; align-items: baseline; gap: 4px; margin-bottom: 3px; }
-.quota-value strong { color: #1677ff; font-size: 1.2rem; line-height: 1; letter-spacing: -.05em; }
+.quota-card { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "title detail" "value detail" "progress progress"; column-gap: 9px; padding: 7px 9px; border: 1px solid #dfe8fb; border-radius: 9px; background: linear-gradient(120deg, #f4f8ff, #fff 68%); box-shadow: inset 3px 0 0 #1677ff; }
+.quota-card h3 { grid-area: title; margin: 0; color: #4c5b70; font-size: .66rem; font-weight: 700; line-height: 1.15; }
+.quota-value { grid-area: value; display: flex; align-items: baseline; gap: 4px; margin-top: 3px; }
+.quota-value strong { color: #1677ff; font-size: 1.3rem; line-height: 1; letter-spacing: -.055em; }
 .quota-value span, .quota-card p { color: #6f7b88; font-size: .61rem; }
-.quota-card p { margin: 3px 0 0; line-height: 1.1; }
-.progress-track { height: 4px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
+.quota-card p { grid-area: detail; align-self: center; max-width: 100%; margin: 0; line-height: 1.35; text-align: right; }
+.progress-track { grid-area: progress; height: 5px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: #1677ff; transition: width .35s ease; }
 
 .sessions-section { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 16px rgba(31, 35, 41, .035); }
@@ -275,7 +275,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 :root[data-theme="dark"] .trend-grid text,
 :root[data-theme="dark"] .trend-labels text { fill: #71829a; }
 :root[data-theme="dark"] .trend-section.is-chart-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
-:root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(135deg, #17253a, #151b23); }
+:root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(120deg, #17253a, #151b23 68%); box-shadow: inset 3px 0 0 #4096ff; }
 :root[data-theme="dark"] .quota-card h3 { color: #c0cddd; }
 :root[data-theme="dark"] .quota-value strong { color: #69b1ff; }
 :root[data-theme="dark"] .progress-track { background: #2a3544; }
