@@ -20,8 +20,8 @@ const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
 const EXPANDED_WINDOW_HEIGHT: f64 = 820.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
-// 收起态仅容纳 64px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
-const COLLAPSED_WINDOW_SIZE: f64 = 72.0;
+// 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
+const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
