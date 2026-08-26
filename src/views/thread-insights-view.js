@@ -5,6 +5,36 @@
 export function createThreadInsightsView({ t }) {
   const insightList = document.querySelector("#thread-insights");
   const activityPanel = document.querySelector("#thread-activity");
+  const fullTextTooltip = document.createElement("div");
+  fullTextTooltip.className = "activity-full-text-tooltip";
+  fullTextTooltip.hidden = true;
+  fullTextTooltip.setAttribute("role", "tooltip");
+  document.body.append(fullTextTooltip);
+
+  function positionFullTextTooltip(clientX, clientY) {
+    const gap = 12;
+    const maxLeft = window.innerWidth - fullTextTooltip.offsetWidth - gap;
+    const maxTop = window.innerHeight - fullTextTooltip.offsetHeight - gap;
+    fullTextTooltip.style.left = `${Math.max(gap, Math.min(clientX + gap, maxLeft))}px`;
+    fullTextTooltip.style.top = `${Math.max(gap, Math.min(clientY + gap, maxTop))}px`;
+  }
+
+  /** WebView2 的原生 title 提示不稳定，长文本统一使用应用内即时浮层展示。 */
+  function bindFullTextTooltip(element, text) {
+    const show = (clientX, clientY) => {
+      fullTextTooltip.textContent = text;
+      fullTextTooltip.hidden = false;
+      positionFullTextTooltip(clientX, clientY);
+    };
+    element.addEventListener("mouseenter", (event) => show(event.clientX, event.clientY));
+    element.addEventListener("mousemove", (event) => positionFullTextTooltip(event.clientX, event.clientY));
+    element.addEventListener("mouseleave", () => { fullTextTooltip.hidden = true; });
+    element.addEventListener("focus", () => {
+      const rect = element.getBoundingClientRect();
+      show(rect.left, rect.bottom);
+    });
+    element.addEventListener("blur", () => { fullTextTooltip.hidden = true; });
+  }
 
   function createMetric(label, value, tone) {
     const metric = document.createElement("div");
@@ -50,10 +80,15 @@ export function createThreadInsightsView({ t }) {
       content.className = "activity-content";
       const title = document.createElement("strong");
       title.textContent = activity.title;
+      // 卡片保持单行省略，完整命令或文件名通过悬停浮层按需查看。
+      title.title = activity.title;
+      bindFullTextTooltip(title, activity.title);
       content.append(title);
       if (activity.detail) {
         const detail = document.createElement("span");
         detail.textContent = activity.detail;
+        detail.title = activity.detail;
+        bindFullTextTooltip(detail, activity.detail);
         content.append(detail);
       }
 

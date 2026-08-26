@@ -39,7 +39,8 @@
 .activity-disclosure summary::before { content: "›"; color: #8a9bb0; font-size: 1rem; transition: transform .16s ease; }
 .activity-disclosure[open] summary::before { transform: rotate(90deg); }
 .activity-summary-hint { overflow: hidden; color: #98a4b2; font-size: .67rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-.activity-list { display: grid; height: 100%; min-height: 0; align-content: start; gap: 0; overflow-y: auto; padding: 2px 3px 2px 0; border: 1px solid #e7ebef; border-radius: 8px; background: #fff; }
+.activity-list { display: grid; height: 100%; min-height: 0; align-content: start; gap: 0; overflow-x: hidden; overflow-y: scroll; padding: 2px 3px 2px 0; border: 1px solid #e7ebef; border-radius: 8px; background: #fff; scrollbar-gutter: stable; touch-action: pan-y; }
+/* 保持原有紧凑单行布局，列表只在纵向滚动，避免长路径破坏卡片层级。 */
 .activity-row { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 32px; padding: 5px 8px; border-bottom: 1px solid #edf1f5; background: transparent; }
 .activity-row:last-child { border-bottom: 0; }
 .activity-icon { display: grid; width: 18px; height: 18px; place-items: center; border-radius: 5px; color: #5e75a3; background: #edf4ff; font-size: .78rem; font-weight: 800; }
@@ -49,6 +50,7 @@
 .activity-content strong, .activity-content span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .activity-content strong { color: #344154; font-family: "Cascadia Code", Consolas, monospace; font-size: .68rem; font-weight: 650; }
 .activity-content span { color: #8b97a5; font-size: .62rem; }
+.activity-full-text-tooltip { position: fixed; z-index: 100; max-width: min(520px, calc(100vw - 24px)); padding: 7px 9px; border: 1px solid #cfd8e3; border-radius: 7px; color: #263445; background: #fff; box-shadow: 0 8px 22px rgba(31, 35, 41, .16); font-family: "Cascadia Code", Consolas, monospace; font-size: .68rem; line-height: 1.45; overflow-wrap: anywhere; pointer-events: none; }
 .activity-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .activity-repeat { padding: 2px 5px; border-radius: 999px; color: #3979c9; background: #edf5ff; font-size: .6rem; font-weight: 750; font-variant-numeric: tabular-nums; }
 .activity-status { padding: 2px 5px; border-radius: 4px; color: #768291; background: #f0f2f5; font-size: .61rem; font-weight: 700; white-space: nowrap; }
@@ -62,13 +64,12 @@
 .close-icon-button:hover { color: #4d5a69; background: #eef1f4; }
 .close-icon-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .message-list { display: grid; flex: 1 1 auto; min-height: 0; align-content: start; gap: 7px; overflow-y: auto; padding: 16px 20px 20px; background: #f7f8fa; }
-.message { width: fit-content; max-width: min(76%, 720px); padding: 8px 10px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
-.message p { margin: 4px 0 0; white-space: pre-wrap; }
+.message { position: relative; width: fit-content; max-width: min(76%, 720px); padding: 8px 34px 8px 10px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
+.message p { margin: 0; white-space: pre-wrap; }
 .message mark { padding: 0 1px; border-radius: 2px; color: inherit; background: #ffe58f; }
 .message.is-search-match { border-color: #d6b868; }
 .message.is-active-search-match { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .16); }
-.message-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.message-role { color: #697586; font-size: .64rem; font-weight: 800; letter-spacing: .04em; }
+.message .copy-icon-button { position: absolute; top: 5px; right: 6px; }
 .copy-icon-button { display: grid; width: 20px; height: 20px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 5px; color: #7f8a97; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
 .copy-icon-button svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .copy-icon-button:hover:not(:disabled) { color: #4f5d6d; background: #eef0f2; }
@@ -83,6 +84,5 @@
 .copy-text-button.is-copied { border-color: #b7ebd5; color: #138b63; background: #f0fbf6; }
 .copy-text-button.is-failed { border-color: #ffccc7; color: #cf1322; background: #fff1f0; }
 .message-user { justify-self: end; border-color: #cfe3ff; background: #eff6ff; }
-.message-user .message-role { color: #3979c9; }
 .message-assistant { justify-self: start; }
 .dialog-hint { width: 100%; margin: 0; padding: 13px 14px; border: 1px dashed #d5dce5; border-radius: 10px; color: #7d8792; background: #fff; font-size: .86rem; }

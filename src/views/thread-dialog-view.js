@@ -84,15 +84,10 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
       item.dataset.messageIndex = String(index);
       if (matchingIndexes.has(index)) item.classList.add("is-search-match");
       if (index === activeMessageIndex) item.classList.add("is-active-search-match");
-      const header = document.createElement("div");
-      header.className = "message-header";
-      const role = document.createElement("span");
-      role.className = "message-role";
-      role.textContent = message.role === "user" ? t("you") : t("codex");
       const copy = document.createElement("button");
       copy.className = "copy-button";
       copy.type = "button";
-      renderCopyIconButton(copy, { label: t("copyId") });
+      renderCopyIconButton(copy, { label: t("copy") });
       copy.addEventListener("click", async () => {
         copy.disabled = true;
         try {
@@ -103,13 +98,13 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
         }
         window.setTimeout(() => {
           copy.disabled = false;
-          renderCopyIconButton(copy, { label: t("copyId") });
+          renderCopyIconButton(copy, { label: t("copy") });
         }, 1_500);
       });
       const text = document.createElement("p");
       messageSearch.appendHighlightedText(text, message.text);
-      header.append(role, copy);
-      item.append(header, text);
+      // 角色由消息气泡的左右位置区分，复制按钮固定在右上角，不占用额外标题行。
+      item.append(copy, text);
       messageList.append(item);
     }
     if (focusCurrentMatch && activeMessageIndex !== undefined) {

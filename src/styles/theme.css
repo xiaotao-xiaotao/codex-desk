@@ -125,6 +125,7 @@
 :root[data-theme="dark"] .activity-row-file .activity-icon { color: #77d9b5; background: #163a31; }
 :root[data-theme="dark"] .activity-row-issue .activity-icon { color: #ffbb79; background: #402b18; }
 :root[data-theme="dark"] .activity-content strong { color: #d5dfeb; }
+:root[data-theme="dark"] .activity-full-text-tooltip { border-color: #405064; color: #d9e2ec; background: #18212c; box-shadow: 0 8px 22px rgba(0, 0, 0, .38); }
 :root[data-theme="dark"] .activity-status { color: #aab7c7; background: #2a3544; }
 :root[data-theme="dark"] .activity-repeat { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .activity-status-completed { color: #77d9b5; background: #163a31; }
@@ -136,9 +137,7 @@
 :root[data-theme="dark"] .message mark { color: #fff2c2; background: #5a4516; }
 :root[data-theme="dark"] .message.is-search-match { border-color: #74602b; }
 :root[data-theme="dark"] .message.is-active-search-match { border-color: #4096ff; box-shadow: 0 0 0 3px rgba(64, 150, 255, .18); }
-:root[data-theme="dark"] .message-role { color: #aab7c7; }
 :root[data-theme="dark"] .message-user { border-color: #245a96; background: #122b47; }
-:root[data-theme="dark"] .message-user .message-role { color: #8dc5ff; }
 :root[data-theme="dark"] .diagnostics-dialog { border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
 :root[data-theme="dark"] .diagnostics-dialog::backdrop { background: rgba(0, 0, 0, .58); }
 :root[data-theme="dark"] .diagnostics-intro, :root[data-theme="dark"] .diagnostics-alerts span { color: #9aa9ba; }
