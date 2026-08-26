@@ -18,12 +18,6 @@ All data is read through the local `codex app-server --stdio` process. Codex Des
 
 If Codex Desk helps you manage your sessions, please consider giving the project a **Star**. Feedback and bug reports are welcome through [Issues](https://github.com/xiaotao-xiaotao/codex-desk/issues).
 
-## What's new in v1.0.2
-
-- Refined the compact floating quota orb and unified scrollbar behavior across scrollable views.
-- Improved session details with cleaner message actions and more reliable scrolling for recent activity.
-- Refreshed the dashboard, account, diagnostics, and session-detail screenshots.
-
 ## Download
 
 Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases):
