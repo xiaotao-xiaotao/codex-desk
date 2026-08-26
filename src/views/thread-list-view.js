@@ -37,10 +37,11 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
         <label class="thread-select"><input type="checkbox" /><span class="visually-hidden"></span></label>
         <span class="thread-title"></span>
         <div class="thread-meta">
-          <div class="thread-id-line"><code></code><button class="id-copy-button" type="button">${t("copyId")}</button></div>
+          <div class="thread-id-line"><code></code></div>
           <time class="thread-updated-at"></time>
           <time class="thread-created-at"></time>
         </div>
+        <button class="id-copy-button" type="button"></button>
       `;
       const selectionInput = item.querySelector(".thread-select input");
       const selectionLabel = item.querySelector(".thread-select .visually-hidden");
@@ -69,18 +70,19 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
       }
 
       const copyIdButton = item.querySelector(".id-copy-button");
+      renderCopyIconButton(copyIdButton, { label: t("copyId") });
       copyIdButton.addEventListener("click", async (event) => {
         event.stopPropagation();
         copyIdButton.disabled = true;
         try {
           await copyText(thread.id);
-          copyIdButton.textContent = t("copied");
+          renderCopyIconButton(copyIdButton, { label: t("copied"), state: "copied" });
         } catch {
-          copyIdButton.textContent = t("copyFailed");
+          renderCopyIconButton(copyIdButton, { label: t("copyFailed"), state: "failed" });
         }
         window.setTimeout(() => {
           copyIdButton.disabled = false;
-          copyIdButton.textContent = t("copyId");
+          renderCopyIconButton(copyIdButton, { label: t("copyId") });
         }, 1_500);
       });
       copyIdButton.addEventListener("keydown", (event) => event.stopPropagation());
@@ -114,3 +116,4 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
     onNextPage: (listener) => nextPageButton.addEventListener("click", listener),
   };
 }
+import { renderCopyIconButton } from "../utils/copy-icon-button.js";

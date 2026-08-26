@@ -254,9 +254,49 @@ const PRODUCT_TRANSLATIONS = {
   },
 };
 
-// 额度区域空间有限，日语沿用“可用的”会让徽标无意义地变宽，因此使用更简洁的业务名称。
+const ACCOUNT_TRANSLATIONS = {
+  "zh-CN": {
+    personalCenter: "个人中心", accountKicker: "当前登录账号", openPersonalCenter: "打开个人中心", closePersonalCenter: "关闭个人中心", accountEmail: "登录邮箱", accountPlan: "订阅方案", accountType: "登录方式", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 密钥", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登录", accountReadFailed: "读取账号信息失败：{error}",
+  },
+  "zh-TW": {
+    personalCenter: "個人中心", accountKicker: "目前登入帳號", openPersonalCenter: "開啟個人中心", closePersonalCenter: "關閉個人中心", accountEmail: "登入信箱", accountPlan: "訂閱方案", accountType: "登入方式", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 金鑰", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登入", accountReadFailed: "讀取帳號資訊失敗：{error}",
+  },
+  en: {
+    personalCenter: "Account", accountKicker: "CURRENT ACCOUNT", openPersonalCenter: "Open account", closePersonalCenter: "Close account", accountEmail: "Email", accountPlan: "Plan", accountType: "Sign-in method", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API key", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "Not signed in", accountReadFailed: "Could not read account: {error}",
+  },
+  ja: {
+    personalCenter: "アカウント", accountKicker: "現在のログインアカウント", openPersonalCenter: "アカウントを開く", closePersonalCenter: "アカウントを閉じる", accountEmail: "メールアドレス", accountPlan: "プラン", accountType: "ログイン方法", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API キー", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未ログイン", accountReadFailed: "アカウント情報の読み込みに失敗しました：{error}",
+  },
+  ko: {
+    personalCenter: "개인 센터", accountKicker: "현재 로그인 계정", openPersonalCenter: "개인 센터 열기", closePersonalCenter: "개인 센터 닫기", accountEmail: "로그인 이메일", accountPlan: "구독 플랜", accountType: "로그인 방식", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 키", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "로그인되지 않음", accountReadFailed: "계정 정보를 읽지 못했습니다: {error}",
+  },
+};
+
+const DIALOG_SEARCH_TRANSLATIONS = {
+  "zh-CN": {
+    searchThreadMessages: "搜索当前会话", searchThreadMessagesPlaceholder: "搜索当前会话内容", previousSearchMatch: "上一个匹配项", nextSearchMatch: "下一个匹配项", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "无匹配", threadTruncated: "该会话较长，仅搜索并显示最近 500 条消息。", enterReadingMode: "进入阅读模式", exitReadingMode: "退出阅读模式",
+  },
+  "zh-TW": {
+    searchThreadMessages: "搜尋目前工作階段", searchThreadMessagesPlaceholder: "搜尋目前工作階段內容", previousSearchMatch: "上一個符合項目", nextSearchMatch: "下一個符合項目", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "沒有符合項目", threadTruncated: "此工作階段較長，僅搜尋並顯示最近 500 則訊息。", enterReadingMode: "進入閱讀模式", exitReadingMode: "離開閱讀模式",
+  },
+  en: {
+    searchThreadMessages: "Search this session", searchThreadMessagesPlaceholder: "Search messages", previousSearchMatch: "Previous match", nextSearchMatch: "Next match", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "No matches", threadTruncated: "This session is long; only the latest 500 messages can be searched and displayed.", enterReadingMode: "Enter reading mode", exitReadingMode: "Exit reading mode",
+  },
+  ja: {
+    searchThreadMessages: "このセッションを検索", searchThreadMessagesPlaceholder: "メッセージを検索", previousSearchMatch: "前の一致", nextSearchMatch: "次の一致", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "一致なし", threadTruncated: "このセッションは長いため、最新 500 件のメッセージのみ検索・表示できます。", enterReadingMode: "閲覧モードに入る", exitReadingMode: "閲覧モードを終了",
+  },
+  ko: {
+    searchThreadMessages: "현재 세션 검색", searchThreadMessagesPlaceholder: "메시지 검색", previousSearchMatch: "이전 일치 항목", nextSearchMatch: "다음 일치 항목", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "일치 항목 없음", threadTruncated: "이 세션은 길어서 최근 500개 메시지만 검색하고 표시합니다.", enterReadingMode: "읽기 모드로 전환", exitReadingMode: "읽기 모드 종료",
+  },
+};
+
+// 额度区域采用独立短文案，保证进度与重置时间在不同语言下都能紧凑呈现。
 const QUOTA_LABEL_TRANSLATIONS = {
-  ja: { resetCredits: "リセットクレジット：{credits}" },
+  "zh-CN": { usedPercent: "已使用 {used}%", resetTime: "下次重置时间：{value}" },
+  "zh-TW": { usedPercent: "已使用 {used}%", resetTime: "下次重設時間：{value}" },
+  en: { usedPercent: "{used}% used", resetTime: "Next reset: {value}" },
+  ja: { resetCredits: "リセットクレジット：{credits}", usedPercent: "使用済み {used}%", resetTime: "次回リセット：{value}" },
+  ko: { usedPercent: "{used}% 사용", resetTime: "다음 재설정: {value}" },
 };
 
 function resolveSystemLanguage() {
@@ -290,12 +330,16 @@ export function createI18n() {
   const t = (key, values = {}) => {
     const language = getLanguage();
     const text = QUOTA_LABEL_TRANSLATIONS[language]?.[key]
+      ?? DIALOG_SEARCH_TRANSLATIONS[language]?.[key]
+      ?? ACCOUNT_TRANSLATIONS[language]?.[key]
       ?? PRODUCT_TRANSLATIONS[language]?.[key]
       ?? TRANSFER_TRANSLATIONS[language]?.[key]
       ?? SESSION_ANALYTICS_TRANSLATIONS[language]?.[key]
       ?? ANALYTICS_TRANSLATIONS[language]?.[key]
       ?? TRANSLATIONS[language][key]
       ?? QUOTA_LABEL_TRANSLATIONS["zh-CN"]?.[key]
+      ?? DIALOG_SEARCH_TRANSLATIONS["zh-CN"]?.[key]
+      ?? ACCOUNT_TRANSLATIONS["zh-CN"]?.[key]
       ?? PRODUCT_TRANSLATIONS["zh-CN"]?.[key]
       ?? TRANSFER_TRANSLATIONS["zh-CN"]?.[key]
       ?? SESSION_ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]

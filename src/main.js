@@ -5,6 +5,7 @@ import { THEME_ICONS, createThemeController } from "./theme.js";
 import { copyText } from "./utils/clipboard.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
+import { createAccountDialogView } from "./views/account-dialog-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createDiagnosticsDialogView } from "./views/diagnostics-dialog-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
@@ -47,6 +48,7 @@ const { formatQuotaWindow, formatResetTime, formatUpdated } = createDateFormatte
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetTime });
 const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
+const accountView = createAccountDialogView({ t, invoke });
 const diagnosticsView = createDiagnosticsDialogView({
   t,
   invoke,
@@ -283,6 +285,7 @@ function applyLanguage() {
   refreshButton.title = refreshButton.ariaLabel = t("refresh");
   quitButton.title = quitButton.ariaLabel = t("quit");
   diagnosticsView.updateLanguage();
+  accountView.updateLanguage();
   orb.title = t("orbTitle");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 

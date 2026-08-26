@@ -24,6 +24,9 @@
             </div>
           </div>
           <div class="header-actions">
+            <button id="account-button" class="icon-button" type="button" title="打开个人中心" aria-label="打开个人中心">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.75-3.45 3.08-5.25 6.5-5.25s5.75 1.8 6.5 5.25" /></svg>
+            </button>
             <button id="diagnostics-button" class="icon-button" type="button" title="诊断 Codex CLI" aria-label="诊断 Codex CLI">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 10v5M12 7.5h.01" /></svg>
             </button>
@@ -60,20 +63,18 @@
 
         <section class="dashboard-section quota-section" aria-labelledby="quota-heading">
           <div class="section-heading">
-            <div>
+            <div class="quota-title-row">
               <p class="section-kicker" data-i18n="accountUsage">账户用量</p>
-              <div class="quota-title-row">
-                <h2 id="quota-heading" data-i18n="quotaOverview">额度概览</h2>
-              </div>
+              <h2 id="quota-heading" data-i18n="quotaOverview">额度概览</h2>
+              <span id="credits" class="badge" hidden></span>
             </div>
-            <span id="credits" class="badge" hidden></span>
           </div>
           <div id="quota-list" class="quota-list" aria-live="polite"></div>
         </section>
 
         <section class="dashboard-section trend-section" aria-labelledby="trend-heading">
           <div class="section-heading trend-heading">
-            <div>
+            <div class="section-title-row">
               <p class="section-kicker" data-i18n="trendKicker">活动洞察</p>
               <h2 id="trend-heading" data-i18n="trendTitle">近 7 天趋势</h2>
             </div>
@@ -87,7 +88,7 @@
 
         <section class="dashboard-section sessions-section" aria-labelledby="threads-heading">
           <div class="section-heading sessions-heading">
-            <div>
+            <div class="section-title-row">
               <p class="section-kicker" data-i18n="localHistory">本地历史</p>
               <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
             </div>
@@ -129,11 +130,23 @@
             <h2 id="dialog-title">会话详情</h2>
             <div class="dialog-meta-row">
               <p id="dialog-meta" class="dialog-meta"></p>
-              <button id="resume-thread-button" class="resume-thread-button" type="button"></button>
+              <button id="resume-thread-button" class="resume-command-copy" type="button"></button>
             </div>
           </div>
-          <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
+          <div class="dialog-header-actions">
+            <button id="thread-reading-mode-button" class="dialog-reading-button" type="button" aria-label="进入阅读模式">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4" /></svg>
+            </button>
+            <button id="dialog-close" class="dialog-close" type="button" aria-label="关闭会话详情">×</button>
+          </div>
         </header>
+        <div class="dialog-search" role="search">
+          <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
+          <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
+          <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
+          <button id="dialog-search-previous" class="dialog-search-button" type="button" aria-label="上一个匹配项">↑</button>
+          <button id="dialog-search-next" class="dialog-search-button" type="button" aria-label="下一个匹配项">↓</button>
+        </div>
         <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
         <section class="dialog-insights" aria-label="会话洞察">
           <div id="thread-insights" class="insight-list"></div>
@@ -162,9 +175,29 @@
           <button id="quota-alerts-toggle" class="selection-button" type="button"></button>
         </div>
         <footer class="diagnostics-actions">
-          <button id="diagnostics-copy" class="selection-button" type="button" disabled></button>
+          <button id="diagnostics-copy" type="button" disabled></button>
           <button id="diagnostics-run" class="thread-action-button thread-action-button-primary" type="button"></button>
         </footer>
+      </section>
+    </dialog>
+    <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
+      <section class="account-content">
+        <header class="account-header">
+          <div>
+            <p class="section-kicker" data-i18n="accountKicker">当前登录账号</p>
+            <h2 id="account-title" data-i18n="personalCenter">个人中心</h2>
+          </div>
+          <button id="account-close" class="dialog-close" type="button" aria-label="关闭个人中心">×</button>
+        </header>
+        <div class="account-identity" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.75-3.45 3.08-5.25 6.5-5.25s5.75 1.8 6.5 5.25" /></svg>
+        </div>
+        <dl class="account-details">
+          <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
+          <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
+          <div><dt data-i18n="accountType">登录方式</dt><dd id="account-type">正在读取账号信息…</dd></div>
+        </dl>
+        <p id="account-message" class="account-message" hidden></p>
       </section>
     </dialog>
     <script type="module" src="/src/main.js"></script>

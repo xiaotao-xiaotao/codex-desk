@@ -37,7 +37,7 @@ export function createThreadInsightsView({ t }) {
       return;
     }
 
-    for (const activity of activities) {
+    for (const activity of groupConsecutiveActivities(activities)) {
       const row = document.createElement("article");
       row.className = `activity-row activity-row-${activity.kind || "tool"}`;
 
@@ -57,13 +57,21 @@ export function createThreadInsightsView({ t }) {
         content.append(detail);
       }
 
-      row.append(icon, content);
+      const meta = document.createElement("div");
+      meta.className = "activity-meta";
+      if (activity.count > 1) {
+        const repeat = document.createElement("span");
+        repeat.className = "activity-repeat";
+        repeat.textContent = `×${activity.count}`;
+        meta.append(repeat);
+      }
       if (activity.status) {
         const status = document.createElement("span");
         status.className = `activity-status activity-status-${activity.status}`;
         status.textContent = statusLabel(activity.status);
-        row.append(status);
+        meta.append(status);
       }
+      row.append(icon, content, meta);
       activityPanel.append(row);
     }
   }
@@ -86,3 +94,4 @@ export function createThreadInsightsView({ t }) {
 
   return { render, clear };
 }
+import { groupConsecutiveActivities } from "./activity-summary.js";

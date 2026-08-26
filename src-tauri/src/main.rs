@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+mod account;
 mod app_server;
 mod quota;
 mod threads;
@@ -13,6 +14,11 @@ use serde::Serialize;
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
+
+const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
+// 为趋势图与五行会话卡片保留可读空间，避免默认展开时依赖列表滚动。
+const EXPANDED_WINDOW_HEIGHT: f64 = 820.0;
+const COLLAPSED_WINDOW_SIZE: f64 = 84.0;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,6 +34,13 @@ async fn read_quota(
     state: State<'_, app_server::AppServerState>,
 ) -> Result<quota::QuotaSnapshot, String> {
     quota::read_quota(&state).await
+}
+
+#[tauri::command]
+async fn read_account(
+    state: State<'_, app_server::AppServerState>,
+) -> Result<account::AccountProfile, String> {
+    account::read_account(&state).await
 }
 
 /// 仅检查本机 CLI、app-server 和当前登录态，不读取认证文件也不上传诊断信息。
@@ -173,11 +186,11 @@ fn toggle_window_maximized(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), String> {
-    // 展开后为趋势图保留完整坐标轴空间，同时维持 5 行 × 2 列会话卡片布局；紧凑态仍为悬浮球。
+    // 展开后为趋势图与会话卡片保留完整阅读空间；紧凑态仍为悬浮球。
     let (width, height) = if expanded {
-        (1100.0, 760.0)
+        (EXPANDED_WINDOW_WIDTH, EXPANDED_WINDOW_HEIGHT)
     } else {
-        (84.0, 84.0)
+        (COLLAPSED_WINDOW_SIZE, COLLAPSED_WINDOW_SIZE)
     };
     let previous_size = window
         .outer_size()
@@ -240,6 +253,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             read_quota,
+            read_account,
             diagnose_codex,
             search_threads,
             list_threads_for_selection,

@@ -20,7 +20,7 @@ export function createDiagnosticsDialogView({ t, invoke, copyText, quotaAlerts, 
     closeButton.ariaLabel = t("closeDiagnostics");
     runButton.textContent = checking ? t("diagnosticsChecking") : t("runDiagnostics");
     runButton.disabled = checking;
-    copyButton.textContent = t("copyDiagnostics");
+    renderCopyTextButton(copyButton, { label: t("copyDiagnostics") });
     copyButton.disabled = !latestDiagnostics || checking;
     alertsDescription.textContent = quotaAlerts.isEnabled() ? t("quotaAlertsEnabled") : t("quotaAlertsDisabled");
     alertsToggle.textContent = quotaAlerts.isEnabled() ? t("disableQuotaAlerts") : t("enableQuotaAlerts");
@@ -83,9 +83,9 @@ export function createDiagnosticsDialogView({ t, invoke, copyText, quotaAlerts, 
   async function copyDiagnostics() {
     try {
       await copyText(diagnosticsText());
-      copyButton.textContent = t("diagnosticsCopied");
+      renderCopyTextButton(copyButton, { label: t("diagnosticsCopied"), state: "copied" });
     } catch {
-      copyButton.textContent = t("copyFailedLong");
+      renderCopyTextButton(copyButton, { label: t("copyFailedLong"), state: "failed" });
     }
     window.setTimeout(render, 1_500);
   }
@@ -111,3 +111,4 @@ export function createDiagnosticsDialogView({ t, invoke, copyText, quotaAlerts, 
 
   return { updateLanguage: render };
 }
+import { renderCopyTextButton } from "../utils/copy-icon-button.js";

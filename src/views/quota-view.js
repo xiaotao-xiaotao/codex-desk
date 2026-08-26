@@ -29,18 +29,23 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
 
       const value = document.createElement("div");
       value.className = "quota-value";
-      value.innerHTML = `<strong>${remainingPercent}%</strong><span>${t("remaining")}</span>`;
+      const remainingValue = document.createElement("strong");
+      remainingValue.textContent = `${remainingPercent}%`;
+      const remainingLabel = document.createElement("span");
+      remainingLabel.textContent = t("remaining");
+      const used = document.createElement("span");
+      used.className = "quota-used";
+      used.textContent = `（${t("usedPercent", { used: Math.round(window.usedPercent) })}）`;
+      value.append(remainingValue, remainingLabel, used);
       const track = document.createElement("div");
       track.className = "progress-track";
       const progressBar = document.createElement("span");
       progressBar.style.width = `${progress}%`;
       track.append(progressBar);
-      const description = document.createElement("p");
-      description.textContent = t("usedRemaining", {
-        used: Math.round(window.usedPercent),
-        remaining: formatResetTime(window.resetsAt),
-      });
-      item.append(name, value, track, description);
+      const resetTime = document.createElement("p");
+      resetTime.className = "quota-reset-time";
+      resetTime.textContent = formatResetTime(window.resetsAt);
+      item.append(name, value, track, resetTime);
       quotaList.append(item);
     }
   }
