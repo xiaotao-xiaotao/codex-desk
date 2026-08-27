@@ -56,30 +56,21 @@
           </div>
         </header>
 
-        <section class="dashboard-section account-section" aria-labelledby="account-heading">
-          <div class="section-heading account-heading">
-            <div>
-              <p class="section-kicker" data-i18n="personalCenter">个人中心</p>
-              <h2 id="account-heading" class="visually-hidden" data-i18n="personalCenter">个人中心</h2>
-            </div>
-          </div>
-          <dl class="account-details">
-            <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
-            <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
-            <div><dt data-i18n="accountType">登录方式</dt><dd id="account-type">正在读取账号信息…</dd></div>
-            <div><dt data-i18n="openBilling">管理订阅</dt><dd><button id="account-billing" class="account-billing-button" type="button" data-i18n="openBillingPortal">打开账单</button></dd></div>
-          </dl>
-          <p id="account-message" class="account-message" hidden></p>
-        </section>
-
         <section class="dashboard-section quota-section" aria-labelledby="quota-heading">
           <div class="section-heading">
             <div class="quota-title-row">
               <p class="section-kicker" data-i18n="accountUsage">账户用量</p>
               <h2 id="quota-heading" data-i18n="quotaOverview">额度概览</h2>
-              <span id="credits" class="badge" hidden></span>
+              <span class="badge account-type-badge"><span data-i18n="accountType">登录方式</span><span id="account-type">正在读取账号信息…</span></span>
             </div>
           </div>
+          <dl class="account-details">
+            <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
+            <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
+            <div><dt data-i18n="openBilling">管理订阅</dt><dd><button id="account-billing" class="account-billing-button" type="button" data-i18n="openBillingPortal">打开账单</button></dd></div>
+          </dl>
+          <p id="account-message" class="account-message" hidden></p>
+          <div class="account-quota-divider" aria-hidden="true"></div>
           <div id="quota-list" class="quota-list" aria-live="polite"></div>
         </section>
 

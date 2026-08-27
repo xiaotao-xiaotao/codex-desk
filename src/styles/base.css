@@ -41,6 +41,9 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 5px; padding: 6px 9px; }
 /* 概览信息收进卡片上方的紧凑标题行，横向空间优先留给两个额度窗口。 */
 .quota-section .section-heading { align-items: center; margin: 0; }
+.quota-section .account-details { margin: 2px 0; }
+/* 账户资料与用量概览共用一张卡，通过细分隔线保留信息层次。 */
+.account-quota-divider { margin: 1px 0 2px; border-top: 1px solid #edf1f5; }
 .trend-section { flex: 0 0 auto; margin-bottom: 5px; padding: 5px 10px 3px; }
 .trend-heading { align-items: flex-end; margin-bottom: 2px; }
 .trend-heading-actions { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 8px; }
@@ -75,19 +78,22 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .quota-title-row .section-kicker::after { margin-left: 6px; color: #d4dce5; content: "｜"; }
 .quota-section h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 .quota-section .badge { margin-left: 6px; padding: 2px 5px; font-size: .6rem; }
+.account-type-badge { display: inline-flex; align-items: center; gap: 3px; }
+.account-type-badge #account-type { font-weight: 750; }
 .quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
 .badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
 .quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 /* 仅返回一个额度窗口时，让它占满右侧区域，避免进度条后留下无效空白。 */
 .quota-list > .quota-card:only-child { grid-column: 1 / -1; }
-.quota-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "value" "progress" "reset"; row-gap: 2px; padding: 5px 9px; border: 1px solid #dfe8fb; border-radius: 9px; background: linear-gradient(120deg, #f4f8ff, #fff 68%); box-shadow: inset 3px 0 0 #1677ff; }
+.quota-card { position: relative; display: grid; min-height: 65px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "value" "progress"; row-gap: 2px; padding: 5px 9px; border: 1px solid #dfe8fb; border-radius: 9px; background: linear-gradient(120deg, #f4f8ff, #fff 68%); box-shadow: inset 3px 0 0 #1677ff; }
 .quota-card h3 { grid-area: title; margin: 0; color: #4c5b70; font-size: .66rem; font-weight: 700; line-height: 1.15; }
 .quota-value { grid-area: value; display: flex; align-items: baseline; gap: 4px; margin-top: 1px; }
 .quota-value strong { color: #1677ff; font-size: 1.24rem; line-height: 1; letter-spacing: -.055em; }
-.quota-value span, .quota-reset-time { color: #6f7b88; font-size: .61rem; }
+.quota-value span { color: #6f7b88; font-size: .61rem; }
 .quota-used { margin-left: 5px; color: #7c8896; }
 .progress-track { grid-area: progress; height: 5px; margin-top: 3px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
-.quota-reset-time { grid-area: reset; justify-self: end; margin: 1px 0 0; line-height: 1.3; text-align: right; }
+/* 重置时间固定在右上角，不参与卡片布局，保持额度卡原有高度。 */
+.quota-reset-time { position: absolute; top: 5px; right: 9px; max-width: calc(100% - 70px); margin: 0; padding: 2px 5px; overflow: hidden; border-radius: 4px; color: #24578f; background: #eaf3ff; font-size: .68rem; font-weight: 700; line-height: 1.35; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: #1677ff; transition: width .35s ease; }
 
 .sessions-section { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 16px rgba(31, 35, 41, .035); }

@@ -21,10 +21,7 @@
 .diagnostics-actions .copy-text-button { padding: 3px 7px; font-size: .6rem; }
 .diagnostics-actions .thread-action-button { min-height: 25px; padding: 0 7px; font-size: .6rem; }
 
-.account-section { margin-bottom: 5px; padding: 6px 9px; }
-.account-section .account-heading { min-height: 25px; margin-bottom: 4px; }
-.account-section .section-kicker { margin: 0; color: #1f2937; font-size: .87rem; font-weight: 700; letter-spacing: 0; }
-.account-details { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.account-details { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
 .account-details div { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; min-height: 31px; padding: 5px 8px; border: 1px solid #e7edf3; border-radius: 7px; background: #fbfcfe; }
 .account-details dt { flex: 0 0 auto; color: #738095; font-size: .62rem; font-weight: 650; }
 .account-details dd { min-width: 0; margin: 0; overflow: hidden; color: #344154; font-size: .68rem; font-weight: 650; text-align: right; text-overflow: ellipsis; white-space: nowrap; }

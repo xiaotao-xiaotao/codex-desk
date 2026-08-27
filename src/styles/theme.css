@@ -25,8 +25,8 @@
 :root[data-theme="dark"] .dialog-meta,
 :root[data-theme="dark"] .dialog-status,
 :root[data-theme="dark"] .dialog-hint,
-:root[data-theme="dark"] .quota-value span,
-:root[data-theme="dark"] .quota-reset-time { color: #9aa9ba; }
+:root[data-theme="dark"] .quota-value span { color: #9aa9ba; }
+:root[data-theme="dark"] .quota-reset-time { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .quota-title-row .section-kicker,
 :root[data-theme="dark"] .section-title-row .section-kicker { color: #e6edf3; }
 :root[data-theme="dark"] .quota-title-row .section-kicker::after { color: #46576a; }
@@ -148,7 +148,7 @@
 :root[data-theme="dark"] .diagnostic-row .is-ready { color: #77d9b5; }
 :root[data-theme="dark"] .diagnostic-row .is-unavailable { color: #ff7875; }
 :root[data-theme="dark"] .diagnostics-alerts { border-top-color: #2a3544; }
-:root[data-theme="dark"] .account-section .section-kicker { color: #e6edf3; }
+:root[data-theme="dark"] .account-quota-divider { border-top-color: #2a3544; }
 :root[data-theme="dark"] .account-details div { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .account-details dt { color: #9aa9ba; }
 :root[data-theme="dark"] .account-details dd { color: #d5dfeb; }
