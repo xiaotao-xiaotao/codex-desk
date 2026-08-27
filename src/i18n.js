@@ -256,20 +256,28 @@ const PRODUCT_TRANSLATIONS = {
 
 const ACCOUNT_TRANSLATIONS = {
   "zh-CN": {
-    personalCenter: "个人中心", openPersonalCenter: "打开个人中心", closePersonalCenter: "关闭个人中心", accountEmail: "登录邮箱", accountPlan: "订阅方案", accountType: "登录方式", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 密钥", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登录", accountReadFailed: "读取账号信息失败：{error}",
+    personalCenter: "个人中心", openPersonalCenter: "打开个人中心", closePersonalCenter: "关闭个人中心", accountEmail: "登录邮箱", accountPlan: "订阅方案", accountType: "登录方式", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 密钥", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登录", accountReadFailed: "读取账号信息失败：{error}", openBilling: "管理订阅", accountBillingOpenFailed: "无法打开账单页面：{error}",
   },
   "zh-TW": {
-    personalCenter: "個人中心", openPersonalCenter: "開啟個人中心", closePersonalCenter: "關閉個人中心", accountEmail: "登入信箱", accountPlan: "訂閱方案", accountType: "登入方式", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 金鑰", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登入", accountReadFailed: "讀取帳號資訊失敗：{error}",
+    personalCenter: "個人中心", openPersonalCenter: "開啟個人中心", closePersonalCenter: "關閉個人中心", accountEmail: "登入信箱", accountPlan: "訂閱方案", accountType: "登入方式", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 金鑰", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未登入", accountReadFailed: "讀取帳號資訊失敗：{error}", openBilling: "管理訂閱", accountBillingOpenFailed: "無法開啟帳單頁面：{error}",
   },
   en: {
-    personalCenter: "Account", openPersonalCenter: "Open account", closePersonalCenter: "Close account", accountEmail: "Email", accountPlan: "Plan", accountType: "Sign-in method", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API key", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "Not signed in", accountReadFailed: "Could not read account: {error}",
+    personalCenter: "Account", openPersonalCenter: "Open account", closePersonalCenter: "Close account", accountEmail: "Email", accountPlan: "Plan", accountType: "Sign-in method", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API key", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "Not signed in", accountReadFailed: "Could not read account: {error}", openBilling: "Manage subscription", accountBillingOpenFailed: "Could not open the billing page: {error}",
   },
   ja: {
-    personalCenter: "アカウント", openPersonalCenter: "アカウントを開く", closePersonalCenter: "アカウントを閉じる", accountEmail: "メールアドレス", accountPlan: "プラン", accountType: "ログイン方法", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API キー", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未ログイン", accountReadFailed: "アカウント情報の読み込みに失敗しました：{error}",
+    personalCenter: "アカウント", openPersonalCenter: "アカウントを開く", closePersonalCenter: "アカウントを閉じる", accountEmail: "メールアドレス", accountPlan: "プラン", accountType: "ログイン方法", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API キー", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "未ログイン", accountReadFailed: "アカウント情報の読み込みに失敗しました：{error}", openBilling: "サブスクリプションを管理", accountBillingOpenFailed: "請求ページを開けませんでした：{error}",
   },
   ko: {
-    personalCenter: "개인 센터", openPersonalCenter: "개인 센터 열기", closePersonalCenter: "개인 센터 닫기", accountEmail: "로그인 이메일", accountPlan: "구독 플랜", accountType: "로그인 방식", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 키", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "로그인되지 않음", accountReadFailed: "계정 정보를 읽지 못했습니다: {error}",
+    personalCenter: "개인 센터", openPersonalCenter: "개인 센터 열기", closePersonalCenter: "개인 센터 닫기", accountEmail: "로그인 이메일", accountPlan: "구독 플랜", accountType: "로그인 방식", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountTypeChatgpt: "ChatGPT", accountTypeApiKey: "API 키", accountTypeBedrock: "Amazon Bedrock", accountTypeUnknown: "로그인되지 않음", accountReadFailed: "계정 정보를 읽지 못했습니다: {error}", openBilling: "구독 관리", accountBillingOpenFailed: "청구 페이지를 열 수 없습니다: {error}",
   },
+};
+
+const SESSION_SECTION_TRANSLATIONS = {
+  "zh-CN": { expandLocalHistory: "展开本地历史", collapseLocalHistory: "收起本地历史", openBillingPortal: "打开账单" },
+  "zh-TW": { expandLocalHistory: "展開本機歷程", collapseLocalHistory: "收合本機歷程", openBillingPortal: "開啟帳單" },
+  en: { expandLocalHistory: "Show local history", collapseLocalHistory: "Hide local history", openBillingPortal: "Open billing" },
+  ja: { expandLocalHistory: "ローカル履歴を開く", collapseLocalHistory: "ローカル履歴を閉じる", openBillingPortal: "請求を開く" },
+  ko: { expandLocalHistory: "로컬 기록 펼치기", collapseLocalHistory: "로컬 기록 접기", openBillingPortal: "청구 열기" },
 };
 
 const DIALOG_SEARCH_TRANSLATIONS = {
@@ -330,6 +338,7 @@ export function createI18n() {
   const t = (key, values = {}) => {
     const language = getLanguage();
     const text = QUOTA_LABEL_TRANSLATIONS[language]?.[key]
+      ?? SESSION_SECTION_TRANSLATIONS[language]?.[key]
       ?? DIALOG_SEARCH_TRANSLATIONS[language]?.[key]
       ?? ACCOUNT_TRANSLATIONS[language]?.[key]
       ?? PRODUCT_TRANSLATIONS[language]?.[key]
@@ -338,6 +347,7 @@ export function createI18n() {
       ?? ANALYTICS_TRANSLATIONS[language]?.[key]
       ?? TRANSLATIONS[language][key]
       ?? QUOTA_LABEL_TRANSLATIONS["zh-CN"]?.[key]
+      ?? SESSION_SECTION_TRANSLATIONS["zh-CN"]?.[key]
       ?? DIALOG_SEARCH_TRANSLATIONS["zh-CN"]?.[key]
       ?? ACCOUNT_TRANSLATIONS["zh-CN"]?.[key]
       ?? PRODUCT_TRANSLATIONS["zh-CN"]?.[key]

@@ -92,6 +92,16 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 
 .sessions-section { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 16px rgba(31, 35, 41, .035); }
 .sessions-section .section-heading { min-height: 31px; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid #edf1f5; }
+.sessions-heading-actions { display: flex; align-items: center; gap: 4px; }
+.sessions-content { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; }
+.sessions-content[hidden] { display: none; }
+.section-collapse-button { display: grid; width: 27px; height: 27px; padding: 0; place-items: center; border: 0; border-radius: 6px; color: #718096; background: transparent; cursor: pointer; }
+.section-collapse-button:hover { color: #1668c6; background: #f2f7ff; }
+.section-collapse-button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; transition: transform .15s ease; }
+.section-collapse-button[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sessions-section.is-collapsed { flex: 0 0 auto; padding-top: 6px; padding-bottom: 6px; }
+.sessions-section.is-collapsed .section-heading { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+.sessions-section.is-collapsed .thread-tools { display: none; }
 .thread-tools { display: flex; align-items: center; gap: 7px; }
 .thread-search input { width: 200px; height: 29px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 8px; outline: 0; color: #1f2937; background: #fff; font-size: .7rem; transition: border-color .18s ease, box-shadow .18s ease; }
 .thread-search input::placeholder { color: #a8b0bb; }

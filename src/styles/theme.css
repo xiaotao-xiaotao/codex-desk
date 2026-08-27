@@ -65,6 +65,8 @@
 :root[data-theme="dark"] .thread-item:focus-visible { border-color: #367dc6; background: #18263a; box-shadow: none; transform: none; }
 :root[data-theme="dark"] .thread-item:has(.thread-select input:checked) { border-color: #367dc6; background: #172b43; box-shadow: none; transform: none; }
 :root[data-theme="dark"] .sessions-section .section-heading { border-bottom-color: #2a3544; }
+:root[data-theme="dark"] .section-collapse-button { color: #aab7c7; background: transparent; }
+:root[data-theme="dark"] .section-collapse-button:hover { color: #e6edf3; background: #2a3544; }
 :root[data-theme="dark"] .thread-select input { border-color: #607084; background-color: #111820; }
 :root[data-theme="dark"] .thread-select input:hover { border-color: #69b1ff; }
 :root[data-theme="dark"] .thread-select input:checked { border-color: #4096ff; background-color: #4096ff; }
@@ -146,10 +148,11 @@
 :root[data-theme="dark"] .diagnostic-row .is-ready { color: #77d9b5; }
 :root[data-theme="dark"] .diagnostic-row .is-unavailable { color: #ff7875; }
 :root[data-theme="dark"] .diagnostics-alerts { border-top-color: #2a3544; }
-:root[data-theme="dark"] .account-dialog { border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
-:root[data-theme="dark"] .account-dialog::backdrop { background: rgba(0, 0, 0, .58); }
+:root[data-theme="dark"] .account-section .section-kicker { color: #e6edf3; }
 :root[data-theme="dark"] .account-details div { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .account-details dt { color: #9aa9ba; }
 :root[data-theme="dark"] .account-details dd { color: #d5dfeb; }
 :root[data-theme="dark"] .account-details div:first-child dd { color: #8dc5ff; }
+:root[data-theme="dark"] .account-billing-button { color: #8dc5ff; }
+:root[data-theme="dark"] .account-billing-button:hover { color: #c7e2ff; }
 :root[data-theme="dark"] .account-message { color: #ff7875; }

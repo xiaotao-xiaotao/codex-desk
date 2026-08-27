@@ -24,9 +24,6 @@
             </div>
           </div>
           <div class="header-actions">
-            <button id="account-button" class="icon-button" type="button" title="打开个人中心" aria-label="打开个人中心">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25" /><path d="M5.5 20c.75-3.45 3.08-5.25 6.5-5.25s5.75 1.8 6.5 5.25" /></svg>
-            </button>
             <button id="diagnostics-button" class="icon-button" type="button" title="诊断 Codex CLI" aria-label="诊断 Codex CLI">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 10v5M12 7.5h.01" /></svg>
             </button>
@@ -59,6 +56,22 @@
           </div>
         </header>
 
+        <section class="dashboard-section account-section" aria-labelledby="account-heading">
+          <div class="section-heading account-heading">
+            <div>
+              <p class="section-kicker" data-i18n="personalCenter">个人中心</p>
+              <h2 id="account-heading" class="visually-hidden" data-i18n="personalCenter">个人中心</h2>
+            </div>
+          </div>
+          <dl class="account-details">
+            <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
+            <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
+            <div><dt data-i18n="accountType">登录方式</dt><dd id="account-type">正在读取账号信息…</dd></div>
+            <div><dt data-i18n="openBilling">管理订阅</dt><dd><button id="account-billing" class="account-billing-button" type="button" data-i18n="openBillingPortal">打开账单</button></dd></div>
+          </dl>
+          <p id="account-message" class="account-message" hidden></p>
+        </section>
+
         <section class="dashboard-section quota-section" aria-labelledby="quota-heading">
           <div class="section-heading">
             <div class="quota-title-row">
@@ -90,30 +103,38 @@
               <p class="section-kicker" data-i18n="localHistory">本地历史</p>
               <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
             </div>
-            <div class="thread-tools">
-              <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
-              <label class="thread-search">
-                <span class="visually-hidden" data-i18n="searchThreads">搜索最近会话</span>
-                <input id="thread-search" type="search" placeholder="搜索标题或会话 ID" data-i18n-placeholder="searchPlaceholder" autocomplete="off" />
-              </label>
-              <div class="thread-transfer-actions">
-                <button id="import-threads" class="thread-action-button" type="button" data-i18n="importThreads">导入</button>
-                <button id="export-threads" class="thread-action-button thread-action-button-primary" type="button" data-i18n="exportThreads" disabled>导出</button>
+            <div class="sessions-heading-actions">
+              <div class="thread-tools">
+                <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
+                <label class="thread-search">
+                  <span class="visually-hidden" data-i18n="searchThreads">搜索最近会话</span>
+                  <input id="thread-search" type="search" placeholder="搜索标题或会话 ID" data-i18n-placeholder="searchPlaceholder" autocomplete="off" />
+                </label>
+                <div class="thread-transfer-actions">
+                  <button id="import-threads" class="thread-action-button" type="button" data-i18n="importThreads">导入</button>
+                  <button id="export-threads" class="thread-action-button thread-action-button-primary" type="button" data-i18n="exportThreads" disabled>导出</button>
+                </div>
               </div>
+              <button id="sessions-toggle" class="section-collapse-button" type="button" aria-expanded="false" aria-controls="sessions-content">
+                <span id="sessions-toggle-label" class="visually-hidden">展开本地历史</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+              </button>
             </div>
           </div>
-          <div id="thread-selection-bar" class="thread-selection-bar" hidden>
-            <button id="select-page-threads" class="selection-button" type="button" data-i18n="selectPage">全选本页</button>
-            <button id="select-all-threads" class="selection-button" type="button" data-i18n="selectAllResults">全选筛选结果</button>
-            <button id="clear-thread-selection" class="selection-button selection-button-muted" type="button" data-i18n="clearSelection">清除</button>
-            <span id="selected-thread-count" class="selected-thread-count" aria-live="polite"></span>
+          <div id="sessions-content" class="sessions-content" hidden>
+            <div id="thread-selection-bar" class="thread-selection-bar" hidden>
+              <button id="select-page-threads" class="selection-button" type="button" data-i18n="selectPage">全选本页</button>
+              <button id="select-all-threads" class="selection-button" type="button" data-i18n="selectAllResults">全选筛选结果</button>
+              <button id="clear-thread-selection" class="selection-button selection-button-muted" type="button" data-i18n="clearSelection">清除</button>
+              <span id="selected-thread-count" class="selected-thread-count" aria-live="polite"></span>
+            </div>
+            <div id="thread-list" class="thread-list app-scrollable" aria-live="polite"></div>
+            <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
+              <button id="previous-page" class="pagination-button" type="button" data-i18n="previousPage">上一页</button>
+              <span id="page-indicator" class="page-indicator"></span>
+              <button id="next-page" class="pagination-button" type="button" data-i18n="nextPage">下一页</button>
+            </nav>
           </div>
-          <div id="thread-list" class="thread-list app-scrollable" aria-live="polite"></div>
-          <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
-            <button id="previous-page" class="pagination-button" type="button" data-i18n="previousPage">上一页</button>
-            <span id="page-indicator" class="page-indicator"></span>
-            <button id="next-page" class="pagination-button" type="button" data-i18n="nextPage">下一页</button>
-          </nav>
         </section>
 
         <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
@@ -174,22 +195,6 @@
           <button id="diagnostics-copy" type="button" disabled></button>
           <button id="diagnostics-run" class="thread-action-button thread-action-button-primary" type="button"></button>
         </footer>
-      </section>
-    </dialog>
-    <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
-      <section class="account-content">
-        <header class="account-header">
-          <div>
-            <h2 id="account-title" data-i18n="personalCenter">个人中心</h2>
-          </div>
-          <button id="account-close" class="close-icon-button" type="button" aria-label="关闭个人中心"></button>
-        </header>
-        <dl class="account-details">
-          <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
-          <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
-          <div><dt data-i18n="accountType">登录方式</dt><dd id="account-type">正在读取账号信息…</dd></div>
-        </dl>
-        <p id="account-message" class="account-message" hidden></p>
       </section>
     </dialog>
     <script type="module" src="/src/main.js"></script>

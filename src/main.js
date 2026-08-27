@@ -6,7 +6,7 @@ import { copyText } from "./utils/clipboard.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
-import { createAccountDialogView } from "./views/account-dialog-view.js";
+import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createDiagnosticsDialogView } from "./views/diagnostics-dialog-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
@@ -38,6 +38,10 @@ const selectPageThreadsButton = document.querySelector("#select-page-threads");
 const selectAllThreadsButton = document.querySelector("#select-all-threads");
 const clearThreadSelectionButton = document.querySelector("#clear-thread-selection");
 const selectedThreadCount = document.querySelector("#selected-thread-count");
+const sessionsSection = document.querySelector(".sessions-section");
+const sessionsContent = document.querySelector("#sessions-content");
+const sessionsToggle = document.querySelector("#sessions-toggle");
+const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
 
 const i18n = createI18n();
 const theme = createThemeController();
@@ -49,7 +53,7 @@ const { formatQuotaWindow, formatResetTime, formatUpdated } = createDateFormatte
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetTime });
 const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
-const accountView = createAccountDialogView({ t, invoke });
+const accountView = createAccountOverviewView({ t, invoke });
 const diagnosticsView = createDiagnosticsDialogView({
   t,
   invoke,
@@ -69,6 +73,7 @@ const threadListView = createThreadListView({
 
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
 let expanded = false;
+let sessionsExpanded = false;
 let latestQuota = null;
 let refreshing = false;
 let searchTimer = null;
@@ -92,6 +97,34 @@ function setStatus(text, kind = "normal") {
 
 function renderCurrentThreadPage() {
   threadListView.renderThreads(currentPageThreads, currentThreadEmptyMessage, selectedThreadIds);
+}
+
+function renderSessionsVisibility() {
+  sessionsSection.classList.toggle("is-collapsed", !sessionsExpanded);
+  sessionsContent.hidden = !sessionsExpanded;
+  sessionsToggle.setAttribute("aria-expanded", String(sessionsExpanded));
+  const labelKey = sessionsExpanded ? "collapseLocalHistory" : "expandLocalHistory";
+  sessionsToggle.title = sessionsToggle.ariaLabel = t(labelKey);
+  sessionsToggleLabel.textContent = t(labelKey);
+}
+
+async function setSessionsExpanded(nextExpanded) {
+  if (sessionsExpanded === nextExpanded) return;
+  try {
+    // 收起会话区时同步压缩原生窗口，避免内容隐藏后仍保留大块空白。
+    await invoke("resize_float_window", { expanded: true, sessionsExpanded: nextExpanded });
+  } catch (error) {
+    console.error("调整会话区窗口尺寸失败", error);
+    setStatus(t("windowResizeFailed", { error: String(error) }), "error");
+    return;
+  }
+  sessionsExpanded = nextExpanded;
+  renderSessionsVisibility();
+  if (!sessionsExpanded) return;
+
+  // 会话列表仅在用户主动展开后读取，避免首屏加载大量本地历史。
+  currentThreadPage = 1;
+  await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
 
 function updateTransferControls() {
@@ -305,7 +338,8 @@ function applyLanguage() {
   updateTransferControls();
   if (latestQuota && !refreshing) quotaView.render(latestQuota);
   else if (!refreshing) setStatus(t("readingLocalData"));
-  if (expanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+  renderSessionsVisibility();
+  if (expanded && sessionsExpanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
 
 function selectLanguage(nextLanguage) {
@@ -327,7 +361,9 @@ async function refreshQuota(forceTrendRefresh = false) {
     await quotaAlerts.notify(latestQuota);
     refreshSucceeded = true;
     if (expanded) {
-      await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+      if (sessionsExpanded) {
+        await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+      }
       void refreshThreadTrends(forceTrendRefresh);
     }
   } catch (error) {
@@ -356,7 +392,7 @@ async function refreshThreadTrends(forceRefresh = false) {
 }
 
 async function searchThreads(query, page = 1) {
-  if (!expanded) return;
+  if (!expanded || !sessionsExpanded) return;
   const requestVersion = ++searchRequestVersion;
   const keyword = query.trim();
   threadListView.setSearchResult(t("readingSearch"));
@@ -396,7 +432,10 @@ async function openThread(thread) {
 async function setExpanded(nextExpanded) {
   try {
     // 由原生层统一控制窗口尺寸和锚点，前端仅在成功后更新自身状态。
-    await invoke("resize_float_window", { expanded: nextExpanded });
+    await invoke("resize_float_window", {
+      expanded: nextExpanded,
+      sessionsExpanded,
+    });
   } catch (error) {
     console.error("调整悬浮窗尺寸失败", error);
     setStatus(t("windowResizeFailed", { error: String(error) }), "error");
@@ -517,6 +556,7 @@ async function bootstrap() {
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);
+  sessionsToggle.addEventListener("click", () => void setSessionsExpanded(!sessionsExpanded));
   selectPageThreadsButton.addEventListener("click", () => {
     currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
     renderCurrentThreadPage();
@@ -545,6 +585,7 @@ async function bootstrap() {
   });
   await setExpanded(false);
   await refreshQuota();
+  void accountView.refresh();
   window.setInterval(refreshQuota, AUTO_REFRESH_INTERVAL_MS);
   window.setInterval(renderSyncedStatus, 1_000);
 }

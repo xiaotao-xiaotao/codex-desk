@@ -1,16 +1,12 @@
-import { renderCloseIconButton } from "../utils/close-icon-button.js";
-
 /**
- * 个人中心按需读取当前登录账户，仅保留用于展示的邮箱、套餐和登录方式。
+ * 主界面个人中心只读取用于展示的邮箱、套餐和登录方式。
  * 不缓存认证数据，也不会将 app-server 返回的原始响应传到页面。
  */
-export function createAccountDialogView({ t, invoke }) {
-  const openButton = document.querySelector("#account-button");
-  const dialog = document.querySelector("#account-dialog");
-  const closeButton = document.querySelector("#account-close");
+export function createAccountOverviewView({ t, invoke }) {
   const email = document.querySelector("#account-email");
   const plan = document.querySelector("#account-plan");
   const accountType = document.querySelector("#account-type");
+  const billingButton = document.querySelector("#account-billing");
   const message = document.querySelector("#account-message");
   let profile = null;
   let loading = false;
@@ -26,8 +22,6 @@ export function createAccountDialogView({ t, invoke }) {
   }
 
   function render() {
-    openButton.title = openButton.ariaLabel = t("openPersonalCenter");
-    renderCloseIconButton(closeButton, { label: t("closePersonalCenter") });
     if (loading) {
       email.textContent = plan.textContent = accountType.textContent = t("accountLoading");
       message.hidden = true;
@@ -38,11 +32,11 @@ export function createAccountDialogView({ t, invoke }) {
     plan.textContent = profile?.planType ?? t("accountPlanUnavailable");
     accountType.textContent = accountTypeLabel(profile?.accountType);
     message.hidden = !error;
-    message.textContent = error ? t("accountReadFailed", { error }) : "";
+    message.textContent = error ? t(error.key, { error: error.detail }) : "";
   }
 
-  async function open() {
-    if (!dialog.open) dialog.showModal();
+  async function refresh() {
+    if (loading) return;
     loading = true;
     error = null;
     render();
@@ -50,18 +44,26 @@ export function createAccountDialogView({ t, invoke }) {
       profile = await invoke("read_account");
     } catch (readError) {
       profile = null;
-      error = String(readError);
+      error = { key: "accountReadFailed", detail: String(readError) };
     } finally {
       loading = false;
       render();
     }
   }
 
-  openButton.addEventListener("click", () => void open());
-  closeButton.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
-  });
+  async function openBillingPage() {
+    error = null;
+    render();
+    try {
+      // 账单门户会按浏览器登录态和购买渠道动态跳转，桌面端只打开官方账单入口。
+      await invoke("open_billing_page");
+    } catch (openError) {
+      error = { key: "accountBillingOpenFailed", detail: String(openError) };
+      render();
+    }
+  }
 
-  return { updateLanguage: render };
+  billingButton.addEventListener("click", () => void openBillingPage());
+
+  return { refresh, updateLanguage: render };
 }
