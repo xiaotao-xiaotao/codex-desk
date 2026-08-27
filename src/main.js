@@ -42,16 +42,17 @@ const sessionsSection = document.querySelector(".sessions-section");
 const sessionsContent = document.querySelector("#sessions-content");
 const sessionsToggle = document.querySelector("#sessions-toggle");
 const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
+const quotaAlertStatus = document.querySelector("#quota-alert-status");
 
 const i18n = createI18n();
 const theme = createThemeController();
 const { t } = i18n;
-const { formatQuotaWindow, formatResetTime, formatUpdated } = createDateFormatters({
+const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime, formatUpdated } = createDateFormatters({
   getLocale: i18n.getLocale,
   t,
 });
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
-const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetTime });
+const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
 const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
 const accountView = createAccountOverviewView({ t, invoke });
 const diagnosticsView = createDiagnosticsDialogView({
@@ -60,6 +61,7 @@ const diagnosticsView = createDiagnosticsDialogView({
   copyText: copyToClipboard,
   quotaAlerts,
   getLatestQuota: () => latestQuota,
+  onQuotaAlertsChange: renderQuotaAlertStatus,
 });
 const dialogView = createThreadDialogView({ t, formatUpdated, copyText: copyToClipboard });
 const trendView = createThreadTrendView({ t });
@@ -72,8 +74,10 @@ const threadListView = createThreadListView({
 });
 
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
-let expanded = false;
+let expanded = true;
 let sessionsExpanded = false;
+let windowMaximized = false;
+let sessionsExpandedBeforeMaximize = null;
 let latestQuota = null;
 let refreshing = false;
 let searchTimer = null;
@@ -95,6 +99,13 @@ function setStatus(text, kind = "normal") {
   status.dataset.kind = kind;
 }
 
+function renderQuotaAlertStatus() {
+  const enabled = quotaAlerts.isEnabled();
+  quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled");
+  quotaAlertStatus.classList.toggle("is-enabled", enabled);
+  quotaAlertStatus.title = quotaAlertStatus.ariaLabel = t("quotaAlerts");
+}
+
 function renderCurrentThreadPage() {
   threadListView.renderThreads(currentPageThreads, currentThreadEmptyMessage, selectedThreadIds);
 }
@@ -108,15 +119,17 @@ function renderSessionsVisibility() {
   sessionsToggleLabel.textContent = t(labelKey);
 }
 
-async function setSessionsExpanded(nextExpanded) {
+async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
   if (sessionsExpanded === nextExpanded) return;
-  try {
-    // 收起会话区时同步压缩原生窗口，避免内容隐藏后仍保留大块空白。
-    await invoke("resize_float_window", { expanded: true, sessionsExpanded: nextExpanded });
-  } catch (error) {
-    console.error("调整会话区窗口尺寸失败", error);
-    setStatus(t("windowResizeFailed", { error: String(error) }), "error");
-    return;
+  if (resizeWindow) {
+    try {
+      // 普通窗口中收起会话区时同步压缩高度；最大化时仅切换内容可见性。
+      await invoke("resize_float_window", { expanded: true, sessionsExpanded: nextExpanded });
+    } catch (error) {
+      console.error("调整会话区窗口尺寸失败", error);
+      setStatus(t("windowResizeFailed", { error: String(error) }), "error");
+      return;
+    }
   }
   sessionsExpanded = nextExpanded;
   renderSessionsVisibility();
@@ -320,6 +333,7 @@ function applyLanguage() {
   renderCloseIconButton(quitButton, { label: t("quit") });
   diagnosticsView.updateLanguage();
   accountView.updateLanguage();
+  renderQuotaAlertStatus();
   orb.title = t("orbTitle");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
@@ -442,6 +456,14 @@ async function setExpanded(nextExpanded) {
     return;
   }
   expanded = nextExpanded;
+  if (!expanded && windowMaximized) {
+    windowMaximized = false;
+    if (sessionsExpandedBeforeMaximize !== null) {
+      sessionsExpanded = sessionsExpandedBeforeMaximize;
+      sessionsExpandedBeforeMaximize = null;
+      renderSessionsVisibility();
+    }
+  }
   if (!expanded) setLanguageMenuOpen(false);
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
@@ -528,7 +550,19 @@ function setupWindowDragging() {
 async function toggleWindowMaximized() {
   if (!expanded) return;
   try {
-    await invoke("toggle_window_maximized");
+    const maximized = await invoke("toggle_window_maximized");
+    windowMaximized = maximized;
+    if (maximized) {
+      sessionsExpandedBeforeMaximize = sessionsExpanded;
+      if (!sessionsExpanded) await setSessionsExpanded(true, { resizeWindow: false });
+      return;
+    }
+
+    const restoreExpanded = sessionsExpandedBeforeMaximize;
+    sessionsExpandedBeforeMaximize = null;
+    if (restoreExpanded !== null && sessionsExpanded !== restoreExpanded) {
+      await setSessionsExpanded(restoreExpanded, { resizeWindow: false });
+    }
   } catch (error) {
     console.error("切换窗口最大化失败", error);
     setStatus(t("windowMaximizeFailed", { error: String(error) }), "error");
@@ -553,10 +587,14 @@ async function bootstrap() {
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshQuota(true));
+  quotaAlertStatus.addEventListener("click", diagnosticsView.open);
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);
-  sessionsToggle.addEventListener("click", () => void setSessionsExpanded(!sessionsExpanded));
+  sessionsToggle.addEventListener("click", () => void setSessionsExpanded(
+    !sessionsExpanded,
+    { resizeWindow: !windowMaximized },
+  ));
   selectPageThreadsButton.addEventListener("click", () => {
     currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
     renderCurrentThreadPage();
@@ -583,8 +621,8 @@ async function bootstrap() {
     if (!expanded) await setExpanded(true);
     else await refreshQuota();
   });
-  await setExpanded(false);
-  await refreshQuota();
+  // 应用启动时直接展示看板；用户可通过标题栏的收起按钮主动切换为悬浮球。
+  await setExpanded(true);
   void accountView.refresh();
   window.setInterval(refreshQuota, AUTO_REFRESH_INTERVAL_MS);
   window.setInterval(renderSyncedStatus, 1_000);

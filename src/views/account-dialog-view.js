@@ -1,36 +1,25 @@
 /**
- * 主界面个人中心只读取用于展示的邮箱、套餐和登录方式。
+ * 主界面账户区只读取用于展示的邮箱和套餐。
  * 不缓存认证数据，也不会将 app-server 返回的原始响应传到页面。
  */
 export function createAccountOverviewView({ t, invoke }) {
   const email = document.querySelector("#account-email");
   const plan = document.querySelector("#account-plan");
-  const accountType = document.querySelector("#account-type");
   const billingButton = document.querySelector("#account-billing");
   const message = document.querySelector("#account-message");
   let profile = null;
   let loading = false;
   let error = null;
 
-  function accountTypeLabel(type) {
-    const key = {
-      chatgpt: "accountTypeChatgpt",
-      apiKey: "accountTypeApiKey",
-      amazonBedrock: "accountTypeBedrock",
-    }[type];
-    return t(key ?? "accountTypeUnknown");
-  }
-
   function render() {
     if (loading) {
-      email.textContent = plan.textContent = accountType.textContent = t("accountLoading");
+      email.textContent = plan.textContent = t("accountLoading");
       message.hidden = true;
       return;
     }
 
     email.textContent = profile?.email ?? t("accountEmailUnavailable");
     plan.textContent = profile?.planType ?? t("accountPlanUnavailable");
-    accountType.textContent = accountTypeLabel(profile?.accountType);
     message.hidden = !error;
     message.textContent = error ? t(error.key, { error: error.detail }) : "";
   }

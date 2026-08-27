@@ -78,8 +78,9 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .quota-title-row .section-kicker::after { margin-left: 6px; color: #d4dce5; content: "｜"; }
 .quota-section h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 .quota-section .badge { margin-left: 6px; padding: 2px 5px; font-size: .6rem; }
-.account-type-badge { display: inline-flex; align-items: center; gap: 3px; }
-.account-type-badge #account-type { font-weight: 750; }
+.quota-alert-status { padding: 2px 5px; border: 1px solid #dbe3ec; border-radius: 999px; color: #7a8796; background: #fff; cursor: pointer; font-size: .58rem; font-weight: 700; line-height: 1.2; }
+.quota-alert-status:hover { border-color: #9fc5fa; color: #1668c6; background: #f5f9ff; }
+.quota-alert-status.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
 .quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
 .badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
 .quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -93,7 +94,19 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .quota-used { margin-left: 5px; color: #7c8896; }
 .progress-track { grid-area: progress; height: 5px; margin-top: 3px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
 /* 重置时间固定在右上角，不参与卡片布局，保持额度卡原有高度。 */
-.quota-reset-time { position: absolute; top: 5px; right: 9px; max-width: calc(100% - 70px); margin: 0; padding: 2px 5px; overflow: hidden; border-radius: 4px; color: #24578f; background: #eaf3ff; font-size: .68rem; font-weight: 700; line-height: 1.35; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.quota-reset-time { position: absolute; top: 5px; right: 9px; display: flex; max-width: calc(100% - 70px); align-items: center; gap: 4px; margin: 0; padding: 2px 5px; overflow: hidden; border-radius: 4px; color: #24578f; background: #eaf3ff; font-size: .63rem; line-height: 1.35; white-space: nowrap; }
+.quota-reset-countdown { flex: 0 0 auto; color: #1677ff; font-size: .68rem; font-weight: 750; }
+.quota-reset-at { min-width: 0; overflow: hidden; color: #53708f; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+/* 预警只在接近耗尽时出现，避免普通用量状态被不必要的颜色干扰。 */
+.quota-alert { margin-left: 3px; padding: 1px 4px; border-radius: 3px; font-size: .58rem; font-weight: 750; line-height: 1.25; }
+.quota-card.is-warning { border-color: #ffd591; box-shadow: inset 3px 0 0 #fa8c16; }
+.quota-card.is-warning .quota-value strong { color: #d46b08; }
+.quota-card.is-warning .progress-track span { background: #fa8c16; }
+.quota-card.is-warning .quota-alert { color: #ad6800; background: #fff7e6; }
+.quota-card.is-critical { border-color: #ffb3b3; box-shadow: inset 3px 0 0 #f5222d; }
+.quota-card.is-critical .quota-value strong { color: #cf1322; }
+.quota-card.is-critical .progress-track span { background: #f5222d; }
+.quota-card.is-critical .quota-alert { color: #cf1322; background: #fff1f0; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: #1677ff; transition: width .35s ease; }
 
 .sessions-section { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 16px rgba(31, 35, 41, .035); }
@@ -126,7 +139,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .selection-button:hover { border-color: #9fc5fa; color: #1668c6; background: #f5f9ff; }
 .selection-button-muted { color: #7a8796; }
 .selected-thread-count { padding: 2px 6px; border-radius: 999px; color: #1668c6; background: #edf5ff; font-size: .61rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.thread-list { position: relative; z-index: 0; display: grid; flex: 1 1 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(54px, 1fr)); gap: 8px; min-height: 0; overflow-y: auto; padding: 0; }
+.thread-list { position: relative; z-index: 0; display: grid; flex: 1 1 auto; align-content: start; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(54px, 60px)); gap: 8px; min-height: 0; overflow-y: auto; padding: 0; }
 .thread-item { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr); grid-template-rows: minmax(30px, 1fr) auto; align-items: center; column-gap: 7px; row-gap: 4px; min-height: 0; padding: 5px 10px; border: 1px solid #e7edf3; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .025); cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s, transform .15s; }
 .thread-item:hover, .thread-item:focus-visible { border-color: #bad6fb; outline: 0; background: #fbfdff; box-shadow: none; transform: none; }
 /* 选中态只保留描边，且不参与悬停位移，避免压住上方的批量操作分隔线。 */

@@ -2,11 +2,13 @@
  * 额度视图只负责把已读取的数据映射为 DOM，不负责请求、刷新倒计时或窗口状态。
  * 这种分层可保证刷新来源从 Tauri 或其他数据源切换时，界面代码无需改动。
  */
-export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
+export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown }) {
   const orb = document.querySelector("#quota-orb");
   const orbValue = document.querySelector("#orb-value");
   const orbLabel = document.querySelector("#orb-label");
   const quotaList = document.querySelector("#quota-list");
+  const credits = document.querySelector("#credits");
+  const resetCreditsRow = document.querySelector("#reset-credits-row");
 
   function formatOrbWindow(durationMinutes) {
     const minutes = Number(durationMinutes);
@@ -23,12 +25,16 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
     // 悬浮球只呈现当前主额度窗口，Pro 等无短周期额度时会自然回退为 7 天窗口。
     orbLabel.textContent = primary ? formatOrbWindow(primary.durationMinutes) : t("remaining");
     orb.style.setProperty("--quota-progress", `${remaining === null ? 0 : remaining}%`);
+    resetCreditsRow.hidden = !quota.resetCredits;
+    credits.textContent = quota.resetCredits ?? "";
     quotaList.replaceChildren();
     for (const window of (quota.windows || [])) {
       const remainingPercent = Math.round(window.remainingPercent);
       const progress = Math.max(0, Math.min(100, window.remainingPercent));
       const item = document.createElement("article");
       item.className = "quota-card";
+      const quotaState = remainingPercent <= 10 ? "critical" : remainingPercent <= 20 ? "warning" : "normal";
+      item.classList.add(`is-${quotaState}`);
 
       // 每个额度窗口都展示名称，避免首个窗口因复用标题区而与其他卡片层级不一致。
       const name = document.createElement("h3");
@@ -43,7 +49,14 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
       const used = document.createElement("span");
       used.className = "quota-used";
       used.textContent = `（${t("usedPercent", { used: Math.round(window.usedPercent) })}）`;
-      value.append(remainingValue, remainingLabel, used);
+      if (quotaState !== "normal") {
+        const alert = document.createElement("span");
+        alert.className = "quota-alert";
+        alert.textContent = t(quotaState === "critical" ? "quotaCritical" : "quotaWarning");
+        value.append(remainingValue, remainingLabel, used, alert);
+      } else {
+        value.append(remainingValue, remainingLabel, used);
+      }
       const track = document.createElement("div");
       track.className = "progress-track";
       const progressBar = document.createElement("span");
@@ -51,7 +64,14 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetTime }) {
       track.append(progressBar);
       const resetTime = document.createElement("p");
       resetTime.className = "quota-reset-time";
-      resetTime.textContent = formatResetTime(window.resetsAt);
+      resetTime.title = formatResetAt(window.resetsAt);
+      const resetCountdown = document.createElement("strong");
+      resetCountdown.className = "quota-reset-countdown";
+      resetCountdown.textContent = formatResetCountdown(window.resetsAt);
+      const resetAt = document.createElement("span");
+      resetAt.className = "quota-reset-at";
+      resetAt.textContent = formatResetAt(window.resetsAt);
+      resetTime.append(resetCountdown, resetAt);
       item.append(name, value, track, resetTime);
       quotaList.append(item);
     }

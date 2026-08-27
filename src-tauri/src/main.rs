@@ -15,11 +15,12 @@ use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
 
-const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
-// 为账户概览、趋势图与五行会话卡片保留可读空间，避免默认展开时依赖列表滚动。
-const EXPANDED_WINDOW_HEIGHT: f64 = 880.0;
+// 980px 能保留账户四列、两张额度卡和趋势图的横向结构，同时减少桌面占用。
+const EXPANDED_WINDOW_WIDTH: f64 = 980.0;
+// 会话卡收紧后同步压缩展开高度，避免分页前留下空白区域。
+const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
 // 本地历史收起后仍展示账户概览、额度和趋势，窗口随内容压缩避免留下大块空白。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 460.0;
+const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 410.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
@@ -205,18 +206,20 @@ fn hide_window(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn toggle_window_maximized(window: WebviewWindow) -> Result<(), String> {
+fn toggle_window_maximized(window: WebviewWindow) -> Result<bool, String> {
     if window
         .is_maximized()
         .map_err(|error| format!("无法读取窗口最大化状态：{error}"))?
     {
         window
             .unmaximize()
-            .map_err(|error| format!("无法还原窗口尺寸：{error}"))
+            .map_err(|error| format!("无法还原窗口尺寸：{error}"))?;
+        Ok(false)
     } else {
         window
             .maximize()
-            .map_err(|error| format!("无法最大化窗口：{error}"))
+            .map_err(|error| format!("无法最大化窗口：{error}"))?;
+        Ok(true)
     }
 }
 

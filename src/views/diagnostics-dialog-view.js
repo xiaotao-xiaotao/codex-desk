@@ -5,7 +5,7 @@ import { renderCloseIconButton } from "../utils/close-icon-button.js";
  * 环境诊断弹窗负责自身状态和 DOM 渲染；入口层只注入 Tauri 调用和通用的复制能力。
  * 这样既不会让 main.js 混入弹窗细节，也能在单独测试/替换诊断来源时保持界面不变。
  */
-export function createDiagnosticsDialogView({ t, invoke, copyText, quotaAlerts, getLatestQuota }) {
+export function createDiagnosticsDialogView({ t, invoke, copyText, quotaAlerts, getLatestQuota, onQuotaAlertsChange }) {
   const openButton = document.querySelector("#diagnostics-button");
   const dialog = document.querySelector("#diagnostics-dialog");
   const closeButton = document.querySelector("#diagnostics-close");
@@ -109,8 +109,9 @@ export function createDiagnosticsDialogView({ t, invoke, copyText, quotaAlerts, 
     const updated = await quotaAlerts.toggle();
     // 用户在高用量时才开启提醒，也应立即收到当前阈值提示，而非必须等待下一轮自动刷新。
     if (updated && quotaAlerts.isEnabled()) await quotaAlerts.notify(getLatestQuota());
+    onQuotaAlertsChange?.();
     render();
   });
 
-  return { updateLanguage: render };
+  return { open, updateLanguage: render };
 }

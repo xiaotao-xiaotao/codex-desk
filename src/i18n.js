@@ -280,6 +280,15 @@ const SESSION_SECTION_TRANSLATIONS = {
   ko: { expandLocalHistory: "로컬 기록 펼치기", collapseLocalHistory: "로컬 기록 접기", openBillingPortal: "청구 열기" },
 };
 
+// 首页摘要使用独立短文案，避免状态提示占用账户用量和本地历史的首屏空间。
+const HOME_SUMMARY_TRANSLATIONS = {
+  "zh-CN": { quotaAlertStatusEnabled: "提醒已开启", quotaAlertStatusDisabled: "提醒未开启" },
+  "zh-TW": { quotaAlertStatusEnabled: "提醒已開啟", quotaAlertStatusDisabled: "提醒未開啟" },
+  en: { quotaAlertStatusEnabled: "Alerts on", quotaAlertStatusDisabled: "Alerts off" },
+  ja: { quotaAlertStatusEnabled: "通知オン", quotaAlertStatusDisabled: "通知オフ" },
+  ko: { quotaAlertStatusEnabled: "알림 켜짐", quotaAlertStatusDisabled: "알림 꺼짐" },
+};
+
 const DIALOG_SEARCH_TRANSLATIONS = {
   "zh-CN": {
     searchThreadMessages: "搜索当前会话", searchThreadMessagesPlaceholder: "搜索当前会话内容", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "无匹配", threadTruncated: "该会话较长，仅搜索并显示最近 500 条消息。",
@@ -300,11 +309,11 @@ const DIALOG_SEARCH_TRANSLATIONS = {
 
 // 额度区域采用独立短文案，保证进度与重置时间在不同语言下都能紧凑呈现。
 const QUOTA_LABEL_TRANSLATIONS = {
-  "zh-CN": { compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小时", usedPercent: "已使用 {used}%", resetTime: "下次重置时间：{value}" },
-  "zh-TW": { compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小時", usedPercent: "已使用 {used}%", resetTime: "下次重設時間：{value}" },
-  en: { compactQuotaWindowDays: "{count}d", compactQuotaWindowHours: "{count}h", usedPercent: "{used}% used", resetTime: "Next reset: {value}" },
-  ja: { compactQuotaWindowDays: "{count}日", compactQuotaWindowHours: "{count}時間", resetCredits: "リセットクレジット：{credits}", usedPercent: "使用済み {used}%", resetTime: "次回リセット：{value}" },
-  ko: { compactQuotaWindowDays: "{count}일", compactQuotaWindowHours: "{count}시간", usedPercent: "{used}% 사용", resetTime: "다음 재설정: {value}" },
+  "zh-CN": { compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小时", usedPercent: "已使用 {used}%", resetTime: "下次重置时间：{value}", resetCountdown: "下次重置：{value}", resetCreditsLabel: "可用重置额度", quotaWarning: "额度偏低", quotaCritical: "额度不足" },
+  "zh-TW": { compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小時", usedPercent: "已使用 {used}%", resetTime: "下次重設時間：{value}", resetCountdown: "下次重設：{value}", resetCreditsLabel: "可用重設額度", quotaWarning: "額度偏低", quotaCritical: "額度不足" },
+  en: { compactQuotaWindowDays: "{count}d", compactQuotaWindowHours: "{count}h", usedPercent: "{used}% used", resetTime: "Next reset: {value}", resetCountdown: "Next reset: {value}", resetCreditsLabel: "Reset credits", quotaWarning: "Low quota", quotaCritical: "Quota exhausted" },
+  ja: { compactQuotaWindowDays: "{count}日", compactQuotaWindowHours: "{count}時間", resetCredits: "リセットクレジット：{credits}", usedPercent: "使用済み {used}%", resetTime: "次回リセット：{value}", resetCountdown: "次回リセット：{value}", resetCreditsLabel: "リセットクレジット", quotaWarning: "残りわずか", quotaCritical: "クォータ不足" },
+  ko: { compactQuotaWindowDays: "{count}일", compactQuotaWindowHours: "{count}시간", usedPercent: "{used}% 사용", resetTime: "다음 재설정: {value}", resetCountdown: "다음 재설정: {value}", resetCreditsLabel: "재설정 크레딧", quotaWarning: "할당량 부족", quotaCritical: "할당량 소진" },
 };
 
 function resolveSystemLanguage() {
@@ -339,6 +348,7 @@ export function createI18n() {
     const language = getLanguage();
     const text = QUOTA_LABEL_TRANSLATIONS[language]?.[key]
       ?? SESSION_SECTION_TRANSLATIONS[language]?.[key]
+      ?? HOME_SUMMARY_TRANSLATIONS[language]?.[key]
       ?? DIALOG_SEARCH_TRANSLATIONS[language]?.[key]
       ?? ACCOUNT_TRANSLATIONS[language]?.[key]
       ?? PRODUCT_TRANSLATIONS[language]?.[key]
@@ -348,6 +358,7 @@ export function createI18n() {
       ?? TRANSLATIONS[language][key]
       ?? QUOTA_LABEL_TRANSLATIONS["zh-CN"]?.[key]
       ?? SESSION_SECTION_TRANSLATIONS["zh-CN"]?.[key]
+      ?? HOME_SUMMARY_TRANSLATIONS["zh-CN"]?.[key]
       ?? DIALOG_SEARCH_TRANSLATIONS["zh-CN"]?.[key]
       ?? ACCOUNT_TRANSLATIONS["zh-CN"]?.[key]
       ?? PRODUCT_TRANSLATIONS["zh-CN"]?.[key]

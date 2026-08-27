@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <main id="app" class="float-app is-compact">
+    <main id="app" class="float-app is-expanded">
       <button id="quota-orb" class="quota-orb" type="button" aria-label="展开 Codex 额度详情" title="短按展开，按住后拖动">
         <span class="orb-ring" aria-hidden="true"></span>
         <span class="orb-value" id="orb-value">--</span>
@@ -61,11 +61,12 @@
             <div class="quota-title-row">
               <p class="section-kicker" data-i18n="accountUsage">账户用量</p>
               <h2 id="quota-heading" data-i18n="quotaOverview">额度概览</h2>
-              <span class="badge account-type-badge"><span data-i18n="accountType">登录方式</span><span id="account-type">正在读取账号信息…</span></span>
+              <button id="quota-alert-status" class="quota-alert-status" type="button"></button>
             </div>
           </div>
           <dl class="account-details">
             <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
+            <div id="reset-credits-row" hidden><dt data-i18n="resetCreditsLabel">可用重置额度</dt><dd id="credits"></dd></div>
             <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
             <div><dt data-i18n="openBilling">管理订阅</dt><dd><button id="account-billing" class="account-billing-button" type="button" data-i18n="openBillingPortal">打开账单</button></dd></div>
           </dl>

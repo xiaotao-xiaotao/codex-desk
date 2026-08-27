@@ -17,6 +17,27 @@ export function createDateFormatters({ getLocale, t }) {
     return Number.isNaN(date.getTime()) ? t("resetUnknown") : t("resetTime", { value: format(date) });
   };
 
+  const formatResetAt = (timestamp) => {
+    if (!timestamp) return t("resetUnknown");
+    const date = new Date(Number(timestamp) * 1_000);
+    return Number.isNaN(date.getTime()) ? t("resetUnknown") : format(date);
+  };
+
+  const formatResetCountdown = (timestamp) => {
+    if (!timestamp) return t("resetUnknown");
+    const resetsAt = Number(timestamp) * 1_000;
+    if (!Number.isFinite(resetsAt)) return t("resetUnknown");
+
+    const minutes = Math.max(1, Math.ceil((resetsAt - Date.now()) / 60_000));
+    const relative = new Intl.RelativeTimeFormat(getLocale(), { numeric: "always" });
+    const countdown = minutes < 60
+      ? relative.format(minutes, "minute")
+      : minutes < 1_440
+        ? relative.format(Math.ceil(minutes / 60), "hour")
+        : relative.format(Math.ceil(minutes / 1_440), "day");
+    return t("resetCountdown", { value: countdown });
+  };
+
   const formatUpdated = (value) => {
     if (!value) return t("updatedUnknown");
     const timestamp = typeof value === "number" && value < 1_000_000_000_000 ? value * 1_000 : value;
@@ -36,5 +57,5 @@ export function createDateFormatters({ getLocale, t }) {
     return t("quotaWindowMinutes", { count: minutes });
   };
 
-  return { formatQuotaWindow, formatResetTime, formatUpdated };
+  return { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime, formatUpdated };
 }

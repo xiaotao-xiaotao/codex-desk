@@ -14,8 +14,8 @@
       {
         "label": "main",
         "title": "Codex Desk",
-        "width": 84,
-        "height": 84,
+        "width": 980,
+        "height": 410,
         "resizable": false,
         "decorations": false,
         "transparent": true,
