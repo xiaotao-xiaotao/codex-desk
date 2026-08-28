@@ -7,8 +7,9 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
   const orbValue = document.querySelector("#orb-value");
   const orbLabel = document.querySelector("#orb-label");
   const quotaList = document.querySelector("#quota-list");
-  const credits = document.querySelector("#credits");
   const resetCreditsRow = document.querySelector("#reset-credits-row");
+  const resetCreditsSummary = document.querySelector("#reset-credits-summary");
+  const resetCreditsTooltip = document.querySelector("#reset-credits-tooltip");
 
   function formatOrbWindow(durationMinutes) {
     const minutes = Number(durationMinutes);
@@ -25,8 +26,31 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     // 悬浮球只呈现当前主额度窗口，Pro 等无短周期额度时会自然回退为 7 天窗口。
     orbLabel.textContent = primary ? formatOrbWindow(primary.durationMinutes) : t("remaining");
     orb.style.setProperty("--quota-progress", `${remaining === null ? 0 : remaining}%`);
-    resetCreditsRow.hidden = !quota.resetCredits;
-    credits.textContent = quota.resetCredits ?? "";
+    const resetCredits = Number(quota.resetCredits ?? 0);
+    const resetCreditDetails = Array.isArray(quota.resetCreditDetails) ? quota.resetCreditDetails : [];
+    resetCreditsRow.hidden = resetCredits <= 0;
+    if (resetCredits > 0) {
+      resetCreditsSummary.textContent = t("resetCreditsCount", { count: resetCredits });
+      resetCreditsTooltip.replaceChildren();
+      const description = document.createElement("span");
+      description.className = "reset-credits-tooltip-description";
+      description.textContent = t("resetCreditsDescription");
+      resetCreditsTooltip.append(description);
+      for (let index = 0; index < resetCredits; index += 1) {
+        const expiresAt = resetCreditDetails[index]?.expiresAt;
+        const expiryText = expiresAt
+          ? t("resetCreditExpires", { value: formatResetAt(expiresAt) })
+          : t("resetCreditExpiresUnknown");
+        const item = document.createElement("span");
+        // 每次重置都单独呈现，避免多次权益被合并成一个无法判断到期日的数字。
+        item.textContent = t("resetCreditTooltipItem", {
+          index: index + 1,
+          title: t("resetCreditsFullReset"),
+          expires: expiryText,
+        });
+        resetCreditsTooltip.append(item);
+      }
+    }
     quotaList.replaceChildren();
     for (const window of (quota.windows || [])) {
       const remainingPercent = Math.round(window.remainingPercent);

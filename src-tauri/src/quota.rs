@@ -14,10 +14,18 @@ pub struct QuotaWindow {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ResetCredit {
+    /// 权益过期的 Unix 秒级时间戳；不存在表示该权益不设到期时间。
+    expires_at: Option<i64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuotaSnapshot {
     windows: Vec<QuotaWindow>,
     plan_type: Option<String>,
     reset_credits: u64,
+    reset_credit_details: Vec<ResetCredit>,
 }
 
 /// 仅从当前本机已登录的 Codex CLI 读取额度；不会读取或保存 auth.json。
@@ -52,16 +60,32 @@ fn normalize_quota(result: &Value) -> Result<QuotaSnapshot, String> {
     if windows.is_empty() {
         return Err("Codex 未返回可展示的额度窗口".to_owned());
     }
+    let reset_credits = result.get("rateLimitResetCredits");
+    let reset_credit_details = reset_credits
+        .and_then(|credits| credits.get("credits"))
+        .and_then(Value::as_array)
+        .map(|credits| {
+            credits
+                .iter()
+                // 后端可能返回历史条目；首页只呈现仍可使用的额度重置权益。
+                .filter(|credit| credit.get("status").and_then(Value::as_str) == Some("available"))
+                .map(|credit| ResetCredit {
+                    expires_at: credit.get("expiresAt").and_then(Value::as_i64),
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
     Ok(QuotaSnapshot {
         windows,
         plan_type: limits
             .get("planType")
             .and_then(Value::as_str)
             .map(str::to_owned),
-        reset_credits: result
-            .get("rateLimitResetCredits")
+        reset_credits: reset_credits
             .and_then(|credits| credits.get("availableCount"))
             .and_then(Value::as_u64)
             .unwrap_or(0),
+        reset_credit_details,
     })
 }

@@ -60,17 +60,32 @@
         <section class="dashboard-section quota-section" aria-labelledby="quota-heading">
           <div class="section-heading">
             <div class="quota-title-row">
-              <p class="section-kicker" data-i18n="accountUsage">账户用量</p>
-              <h2 id="quota-heading" data-i18n="quotaOverview">额度概览</h2>
-              <button id="quota-alert-status" class="quota-alert-status" type="button"></button>
+              <h2 id="quota-heading" class="quota-heading-title" data-i18n="accountUsage">账户用量</h2>
+              <span class="quota-heading-subtitle" data-i18n="quotaOverview">额度概览</span>
+            </div>
+            <div class="quota-alert-control">
+              <span id="quota-alert-status" class="quota-alert-status"></span>
+              <button id="quota-alert-toggle" class="quota-alert-toggle" type="button"></button>
             </div>
           </div>
-          <dl class="account-details">
-            <div><dt data-i18n="accountEmail">登录邮箱</dt><dd id="account-email">正在读取账号信息…</dd></div>
-            <div id="reset-credits-row" hidden><dt data-i18n="resetCreditsLabel">可用重置额度</dt><dd id="credits"></dd></div>
-            <div><dt data-i18n="accountPlan">订阅方案</dt><dd id="account-plan">正在读取账号信息…</dd></div>
-            <div><dt data-i18n="openBilling">管理订阅</dt><dd><button id="account-billing" class="account-billing-button" type="button" data-i18n="openBillingPortal">打开账单</button></dd></div>
-          </dl>
+          <div class="account-details">
+            <div class="account-detail-item account-email-item">
+              <span class="account-detail-label" data-i18n="accountEmail">登录邮箱</span>
+              <strong id="account-email">正在读取账号信息…</strong>
+            </div>
+            <div class="account-detail-item">
+              <span class="account-detail-label" data-i18n="accountPlan">订阅方案</span>
+              <strong id="account-plan">正在读取账号信息…</strong>
+            </div>
+            <div id="reset-credits-row" class="account-reset-credits" hidden>
+              <span class="account-detail-label" data-i18n="resetCreditsTitle">使用限额重置</span>
+              <strong id="reset-credits-summary"></strong>
+              <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
+            </div>
+            <div class="account-billing-actions">
+              <button id="account-billing" class="account-billing-button" type="button" data-i18n="openBilling">查看订阅到期时间</button>
+            </div>
+          </div>
           <p id="account-message" class="account-message" hidden></p>
           <div class="account-quota-divider" aria-hidden="true"></div>
           <div id="quota-list" class="quota-list" aria-live="polite"></div>
@@ -93,6 +108,22 @@
             </div>
           </div>
           <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
+        </section>
+
+        <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
+          <div class="section-heading trend-heading">
+            <div class="section-title-row">
+              <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token 洞察</p>
+              <div class="trend-range-summary">
+                <div class="trend-range-picker">
+                  <select id="token-usage-range" class="trend-range" aria-label="Token 趋势范围"></select>
+                  <svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+                </div>
+                <span id="token-usage-total" class="trend-total"></span>
+              </div>
+            </div>
+          </div>
+          <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
         </section>
 
         <section class="dashboard-section sessions-section" aria-labelledby="threads-heading">
@@ -172,6 +203,27 @@
           <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
         </section>
       </section>
+      <section id="file-diff-panel" class="file-diff-panel" role="dialog" aria-modal="true" aria-labelledby="file-diff-title" hidden>
+        <header class="file-diff-toolbar">
+          <div>
+            <h3 id="file-diff-title"></h3>
+            <p id="file-diff-summary" class="file-diff-summary"></p>
+          </div>
+          <div class="file-diff-actions">
+            <div class="file-diff-layout-switch" role="group">
+              <button id="file-diff-side-by-side" class="file-diff-layout-button" type="button" aria-pressed="true"></button>
+              <button id="file-diff-unified" class="file-diff-layout-button" type="button" aria-pressed="false"></button>
+            </div>
+            <button id="file-diff-close" class="close-icon-button" type="button"></button>
+          </div>
+        </header>
+        <div id="file-diff-list" class="file-diff-list app-scrollable"></div>
+      </section>
+      <section id="thread-image-preview" class="thread-image-preview" role="dialog" aria-modal="true" aria-labelledby="thread-image-preview-title" hidden>
+        <h3 id="thread-image-preview-title" class="visually-hidden"></h3>
+        <button id="thread-image-preview-close" class="close-icon-button" type="button"></button>
+        <img id="thread-image-preview-image" alt="" />
+      </section>
     </dialog>
     <dialog id="diagnostics-dialog" class="diagnostics-dialog" aria-labelledby="diagnostics-title">
       <section class="diagnostics-content">
@@ -185,10 +237,6 @@
         <p id="diagnostics-intro" class="diagnostics-intro" data-i18n="diagnosticsIntro">仅检查本机 Codex CLI、app-server 和当前登录态，不会读取认证文件或上传数据。</p>
         <div id="diagnostics-results" class="diagnostics-results" aria-live="polite"></div>
         <p id="diagnostics-error" class="diagnostics-error" hidden></p>
-        <div class="diagnostics-alerts">
-          <div><strong data-i18n="quotaAlerts">额度提醒</strong><span id="quota-alerts-description"></span></div>
-          <button id="quota-alerts-toggle" class="selection-button" type="button"></button>
-        </div>
         <footer class="diagnostics-actions">
           <button id="diagnostics-copy" type="button" disabled></button>
           <button id="diagnostics-run" class="thread-action-button thread-action-button-primary" type="button"></button>

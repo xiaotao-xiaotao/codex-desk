@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { LANGUAGE_OPTIONS, createI18n } from "./i18n.js";
 import { THEME_ICONS, createThemeController } from "./theme.js";
-import { copyText } from "./utils/clipboard.js";
+import { copyMessageContent, copyText } from "./utils/clipboard.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
@@ -12,6 +12,7 @@ import { createDiagnosticsDialogView } from "./views/diagnostics-dialog-view.js"
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
 import { createThreadListView } from "./views/thread-list-view.js";
 import { createThreadTrendView } from "./views/thread-trend-view.js";
+import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
 
 const AUTO_REFRESH_INTERVAL_MS = 60_000;
 const DRAG_THRESHOLD_PX = 4;
@@ -43,6 +44,7 @@ const sessionsContent = document.querySelector("#sessions-content");
 const sessionsToggle = document.querySelector("#sessions-toggle");
 const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
 const quotaAlertStatus = document.querySelector("#quota-alert-status");
+const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
 
 const i18n = createI18n();
 const theme = createThemeController();
@@ -52,6 +54,7 @@ const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime,
   t,
 });
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
+const copyMessageToClipboard = (message) => copyMessageContent(message, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
 const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
 const accountView = createAccountOverviewView({ t, invoke });
@@ -59,15 +62,18 @@ const diagnosticsView = createDiagnosticsDialogView({
   t,
   invoke,
   copyText: copyToClipboard,
-  quotaAlerts,
-  getLatestQuota: () => latestQuota,
-  onQuotaAlertsChange: renderQuotaAlertStatus,
 });
-const dialogView = createThreadDialogView({ t, formatUpdated, copyText: copyToClipboard });
+const dialogView = createThreadDialogView({
+  t,
+  formatUpdated,
+  copyText: copyToClipboard,
+  copyMessage: copyMessageToClipboard,
+});
 const trendView = createThreadTrendView({
   t,
   onRangeChange: () => void refreshThreadTrends(),
 });
+const tokenUsageView = createTokenUsageTrendView({ t });
 const threadListView = createThreadListView({
   t,
   formatUpdated,
@@ -86,6 +92,7 @@ let refreshing = false;
 let searchTimer = null;
 let searchRequestVersion = 0;
 let trendRequestVersion = 0;
+let tokenUsageRequestVersion = 0;
 let currentThreadPage = 1;
 let currentPageThreads = [];
 let currentThreadEmptyMessage = "";
@@ -105,7 +112,17 @@ function renderQuotaAlertStatus() {
   const enabled = quotaAlerts.isEnabled();
   quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled");
   quotaAlertStatus.classList.toggle("is-enabled", enabled);
-  quotaAlertStatus.title = quotaAlertStatus.ariaLabel = t("quotaAlerts");
+  quotaAlertStatus.title = t("quotaAlerts");
+  quotaAlertToggle.textContent = t(enabled ? "quotaAlertToggleDisable" : "quotaAlertToggleEnable");
+  quotaAlertToggle.classList.toggle("is-enabled", enabled);
+  quotaAlertToggle.ariaLabel = t("quotaAlerts");
+}
+
+async function toggleQuotaAlerts() {
+  const updated = await quotaAlerts.toggle();
+  // 用户在高用量时开启提醒，应立即检查当前额度而非等待下一轮自动刷新。
+  if (updated && quotaAlerts.isEnabled()) await quotaAlerts.notify(latestQuota);
+  renderQuotaAlertStatus();
 }
 
 function renderCurrentThreadPage() {
@@ -358,6 +375,7 @@ function applyLanguage() {
 
   dialogView.updateLanguage();
   trendView.render();
+  tokenUsageView.render();
   renderTheme();
   renderCurrentThreadPage();
   updateTransferControls();
@@ -390,6 +408,7 @@ async function refreshQuota(forceTrendRefresh = false) {
         await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
       }
       void refreshThreadTrends(forceTrendRefresh);
+      void refreshTokenUsage();
     }
   } catch (error) {
     console.error(error);
@@ -416,6 +435,20 @@ async function refreshThreadTrends(forceRefresh = false) {
     if (requestVersion !== trendRequestVersion) return;
     console.error(error);
     trendView.showError();
+  }
+}
+
+async function refreshTokenUsage() {
+  const requestVersion = ++tokenUsageRequestVersion;
+  tokenUsageView.showLoading();
+  try {
+    const data = await invoke("read_token_usage");
+    if (requestVersion !== tokenUsageRequestVersion) return;
+    tokenUsageView.setData(data);
+  } catch (error) {
+    if (requestVersion !== tokenUsageRequestVersion) return;
+    console.error(error);
+    tokenUsageView.showError();
   }
 }
 
@@ -593,7 +626,7 @@ async function bootstrap() {
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshQuota(true));
-  quotaAlertStatus.addEventListener("click", diagnosticsView.open);
+  quotaAlertToggle.addEventListener("click", () => void toggleQuotaAlerts());
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);

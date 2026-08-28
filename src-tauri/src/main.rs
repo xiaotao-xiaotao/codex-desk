@@ -8,6 +8,7 @@ mod app_server;
 mod quota;
 mod threads;
 mod tray;
+mod usage;
 
 use std::{path::Path, process::Command};
 use serde::Serialize;
@@ -19,8 +20,8 @@ use tauri::{
 const EXPANDED_WINDOW_WIDTH: f64 = 820.0;
 // 会话卡收紧后同步压缩展开高度，避免分页前留下空白区域。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
-// 本地历史收起后仍展示账户概览、额度和趋势，窗口随内容压缩避免留下大块空白。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 410.0;
+// 本地历史收起后仍展示账户概览、两张趋势图和同步状态，避免底部内容被窗口边缘裁切。
+const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 550.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
@@ -161,6 +162,13 @@ async fn read_thread_trends(
     threads::read_thread_trends(&state, &trend_state, force_refresh, days).await
 }
 
+#[tauri::command]
+async fn read_token_usage(
+    state: State<'_, app_server::AppServerState>,
+) -> Result<usage::TokenUsageSnapshot, String> {
+    usage::read_token_usage(&state).await
+}
+
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
 #[tauri::command]
 fn open_billing_page() -> Result<(), String> {
@@ -290,8 +298,10 @@ fn resize_float_window(
     // 窗口保持不可手动缩放，避免 Windows 在拖至屏幕边缘时显示 Snap 贴靠预览；
     // 程序仍可通过原生 API 切换展开和收起尺寸。
     window
+        // 展开看板不抢占其他应用；仅收起为悬浮球时保持在最前，便于随时恢复。
+        .set_always_on_top(!expanded)
         // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
-        .unmaximize()
+        .and_then(|_| window.unmaximize())
         .and_then(|_| window.set_size(Size::Logical(LogicalSize::new(width, height))))
         .and_then(|_| window.set_position(Position::Physical(target_position)))
         .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
@@ -332,6 +342,7 @@ fn main() {
             import_threads,
             read_thread,
             read_thread_trends,
+            read_token_usage,
             open_billing_page,
             start_dragging,
             hide_window,

@@ -1,4 +1,4 @@
-.thread-dialog { width: min(1080px, calc(100% - 32px)); height: min(88vh, 780px); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
+.thread-dialog { position: relative; width: min(1080px, calc(100% - 32px)); height: min(88vh, 780px); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
 .thread-dialog::backdrop { background: rgba(15, 23, 42, .38); }
 .thread-dialog-toolbar { display: flex; height: 42px; align-items: center; justify-content: space-between; padding: 0 12px 0 18px; border-bottom: 1px solid #e7ebef; background: #fff; }
 .thread-dialog-toolbar h2 { margin: 0; color: #263445; font-size: .95rem; font-weight: 760; letter-spacing: .01em; }
@@ -43,6 +43,9 @@
 /* 保持原有紧凑单行布局，列表只在纵向滚动，避免长路径破坏卡片层级。 */
 .activity-row { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 32px; padding: 5px 8px; border-bottom: 1px solid #edf1f5; background: transparent; }
 .activity-row:last-child { border-bottom: 0; }
+.activity-row.is-clickable { cursor: pointer; }
+.activity-row.is-clickable:hover { background: #f2faf6; }
+.activity-row.is-clickable:focus-visible { position: relative; z-index: 1; outline: 2px solid #6dcaa3; outline-offset: -2px; }
 .activity-icon { display: grid; width: 18px; height: 18px; place-items: center; border-radius: 5px; color: #5e75a3; background: #edf4ff; font-size: .78rem; font-weight: 800; }
 .activity-row-file .activity-icon { color: #188460; background: #e7f8f0; }
 .activity-row-issue .activity-icon { color: #bf6720; background: #fff2df; }
@@ -66,6 +69,9 @@
 .message-list { display: grid; flex: 1 1 auto; min-height: 0; align-content: start; gap: 7px; overflow-y: auto; padding: 16px 20px 20px; background: #f7f8fa; }
 .message { position: relative; width: fit-content; max-width: min(76%, 720px); padding: 8px 34px 8px 10px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
 .message p { margin: 0; white-space: pre-wrap; }
+.message-image { display: block; max-width: min(100%, 460px); max-height: 360px; margin-top: 8px; border-radius: 6px; background: #f1f3f5; cursor: zoom-in; object-fit: contain; }
+.message-image:first-child { margin-top: 0; }
+.message-image:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
 .message mark { padding: 0 1px; border-radius: 2px; color: inherit; background: #ffe58f; }
 .message.is-search-match { border-color: #d6b868; }
 .message.is-active-search-match { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .16); }
@@ -86,3 +92,43 @@
 .message-user { justify-self: end; border-color: #cfe3ff; background: #eff6ff; }
 .message-assistant { justify-self: start; }
 .dialog-hint { width: 100%; margin: 0; padding: 13px 14px; border: 1px dashed #d5dce5; border-radius: 10px; color: #7d8792; background: #fff; font-size: .86rem; }
+/* Diff 使用当前会话快照覆盖详情内容，不创建嵌套原生 dialog，确保 WebView2 的 Esc 行为稳定。 */
+.file-diff-panel { position: absolute; z-index: 3; inset: 42px 0 0; display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); background: #f7f8fa; }
+.file-diff-panel[hidden] { display: none; }
+.thread-image-preview { position: absolute; z-index: 4; inset: 0; display: grid; padding: 48px 28px 28px; place-items: center; background: rgba(15, 23, 42, .82); cursor: zoom-out; }
+.thread-image-preview[hidden] { display: none; }
+.thread-image-preview .close-icon-button { position: absolute; top: 12px; right: 12px; color: #d9e2ec; background: rgba(255, 255, 255, .12); }
+.thread-image-preview .close-icon-button:hover { color: #fff; background: rgba(255, 255, 255, .22); }
+.thread-image-preview img { display: block; max-width: 100%; max-height: 100%; border-radius: 6px; background: #fff; box-shadow: 0 16px 46px rgba(0, 0, 0, .42); cursor: default; object-fit: contain; }
+.file-diff-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 18px 12px; border-bottom: 1px solid #e1e7ee; background: #fff; }
+.file-diff-toolbar h3 { margin: 0; color: #263445; font-size: .9rem; }
+.file-diff-summary { margin: 4px 0 0; color: #7a8797; font-size: .68rem; }
+.file-diff-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 7px; }
+.file-diff-layout-switch { display: flex; overflow: hidden; border: 1px solid #dbe3ec; border-radius: 6px; }
+.file-diff-layout-button { min-width: 42px; padding: 4px 7px; border: 0; border-right: 1px solid #dbe3ec; color: #677587; background: #fff; cursor: pointer; font-size: .62rem; line-height: 1.25; }
+.file-diff-layout-button:last-child { border-right: 0; }
+.file-diff-layout-button:hover { color: #1668c6; background: #f2f7ff; }
+.file-diff-layout-button.is-active { color: #0958d9; background: #eaf3ff; font-weight: 700; }
+.file-diff-layout-button:focus-visible { position: relative; z-index: 1; outline: 2px solid #91caff; outline-offset: -2px; }
+.file-diff-list { display: grid; min-width: 0; min-height: 0; align-content: start; gap: 12px; overflow: auto; padding: 16px 18px 22px; }
+.file-diff-file { min-width: 0; overflow: hidden; border: 1px solid #dfe6ed; border-radius: 9px; background: #fff; }
+.file-diff-file > header { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px; border-bottom: 1px solid #e7edf2; background: #fbfcfe; }
+.file-diff-file code { min-width: 0; overflow: hidden; color: #39495c; font-family: "Cascadia Code", Consolas, monospace; font-size: .69rem; text-overflow: ellipsis; white-space: nowrap; }
+.file-diff-kind { flex: 0 0 auto; padding: 2px 6px; border-radius: 4px; color: #3979c9; background: #edf5ff; font-size: .6rem; font-weight: 700; }
+.file-diff-kind-add { color: #13795b; background: #e7f8f0; }
+.file-diff-kind-delete { color: #c43d38; background: #fff1f0; }
+.file-diff-moved, .file-diff-empty { margin: 0; padding: 9px 11px; color: #7a8797; font-size: .68rem; overflow-wrap: anywhere; }
+.file-diff-code { margin: 0; overflow: auto; padding: 7px 0; color: #435163; background: #fff; font-family: "Cascadia Code", Consolas, monospace; font-size: .68rem; line-height: 1.55; tab-size: 2; }
+.file-diff-line { display: block; min-width: max-content; padding: 0 11px; white-space: pre; }
+.file-diff-line.is-hunk { color: #316da8; background: #edf6ff; }
+.file-diff-line.is-added { color: #176b4f; background: #eaf8f0; }
+.file-diff-line.is-removed { color: #a83e38; background: #fff0ef; }
+.file-diff-side-by-side { display: grid; min-width: 720px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); color: #435163; background: #fff; font-family: "Cascadia Code", Consolas, monospace; font-size: .68rem; line-height: 1.55; tab-size: 2; }
+.file-diff-side-by-side-header { padding: 6px 11px; border-bottom: 1px solid #e7edf2; color: #697789; background: #f7f9fc; font-family: system-ui, sans-serif; font-size: .61rem; font-weight: 700; }
+.file-diff-side-by-side-header.is-right { border-left: 1px solid #e7edf2; }
+.file-diff-side-by-side-line { min-width: 0; padding: 0 11px; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.file-diff-side-by-side-line.is-right { border-left: 1px solid #edf1f5; }
+.file-diff-side-by-side-line.is-empty { background: #fafbfc; }
+.file-diff-side-by-side-line.is-hunk-label { grid-column: 1 / -1; padding: 2px 11px; color: #316da8; background: #edf6ff; }
+.file-diff-side-by-side-line.is-added { color: #176b4f; background: #eaf8f0; }
+.file-diff-side-by-side-line.is-removed { color: #a83e38; background: #fff0ef; }

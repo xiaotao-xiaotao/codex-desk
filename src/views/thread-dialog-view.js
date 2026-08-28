@@ -1,4 +1,6 @@
 import { createThreadInsightsView } from "./thread-insights-view.js";
+import { createThreadFileDiffView } from "./thread-file-diff-view.js";
+import { createThreadImagePreviewView } from "./thread-image-preview-view.js";
 import { createThreadMessageSearch } from "./thread-message-search.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
@@ -8,7 +10,7 @@ const DIALOG_TITLE_MAX_LENGTH = 52;
 /**
  * 会话详情视图保留已打开的详情数据，以便切换语言时可重新渲染角色与复制按钮。
  */
-export function createThreadDialogView({ t, formatUpdated, copyText }) {
+export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
   const threadDialog = document.querySelector("#thread-dialog");
   const dialogTitle = document.querySelector("#dialog-title");
   const dialogMeta = document.querySelector("#dialog-meta");
@@ -17,7 +19,12 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
   const searchResult = document.querySelector("#dialog-search-result");
-  const insightsView = createThreadInsightsView({ t });
+  const fileDiffView = createThreadFileDiffView({ t });
+  const imagePreviewView = createThreadImagePreviewView({ t });
+  const insightsView = createThreadInsightsView({
+    t,
+    onViewFileChanges: (activity) => fileDiffView.show(activity),
+  });
   let currentDetail = null;
   const messageSearch = createThreadMessageSearch({
     t,
@@ -84,27 +91,47 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
       item.dataset.messageIndex = String(index);
       if (matchingIndexes.has(index)) item.classList.add("is-search-match");
       if (index === activeMessageIndex) item.classList.add("is-active-search-match");
-      const copy = document.createElement("button");
-      copy.className = "copy-button";
-      copy.type = "button";
-      renderCopyIconButton(copy, { label: t("copy") });
-      copy.addEventListener("click", async () => {
-        copy.disabled = true;
-        try {
-          await copyText(message.text);
-          renderCopyIconButton(copy, { label: t("copied"), state: "copied" });
-        } catch {
-          renderCopyIconButton(copy, { label: t("copyFailedLong"), state: "failed" });
-        }
-        window.setTimeout(() => {
-          copy.disabled = false;
-          renderCopyIconButton(copy, { label: t("copy") });
-        }, 1_500);
-      });
-      const text = document.createElement("p");
-      messageSearch.appendHighlightedText(text, message.text);
-      // 角色由消息气泡的左右位置区分，复制按钮固定在右上角，不占用额外标题行。
-      item.append(copy, text);
+      if (message.text || (message.images ?? []).length > 0) {
+        const copy = document.createElement("button");
+        copy.className = "copy-button";
+        copy.type = "button";
+        renderCopyIconButton(copy, { label: t("copy") });
+        copy.addEventListener("click", async () => {
+          copy.disabled = true;
+          try {
+            await copyMessage(message);
+            renderCopyIconButton(copy, { label: t("copied"), state: "copied" });
+          } catch {
+            renderCopyIconButton(copy, { label: t("copyFailedLong"), state: "failed" });
+          }
+          window.setTimeout(() => {
+            copy.disabled = false;
+            renderCopyIconButton(copy, { label: t("copy") });
+          }, 1_500);
+        });
+        const text = document.createElement("p");
+        messageSearch.appendHighlightedText(text, message.text);
+        // 角色由消息气泡的左右位置区分，复制按钮固定在右上角，不占用额外标题行。
+        item.append(copy, text);
+      }
+      for (const [imageIndex, imageData] of (message.images ?? []).entries()) {
+        const image = document.createElement("img");
+        image.className = "message-image";
+        image.src = imageData.src;
+        image.alt = `${t("threadImage")} ${imageIndex + 1}`;
+        image.loading = "lazy";
+        image.addEventListener("error", () => image.remove());
+        image.tabIndex = 0;
+        image.setAttribute("role", "button");
+        image.title = t("openImagePreview");
+        image.addEventListener("dblclick", () => imagePreviewView.show(image));
+        image.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          imagePreviewView.show(image);
+        });
+        item.append(image);
+      }
       messageList.append(item);
     }
     if (focusCurrentMatch && activeMessageIndex !== undefined) {
@@ -119,6 +146,8 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
     setDialogMeta(thread.updatedAt);
     messageList.replaceChildren();
     insightsView.clear();
+    fileDiffView.clear();
+    imagePreviewView.close();
     showStatus(t("readingThread"));
     threadDialog.showModal();
   }
@@ -139,25 +168,39 @@ export function createThreadDialogView({ t, formatUpdated, copyText }) {
 
   function updateLanguage() {
     renderCloseIconButton(dialogCloseButton, { label: t("closeThreadDetail") });
+    imagePreviewView.updateLanguage();
     if (!threadDialog.open) {
       dialogTitle.textContent = t("threadDetail");
       dialogTitle.removeAttribute("title");
       dialogTitle.removeAttribute("aria-label");
+      // 文件对比面板在详情弹窗内延迟打开；关闭详情时切换语言也需提前同步其按钮文案。
+      fileDiffView.updateLanguage();
       return;
     }
     if (currentDetail) {
       setDialogMeta(currentDetail.updatedAt);
       insightsView.render(currentDetail);
+      fileDiffView.updateLanguage();
       messageSearch.setMessages(currentDetail.messages);
       renderMessages(currentDetail);
     } else {
       insightsView.clear();
+      fileDiffView.clear();
       messageSearch.updateLanguage();
       showStatus(t("readingThread"));
     }
   }
 
   dialogCloseButton.addEventListener("click", () => threadDialog.close());
+  threadDialog.addEventListener("cancel", (event) => {
+    if (imagePreviewView.isOpen()) {
+      event.preventDefault();
+      imagePreviewView.close();
+    } else if (fileDiffView.isOpen()) {
+      event.preventDefault();
+      fileDiffView.close();
+    }
+  });
   threadDialog.addEventListener("click", (event) => {
     if (event.target === threadDialog) threadDialog.close();
   });

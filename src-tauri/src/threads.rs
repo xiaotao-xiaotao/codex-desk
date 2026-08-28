@@ -18,6 +18,9 @@ const TRANSFER_VERSION: u32 = 1;
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
+// 图片随会话详情返回前会转换为 data URL；限制单张图片大小，避免历史会话拖慢弹窗渲染。
+const MAX_THREAD_IMAGE_BYTES: u64 = 8 * 1_024 * 1_024;
+const MAX_THREAD_IMAGES_PER_MESSAGE: usize = 8;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -45,6 +48,15 @@ pub struct ThreadSearchResult {
 struct ThreadMessage {
     role: String,
     text: String,
+    #[serde(default)]
+    images: Vec<ThreadImage>,
+}
+
+/// 前端仅接收可直接绑定到 img.src 的受控来源，不暴露本机原始文件路径。
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadImage {
+    src: String,
 }
 
 /// 由 Codex Desk 导出的可移植会话包。该格式只携带可见对话文本与时间元数据，
@@ -115,6 +127,20 @@ struct ThreadActivity {
     title: String,
     detail: Option<String>,
     status: Option<String>,
+    /// 文件操作会携带 App Server 返回的统一 diff；其他操作保持为空，避免重复传输。
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    changes: Vec<ThreadFileChange>,
+}
+
+/// 单个文件的会话内变更快照。只来自 Codex 已持久化的 fileChange 记录，
+/// 不会为展示差异重新读取工作区文件，避免内容随当前磁盘状态漂移。
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadFileChange {
+    path: String,
+    change_type: String,
+    move_path: Option<String>,
+    diff: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -571,6 +597,12 @@ fn transfer_messages_from_thread(thread: &Value) -> Vec<ThreadMessage> {
                 .flatten()
         })
         .filter_map(thread_message_from_item)
+        // 导出包仅用于恢复文本上下文，不携带图片二进制，避免导出文件无边界膨胀。
+        .map(|message| ThreadMessage {
+            role: message.role,
+            text: message.text,
+            images: Vec::new(),
+        })
         .collect()
 }
 
@@ -726,7 +758,7 @@ fn summarize_turn(turn: &Value) -> ThreadInsights {
         .flatten()
     {
         match item.get("type").and_then(Value::as_str) {
-            Some("userMessage") if !extract_user_message(item).is_empty() => insights.messages += 1,
+            Some("userMessage") if thread_message_from_item(item).is_some() => insights.messages += 1,
             Some("agentMessage")
                 if item
                     .get("text")
@@ -909,14 +941,142 @@ fn extract_user_message(item: &Value) -> String {
         .join("\n\n")
 }
 
+/// App Server 的图片输入可能是内嵌 base64、HTTPS 地址或本机路径。
+/// 本机路径在 Rust 侧读取并转换为 data URL，避免把任意文件路径暴露给 WebView。
+fn extract_user_images(item: &Value) -> Vec<ThreadImage> {
+    item.get("content")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(thread_image_from_content)
+        .take(MAX_THREAD_IMAGES_PER_MESSAGE)
+        .collect()
+}
+
+fn thread_image_from_content(part: &Value) -> Option<ThreadImage> {
+    match part.get("type").and_then(Value::as_str) {
+        Some("image") => image_source_from_image_part(part),
+        Some("localImage") => part
+            .get("path")
+            .and_then(Value::as_str)
+            .and_then(local_image_source),
+        _ => None,
+    }
+}
+
+fn image_source_from_image_part(part: &Value) -> Option<ThreadImage> {
+    if let (Some(data), Some(mime_type)) = (
+        part.get("data").and_then(Value::as_str),
+        part.get("mimeType")
+            .or_else(|| part.get("mime_type"))
+            .and_then(Value::as_str),
+    ) {
+        return inline_image_source(data, mime_type);
+    }
+
+    // 只渲染 HTTPS 图片，避免历史消息触发不安全或本机协议请求。
+    part.get("url")
+        .and_then(Value::as_str)
+        .filter(|url| url.starts_with("https://"))
+        .map(|url| ThreadImage {
+            src: url.to_owned(),
+        })
+}
+
+fn inline_image_source(data: &str, mime_type: &str) -> Option<ThreadImage> {
+    let max_base64_length = ((MAX_THREAD_IMAGE_BYTES as usize + 2) / 3) * 4;
+    if !is_supported_image_mime(mime_type)
+        || data.len() > max_base64_length
+        || !data.bytes().all(is_base64_character)
+    {
+        return None;
+    }
+    Some(ThreadImage {
+        src: format!("data:{mime_type};base64,{data}"),
+    })
+}
+
+fn local_image_source(path: &str) -> Option<ThreadImage> {
+    let path = Path::new(path);
+    let metadata = std::fs::metadata(path).ok()?;
+    if !metadata.is_file() || metadata.len() > MAX_THREAD_IMAGE_BYTES {
+        return None;
+    }
+    let bytes = std::fs::read(path).ok()?;
+    let mime_type = image_mime_type(&bytes)?;
+    Some(ThreadImage {
+        src: format!("data:{mime_type};base64,{}", base64_encode(&bytes)),
+    })
+}
+
+fn is_supported_image_mime(mime_type: &str) -> bool {
+    matches!(mime_type, "image/png" | "image/jpeg" | "image/gif" | "image/webp")
+}
+
+fn image_mime_type(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.starts_with(b"RIFF") && bytes.get(8..12) == Some(b"WEBP") {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
+fn is_base64_character(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'/' | b'=')
+}
+
+fn base64_encode(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut encoded = String::with_capacity(((bytes.len() + 2) / 3) * 4);
+    for chunk in bytes.chunks(3) {
+        let first = chunk[0];
+        let second = *chunk.get(1).unwrap_or(&0);
+        let third = *chunk.get(2).unwrap_or(&0);
+        encoded.push(TABLE[(first >> 2) as usize] as char);
+        encoded.push(TABLE[(((first & 0b0000_0011) << 4) | (second >> 4)) as usize] as char);
+        encoded.push(if chunk.len() > 1 {
+            TABLE[(((second & 0b0000_1111) << 2) | (third >> 6)) as usize] as char
+        } else {
+            '='
+        });
+        encoded.push(if chunk.len() > 2 {
+            TABLE[(third & 0b0011_1111) as usize] as char
+        } else {
+            '='
+        });
+    }
+    encoded
+}
+
+fn without_image_placeholders(text: String, has_images: bool) -> String {
+    if !has_images {
+        return text;
+    }
+    text.split("\n\n")
+        .filter(|part| {
+            let trimmed = part.trim();
+            !(trimmed.starts_with("[Image #") && trimmed.ends_with(']'))
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
 /// 将 App Server 中可直接展示的用户输入和 Codex 回复统一识别，供详情与趋势复用。
 fn thread_message_from_item(item: &Value) -> Option<ThreadMessage> {
     match item.get("type").and_then(Value::as_str) {
         Some("userMessage") => {
-            let text = extract_user_message(item);
-            (!text.is_empty()).then_some(ThreadMessage {
+            let images = extract_user_images(item);
+            let text = without_image_placeholders(extract_user_message(item), !images.is_empty());
+            (!text.is_empty() || !images.is_empty()).then_some(ThreadMessage {
                 role: "user".to_owned(),
                 text,
+                images,
             })
         }
         Some("agentMessage") => item
@@ -927,6 +1087,7 @@ fn thread_message_from_item(item: &Value) -> Option<ThreadMessage> {
             .map(|text| ThreadMessage {
                 role: "assistant".to_owned(),
                 text: text.to_owned(),
+                images: Vec::new(),
             }),
         _ => None,
     }
@@ -972,16 +1133,21 @@ fn turn_status_activity(turn: &Value) -> Option<ThreadActivity> {
         title: "回合未正常完成".to_owned(),
         detail,
         status: Some(status.to_owned()),
+        changes: Vec::new(),
     })
 }
 
 fn file_change_activity(item: &Value, count: usize) -> ThreadActivity {
-    let paths = item
+    let changes = item
         .get("changes")
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
-        .filter_map(|change| change.get("path").and_then(Value::as_str))
+        .filter_map(thread_file_change_from_value)
+        .collect::<Vec<_>>();
+    let paths = changes
+        .iter()
+        .map(|change| change.path.as_str())
         .take(3)
         .collect::<Vec<_>>();
     let detail = if paths.is_empty() {
@@ -997,7 +1163,35 @@ fn file_change_activity(item: &Value, count: usize) -> ThreadActivity {
             .get("status")
             .and_then(Value::as_str)
             .map(str::to_owned),
+        changes,
     }
+}
+
+fn thread_file_change_from_value(change: &Value) -> Option<ThreadFileChange> {
+    let path = change.get("path").and_then(Value::as_str)?.to_owned();
+    let change_type = change
+        .get("kind")
+        .and_then(|kind| kind.get("type"))
+        .and_then(Value::as_str)
+        .unwrap_or("update")
+        .to_owned();
+    let move_path = change
+        .get("kind")
+        .and_then(|kind| kind.get("move_path").or_else(|| kind.get("movePath")))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    // 部分历史记录只保留文件名。此处保留空字符串，前端会明确提示不能展示差异。
+    let diff = change
+        .get("diff")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    Some(ThreadFileChange {
+        path,
+        change_type,
+        move_path,
+        diff,
+    })
 }
 
 fn tool_activity(item: &Value, kind: &str) -> ThreadActivity {
@@ -1042,6 +1236,7 @@ fn tool_activity(item: &Value, kind: &str) -> ThreadActivity {
             .get("status")
             .and_then(Value::as_str)
             .map(str::to_owned),
+        changes: Vec::new(),
     }
 }
 
@@ -1186,10 +1381,65 @@ mod tests {
             .activities
             .iter()
             .any(|activity| activity.kind == "file"));
+        let file_activity = detail
+            .activities
+            .iter()
+            .find(|activity| activity.kind == "file")
+            .expect("文件操作应保留用于展示的变更记录");
+        assert_eq!(file_activity.changes.len(), 2);
+        assert_eq!(file_activity.changes[0].path, "src/main.js");
+        assert!(file_activity.changes[0].diff.is_empty());
         assert!(detail
             .activities
             .iter()
             .any(|activity| activity.kind == "issue"));
+    }
+
+    #[test]
+    fn keeps_file_change_patch_for_diff_viewer() {
+        let change = thread_file_change_from_value(&json!({
+            "path": "src/views/example.js",
+            "kind": { "type": "update", "move_path": null },
+            "diff": "@@ -1 +1 @@\n-old\n+new\n"
+        }))
+        .expect("带路径的文件变更应可读取");
+
+        assert_eq!(change.change_type, "update");
+        assert_eq!(change.diff, "@@ -1 +1 @@\n-old\n+new\n");
+    }
+
+    #[test]
+    fn keeps_embedded_user_images_and_hides_their_text_placeholder() {
+        let detail = normalize_thread_detail(&json!({
+            "thread": {
+                "id": "thread-12345678",
+                "turns": [{
+                    "items": [{
+                        "type": "userMessage",
+                        "content": [
+                            { "type": "text", "text": "[Image #1]" },
+                            {
+                                "type": "image",
+                                "mimeType": "image/png",
+                                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL9iwAAAABJRU5ErkJggg=="
+                            }
+                        ]
+                    }]
+                }]
+            }
+        }))
+        .expect("图片消息应可归一化");
+
+        assert_eq!(detail.messages.len(), 1);
+        assert!(detail.messages[0].text.is_empty());
+        assert_eq!(detail.messages[0].images.len(), 1);
+        assert!(detail.messages[0].images[0].src.starts_with("data:image/png;base64,"));
+    }
+
+    #[test]
+    fn encodes_local_image_bytes_as_standard_base64() {
+        assert_eq!(base64_encode(b"Man"), "TWFu");
+        assert_eq!(base64_encode(b"Ma"), "TWE=");
     }
 
     #[test]
@@ -1265,10 +1515,12 @@ mod tests {
                 ThreadMessage {
                     role: "user".to_owned(),
                     text: "登录失败".to_owned(),
+                    images: Vec::new(),
                 },
                 ThreadMessage {
                     role: "assistant".to_owned(),
                     text: "请检查令牌。".to_owned(),
+                    images: Vec::new(),
                 },
             ],
         };
