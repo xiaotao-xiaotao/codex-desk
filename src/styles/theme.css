@@ -63,6 +63,7 @@
 :root[data-theme="dark"] .trend-grid text,
 :root[data-theme="dark"] .trend-labels text { fill: #71829a; }
 :root[data-theme="dark"] .trend-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 7px 18px rgba(0, 0, 0, .35); }
+:root[data-theme="dark"] .status-refresh-countdown { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .trend-section.is-chart-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
 :root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(120deg, #17253a, #151b23 68%); box-shadow: inset 3px 0 0 #4096ff; }
 :root[data-theme="dark"] .quota-card h3 { color: #c0cddd; }

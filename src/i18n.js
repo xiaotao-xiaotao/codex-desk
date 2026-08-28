@@ -307,11 +307,11 @@ const SESSION_SECTION_TRANSLATIONS = {
 
 // 首页摘要使用独立短文案，避免状态提示占用账户用量和本地历史的首屏空间。
 const HOME_SUMMARY_TRANSLATIONS = {
-  "zh-CN": { quotaAlertStatusEnabled: "提醒已开启", quotaAlertStatusDisabled: "提醒未开启" },
-  "zh-TW": { quotaAlertStatusEnabled: "提醒已開啟", quotaAlertStatusDisabled: "提醒未開啟" },
-  en: { quotaAlertStatusEnabled: "Alerts on", quotaAlertStatusDisabled: "Alerts off" },
-  ja: { quotaAlertStatusEnabled: "通知オン", quotaAlertStatusDisabled: "通知オフ" },
-  ko: { quotaAlertStatusEnabled: "알림 켜짐", quotaAlertStatusDisabled: "알림 꺼짐" },
+  "zh-CN": { quotaAlertStatusEnabled: "提醒已开启", quotaAlertStatusDisabled: "提醒未开启", syncedStatusPrefix: "本地 Codex 已同步{plan}（仅从本机读取 · ", autoRefreshCountdownPrefix: "", autoRefreshCountdownSuffix: " 秒后自动刷新", syncedStatusSuffix: "）" },
+  "zh-TW": { quotaAlertStatusEnabled: "提醒已開啟", quotaAlertStatusDisabled: "提醒未開啟", syncedStatusPrefix: "本機 Codex 已同步{plan}（僅從本機讀取 · ", autoRefreshCountdownPrefix: "", autoRefreshCountdownSuffix: " 秒後自動重新整理", syncedStatusSuffix: "）" },
+  en: { quotaAlertStatusEnabled: "Alerts on", quotaAlertStatusDisabled: "Alerts off", syncedStatusPrefix: "Local Codex synced{plan} (local data only · ", autoRefreshCountdownPrefix: "refreshes in ", autoRefreshCountdownSuffix: "s", syncedStatusSuffix: ")" },
+  ja: { quotaAlertStatusEnabled: "通知オン", quotaAlertStatusDisabled: "通知オフ", syncedStatusPrefix: "ローカル Codex を同期済み{plan}（ローカルデータのみ · ", autoRefreshCountdownPrefix: "", autoRefreshCountdownSuffix: " 秒後に自動更新", syncedStatusSuffix: "）" },
+  ko: { quotaAlertStatusEnabled: "알림 켜짐", quotaAlertStatusDisabled: "알림 꺼짐", syncedStatusPrefix: "로컬 Codex 동기화됨{plan}(로컬 데이터만 · ", autoRefreshCountdownPrefix: "", autoRefreshCountdownSuffix: "초 후 자동 새로 고침", syncedStatusSuffix: ")" },
 };
 
 const DIALOG_SEARCH_TRANSLATIONS = {

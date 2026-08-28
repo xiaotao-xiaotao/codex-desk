@@ -195,5 +195,6 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .pagination-button:disabled { border-color: #edf0f3; color: #b0b8c3; background: #fafbfc; cursor: default; }
 .page-indicator { min-width: 40px; color: #7f8a97; font-size: .68rem; text-align: center; }
 .status { flex: 0 0 auto; min-height: 13px; margin-top: 4px; color: #637286; font-size: .64rem; }
+.status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: .66rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .status[data-kind="error"], .dialog-status[data-kind="error"] { color: #cf1322; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }

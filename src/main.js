@@ -291,7 +291,16 @@ function renderSyncedStatus() {
   if (!latestQuota || refreshing) return;
   const seconds = Math.max(0, Math.ceil((nextAutoRefreshAt - Date.now()) / 1_000));
   const plan = latestQuota.planType ? t("planPrefix", { plan: latestQuota.planType }) : "";
-  setStatus(t("syncedStatus", { plan, seconds }));
+  const countdown = document.createElement("span");
+  countdown.className = "status-refresh-countdown";
+  countdown.textContent = String(seconds);
+  status.replaceChildren(
+    document.createTextNode(t("syncedStatusPrefix", { plan })),
+    document.createTextNode(t("autoRefreshCountdownPrefix")),
+    countdown,
+    document.createTextNode(`${t("autoRefreshCountdownSuffix")}${t("syncedStatusSuffix")}`),
+  );
+  status.dataset.kind = "normal";
 }
 
 function renderTheme() {
