@@ -23,6 +23,7 @@
               <p class="eyebrow"><span class="status-dot"></span><span data-i18n="secureAccess">本机安全访问</span></p>
             </div>
           </div>
+          <div id="window-drag-region" class="window-drag-region" aria-hidden="true"></div>
           <div class="header-actions">
             <button id="diagnostics-button" class="icon-button" type="button" title="诊断 Codex CLI" aria-label="诊断 Codex CLI">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 10v5M12 7.5h.01" /></svg>
@@ -78,11 +79,16 @@
         <section class="dashboard-section trend-section" aria-labelledby="trend-heading">
           <div class="section-heading trend-heading">
             <div class="section-title-row">
-              <p class="section-kicker" data-i18n="trendKicker">活动洞察</p>
-              <h2 id="trend-heading" data-i18n="trendTitle">近 7 天趋势</h2>
+              <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
+              <div class="trend-range-summary">
+                <div class="trend-range-picker">
+                  <select id="trend-range" class="trend-range" aria-label="趋势范围"></select>
+                  <svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+                </div>
+                <span id="trend-total" class="trend-total"></span>
+              </div>
             </div>
             <div class="trend-heading-actions">
-              <span id="trend-total" class="trend-total"></span>
               <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
             </div>
           </div>

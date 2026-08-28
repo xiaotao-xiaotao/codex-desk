@@ -20,7 +20,7 @@ const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
 const status = document.querySelector("#status");
 const panel = document.querySelector(".panel");
-const panelHeader = document.querySelector(".panel-header");
+const windowDragRegion = document.querySelector("#window-drag-region");
 const languageButton = document.querySelector("#language-button");
 const languageMenu = document.querySelector("#language-menu");
 const languageOptions = document.querySelectorAll("[data-language]");
@@ -64,7 +64,10 @@ const diagnosticsView = createDiagnosticsDialogView({
   onQuotaAlertsChange: renderQuotaAlertStatus,
 });
 const dialogView = createThreadDialogView({ t, formatUpdated, copyText: copyToClipboard });
-const trendView = createThreadTrendView({ t });
+const trendView = createThreadTrendView({
+  t,
+  onRangeChange: () => void refreshThreadTrends(),
+});
 const threadListView = createThreadListView({
   t,
   formatUpdated,
@@ -92,7 +95,6 @@ let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
 let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
-let suppressPanelClick = false;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
@@ -395,7 +397,10 @@ async function refreshThreadTrends(forceRefresh = false) {
   const requestVersion = ++trendRequestVersion;
   trendView.showLoading();
   try {
-    const data = await invoke("read_thread_trends", { forceRefresh });
+    const data = await invoke("read_thread_trends", {
+      forceRefresh,
+      days: Number(document.querySelector("#trend-range").value),
+    });
     if (requestVersion !== trendRequestVersion) return;
     trendView.setData(data);
   } catch (error) {
@@ -516,15 +521,14 @@ function setupWindowDragging() {
     }
     setExpanded(!expanded);
   });
-  panel.addEventListener("mousedown", (event) => {
+  windowDragRegion.addEventListener("mousedown", (event) => {
     if (!expanded || event.button !== 0) return;
-    suppressPanelClick = false;
     panelDragStart = { x: event.clientX, y: event.clientY };
   });
   window.addEventListener("mousemove", (event) => {
     for (const dragState of [
       { start: orbDragStart, clear: () => { orbDragStart = null; }, suppress: () => { suppressOrbClick = true; }, name: "额度球" },
-      { start: panelDragStart, clear: () => { panelDragStart = null; }, suppress: () => { suppressPanelClick = true; }, name: "窗口" },
+      { start: panelDragStart, clear: () => { panelDragStart = null; }, suppress: () => {}, name: "窗口" },
     ]) {
       if (!dragState.start) continue;
       const moved = Math.hypot(event.clientX - dragState.start.x, event.clientY - dragState.start.y);
@@ -539,12 +543,6 @@ function setupWindowDragging() {
     orbDragStart = null;
     panelDragStart = null;
   });
-  panel.addEventListener("click", (event) => {
-    if (!suppressPanelClick) return;
-    event.preventDefault();
-    event.stopPropagation();
-    suppressPanelClick = false;
-  }, true);
 }
 
 async function toggleWindowMaximized() {
@@ -577,10 +575,9 @@ async function bootstrap() {
     renderTheme();
   });
   theme.onSystemThemeChange(renderTheme);
-  panelHeader.addEventListener("dblclick", (event) => {
+  windowDragRegion.addEventListener("dblclick", (event) => {
     if (event.button !== 0) return;
-    // 右侧图标组保留各自的双击/点击行为，标题栏其余区域遵循原生窗口的最大化习惯。
-    if (event.target.closest(".header-actions")) return;
+    // 双击最大化仅限空白拖动区，标题文字可用于双击选词与复制。
     event.preventDefault();
     void toggleWindowMaximized();
   });

@@ -1,7 +1,7 @@
 use crate::app_server::AppServerState;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
@@ -17,7 +17,6 @@ const TRANSFER_VERSION: u32 = 1;
 // 详情弹窗保留更完整的上下文，同时限制超长会话占用过多内存与渲染空间。
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
-const TREND_DAY_LIMIT: usize = 7;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Serialize)]
@@ -142,13 +141,13 @@ struct CachedThreadTrend {
 
 /// 趋势数据的短期缓存与 App Server 连接状态分离，避免领域缓存污染传输层。
 pub struct ThreadTrendState {
-    cached: Mutex<Option<CachedThreadTrend>>,
+    cached: Mutex<HashMap<usize, CachedThreadTrend>>,
 }
 
 impl Default for ThreadTrendState {
     fn default() -> Self {
         Self {
-            cached: Mutex::new(None),
+            cached: Mutex::new(HashMap::new()),
         }
     }
 }
@@ -156,7 +155,7 @@ impl Default for ThreadTrendState {
 impl ThreadTrendState {
     /// 会话被批量导入后，旧趋势缓存已不再代表当前本机线程列表。
     pub async fn invalidate(&self) {
-        *self.cached.lock().await = None;
+        self.cached.lock().await.clear();
     }
 }
 
@@ -312,27 +311,34 @@ pub async fn import_threads(
     })
 }
 
-/// 聚合最近七个自然日的会话活动。每条数据按回合时间归属到对应日期，
+/// 聚合指定自然日范围内的会话活动。每条数据按回合时间归属到对应日期，
 /// 回合缺少时间时才回退到会话更新时间。
 pub async fn read_thread_trends(
     state: &AppServerState,
     trend_state: &ThreadTrendState,
     force_refresh: bool,
+    days: usize,
 ) -> Result<ThreadTrendResponse, String> {
+    if !matches!(days, 3 | 7 | 30) {
+        return Err("趋势时间范围仅支持 3、7 或 30 天".to_owned());
+    }
     if !force_refresh {
         let cached = trend_state.cached.lock().await;
-        if let Some(cached) = cached.as_ref() {
+        if let Some(cached) = cached.get(&days) {
             if cached.generated_at.elapsed() < TREND_CACHE_TTL {
                 return Ok(cached.response.clone());
             }
         }
     }
 
-    let response = build_thread_trends(state).await?;
-    *trend_state.cached.lock().await = Some(CachedThreadTrend {
-        generated_at: Instant::now(),
-        response: response.clone(),
-    });
+    let response = build_thread_trends(state, days).await?;
+    trend_state.cached.lock().await.insert(
+        days,
+        CachedThreadTrend {
+            generated_at: Instant::now(),
+            response: response.clone(),
+        },
+    );
     Ok(response)
 }
 
@@ -749,8 +755,11 @@ fn file_change_count(item: &Value) -> usize {
         .max(1)
 }
 
-async fn build_thread_trends(state: &AppServerState) -> Result<ThreadTrendResponse, String> {
-    let mut points = recent_day_points(TREND_DAY_LIMIT);
+async fn build_thread_trends(
+    state: &AppServerState,
+    days: usize,
+) -> Result<ThreadTrendResponse, String> {
+    let mut points = recent_day_points(days);
     let threads = list_recent_threads(state).await?;
 
     for summary in threads {
@@ -802,10 +811,7 @@ async fn build_thread_trends(state: &AppServerState) -> Result<ThreadTrendRespon
         }
     }
 
-    Ok(ThreadTrendResponse {
-        days: TREND_DAY_LIMIT,
-        points,
-    })
+    Ok(ThreadTrendResponse { days, points })
 }
 
 fn turn_day_key(turn: &Value) -> Option<String> {

@@ -15,8 +15,8 @@ use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
 
-// 980px 能保留账户四列、两张额度卡和趋势图的横向结构，同时减少桌面占用。
-const EXPANDED_WINDOW_WIDTH: f64 = 980.0;
+// 820px 在减少桌面占用的同时，为标题栏、额度卡和趋势图保留必要的横向空间。
+const EXPANDED_WINDOW_WIDTH: f64 = 820.0;
 // 会话卡收紧后同步压缩展开高度，避免分页前留下空白区域。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
 // 本地历史收起后仍展示账户概览、额度和趋势，窗口随内容压缩避免留下大块空白。
@@ -156,8 +156,9 @@ async fn read_thread_trends(
     state: State<'_, app_server::AppServerState>,
     trend_state: State<'_, threads::ThreadTrendState>,
     force_refresh: bool,
+    days: usize,
 ) -> Result<threads::ThreadTrendResponse, String> {
-    threads::read_thread_trends(&state, &trend_state, force_refresh).await
+    threads::read_thread_trends(&state, &trend_state, force_refresh, days).await
 }
 
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
