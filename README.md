@@ -12,9 +12,9 @@
 
 **Keep track of Codex CLI quota and quickly resume local sessions.**
 
-Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, local session browsing, activity trends, session insights, and cross-device session migration.
+Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, account and usage overviews, local session browsing, activity and Token trends, session insights, and cross-device session migration.
 
-All data is read through the local `codex app-server --stdio` process. Codex Desk does not upload your data to a third-party service, read or save `auth.json`, or call account APIs.
+Data is obtained through the local `codex app-server --stdio` process. Codex Desk does not upload your data to a third-party service or read or save `auth.json`.
 
 If Codex Desk helps you manage your sessions, please consider giving the project a **Star**. Feedback and bug reports are welcome through [Issues](https://github.com/xiaotao-xiaotao/codex-desk/issues).
 
@@ -44,14 +44,16 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 ## Features
 
-- **Usage overview**: view the current plan, quota window, usage percentage, and reset time.
+- **Account and usage overview**: view a masked sign-in email, current plan, quota windows, usage percentage, reset time, available rate-limit resets, and a link to the official billing portal.
 - **Quota alerts**: after you explicitly enable native notifications, get one alert per reset window at 80%, 90%, and 100% usage.
-- **Seven-day activity trends**: switch between messages, tool calls, file changes, and errors in a code-drawn line chart.
+- **Activity trends**: view the last 3, 7, or 30 days and independently show or hide messages, tool calls, file changes, and errors in a code-drawn line chart.
+- **Token insights**: view daily Token usage and totals for the last 3, 7, or 30 days when the local Codex app server provides usage data.
 - **Local sessions**: browse non-archived local sessions, search by title or session ID, and view creation and update times.
-- **Session details and insights**: inspect user messages and Codex replies, copy individual messages, and review aggregate activity metrics.
+- **Session details and insights**: inspect user messages and Codex replies, enlarge images in a dedicated preview, copy messages with images when the system clipboard supports rich content, and review aggregate activity metrics.
+- **File change comparison**: open recorded file changes from recent activity and compare diffs side by side or inline. Historical diffs are shown from the session record and are not read from the current workspace.
 - **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
-- **Local data boundary**: data is obtained from the local Codex app server; local JSONL files and authentication data are not parsed or stored by the app.
+- **Local data boundary**: account, quota, Token, and session data are obtained through the local Codex app server; local JSONL files and authentication data are not parsed or stored by the app.
 - **Local diagnostics**: diagnostics only check the local CLI, `app-server`, and quota access; no auth file is read and no data is uploaded.
 
 ## Screenshots
@@ -65,17 +67,11 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 ![Codex Desk light dashboard](docs/screenshots/dashboard-light-en.png)
 
+![Codex Desk dark dashboard](docs/screenshots/dashboard-dark-en.png)
+
 ### Session details
 
 ![Codex Desk session details](docs/screenshots/session-details-en.png)
-
-### Codex CLI diagnostics
-
-![Codex Desk Codex CLI diagnostics](docs/screenshots/diagnostics-dialog-en.png)
-
-### Account
-
-![Codex Desk account](docs/screenshots/account-dialog-en.png)
 
 ## Multilingual support
 
@@ -124,11 +120,11 @@ Build artifacts are generated under `src-tauri/target/release/bundle/`. Windows 
 
 - Click the floating usage orb to show or hide the dashboard.
 - Use the top-right diagnostic button to verify the local connection and optionally enable 80% / 90% / 100% quota alerts.
-- Switch trend metrics below the quota section.
-- Search, inspect, import, or export local sessions from the session list.
+- Choose a 3-, 7-, or 30-day range for activity and Token trends, then toggle the activity metrics you want to compare.
+- Search, inspect, import, or export local sessions from the session list. In session details, open recorded file diffs, or double-click an image to enlarge it.
 - Copy `codex resume <session ID>` from a session detail page to continue it in the terminal.
 - Drag the title area to reposition the floating window.
-- The app refreshes automatically every 60 seconds; use the refresh button for an immediate update.
+- The app refreshes automatically every 60 seconds and shows the countdown in the status bar; use the refresh button for an immediate update.
 - Closing the window hides it. Use the system tray menu to show the dashboard again.
 
 ## License
