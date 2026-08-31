@@ -52,6 +52,16 @@ struct ThreadMessage {
     images: Vec<ThreadImage>,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadDetailMessage {
+    role: String,
+    text: String,
+    images: Vec<ThreadImage>,
+    /// 同一回合内的工具、文件与异常操作挂在最终回复下方，保持与对话上下文一致。
+    activities: Vec<ThreadActivity>,
+}
+
 /// 前端仅接收可直接绑定到 img.src 的受控来源，不暴露本机原始文件路径。
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -191,10 +201,9 @@ pub struct ThreadDetail {
     id: String,
     title: String,
     updated_at: Option<Value>,
-    messages: Vec<ThreadMessage>,
+    messages: Vec<ThreadDetailMessage>,
     truncated: bool,
     insights: ThreadInsights,
-    activities: Vec<ThreadActivity>,
 }
 
 /// 读取最近的已持久化线程，在应用侧完成轻量搜索与分页。
@@ -670,7 +679,6 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         .find_map(|key| thread.get(*key).cloned());
 
     let mut messages = Vec::new();
-    let mut activities = Vec::new();
     let mut insights = ThreadInsights::default();
 
     for turn in thread
@@ -680,8 +688,10 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         .flatten()
     {
         insights.merge(&summarize_turn(turn));
+        let mut turn_message_indexes = Vec::new();
+        let mut turn_activities = Vec::new();
         if let Some(activity) = turn_status_activity(turn) {
-            activities.push(activity);
+            turn_activities.push(activity);
         }
         for item in turn
             .get("items")
@@ -690,36 +700,62 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
             .flatten()
         {
             if let Some(message) = thread_message_from_item(item) {
-                messages.push(message);
+                messages.push(ThreadDetailMessage {
+                    role: message.role,
+                    text: message.text,
+                    images: message.images,
+                    activities: Vec::new(),
+                });
+                turn_message_indexes.push(messages.len() - 1);
                 continue;
             }
             match item.get("type").and_then(Value::as_str) {
                 Some("fileChange") => {
                     let count = file_change_count(item);
-                    activities.push(file_change_activity(item, count));
+                    turn_activities.push(file_change_activity(item, count));
                 }
                 Some(kind) if is_tool_item(kind) => {
-                    activities.push(tool_activity(item, kind));
+                    turn_activities.push(tool_activity(item, kind));
                 }
                 _ => {}
             }
         }
+
+        // App Server 将一次用户请求及其工具调用、最终回复放在同一个 turn 中。
+        // 优先挂到该回合最后一条 Codex 回复；异常回合没有消息时退回上一条可见消息。
+        let target_index = turn_message_indexes
+            .iter()
+            .rev()
+            .copied()
+            .find(|index| messages[*index].role == "assistant")
+            .or_else(|| turn_message_indexes.last().copied())
+            .or_else(|| messages.len().checked_sub(1));
+        if let Some(index) = target_index {
+            messages[index].activities.extend(turn_activities);
+        }
     }
 
     let truncated = messages.len() > MAX_MESSAGES;
-    let messages = if truncated {
+    let mut messages = if truncated {
         messages.split_off(messages.len() - MAX_MESSAGES)
     } else {
         messages
     };
-    let activities = activities
-        .into_iter()
-        .rev()
-        .take(MAX_ACTIVITIES)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .rev()
-        .collect();
+
+    // 仍沿用原有“最多 30 项近期操作”的传输上限，只是改为分布在对应消息下方。
+    let activity_count = messages
+        .iter()
+        .map(|message| message.activities.len())
+        .sum::<usize>();
+    let mut activities_to_drop = activity_count.saturating_sub(MAX_ACTIVITIES);
+    for message in &mut messages {
+        if activities_to_drop == 0 {
+            break;
+        }
+        let drop_count = activities_to_drop.min(message.activities.len());
+        message.activities.drain(..drop_count);
+        activities_to_drop -= drop_count;
+    }
 
     Ok(ThreadDetail {
         id,
@@ -728,7 +764,6 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         messages,
         truncated,
         insights,
-        activities,
     })
 }
 
@@ -1377,11 +1412,12 @@ mod tests {
         assert_eq!(detail.insights.file_changes, 2);
         assert_eq!(detail.insights.issues, 2);
         assert_eq!(detail.messages.len(), 2);
-        assert!(detail
-            .activities
+        let message_activities = &detail.messages[1].activities;
+        assert!(message_activities
             .iter()
             .any(|activity| activity.kind == "file"));
         let file_activity = detail
+            .messages[1]
             .activities
             .iter()
             .find(|activity| activity.kind == "file")
@@ -1390,6 +1426,7 @@ mod tests {
         assert_eq!(file_activity.changes[0].path, "src/main.js");
         assert!(file_activity.changes[0].diff.is_empty());
         assert!(detail
+            .messages[1]
             .activities
             .iter()
             .any(|activity| activity.kind == "issue"));

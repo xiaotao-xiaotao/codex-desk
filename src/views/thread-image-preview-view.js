@@ -8,8 +8,10 @@ export function createThreadImagePreviewView({ t }) {
   const title = document.querySelector("#thread-image-preview-title");
   const image = document.querySelector("#thread-image-preview-image");
   const closeButton = document.querySelector("#thread-image-preview-close");
+  let isHandlingEscape = false;
 
   function show(sourceImage) {
+    isHandlingEscape = false;
     image.src = sourceImage.currentSrc || sourceImage.src;
     image.alt = sourceImage.alt;
     preview.hidden = false;
@@ -27,6 +29,10 @@ export function createThreadImagePreviewView({ t }) {
     return !preview.hidden;
   }
 
+  function handlingEscape() {
+    return isHandlingEscape;
+  }
+
   function updateLanguage() {
     title.textContent = t("threadImagePreview");
     renderCloseIconButton(closeButton, { label: t("closeImagePreview") });
@@ -36,6 +42,21 @@ export function createThreadImagePreviewView({ t }) {
   preview.addEventListener("click", (event) => {
     if (event.target === preview) close();
   });
+  // 从按下到松开完整吞掉 Esc，避免长按产生的重复事件继续关闭外层会话 dialog。
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || (!isOpen() && !isHandlingEscape)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!isHandlingEscape && isOpen()) close();
+    isHandlingEscape = true;
+  }, true);
+  document.addEventListener("keyup", (event) => {
+    if (event.key !== "Escape" || !isHandlingEscape) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    isHandlingEscape = false;
+  }, true);
+  window.addEventListener("blur", () => { isHandlingEscape = false; });
   updateLanguage();
-  return { show, close, isOpen, updateLanguage };
+  return { show, close, isOpen, handlingEscape, updateLanguage };
 }

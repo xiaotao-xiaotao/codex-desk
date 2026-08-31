@@ -1,10 +1,43 @@
+import { groupConsecutiveActivities } from "./activity-summary.js";
+
+function createMetric(label, value, tone) {
+  const metric = document.createElement("div");
+  metric.className = `insight-metric insight-metric-${tone}`;
+  const metricValue = document.createElement("strong");
+  metricValue.textContent = String(value ?? 0);
+  const metricLabel = document.createElement("span");
+  metricLabel.textContent = label;
+  metric.append(metricValue, metricLabel);
+  return metric;
+}
+
 /**
- * 会话洞察区只消费后端已归一化的数据，不关心 App Server 的原始 item 结构。
- * 这样协议字段变化时，界面层无需跟着修改。
+ * 会话洞察区只渲染汇总指标；具体操作由消息视图按回合放在对应回复下方。
  */
-export function createThreadInsightsView({ t, onViewFileChanges }) {
+export function createThreadInsightsView({ t }) {
   const insightList = document.querySelector("#thread-insights");
-  const activityPanel = document.querySelector("#thread-activity");
+
+  function render(detail) {
+    const insights = detail.insights ?? {};
+    insightList.replaceChildren(
+      createMetric(t("insightMessages"), insights.messages, "blue"),
+      createMetric(t("insightToolCalls"), insights.toolCalls, "violet"),
+      createMetric(t("insightFileChanges"), insights.fileChanges, "emerald"),
+      createMetric(t("insightIssues"), insights.issues, "amber"),
+    );
+  }
+
+  function clear() {
+    insightList.replaceChildren();
+  }
+
+  return { render, clear };
+}
+
+/**
+ * 将单个回合的结构化操作渲染为消息下方的折叠卡片；文件操作仍复用完整 diff 面板。
+ */
+export function createThreadActivityView({ t, onViewFileChanges }) {
   const fullTextTooltip = document.createElement("div");
   fullTextTooltip.className = "activity-full-text-tooltip";
   fullTextTooltip.hidden = true;
@@ -22,7 +55,6 @@ export function createThreadInsightsView({ t, onViewFileChanges }) {
 
   function bindFullTextTooltip(element, text) {
     function isPointerOverEllipsis(event) {
-      // 仅在文本实际被省略，且指针落在末尾省略号的可视区域时展示完整内容。
       if (element.scrollWidth <= element.clientWidth) return false;
       const rect = element.getBoundingClientRect();
       const fontSize = Number.parseFloat(getComputedStyle(element).fontSize) || 12;
@@ -53,17 +85,6 @@ export function createThreadInsightsView({ t, onViewFileChanges }) {
     element.addEventListener("blur", () => { fullTextTooltip.hidden = true; });
   }
 
-  function createMetric(label, value, tone) {
-    const metric = document.createElement("div");
-    metric.className = `insight-metric insight-metric-${tone}`;
-    const metricValue = document.createElement("strong");
-    metricValue.textContent = String(value ?? 0);
-    const metricLabel = document.createElement("span");
-    metricLabel.textContent = label;
-    metric.append(metricValue, metricLabel);
-    return metric;
-  }
-
   function statusLabel(status) {
     const labels = {
       completed: "activityStatusCompleted",
@@ -74,33 +95,118 @@ export function createThreadInsightsView({ t, onViewFileChanges }) {
     return labels[status] ? t(labels[status]) : status || t("activityStatusUnknown");
   }
 
-  function renderActivities(activities) {
-    activityPanel.replaceChildren();
-    if (!activities?.length) {
-      const empty = document.createElement("p");
-      empty.className = "activity-empty";
-      empty.textContent = t("noStructuredActivity");
-      activityPanel.append(empty);
-      return;
+  function diffStats(diff) {
+    const lines = String(diff ?? "").replaceAll("\r\n", "\n").split("\n");
+    return {
+      added: lines.filter((line) => line.startsWith("+") && !line.startsWith("+++")).length,
+      removed: lines.filter((line) => line.startsWith("-") && !line.startsWith("---")).length,
+    };
+  }
+
+  function parsePreviewLines(diff) {
+    const previewLines = [];
+    let oldLine = null;
+    let newLine = null;
+    for (const line of String(diff ?? "").replaceAll("\r\n", "\n").split("\n")) {
+      const hunk = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+      if (hunk) {
+        oldLine = Number(hunk[1]);
+        newLine = Number(hunk[2]);
+        previewLines.push({ kind: "hunk", oldLine: "", newLine: "", text: line });
+        continue;
+      }
+      if (line.startsWith("---") || line.startsWith("+++")) continue;
+      if (line.startsWith("-")) {
+        previewLines.push({ kind: "removed", oldLine, newLine: "", text: line.slice(1) });
+        if (oldLine !== null) oldLine += 1;
+      } else if (line.startsWith("+")) {
+        previewLines.push({ kind: "added", oldLine: "", newLine, text: line.slice(1) });
+        if (newLine !== null) newLine += 1;
+      } else {
+        previewLines.push({ kind: "context", oldLine, newLine, text: line.startsWith(" ") ? line.slice(1) : line });
+        if (oldLine !== null) oldLine += 1;
+        if (newLine !== null) newLine += 1;
+      }
+      if (previewLines.length >= 80) break;
+    }
+    return previewLines;
+  }
+
+  function createDiffStats(change) {
+    const stats = diffStats(change.diff);
+    const container = document.createElement("span");
+    container.className = "activity-file-stats";
+    const added = document.createElement("span");
+    added.className = "is-added";
+    added.textContent = `+${stats.added}`;
+    const removed = document.createElement("span");
+    removed.className = "is-removed";
+    removed.textContent = `-${stats.removed}`;
+    container.append(added, removed);
+    return container;
+  }
+
+  function createFileHoverPreview(change) {
+    const preview = document.createElement("div");
+    preview.className = "activity-file-hover-preview";
+    preview.setAttribute("role", "tooltip");
+    const header = document.createElement("header");
+    const path = document.createElement("code");
+    path.textContent = change.path;
+    header.append(path, createDiffStats(change));
+    preview.append(header);
+
+    if (!change.diff) {
+      const unavailable = document.createElement("p");
+      unavailable.textContent = t("fileDiffUnavailable");
+      preview.append(unavailable);
+      return preview;
     }
 
+    const code = document.createElement("div");
+    code.className = "activity-file-preview-code";
+    for (const line of parsePreviewLines(change.diff)) {
+      const row = document.createElement("div");
+      row.className = `activity-file-preview-line is-${line.kind}`;
+      const oldNumber = document.createElement("span");
+      oldNumber.textContent = line.oldLine ?? "";
+      const newNumber = document.createElement("span");
+      newNumber.textContent = line.newLine ?? "";
+      const text = document.createElement("code");
+      text.textContent = line.text || " ";
+      row.append(oldNumber, newNumber, text);
+      code.append(row);
+    }
+    preview.append(code);
+    return preview;
+  }
+
+  function renderFileActivity(container, activity) {
+    for (const change of activity.changes) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "activity-file-item";
+      const row = document.createElement("button");
+      row.className = "activity-file-row";
+      row.type = "button";
+      row.setAttribute("aria-label", t("openFileDiff", { count: 1 }));
+      const path = document.createElement("code");
+      path.textContent = change.path;
+      path.title = change.path;
+      row.append(path, createDiffStats(change));
+      row.addEventListener("click", () => onViewFileChanges({ ...activity, changes: [change] }));
+      wrapper.append(row, createFileHoverPreview(change));
+      container.append(wrapper);
+    }
+  }
+
+  function renderActivities(container, activities) {
     for (const activity of groupConsecutiveActivities(activities)) {
+      if (activity.kind === "file" && activity.changes?.length > 0) {
+        renderFileActivity(container, activity);
+        continue;
+      }
       const row = document.createElement("article");
       row.className = `activity-row activity-row-${activity.kind || "tool"}`;
-      const canViewDiff = activity.kind === "file" && activity.changes?.length > 0;
-      if (canViewDiff) {
-        // 操作条目本身就是入口，避免在狭窄侧栏再占用一个额外按钮。
-        row.classList.add("is-clickable");
-        row.tabIndex = 0;
-        row.setAttribute("role", "button");
-        row.setAttribute("aria-label", t("openFileDiff", { count: activity.changes.length }));
-        row.addEventListener("click", () => onViewFileChanges(activity));
-        row.addEventListener("keydown", (event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          onViewFileChanges(activity);
-        });
-      }
 
       const icon = document.createElement("span");
       icon.className = "activity-icon";
@@ -111,7 +217,6 @@ export function createThreadInsightsView({ t, onViewFileChanges }) {
       content.className = "activity-content";
       const title = document.createElement("strong");
       title.textContent = activity.title;
-      // 卡片保持单行省略，完整命令或文件名通过悬停浮层按需查看。
       bindFullTextTooltip(title, activity.title);
       content.append(title);
       if (activity.detail) {
@@ -136,26 +241,42 @@ export function createThreadInsightsView({ t, onViewFileChanges }) {
         meta.append(status);
       }
       row.append(icon, content, meta);
-      activityPanel.append(row);
+      container.append(row);
     }
   }
 
-  function render(detail) {
-    const insights = detail.insights ?? {};
-    insightList.replaceChildren(
-      createMetric(t("insightMessages"), insights.messages, "blue"),
-      createMetric(t("insightToolCalls"), insights.toolCalls, "violet"),
-      createMetric(t("insightFileChanges"), insights.fileChanges, "emerald"),
-      createMetric(t("insightIssues"), insights.issues, "amber"),
+  function createActivitySummaryIcon() {
+    const icon = document.createElement("span");
+    icon.className = "activity-summary-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = `<svg viewBox="0 0 20 20"><rect x="4.5" y="3.5" width="11" height="13" rx="2"></rect><path d="M7.5 7.5h5M7.5 11h5M10 8.5v5"></path></svg>`;
+    return icon;
+  }
+
+  function createDisclosure(activities) {
+    if (!activities?.length) return null;
+    const disclosure = document.createElement("details");
+    disclosure.className = "message-activity-disclosure";
+    const summary = document.createElement("summary");
+    const fileCount = activities.reduce(
+      (count, activity) => count + (activity.kind === "file" ? activity.changes?.length ?? 0 : 0),
+      0,
     );
-    renderActivities(detail.activities);
+    const title = document.createElement("strong");
+    title.textContent = fileCount > 0
+      ? t("messageFileActivitySummary", { count: fileCount })
+      : t("messageActivitySummary", { count: activities.length });
+    const hint = document.createElement("span");
+    hint.className = "activity-summary-hint";
+    hint.textContent = t("activitySummaryHint");
+    summary.append(createActivitySummaryIcon(), title, hint);
+
+    const list = document.createElement("div");
+    list.className = "activity-list message-activity-list";
+    renderActivities(list, activities);
+    disclosure.append(summary, list);
+    return disclosure;
   }
 
-  function clear() {
-    insightList.replaceChildren();
-    activityPanel.replaceChildren();
-  }
-
-  return { render, clear };
+  return { createDisclosure };
 }
-import { groupConsecutiveActivities } from "./activity-summary.js";

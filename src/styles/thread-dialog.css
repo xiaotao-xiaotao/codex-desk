@@ -15,7 +15,7 @@
 .dialog-search input::placeholder { color: #9ba6b2; }
 .dialog-search input:focus { border-color: #1677ff; background: #fff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .12); }
 .dialog-search-result { min-width: 44px; overflow: hidden; color: #788697; font-size: .65rem; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-/* 统计保持紧凑，近期操作独占下方余量，避免将搜索挤到顶部信息之前。 */
+/* 左侧只保留会话级汇总，具体操作随消息展示，便于理解每次修改来自哪轮对话。 */
 .dialog-insights { flex: 0 0 auto; padding: 12px 14px 8px; background: #fff; }
 .insight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .insight-metric { min-width: 0; padding: 6px 7px; border: 1px solid #e4eaf2; border-radius: 8px; background: #fff; }
@@ -29,15 +29,6 @@
 .insight-metric-emerald strong { color: #19956a; }
 .insight-metric-amber { border-color: #ffe3b0; background: #fffaf0; }
 .insight-metric-amber strong { color: #c77900; }
-.dialog-activity-panel { display: grid; height: 0; min-height: 0; flex: 1 1 0; grid-template-rows: minmax(0, 1fr); overflow: hidden; padding: 4px 14px 20px; background: linear-gradient(180deg, #fff, #fbfcfe); }
-.activity-disclosure { margin-top: 10px; }
-.dialog-activity-panel .activity-disclosure { margin-top: 0; }
-/* details 改为两行网格：标题固定，列表只能占用面板的剩余高度，避免内容撑破侧栏。 */
-.activity-disclosure[open] { display: grid; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); row-gap: 6px; overflow: hidden; }
-.activity-disclosure summary { display: flex; align-items: center; gap: 8px; color: #566579; cursor: pointer; font-size: .72rem; font-weight: 720; list-style: none; user-select: none; }
-.activity-disclosure summary::-webkit-details-marker { display: none; }
-.activity-disclosure summary::before { content: "›"; color: #8a9bb0; font-size: 1rem; transition: transform .16s ease; }
-.activity-disclosure[open] summary::before { transform: rotate(90deg); }
 .activity-summary-hint { overflow: hidden; color: #98a4b2; font-size: .67rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .activity-list { display: grid; height: 100%; min-height: 0; align-content: start; gap: 0; overflow-x: hidden; overflow-y: scroll; padding: 2px 3px 2px 0; border: 1px solid #e7ebef; border-radius: 8px; background: #fff; scrollbar-gutter: stable; touch-action: pan-y; }
 /* 保持原有紧凑单行布局，列表只在纵向滚动，避免长路径破坏卡片层级。 */
@@ -66,11 +57,15 @@
 .close-icon-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .close-icon-button:hover { color: #4d5a69; background: #eef1f4; }
 .close-icon-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
-.message-list { display: grid; flex: 1 1 auto; min-height: 0; align-content: start; gap: 7px; overflow-y: auto; padding: 10px 20px 20px; background: #f7f8fa; }
-.message { position: relative; width: fit-content; max-width: min(76%, 720px); padding: 8px 34px 8px 10px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
+.message-list { display: grid; flex: 1 1 auto; min-height: 0; align-content: start; gap: 9px; overflow-y: auto; padding: 10px 20px 20px; background: #f7f8fa; }
+.message-entry { display: grid; width: min(76%, 720px); max-width: calc(100% - 8px); min-width: 0; gap: 6px; }
+.message-entry-user { justify-self: end; justify-items: end; }
+.message-entry-assistant { justify-self: start; justify-items: start; }
+.message { position: relative; width: fit-content; max-width: 100%; padding: 8px 34px 8px 10px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
 .message p { margin: 0; white-space: pre-wrap; }
-.message-image { display: block; max-width: min(100%, 460px); max-height: 360px; margin-top: 8px; border-radius: 6px; background: #f1f3f5; cursor: zoom-in; object-fit: contain; }
-.message-image:first-child { margin-top: 0; }
+.message-image-strip { display: grid; max-width: 100%; gap: 8px; overflow: hidden; }
+.message-image-frame { width: 100%; min-width: 0; overflow: hidden; aspect-ratio: 1; border: 1px solid #e1e6ec; border-radius: 8px; background: #f1f3f5; }
+.message-image { display: block; width: 100%; height: 100%; background: transparent; cursor: zoom-in; object-fit: contain; }
 .message-image:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
 .message mark { padding: 0 1px; border-radius: 2px; color: inherit; background: #ffe58f; }
 .message.is-search-match { border-color: #d6b868; }
@@ -91,6 +86,41 @@
 .copy-text-button.is-failed { border-color: #ffccc7; color: #cf1322; background: #fff1f0; }
 .message-user { justify-self: end; border-color: #cfe3ff; background: #eff6ff; }
 .message-assistant { justify-self: start; }
+.message-activity-disclosure { width: 100%; overflow: visible; border: 1px solid #e2e7ed; border-radius: 9px; background: #fff; }
+.message-activity-disclosure summary { display: grid; min-height: 44px; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 5px 8px; color: #526173; cursor: pointer; list-style: none; user-select: none; }
+.message-activity-disclosure summary::-webkit-details-marker { display: none; }
+.message-activity-disclosure summary:hover { background: #f8fafc; }
+.message-activity-disclosure summary:focus-visible { outline: 2px solid #91caff; outline-offset: -2px; }
+.message-activity-disclosure summary strong { min-width: 0; overflow: hidden; color: #344154; font-size: .7rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.activity-summary-icon { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #dce3eb; border-radius: 8px; color: #647386; background: #f3f5f8; }
+.activity-summary-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.45; }
+.message-activity-list { height: auto; max-height: none; overflow: visible; padding: 0; border: 0; border-top: 1px solid #edf1f5; border-radius: 0; scrollbar-gutter: auto; }
+.activity-file-item { position: relative; border-bottom: 1px solid #edf1f5; }
+.activity-file-item:last-child { border-bottom: 0; }
+.activity-file-row { display: grid; width: 100%; min-height: 34px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 9px; border: 0; color: #344154; background: transparent; cursor: pointer; text-align: left; }
+.activity-file-row:hover, .activity-file-row:focus-visible { background: #f2faf6; }
+.activity-file-row:focus-visible { position: relative; z-index: 2; outline: 2px solid #6dcaa3; outline-offset: -2px; }
+.activity-file-row code { min-width: 0; overflow: hidden; font-family: "Cascadia Code", Consolas, monospace; font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }
+.activity-file-stats { display: flex; align-items: center; gap: 7px; font-family: "Cascadia Code", Consolas, monospace; font-size: .62rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.activity-file-stats .is-added { color: #169c68; }
+.activity-file-stats .is-removed { color: #cf4b44; }
+.activity-file-hover-preview { position: absolute; z-index: 12; top: calc(100% + 5px); left: 0; display: none; width: min(660px, 100%); max-height: 310px; overflow: hidden; border: 1px solid #d7dee7; border-radius: 8px; color: #344154; background: #fff; box-shadow: 0 16px 36px rgba(31, 35, 41, .16); pointer-events: none; }
+.activity-file-item:hover .activity-file-hover-preview, .activity-file-item:focus-within .activity-file-hover-preview { display: block; }
+.activity-file-hover-preview header { display: grid; min-height: 34px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 6px 10px; border-bottom: 1px solid #e1e7ee; background: #f7f9fb; }
+.activity-file-hover-preview header code { overflow: hidden; color: #344154; font-family: "Cascadia Code", Consolas, monospace; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.activity-file-hover-preview > p { margin: 0; padding: 12px; color: #7a8797; font-size: .68rem; }
+.activity-file-preview-code { max-height: 274px; overflow: hidden; font-family: "Cascadia Code", Consolas, monospace; font-size: .63rem; line-height: 1.5; }
+.activity-file-preview-line { display: grid; min-width: max-content; grid-template-columns: 34px 34px minmax(0, 1fr); }
+.activity-file-preview-line > span { padding: 0 7px; color: #8a95a3; background: #f8fafc; text-align: right; user-select: none; }
+.activity-file-preview-line code { min-width: 0; padding: 0 10px; color: #435163; white-space: pre; }
+.activity-file-preview-line.is-hunk { grid-template-columns: 68px minmax(0, 1fr); color: #316da8; background: #edf6ff; }
+.activity-file-preview-line.is-hunk > span:first-child { grid-column: 1; }
+.activity-file-preview-line.is-hunk > span:nth-child(2) { display: none; }
+.activity-file-preview-line.is-hunk code { color: #316da8; }
+.activity-file-preview-line.is-added { background: #eaf8f0; }
+.activity-file-preview-line.is-added code { color: #176b4f; }
+.activity-file-preview-line.is-removed { background: #fff0ef; }
+.activity-file-preview-line.is-removed code { color: #a83e38; }
 .dialog-hint { width: 100%; margin: 0; padding: 13px 14px; border: 1px dashed #d5dce5; border-radius: 10px; color: #7d8792; background: #fff; font-size: .86rem; }
 /* Diff 使用当前会话快照覆盖详情内容，不创建嵌套原生 dialog，确保 WebView2 的 Esc 行为稳定。 */
 .file-diff-panel { position: absolute; z-index: 3; inset: 42px 0 0; display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); background: #f7f8fa; }

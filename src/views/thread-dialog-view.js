@@ -1,4 +1,4 @@
-import { createThreadInsightsView } from "./thread-insights-view.js";
+import { createThreadActivityView, createThreadInsightsView } from "./thread-insights-view.js";
 import { createThreadFileDiffView } from "./thread-file-diff-view.js";
 import { createThreadImagePreviewView } from "./thread-image-preview-view.js";
 import { createThreadMessageSearch } from "./thread-message-search.js";
@@ -21,7 +21,8 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
   const searchResult = document.querySelector("#dialog-search-result");
   const fileDiffView = createThreadFileDiffView({ t });
   const imagePreviewView = createThreadImagePreviewView({ t });
-  const insightsView = createThreadInsightsView({
+  const insightsView = createThreadInsightsView({ t });
+  const activityView = createThreadActivityView({
     t,
     onViewFileChanges: (activity) => fileDiffView.show(activity),
   });
@@ -86,12 +87,14 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
     }
 
     for (const [index, message] of detail.messages.entries()) {
+      const entry = document.createElement("section");
+      entry.className = `message-entry message-entry-${message.role}`;
+      entry.dataset.messageIndex = String(index);
       const item = document.createElement("article");
       item.className = `message message-${message.role}`;
-      item.dataset.messageIndex = String(index);
       if (matchingIndexes.has(index)) item.classList.add("is-search-match");
       if (index === activeMessageIndex) item.classList.add("is-active-search-match");
-      if (message.text || (message.images ?? []).length > 0) {
+      if (message.text) {
         const copy = document.createElement("button");
         copy.className = "copy-button";
         copy.type = "button";
@@ -114,25 +117,41 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
         // 角色由消息气泡的左右位置区分，复制按钮固定在右上角，不占用额外标题行。
         item.append(copy, text);
       }
-      for (const [imageIndex, imageData] of (message.images ?? []).entries()) {
-        const image = document.createElement("img");
-        image.className = "message-image";
-        image.src = imageData.src;
-        image.alt = `${t("threadImage")} ${imageIndex + 1}`;
-        image.loading = "lazy";
-        image.addEventListener("error", () => image.remove());
-        image.tabIndex = 0;
-        image.setAttribute("role", "button");
-        image.title = t("openImagePreview");
-        image.addEventListener("dblclick", () => imagePreviewView.show(image));
-        image.addEventListener("keydown", (event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          imagePreviewView.show(image);
-        });
-        item.append(image);
+      let imageStrip = null;
+      if ((message.images ?? []).length > 0) {
+        imageStrip = document.createElement("div");
+        imageStrip.className = "message-image-strip";
+        const imageCount = message.images.length;
+        imageStrip.style.width = `min(100%, ${imageCount * 78 + Math.max(0, imageCount - 1) * 8}px)`;
+        imageStrip.style.gridTemplateColumns = `repeat(${imageCount}, minmax(0, 1fr))`;
+        for (const [imageIndex, imageData] of message.images.entries()) {
+          const frame = document.createElement("div");
+          frame.className = "message-image-frame";
+          const image = document.createElement("img");
+          image.className = "message-image";
+          image.src = imageData.src;
+          image.alt = `${t("threadImage")} ${imageIndex + 1}`;
+          image.loading = "lazy";
+          image.addEventListener("error", () => frame.remove());
+          image.tabIndex = 0;
+          image.setAttribute("role", "button");
+          image.title = t("openImagePreview");
+          image.addEventListener("dblclick", () => imagePreviewView.show(image));
+          image.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            imagePreviewView.show(image);
+          });
+          frame.append(image);
+          imageStrip.append(frame);
+        }
       }
-      messageList.append(item);
+      if (imageStrip) entry.append(imageStrip);
+      // 仅含图片的消息不再生成空白文字气泡，保持与 ChatGPT 附件布局一致。
+      if (message.text || !imageStrip) entry.append(item);
+      const activityDisclosure = activityView.createDisclosure(message.activities);
+      if (activityDisclosure) entry.append(activityDisclosure);
+      messageList.append(entry);
     }
     if (focusCurrentMatch && activeMessageIndex !== undefined) {
       window.requestAnimationFrame(focusActiveMatch);
@@ -193,9 +212,9 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
 
   dialogCloseButton.addEventListener("click", () => threadDialog.close());
   threadDialog.addEventListener("cancel", (event) => {
-    if (imagePreviewView.isOpen()) {
+    if (imagePreviewView.isOpen() || imagePreviewView.handlingEscape()) {
       event.preventDefault();
-      imagePreviewView.close();
+      if (imagePreviewView.isOpen()) imagePreviewView.close();
     } else if (fileDiffView.isOpen()) {
       event.preventDefault();
       fileDiffView.close();
