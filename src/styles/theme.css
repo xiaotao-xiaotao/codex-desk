@@ -122,7 +122,7 @@
 :root[data-theme="dark"] .dialog-sidebar { border-right-color: #2a3544; background: #151b23; }
 :root[data-theme="dark"] .dialog-messages-pane { background: #10151c; }
 :root[data-theme="dark"] .dialog-header { border-bottom-color: #2a3544; }
-:root[data-theme="dark"] .dialog-search { border-bottom-color: #2a3544; background: #151b23; }
+:root[data-theme="dark"] .dialog-search { border-bottom-color: #2a3544; background: #10151c; }
 :root[data-theme="dark"] .dialog-search input { border-color: #2c3948; color: #d9e2ec; background: #111820; }
 :root[data-theme="dark"] .dialog-search input::placeholder { color: #718096; }
 :root[data-theme="dark"] .dialog-search input:focus { border-color: #3b82d0; background: #111820; box-shadow: 0 0 0 3px rgba(64, 150, 255, .16); }

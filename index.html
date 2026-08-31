@@ -186,11 +186,6 @@
           <section class="dialog-insights" aria-label="会话洞察">
             <div id="thread-insights" class="insight-list"></div>
           </section>
-          <div class="dialog-search" role="search">
-            <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
-            <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
-            <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
-          </div>
           <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
           <section class="dialog-activity-panel" aria-label="近期操作">
             <details class="activity-disclosure" open>
@@ -200,6 +195,11 @@
           </section>
         </aside>
         <section class="dialog-messages-pane" aria-label="聊天消息">
+          <div class="dialog-search" role="search">
+            <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
+            <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
+            <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
+          </div>
           <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
         </section>
       </section>
