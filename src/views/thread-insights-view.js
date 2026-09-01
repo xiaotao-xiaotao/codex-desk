@@ -146,6 +146,25 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
     return container;
   }
 
+  function createSummaryDiffStats(changes) {
+    const total = changes.reduce((result, change) => {
+      const stats = diffStats(change.diff);
+      result.added += stats.added;
+      result.removed += stats.removed;
+      return result;
+    }, { added: 0, removed: 0 });
+    const container = document.createElement("span");
+    container.className = "activity-summary-stats";
+    const added = document.createElement("span");
+    added.className = "is-added";
+    added.textContent = `+${total.added}`;
+    const removed = document.createElement("span");
+    removed.className = "is-removed";
+    removed.textContent = `-${total.removed}`;
+    container.append(added, removed);
+    return container;
+  }
+
   function createFileHoverPreview(change) {
     const preview = document.createElement("div");
     preview.className = "activity-file-hover-preview";
@@ -193,7 +212,8 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
       path.textContent = change.path;
       row.append(path, createDiffStats(change));
       row.addEventListener("click", () => onViewFileChanges({ ...activity, changes: [change] }));
-      wrapper.append(row, createFileHoverPreview(change));
+      // 预览改由点击后进入完整差异面板，避免悬停时把长代码直接铺进聊天区。
+      wrapper.append(row);
       container.append(wrapper);
     }
   }
@@ -257,18 +277,29 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
     const disclosure = document.createElement("details");
     disclosure.className = "message-activity-disclosure";
     const summary = document.createElement("summary");
-    const fileCount = activities.reduce(
-      (count, activity) => count + (activity.kind === "file" ? activity.changes?.length ?? 0 : 0),
-      0,
-    );
+    const fileChanges = activities
+      .filter((activity) => activity.kind === "file")
+      .flatMap((activity) => activity.changes ?? []);
+    const fileCount = fileChanges.length;
     const title = document.createElement("strong");
-    title.textContent = fileCount > 0
-      ? t("messageFileActivitySummary", { count: fileCount })
-      : t("messageActivitySummary", { count: activities.length });
+    if (fileCount === 1) {
+      const path = fileChanges[0].path;
+      const fileName = path.split(/[\\/]/).pop() || path;
+      // 折叠态优先呈现单个文件名，快速传达本回合的核心改动。
+      title.textContent = `${t("messageFileActivitySummary", { count: fileCount })} · ${fileName}`;
+      title.title = path;
+    } else {
+      title.textContent = fileCount > 0
+        ? t("messageFileActivitySummary", { count: fileCount })
+        : t("messageActivitySummary", { count: activities.length });
+    }
+    const stats = fileCount > 0 ? createSummaryDiffStats(fileChanges) : null;
     const hint = document.createElement("span");
     hint.className = "activity-summary-hint";
     hint.textContent = t("activitySummaryHint");
-    summary.append(createActivitySummaryIcon(), title, hint);
+    summary.append(createActivitySummaryIcon(), title);
+    if (stats) summary.append(stats);
+    summary.append(hint);
 
     const list = document.createElement("div");
     list.className = "activity-list message-activity-list";

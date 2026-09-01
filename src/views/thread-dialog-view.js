@@ -8,6 +8,56 @@ import { renderCloseIconButton } from "../utils/close-icon-button.js";
 
 const DIALOG_TITLE_MAX_LENGTH = 52;
 
+function timestampToMilliseconds(value) {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value < 1_000_000_000_000 ? value * 1_000 : value;
+  }
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (!text) return null;
+  const numeric = Number(text);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return numeric < 1_000_000_000_000 ? numeric * 1_000 : numeric;
+  }
+  const parsed = Date.parse(text);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function formatMessageTime(message) {
+  const completedAt = timestampToMilliseconds(message.completedAt);
+  if (completedAt === null) return null;
+  const date = new Date(completedAt);
+  return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function formatMessageDuration(message) {
+  const startedAt = timestampToMilliseconds(message.startedAt);
+  const completedAt = timestampToMilliseconds(message.completedAt);
+  if (startedAt === null || completedAt === null || completedAt <= startedAt) return null;
+  const seconds = Math.max(1, Math.round((completedAt - startedAt) / 1_000));
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+}
+
+function createCollapsedMessagesDisclosure({ t, message, duration }) {
+  const collapsedMessages = Array.isArray(message.collapsedMessages) ? message.collapsedMessages : [];
+  if (collapsedMessages.length === 0) return null;
+  const disclosure = document.createElement("details");
+  disclosure.className = "message-duration-disclosure";
+  const summary = document.createElement("summary");
+  summary.textContent = t("threadMessageDuration", { value: duration ?? "—" });
+  const content = document.createElement("div");
+  content.className = "message-collapsed-content";
+  for (const text of collapsedMessages) {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = text;
+    content.append(paragraph);
+  }
+  disclosure.append(summary, content);
+  return disclosure;
+}
+
 /**
  * 会话详情视图保留已打开的详情数据，以便切换语言时可重新渲染角色与复制按钮。
  */
@@ -33,14 +83,14 @@ export function createThreadDialogView({
   const fileDiffView = createThreadFileDiffView({ t });
   const imagePreviewView = createThreadImagePreviewView({ t });
   const insightsView = createThreadInsightsView({ t });
+  const activityView = createThreadActivityView({
+    t,
+    onViewFileChanges: (activity) => fileDiffView.show(activity),
+  });
   const overviewView = createThreadOverviewView({
     t,
     formatUpdated,
     onViewFileChange: (activity) => fileDiffView.show(activity),
-  });
-  const activityView = createThreadActivityView({
-    t,
-    onViewFileChanges: (activity) => fileDiffView.show(activity),
   });
   let currentDetail = null;
   const messageSearch = createThreadMessageSearch({
@@ -121,27 +171,19 @@ export function createThreadDialogView({
       if (matchingIndexes.has(index)) item.classList.add("is-search-match");
       if (index === activeMessageIndex) item.classList.add("is-active-search-match");
       if (message.text) {
-        const copy = document.createElement("button");
-        copy.className = "copy-button";
-        copy.type = "button";
-        renderCopyIconButton(copy, { label: t("copy") });
-        copy.addEventListener("click", async () => {
-          copy.disabled = true;
-          try {
-            await copyMessage(message);
-            renderCopyIconButton(copy, { label: t("copied"), state: "copied" });
-          } catch {
-            renderCopyIconButton(copy, { label: t("copyFailedLong"), state: "failed" });
-          }
-          window.setTimeout(() => {
-            copy.disabled = false;
-            renderCopyIconButton(copy, { label: t("copy") });
-          }, 1_500);
-        });
         const text = document.createElement("p");
         messageSearch.appendHighlightedText(text, message.text);
-        // 角色由消息气泡的左右位置区分，复制按钮固定在右上角，不占用额外标题行。
-        item.append(copy, text);
+        item.append(text);
+      }
+      const duration = message.role === "assistant" ? formatMessageDuration(message) : null;
+      const collapsedMessages = createCollapsedMessagesDisclosure({ t, message, duration });
+      if (collapsedMessages) {
+        entry.append(collapsedMessages);
+      } else if (duration) {
+        const durationLabel = document.createElement("span");
+        durationLabel.className = "message-duration";
+        durationLabel.textContent = t("threadMessageDuration", { value: duration });
+        entry.append(durationLabel);
       }
       let imageStrip = null;
       if ((message.images ?? []).length > 0) {
@@ -175,8 +217,38 @@ export function createThreadDialogView({
       if (imageStrip) entry.append(imageStrip);
       // 仅含图片的消息不再生成空白文字气泡，保持与 ChatGPT 附件布局一致。
       if (message.text || !imageStrip) entry.append(item);
+      const actions = document.createElement("div");
+      actions.className = "message-actions";
+      if (message.text) {
+        const copy = document.createElement("button");
+        copy.type = "button";
+        renderCopyIconButton(copy, { label: t("copy") });
+        copy.addEventListener("click", async () => {
+          copy.disabled = true;
+          try {
+            await copyMessage(message);
+            renderCopyIconButton(copy, { label: t("copied"), state: "copied" });
+          } catch {
+            renderCopyIconButton(copy, { label: t("copyFailedLong"), state: "failed" });
+          }
+          window.setTimeout(() => {
+            copy.disabled = false;
+            renderCopyIconButton(copy, { label: t("copy") });
+          }, 1_500);
+        });
+        actions.append(copy);
+      }
+      const time = message.role === "assistant" ? formatMessageTime(message) : null;
+      if (time) {
+        const timeLabel = document.createElement("time");
+        timeLabel.className = "message-time";
+        timeLabel.textContent = time;
+        actions.append(timeLabel);
+      }
       const activityDisclosure = activityView.createDisclosure(message.activities);
       if (activityDisclosure) entry.append(activityDisclosure);
+      // 操作栏属于整条回复，需排在本回合的工具与文件记录之后。
+      if (actions.childElementCount > 0) entry.append(actions);
       messageList.append(entry);
     }
     if (focusCurrentMatch && activeMessageIndex !== undefined) {

@@ -59,6 +59,15 @@ struct ThreadDetailMessage {
     role: String,
     text: String,
     images: Vec<ThreadImage>,
+    /// 仅助手回复携带所属回合的起止时间，用于展示执行用时和回复时刻；缺失时前端不显示。
+    started_at: Option<Value>,
+    completed_at: Option<Value>,
+    /// 同一回合中最终回复之前的过程性文本，默认折叠以保持聊天区聚焦结论。
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    collapsed_messages: Vec<String>,
+    /// 过程性文本会合并到最终回复中，不再作为独立消息输出给前端。
+    #[serde(skip_serializing)]
+    hidden: bool,
     /// 同一回合内的工具、文件与异常操作挂在最终回复下方，保持与对话上下文一致。
     activities: Vec<ThreadActivity>,
 }
@@ -714,6 +723,13 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         .into_iter()
         .flatten()
     {
+        // App Server 以回合为粒度记录起止时间；消息本身没有独立时间戳。
+        let started_at = ["startedAt", "createdAt"]
+            .iter()
+            .find_map(|key| turn.get(*key).cloned());
+        let completed_at = ["completedAt", "updatedAt"]
+            .iter()
+            .find_map(|key| turn.get(*key).cloned());
         insights.merge(&summarize_turn(turn));
         let mut turn_message_indexes = Vec::new();
         let mut turn_activities = Vec::new();
@@ -728,10 +744,15 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
             .flatten()
         {
             if let Some(message) = thread_message_from_item(item) {
+                let is_assistant = message.role == "assistant";
                 messages.push(ThreadDetailMessage {
                     role: message.role,
                     text: message.text,
                     images: message.images,
+                    started_at: if is_assistant { started_at.clone() } else { None },
+                    completed_at: if is_assistant { completed_at.clone() } else { None },
+                    collapsed_messages: Vec::new(),
+                    hidden: false,
                     activities: Vec::new(),
                 });
                 turn_message_indexes.push(messages.len() - 1);
@@ -767,7 +788,31 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         if let Some(index) = target_index {
             messages[index].activities.extend(turn_activities);
         }
+
+        let assistant_indexes = turn_message_indexes
+            .iter()
+            .copied()
+            .filter(|index| messages[*index].role == "assistant")
+            .collect::<Vec<_>>();
+        if let Some((&final_index, intermediate_indexes)) = assistant_indexes.split_last() {
+            if !intermediate_indexes.is_empty() {
+                let collapsed_messages = intermediate_indexes
+                    .iter()
+                    .filter_map(|index| {
+                        let message = &messages[*index];
+                        (!message.text.is_empty()).then(|| message.text.clone())
+                    })
+                    .collect();
+                messages[final_index].collapsed_messages = collapsed_messages;
+                for index in intermediate_indexes {
+                    messages[*index].hidden = true;
+                }
+            }
+        }
     }
+
+    // 过程消息已合并进最终回复的折叠区，后续截断按实际可见消息计数。
+    messages.retain(|message| !message.hidden);
 
     let truncated = messages.len() > MAX_MESSAGES;
     let mut messages = if truncated {
@@ -1437,6 +1482,8 @@ mod tests {
                 "turns": [
                     {
                         "status": "completed",
+                        "startedAt": "2026-09-01T09:00:00+08:00",
+                        "completedAt": "2026-09-01T09:01:34+08:00",
                         "items": [
                             { "type": "userMessage", "content": [{ "type": "text", "text": "修复仪表盘" }] },
                             { "type": "commandExecution", "command": "npm run build", "cwd": "D:/work", "status": "completed" },
@@ -1465,6 +1512,14 @@ mod tests {
         assert_eq!(detail.file_changes.len(), detail.insights.file_changes);
         assert_eq!(detail.issues.len(), detail.insights.issues);
         assert_eq!(detail.messages.len(), 2);
+        assert_eq!(
+            detail.messages[1].started_at,
+            Some(json!("2026-09-01T09:00:00+08:00"))
+        );
+        assert_eq!(
+            detail.messages[1].completed_at,
+            Some(json!("2026-09-01T09:01:34+08:00"))
+        );
         let message_activities = &detail.messages[1].activities;
         assert!(message_activities
             .iter()
@@ -1483,6 +1538,29 @@ mod tests {
             .activities
             .iter()
             .any(|activity| activity.kind == "issue"));
+    }
+
+    #[test]
+    fn folds_intermediate_assistant_messages_into_the_final_reply() {
+        let detail = normalize_thread_detail(&json!({
+            "thread": {
+                "id": "thread-12345678",
+                "turns": [{
+                    "startedAt": "2026-09-01T09:00:00+08:00",
+                    "completedAt": "2026-09-01T09:00:34+08:00",
+                    "items": [
+                        { "type": "userMessage", "content": [{ "type": "text", "text": "请修改标题" }] },
+                        { "type": "agentMessage", "text": "我会保留顶部会话标题。" },
+                        { "type": "agentMessage", "text": "已移除重复标题。" }
+                    ]
+                }]
+            }
+        }))
+        .expect("会话详情应可归一化");
+
+        assert_eq!(detail.messages.len(), 2);
+        assert_eq!(detail.messages[1].text, "已移除重复标题。");
+        assert_eq!(detail.messages[1].collapsed_messages, vec!["我会保留顶部会话标题。"]);
     }
 
     #[test]

@@ -179,6 +179,9 @@
 :root[data-theme="dark"] .activity-status-inProgress { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .message-list { background: #10151c; }
 :root[data-theme="dark"] .message { border-color: #2c3948; color: #d9e2ec; background: #18212c; }
+:root[data-theme="dark"] .message-duration,
+:root[data-theme="dark"] .message-duration-disclosure summary { border-bottom-color: #2c3948; color: #98a7b8; }
+:root[data-theme="dark"] .message-collapsed-content { border-color: #2c3948; color: #b2bfce; background: #151d27; }
 :root[data-theme="dark"] .message mark { color: #fff2c2; background: #5a4516; }
 :root[data-theme="dark"] .message.is-search-match { border-color: #74602b; }
 :root[data-theme="dark"] .message.is-active-search-match { border-color: #4096ff; box-shadow: 0 0 0 3px rgba(64, 150, 255, .18); }
