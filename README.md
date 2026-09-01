@@ -14,7 +14,7 @@
 
 Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, account and usage overviews, local session browsing, activity and Token trends, session insights, and cross-device session migration.
 
-Data is obtained through the local `codex app-server --stdio` process. Codex Desk does not upload your data to a third-party service or read or save `auth.json`.
+Account, quota, and session data are obtained through the local `codex app-server --stdio` process. Token usage is aggregated from cumulative snapshots in local Codex session files. Codex Desk does not upload your data to a third-party service or read or save `auth.json`.
 
 If Codex Desk helps you manage your sessions, please consider giving the project a **Star**. Feedback and bug reports are welcome through [Issues](https://github.com/xiaotao-xiaotao/codex-desk/issues).
 
@@ -47,13 +47,14 @@ After installation, you still need to install and sign in to Codex CLI separatel
 - **Account and usage overview**: view a masked sign-in email, current plan, quota windows, usage percentage, reset time, available rate-limit resets, and a link to the official billing portal.
 - **Quota alerts**: after you explicitly enable native notifications, get one alert per reset window at 80%, 90%, and 100% usage.
 - **Activity trends**: view the last 3, 7, or 30 days and independently show or hide messages, tool calls, file changes, and errors in a code-drawn line chart.
-- **Token insights**: view daily Token usage and totals for the last 3, 7, or 30 days when the local Codex app server provides usage data.
+- **Token insights**: aggregate daily Token usage and totals for the last 3, 7, or 30 days from cumulative snapshots in local Codex session files; session details also show total, input, output, cached-input, and reasoning-output usage.
 - **Local sessions**: browse non-archived local sessions, search by title or session ID, and view creation and update times.
-- **Session details and insights**: inspect user messages and Codex replies, enlarge images in a dedicated preview, copy messages with images when the system clipboard supports rich content, and review aggregate activity metrics.
-- **File change comparison**: open recorded file changes from recent activity and compare diffs side by side or inline. Historical diffs are shown from the session record and are not read from the current workspace.
+- **Session details and insights**: inspect user messages and Codex replies, with intermediate replies from the same turn collapsed under elapsed time while the final reply stays expanded. Enlarge images in a dedicated preview, copy messages with images when the system clipboard supports rich content, and review aggregate activity metrics.
+- **File change comparison**: aggregate file and tool activity below the relevant reply. File cards show filenames and added/removed line counts, and can be expanded before opening side-by-side or inline diffs. Historical diffs are shown from the session record and are not read from the current workspace.
 - **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
-- **Local data boundary**: account, quota, Token, and session data are obtained through the local Codex app server; local JSONL files and authentication data are not parsed or stored by the app.
+- **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate Codex app-server and floating-orb instances.
+- **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Authentication data is never read or stored, and no data is uploaded to third-party services.
 - **Local diagnostics**: diagnostics only check the local CLI, `app-server`, and quota access; no auth file is read and no data is uploaded.
 
 ## Screenshots
