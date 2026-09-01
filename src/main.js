@@ -68,6 +68,8 @@ const dialogView = createThreadDialogView({
   formatUpdated,
   copyText: copyToClipboard,
   copyMessage: copyMessageToClipboard,
+  onRefreshThread: (threadId) => invoke("read_thread", { threadId }),
+  onExportThread: exportThreadFromDialog,
 });
 const trendView = createThreadTrendView({
   t,
@@ -192,6 +194,27 @@ function transferFailureSuffix(failures) {
 function createExportFileName() {
   const date = new Date().toISOString().slice(0, 10);
   return `${t("exportFileName")}-${date}.codex-desk.json`;
+}
+
+async function exportThreadFromDialog(threadId) {
+  setStatus(t("selectingExportLocation"));
+  const outputPath = await invoke("choose_export_path", {
+    defaultFileName: createExportFileName(),
+    filterName: t("exportFileDialogFilter"),
+  });
+  if (!outputPath) {
+    renderSyncedStatus();
+    return;
+  }
+  setStatus(t("preparingExport", { count: 1 }));
+  const result = await invoke("export_threads", {
+    threadIds: [threadId],
+    outputPath,
+  });
+  setStatus(t("exportCompleted", {
+    count: result.exported,
+    failed: transferFailureSuffix(result.failures),
+  }));
 }
 
 async function exportSelectedThreads() {

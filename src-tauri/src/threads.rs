@@ -1,4 +1,5 @@
 use crate::app_server::AppServerState;
+use crate::local_usage::{read_thread_token_usage, ThreadTokenUsage};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
@@ -130,7 +131,7 @@ struct ThreadInsights {
     issues: usize,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ThreadActivity {
     kind: String,
@@ -144,7 +145,7 @@ struct ThreadActivity {
 
 /// 单个文件的会话内变更快照。只来自 Codex 已持久化的 fileChange 记录，
 /// 不会为展示差异重新读取工作区文件，避免内容随当前磁盘状态漂移。
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ThreadFileChange {
     path: String,
@@ -200,7 +201,15 @@ impl ThreadTrendState {
 pub struct ThreadDetail {
     id: String,
     title: String,
+    created_at: Option<Value>,
     updated_at: Option<Value>,
+    model: Option<String>,
+    status: Option<String>,
+    token_usage: Option<ThreadTokenUsage>,
+    /// 左栏文件记录使用完整会话聚合，独立于聊天区的近期操作截断上限。
+    file_changes: Vec<ThreadFileChange>,
+    /// 左栏异常记录与洞察统计使用同一口径，包含失败回合与失败工具调用。
+    issues: Vec<ThreadActivity>,
     messages: Vec<ThreadDetailMessage>,
     truncated: bool,
     insights: ThreadInsights,
@@ -445,7 +454,17 @@ pub async fn read_thread(state: &AppServerState, thread_id: &str) -> Result<Thre
             json!({ "threadId": thread_id, "includeTurns": true }),
         )
         .await?;
-    normalize_thread_detail(&result)
+    let mut detail = normalize_thread_detail(&result)?;
+    let token_path = result
+        .get("thread")
+        .and_then(|thread| thread.get("path"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    detail.token_usage = match token_path {
+        Some(path) => read_thread_token_usage(&path).await,
+        None => None,
+    };
+    Ok(detail)
 }
 
 async fn read_transfer_thread(
@@ -677,9 +696,17 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
     let updated_at = ["updatedAt", "updated_at", "createdAt"]
         .iter()
         .find_map(|key| thread.get(*key).cloned());
+    let created_at = ["createdAt", "created_at"]
+        .iter()
+        .find_map(|key| thread.get(*key).cloned());
+    let model = thread_string(thread, &["model", "modelName"])
+        .or_else(|| thread.get("extra").and_then(|extra| thread_string(extra, &["model", "modelName"])));
+    let status = thread_string(thread, &["status"]);
 
     let mut messages = Vec::new();
     let mut insights = ThreadInsights::default();
+    let mut file_changes = Vec::new();
+    let mut issues = Vec::new();
 
     for turn in thread
         .get("turns")
@@ -691,6 +718,7 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         let mut turn_message_indexes = Vec::new();
         let mut turn_activities = Vec::new();
         if let Some(activity) = turn_status_activity(turn) {
+            issues.push(activity.clone());
             turn_activities.push(activity);
         }
         for item in turn
@@ -712,10 +740,16 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
             match item.get("type").and_then(Value::as_str) {
                 Some("fileChange") => {
                     let count = file_change_count(item);
-                    turn_activities.push(file_change_activity(item, count));
+                    let activity = file_change_activity(item, count);
+                    file_changes.extend(activity.changes.iter().cloned());
+                    turn_activities.push(activity);
                 }
                 Some(kind) if is_tool_item(kind) => {
-                    turn_activities.push(tool_activity(item, kind));
+                    let activity = tool_activity(item, kind);
+                    if is_failed_status(activity.status.as_deref()) {
+                        issues.push(activity.clone());
+                    }
+                    turn_activities.push(activity);
                 }
                 _ => {}
             }
@@ -760,10 +794,27 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
     Ok(ThreadDetail {
         id,
         title,
+        created_at,
         updated_at,
+        model,
+        status,
+        token_usage: None,
+        file_changes,
+        issues,
         messages,
         truncated,
         insights,
+    })
+}
+
+fn thread_string(thread: &Value, keys: &[&str]) -> Option<String> {
+    keys.iter().find_map(|key| {
+        thread
+            .get(*key)
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
     })
 }
 
@@ -1411,6 +1462,8 @@ mod tests {
         assert_eq!(detail.insights.tool_calls, 2);
         assert_eq!(detail.insights.file_changes, 2);
         assert_eq!(detail.insights.issues, 2);
+        assert_eq!(detail.file_changes.len(), detail.insights.file_changes);
+        assert_eq!(detail.issues.len(), detail.insights.issues);
         assert_eq!(detail.messages.len(), 2);
         let message_activities = &detail.messages[1].activities;
         assert!(message_activities

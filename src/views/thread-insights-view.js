@@ -191,7 +191,6 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
       row.setAttribute("aria-label", t("openFileDiff", { count: 1 }));
       const path = document.createElement("code");
       path.textContent = change.path;
-      path.title = change.path;
       row.append(path, createDiffStats(change));
       row.addEventListener("click", () => onViewFileChanges({ ...activity, changes: [change] }));
       wrapper.append(row, createFileHoverPreview(change));

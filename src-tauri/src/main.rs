@@ -5,6 +5,7 @@
 
 mod account;
 mod app_server;
+mod local_usage;
 mod quota;
 mod threads;
 mod tray;
@@ -317,6 +318,13 @@ fn main() {
         .manage(app_server::AppServerState::default())
         .manage(threads::ThreadTrendState::default())
         .plugin(tauri_plugin_notification::init())
+        // 第二次启动由首个实例接收，并唤起已有窗口，避免重复启动 app-server 与悬浮窗。
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .setup(|app| {
             tray::setup(app)?;
             let app_handle = app.handle().clone();

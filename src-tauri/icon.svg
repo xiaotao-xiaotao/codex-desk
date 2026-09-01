@@ -12,5 +12,6 @@
   <rect width="512" height="512" rx="120" fill="url(#background)"/>
   <circle cx="256" cy="256" r="158" fill="none" stroke="#1e293b" stroke-width="44"/>
   <circle cx="256" cy="256" r="158" fill="none" stroke="url(#ring)" stroke-width="44" stroke-linecap="round" stroke-dasharray="760 993" transform="rotate(-90 256 256)"/>
-  <text x="256" y="275" fill="#f8fafc" font-family="Arial, sans-serif" font-size="115" font-weight="700" text-anchor="middle">%</text>
+  <!-- 外围圆环兼作表盘边界，中心仅保留时钟指针以避免双层圆形显得拥挤。 -->
+  <path d="M256 190v75l55 34" fill="none" stroke="#f8fafc" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

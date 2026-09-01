@@ -2,6 +2,7 @@ import { createThreadActivityView, createThreadInsightsView } from "./thread-ins
 import { createThreadFileDiffView } from "./thread-file-diff-view.js";
 import { createThreadImagePreviewView } from "./thread-image-preview-view.js";
 import { createThreadMessageSearch } from "./thread-message-search.js";
+import { createThreadOverviewView } from "./thread-overview-view.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
 
@@ -10,7 +11,14 @@ const DIALOG_TITLE_MAX_LENGTH = 52;
 /**
  * 会话详情视图保留已打开的详情数据，以便切换语言时可重新渲染角色与复制按钮。
  */
-export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
+export function createThreadDialogView({
+  t,
+  formatUpdated,
+  copyText,
+  copyMessage,
+  onRefreshThread,
+  onExportThread,
+}) {
   const threadDialog = document.querySelector("#thread-dialog");
   const dialogTitle = document.querySelector("#dialog-title");
   const dialogMeta = document.querySelector("#dialog-meta");
@@ -19,9 +27,17 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
   const searchResult = document.querySelector("#dialog-search-result");
+  const exportButton = document.querySelector("#thread-export");
+  const copyIdButton = document.querySelector("#thread-copy-id");
+  const refreshButton = document.querySelector("#thread-refresh");
   const fileDiffView = createThreadFileDiffView({ t });
   const imagePreviewView = createThreadImagePreviewView({ t });
   const insightsView = createThreadInsightsView({ t });
+  const overviewView = createThreadOverviewView({
+    t,
+    formatUpdated,
+    onViewFileChange: (activity) => fileDiffView.show(activity),
+  });
   const activityView = createThreadActivityView({
     t,
     onViewFileChanges: (activity) => fileDiffView.show(activity),
@@ -42,6 +58,16 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
     dialogStatus.hidden = false;
   }
 
+  function renderSidebarActions() {
+    exportButton.textContent = t("threadExport");
+    copyIdButton.textContent = t("threadCopyId");
+    refreshButton.textContent = t("threadRefresh");
+    const disabled = !currentDetail;
+    exportButton.disabled = disabled;
+    copyIdButton.disabled = disabled;
+    refreshButton.disabled = disabled;
+  }
+
   function setDialogTitle(title) {
     const normalizedTitle = String(title ?? "").replace(/\s+/g, " ").trim();
     const titleCharacters = Array.from(normalizedTitle);
@@ -54,12 +80,12 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
     dialogTitle.ariaLabel = normalizedTitle;
   }
 
-  function setDialogMeta(updatedAt) {
-    const value = formatUpdated(updatedAt);
-    const label = t("updated", { value });
-    dialogMeta.textContent = label;
-    dialogMeta.title = label;
-    dialogMeta.setAttribute("aria-label", label);
+  function setDialogMeta() {
+    // 更新时间已纳入左侧“会话基础信息”，标题区域只保留会话名称。
+    dialogMeta.textContent = "";
+    dialogMeta.hidden = true;
+    dialogMeta.removeAttribute("title");
+    dialogMeta.removeAttribute("aria-label");
   }
 
   function focusActiveMatch() {
@@ -165,6 +191,8 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
     setDialogMeta(thread.updatedAt);
     messageList.replaceChildren();
     insightsView.clear();
+    overviewView.clear();
+    renderSidebarActions();
     fileDiffView.clear();
     imagePreviewView.close();
     showStatus(t("readingThread"));
@@ -178,6 +206,8 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
     setDialogMeta(detail.updatedAt);
     dialogStatus.hidden = true;
     insightsView.render(detail);
+    overviewView.setDetail(detail);
+    renderSidebarActions();
     renderMessages(detail);
   }
 
@@ -199,11 +229,14 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
     if (currentDetail) {
       setDialogMeta(currentDetail.updatedAt);
       insightsView.render(currentDetail);
+      overviewView.updateLanguage();
+      renderSidebarActions();
       fileDiffView.updateLanguage();
       messageSearch.setMessages(currentDetail.messages);
       renderMessages(currentDetail);
     } else {
       insightsView.clear();
+      overviewView.clear();
       fileDiffView.clear();
       messageSearch.updateLanguage();
       showStatus(t("readingThread"));
@@ -211,6 +244,40 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
   }
 
   dialogCloseButton.addEventListener("click", () => threadDialog.close());
+  copyIdButton.addEventListener("click", async () => {
+    if (!currentDetail) return;
+    copyIdButton.disabled = true;
+    try {
+      await copyText(currentDetail.id);
+      copyIdButton.textContent = t("copied");
+      window.setTimeout(renderSidebarActions, 1_200);
+    } catch (error) {
+      showStatus(t("readFailed", { error: String(error) }), true);
+      renderSidebarActions();
+    }
+  });
+  refreshButton.addEventListener("click", async () => {
+    if (!currentDetail) return;
+    refreshButton.disabled = true;
+    showStatus(t("readingThread"));
+    try {
+      showDetail(await onRefreshThread(currentDetail.id));
+    } catch (error) {
+      showReadFailure(error);
+      renderSidebarActions();
+    }
+  });
+  exportButton.addEventListener("click", async () => {
+    if (!currentDetail) return;
+    exportButton.disabled = true;
+    try {
+      await onExportThread(currentDetail.id);
+      renderSidebarActions();
+    } catch (error) {
+      showStatus(t("readFailed", { error: String(error) }), true);
+      renderSidebarActions();
+    }
+  });
   threadDialog.addEventListener("cancel", (event) => {
     if (imagePreviewView.isOpen() || imagePreviewView.handlingEscape()) {
       event.preventDefault();
@@ -223,5 +290,6 @@ export function createThreadDialogView({ t, formatUpdated, copyMessage }) {
   threadDialog.addEventListener("click", (event) => {
     if (event.target === threadDialog) threadDialog.close();
   });
+  renderSidebarActions();
   return { openLoading, showDetail, showReadFailure, updateLanguage };
 }
