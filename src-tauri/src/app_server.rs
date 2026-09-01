@@ -153,7 +153,7 @@ impl CodexAppServer {
             .request(
                 1,
                 "initialize",
-                json!({ "clientInfo": { "name": "codex-desk", "version": "1.1.0" } }),
+                json!({ "clientInfo": { "name": "codex-desk", "version": "1.1.1" } }),
             )
             .await?;
         // initialized 是通知，不会返回 JSON-RPC 响应。

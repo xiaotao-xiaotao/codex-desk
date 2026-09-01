@@ -1,6 +1,6 @@
 [package]
 name = "codex-desk"
-version = "1.1.0"
+version = "1.1.1"
 description = "Codex 本地桌面控制台"
 authors = ["local"]
 edition = "2021"
