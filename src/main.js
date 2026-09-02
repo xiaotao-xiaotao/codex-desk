@@ -15,6 +15,8 @@ import { createThreadTrendView } from "./views/thread-trend-view.js";
 import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
 
 const AUTO_REFRESH_INTERVAL_MS = 60_000;
+// 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
+const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
 const DRAG_THRESHOLD_PX = 4;
 
 const app = document.querySelector("#app");
@@ -101,6 +103,8 @@ let currentThreadEmptyMessage = "";
 let selectedThreadIds = new Set();
 let transferInProgress = false;
 let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
+let consecutiveRefreshFailures = 0;
+let autoRefreshPaused = false;
 let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
@@ -328,7 +332,7 @@ async function selectAllFilteredThreads() {
 }
 
 function renderSyncedStatus() {
-  if (!latestQuota || refreshing) return;
+  if (!latestQuota || refreshing || autoRefreshPaused) return;
   const seconds = Math.max(0, Math.ceil((nextAutoRefreshAt - Date.now()) / 1_000));
   const plan = latestQuota.planType ? t("planPrefix", { plan: latestQuota.planType }) : "";
   const countdown = document.createElement("span");
@@ -403,7 +407,10 @@ function applyLanguage() {
   renderCurrentThreadPage();
   updateTransferControls();
   if (latestQuota && !refreshing) quotaView.render(latestQuota);
-  else if (!refreshing) setStatus(t("readingLocalData"));
+  else if (!refreshing && !autoRefreshPaused) setStatus(t("readingLocalData"));
+  if (autoRefreshPaused && !refreshing) {
+    setStatus(t("autoRefreshPaused", { count: MAX_CONSECUTIVE_REFRESH_FAILURES }), "error");
+  }
   renderSessionsVisibility();
   if (expanded && sessionsExpanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
@@ -414,8 +421,8 @@ function selectLanguage(nextLanguage) {
   applyLanguage();
 }
 
-async function refreshQuota(forceTrendRefresh = false) {
-  if (refreshing) return;
+async function refreshQuota(forceTrendRefresh = false, automatic = false) {
+  if (refreshing || (automatic && autoRefreshPaused)) return;
   refreshing = true;
   let refreshSucceeded = false;
   refreshButton.classList.add("is-loading");
@@ -423,6 +430,8 @@ async function refreshQuota(forceTrendRefresh = false) {
   try {
     latestQuota = await invoke("read_quota");
     nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
+    consecutiveRefreshFailures = 0;
+    autoRefreshPaused = false;
     quotaView.render(latestQuota);
     await quotaAlerts.notify(latestQuota);
     refreshSucceeded = true;
@@ -436,7 +445,13 @@ async function refreshQuota(forceTrendRefresh = false) {
   } catch (error) {
     console.error(error);
     quotaView.showReadFailure(Boolean(latestQuota));
-    setStatus(t("readFailed", { error: String(error) }), "error");
+    consecutiveRefreshFailures += 1;
+    if (consecutiveRefreshFailures >= MAX_CONSECUTIVE_REFRESH_FAILURES) {
+      autoRefreshPaused = true;
+      setStatus(t("autoRefreshPaused", { count: MAX_CONSECUTIVE_REFRESH_FAILURES }), "error");
+    } else {
+      setStatus(t("readFailed", { error: String(error) }), "error");
+    }
   } finally {
     refreshing = false;
     refreshButton.classList.remove("is-loading");
@@ -686,7 +701,7 @@ async function bootstrap() {
   // 应用启动时直接展示看板；用户可通过标题栏的收起按钮主动切换为悬浮球。
   await setExpanded(true);
   void accountView.refresh();
-  window.setInterval(refreshQuota, AUTO_REFRESH_INTERVAL_MS);
+  window.setInterval(() => void refreshQuota(false, true), AUTO_REFRESH_INTERVAL_MS);
   window.setInterval(renderSyncedStatus, 1_000);
 }
 
