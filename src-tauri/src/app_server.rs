@@ -1,13 +1,18 @@
 use serde_json::{json, Value};
-use std::process::Stdio;
+use std::{
+    process::Stdio,
+    sync::atomic::{AtomicU64, AtomicUsize, Ordering},
+};
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, ChildStdout, Command},
     sync::Mutex,
-    time::{timeout, Duration},
+    time::{sleep, timeout, Duration},
 };
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
+// 趋势等后台读取检测到交互请求后，短暂让出调度机会，避免循环让出 CPU。
+const BACKGROUND_REQUEST_YIELD_DELAY: Duration = Duration::from_millis(25);
 
 // 由桌面端托管的 Codex app-server 不需要独立控制台窗口。
 #[cfg(target_os = "windows")]
@@ -30,12 +35,19 @@ struct CodexAppServer {
 /// JSON-RPC 响应错误地交给当前调用方。
 pub struct AppServerState {
     server: Mutex<Option<CodexAppServer>>,
+    /// 每次请求使用不同 JSON-RPC ID，便于协议日志定位，也为后续并发调度保留空间。
+    next_request_id: AtomicU64,
+    /// 交互请求排队或执行期间，后台任务不再抢占下一次 App Server 调用。
+    interactive_requests: AtomicUsize,
 }
 
 impl Default for AppServerState {
     fn default() -> Self {
         Self {
             server: Mutex::new(None),
+            // initialize 占用 JSON-RPC ID 1，业务请求从 2 开始。
+            next_request_id: AtomicU64::new(2),
+            interactive_requests: AtomicUsize::new(0),
         }
     }
 }
@@ -52,7 +64,41 @@ impl AppServerState {
 
     /// 向 App Server 发起一次串行 JSON-RPC 调用。
     pub async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
+        let _interactive_request = InteractiveRequestGuard::new(&self.interactive_requests);
+        let request_id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
         let mut connection = self.server.lock().await;
+        Self::request_locked(&mut connection, request_id, method, params).await
+    }
+
+    /// 执行可延后的后台读取。交互请求到达后，后台任务会在下一条 RPC 前主动让路。
+    ///
+    /// App Server 的 stdio 连接仍保持单路串行，避免响应交错；这里仅区分“谁先获得
+    /// 下一次调用机会”，例如趋势聚合不会连续占满会话详情读取队列。
+    pub async fn request_background(&self, method: &str, params: Value) -> Result<Value, String> {
+        let request_id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
+        loop {
+            if self.interactive_requests.load(Ordering::Acquire) != 0 {
+                sleep(BACKGROUND_REQUEST_YIELD_DELAY).await;
+                continue;
+            }
+
+            let mut connection = self.server.lock().await;
+            // 在等待锁期间可能已有交互请求入队；检查后再决定是否执行后台 RPC。
+            if self.interactive_requests.load(Ordering::Acquire) != 0 {
+                drop(connection);
+                sleep(BACKGROUND_REQUEST_YIELD_DELAY).await;
+                continue;
+            }
+            return Self::request_locked(&mut connection, request_id, method, params).await;
+        }
+    }
+
+    async fn request_locked(
+        connection: &mut Option<CodexAppServer>,
+        request_id: u64,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, String> {
         if connection.is_none() {
             *connection = Some(CodexAppServer::connect().await?);
         }
@@ -60,7 +106,7 @@ impl AppServerState {
         let result = connection
             .as_mut()
             .expect("已建立 app-server 连接")
-            .request(2, method, params)
+            .request(request_id, method, params)
             .await;
 
         if result.is_err() {
@@ -78,6 +124,24 @@ impl AppServerState {
         if let Some(server) = server {
             server.close().await;
         }
+    }
+}
+
+/// 计数在 future 被取消时也必须释放，否则后台任务会永久误判为存在交互请求。
+struct InteractiveRequestGuard<'a> {
+    counter: &'a AtomicUsize,
+}
+
+impl<'a> InteractiveRequestGuard<'a> {
+    fn new(counter: &'a AtomicUsize) -> Self {
+        counter.fetch_add(1, Ordering::AcqRel);
+        Self { counter }
+    }
+}
+
+impl Drop for InteractiveRequestGuard<'_> {
+    fn drop(&mut self) {
+        self.counter.fetch_sub(1, Ordering::AcqRel);
     }
 }
 

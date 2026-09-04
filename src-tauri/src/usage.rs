@@ -31,7 +31,7 @@ pub async fn read_token_usage(state: &AppServerState) -> Result<TokenUsageSnapsh
     let server_result = state.request("account/usage/read", Value::Null).await;
     let mut snapshot = server_result
         .as_ref()
-        .map(|result| snapshot_from_server(result))
+        .map(snapshot_from_server)
         .unwrap_or_default();
     let server_days = snapshot
         .daily_usage_buckets

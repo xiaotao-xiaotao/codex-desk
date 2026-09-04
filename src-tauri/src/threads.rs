@@ -19,6 +19,8 @@ const TRANSFER_VERSION: u32 = 1;
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
+// 搜索输入会连续触发多次；短暂缓存完整摘要可避免每次都重新遍历所有会话分页。
+const THREAD_LIST_CACHE_TTL: Duration = Duration::from_secs(20);
 // 图片随会话详情返回前会转换为 data URL；限制单张图片大小，避免历史会话拖慢弹窗渲染。
 const MAX_THREAD_IMAGE_BYTES: u64 = 8 * 1_024 * 1_024;
 const MAX_THREAD_IMAGES_PER_MESSAGE: usize = 8;
@@ -130,7 +132,7 @@ pub struct ThreadImportResult {
     failures: Vec<ThreadTransferFailure>,
 }
 
-#[derive(Default, Serialize)]
+#[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ThreadInsights {
     turns: usize,
@@ -185,15 +187,30 @@ struct CachedThreadTrend {
     response: ThreadTrendResponse,
 }
 
+/// 同一会话在 updatedAt 未变化时，其趋势贡献不会变化；按版本缓存避免每分钟重读详情。
+#[derive(Clone)]
+struct ThreadTrendContribution {
+    message_days: Vec<String>,
+    turn_insights: Vec<(String, ThreadInsights)>,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+struct ThreadTrendCacheKey {
+    thread_id: String,
+    updated_at: String,
+}
+
 /// 趋势数据的短期缓存与 App Server 连接状态分离，避免领域缓存污染传输层。
 pub struct ThreadTrendState {
     cached: Mutex<HashMap<usize, CachedThreadTrend>>,
+    contributions: Mutex<HashMap<ThreadTrendCacheKey, ThreadTrendContribution>>,
 }
 
 impl Default for ThreadTrendState {
     fn default() -> Self {
         Self {
             cached: Mutex::new(HashMap::new()),
+            contributions: Mutex::new(HashMap::new()),
         }
     }
 }
@@ -202,6 +219,32 @@ impl ThreadTrendState {
     /// 会话被批量导入后，旧趋势缓存已不再代表当前本机线程列表。
     pub async fn invalidate(&self) {
         self.cached.lock().await.clear();
+        self.contributions.lock().await.clear();
+    }
+}
+
+struct CachedThreadList {
+    generated_at: Instant,
+    threads: Vec<ThreadSummary>,
+}
+
+/// 会话搜索与跨页选择共用同一份短期摘要缓存，避免快速输入时重复拉取全部分页。
+pub struct ThreadListState {
+    cached: Mutex<Option<CachedThreadList>>,
+}
+
+impl Default for ThreadListState {
+    fn default() -> Self {
+        Self {
+            cached: Mutex::new(None),
+        }
+    }
+}
+
+impl ThreadListState {
+    /// 导入成功后列表数据已变化，后续搜索必须重新拉取。
+    pub async fn invalidate(&self) {
+        *self.cached.lock().await = None;
     }
 }
 
@@ -227,14 +270,16 @@ pub struct ThreadDetail {
 /// 读取最近的已持久化线程，在应用侧完成轻量搜索与分页。
 pub async fn search_threads(
     state: &AppServerState,
+    list_state: &ThreadListState,
     query: &str,
     page: u32,
+    force_refresh: bool,
 ) -> Result<ThreadSearchResult, String> {
     let query = query.trim();
     if query.chars().count() > 120 {
         return Err("搜索关键词不能超过 120 个字符".to_owned());
     }
-    let threads = list_all_threads(state).await?;
+    let threads = list_all_threads(state, list_state, force_refresh).await?;
     let threads = filter_threads(threads, query);
     Ok(paginate_threads(threads, page as usize))
 }
@@ -243,13 +288,17 @@ pub async fn search_threads(
 /// 页面展示只渲染当前页，批量选择状态则由前端按此列表跨页保存。
 pub async fn list_threads_for_selection(
     state: &AppServerState,
+    list_state: &ThreadListState,
     query: &str,
 ) -> Result<Vec<ThreadSummary>, String> {
     let query = query.trim();
     if query.chars().count() > 120 {
         return Err("搜索关键词不能超过 120 个字符".to_owned());
     }
-    Ok(filter_threads(list_all_threads(state).await?, query))
+    Ok(filter_threads(
+        list_all_threads(state, list_state, false).await?,
+        query,
+    ))
 }
 
 /// 将选中的本机会话导出为 Desk 自有 JSON 包。单条会话读取失败不会中止其他会话，
@@ -384,7 +433,7 @@ pub async fn read_thread_trends(
         }
     }
 
-    let response = build_thread_trends(state, days).await?;
+    let response = build_thread_trends(state, trend_state, days).await?;
     trend_state.cached.lock().await.insert(
         days,
         CachedThreadTrend {
@@ -397,7 +446,7 @@ pub async fn read_thread_trends(
 
 async fn list_recent_threads(state: &AppServerState) -> Result<Vec<ThreadSummary>, String> {
     let result = state
-        .request(
+        .request_background(
             "thread/list",
             json!({
                 "cursor": null,
@@ -414,7 +463,29 @@ async fn list_recent_threads(state: &AppServerState) -> Result<Vec<ThreadSummary
 
 /// 搜索和“全选筛选结果”使用完整分页列表，而趋势图仍只读取最近会话，
 /// 防止历史过多时把趋势聚合放大为不必要的全量详情读取。
-async fn list_all_threads(state: &AppServerState) -> Result<Vec<ThreadSummary>, String> {
+async fn list_all_threads(
+    state: &AppServerState,
+    list_state: &ThreadListState,
+    force_refresh: bool,
+) -> Result<Vec<ThreadSummary>, String> {
+    // 锁覆盖整次拉取以合并并发搜索；否则用户快速输入时会同时发出多轮全分页请求。
+    let mut cached = list_state.cached.lock().await;
+    if !force_refresh {
+        if let Some(cached) = cached.as_ref() {
+            if cached.generated_at.elapsed() < THREAD_LIST_CACHE_TTL {
+                return Ok(cached.threads.clone());
+            }
+        }
+    }
+    let threads = fetch_all_threads(state).await?;
+    *cached = Some(CachedThreadList {
+        generated_at: Instant::now(),
+        threads: threads.clone(),
+    });
+    Ok(threads)
+}
+
+async fn fetch_all_threads(state: &AppServerState) -> Result<Vec<ThreadSummary>, String> {
     let mut cursor = None;
     let mut threads = Vec::new();
 
@@ -708,8 +779,11 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
     let created_at = ["createdAt", "created_at"]
         .iter()
         .find_map(|key| thread.get(*key).cloned());
-    let model = thread_string(thread, &["model", "modelName"])
-        .or_else(|| thread.get("extra").and_then(|extra| thread_string(extra, &["model", "modelName"])));
+    let model = thread_string(thread, &["model", "modelName"]).or_else(|| {
+        thread
+            .get("extra")
+            .and_then(|extra| thread_string(extra, &["model", "modelName"]))
+    });
     let status = thread_string(thread, &["status"]);
 
     let mut messages = Vec::new();
@@ -749,8 +823,16 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
                     role: message.role,
                     text: message.text,
                     images: message.images,
-                    started_at: if is_assistant { started_at.clone() } else { None },
-                    completed_at: if is_assistant { completed_at.clone() } else { None },
+                    started_at: if is_assistant {
+                        started_at.clone()
+                    } else {
+                        None
+                    },
+                    completed_at: if is_assistant {
+                        completed_at.clone()
+                    } else {
+                        None
+                    },
                     collapsed_messages: Vec::new(),
                     hidden: false,
                     activities: Vec::new(),
@@ -889,7 +971,9 @@ fn summarize_turn(turn: &Value) -> ThreadInsights {
         .flatten()
     {
         match item.get("type").and_then(Value::as_str) {
-            Some("userMessage") if thread_message_from_item(item).is_some() => insights.messages += 1,
+            Some("userMessage") if thread_message_from_item(item).is_some() => {
+                insights.messages += 1
+            }
             Some("agentMessage")
                 if item
                     .get("text")
@@ -920,10 +1004,22 @@ fn file_change_count(item: &Value) -> usize {
 
 async fn build_thread_trends(
     state: &AppServerState,
+    trend_state: &ThreadTrendState,
     days: usize,
 ) -> Result<ThreadTrendResponse, String> {
     let mut points = recent_day_points(days);
     let threads = list_recent_threads(state).await?;
+
+    // 最近列表至多 100 条，清理已不在范围内的旧版本，防止缓存随会话更新无限增长。
+    let active_keys = threads
+        .iter()
+        .filter_map(thread_trend_cache_key)
+        .collect::<HashSet<_>>();
+    trend_state
+        .contributions
+        .lock()
+        .await
+        .retain(|key, _| active_keys.contains(key));
 
     for summary in threads {
         let fallback_day = summary.updated_at.as_ref().and_then(day_key_from_value);
@@ -934,40 +1030,48 @@ async fn build_thread_trends(
             continue;
         }
 
-        let result = match state
-            .request(
-                "thread/read",
-                json!({ "threadId": summary.id, "includeTurns": true }),
-            )
-            .await
-        {
-            Ok(result) => result,
-            // 单条历史线程不可读不应让整个趋势图空白；下一次刷新会再次尝试。
-            Err(_) => continue,
+        let cache_key = thread_trend_cache_key(&summary);
+        let cached_contribution = match cache_key.as_ref() {
+            Some(key) => trend_state.contributions.lock().await.get(key).cloned(),
+            None => None,
         };
-        let Some(thread) = result.get("thread") else {
-            continue;
+        let contribution = if let Some(cached) = cached_contribution {
+            cached
+        } else {
+            let result = match state
+                .request_background(
+                    "thread/read",
+                    json!({ "threadId": summary.id, "includeTurns": true }),
+                )
+                .await
+            {
+                Ok(result) => result,
+                // 单条历史线程不可读不应让整个趋势图空白；下一次刷新会再次尝试。
+                Err(_) => continue,
+            };
+            let Some(thread) = result.get("thread") else {
+                continue;
+            };
+            let contribution = thread_trend_contribution(thread, fallback_day.as_deref());
+            if let Some(key) = cache_key {
+                trend_state
+                    .contributions
+                    .lock()
+                    .await
+                    .insert(key, contribution.clone());
+            }
+            contribution
         };
 
-        // 首项与详情弹窗复用同一条消息识别规则，并且每个会话只纳入最新 500 条消息。
-        // 消息本身没有独立时间戳，因此以所属回合的时间进行按天归档。
-        for day in recent_message_days(thread, fallback_day.as_deref()) {
+        for day in contribution.message_days {
             if let Some(point) = points.iter_mut().find(|point| point.day == day) {
                 point.messages += 1;
             }
         }
-        for turn in thread
-            .get("turns")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            let day = turn_day_key(turn).or_else(|| fallback_day.clone());
-            let Some(day) = day else { continue };
+        for (day, insights) in contribution.turn_insights {
             let Some(point) = points.iter_mut().find(|point| point.day == day) else {
                 continue;
             };
-            let insights = summarize_turn(turn);
             point.tool_calls += insights.tool_calls;
             point.file_changes += insights.file_changes;
             point.issues += insights.issues;
@@ -975,6 +1079,36 @@ async fn build_thread_trends(
     }
 
     Ok(ThreadTrendResponse { days, points })
+}
+
+fn thread_trend_cache_key(summary: &ThreadSummary) -> Option<ThreadTrendCacheKey> {
+    Some(ThreadTrendCacheKey {
+        thread_id: summary.id.clone(),
+        // 缺少更新时间时无法判断详情是否变化，宁可不缓存以保证趋势数据正确。
+        updated_at: summary.updated_at.as_ref()?.to_string(),
+    })
+}
+
+fn thread_trend_contribution(
+    thread: &Value,
+    fallback_day: Option<&str>,
+) -> ThreadTrendContribution {
+    let turn_insights = thread
+        .get("turns")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|turn| {
+            let day = turn_day_key(turn).or_else(|| fallback_day.map(str::to_owned))?;
+            Some((day, summarize_turn(turn)))
+        })
+        .collect();
+    ThreadTrendContribution {
+        // 与详情弹窗复用同一条消息识别规则，并且每个会话只纳入最新 500 条消息。
+        // 消息本身没有独立时间戳，因此以所属回合的时间进行按天归档。
+        message_days: recent_message_days(thread, fallback_day),
+        turn_insights,
+    }
 }
 
 fn turn_day_key(turn: &Value) -> Option<String> {
@@ -1115,7 +1249,7 @@ fn image_source_from_image_part(part: &Value) -> Option<ThreadImage> {
 }
 
 fn inline_image_source(data: &str, mime_type: &str) -> Option<ThreadImage> {
-    let max_base64_length = ((MAX_THREAD_IMAGE_BYTES as usize + 2) / 3) * 4;
+    let max_base64_length = (MAX_THREAD_IMAGE_BYTES as usize).div_ceil(3) * 4;
     if !is_supported_image_mime(mime_type)
         || data.len() > max_base64_length
         || !data.bytes().all(is_base64_character)
@@ -1141,7 +1275,10 @@ fn local_image_source(path: &str) -> Option<ThreadImage> {
 }
 
 fn is_supported_image_mime(mime_type: &str) -> bool {
-    matches!(mime_type, "image/png" | "image/jpeg" | "image/gif" | "image/webp")
+    matches!(
+        mime_type,
+        "image/png" | "image/jpeg" | "image/gif" | "image/webp"
+    )
 }
 
 fn image_mime_type(bytes: &[u8]) -> Option<&'static str> {
@@ -1164,7 +1301,7 @@ fn is_base64_character(byte: u8) -> bool {
 
 fn base64_encode(bytes: &[u8]) -> String {
     const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut encoded = String::with_capacity(((bytes.len() + 2) / 3) * 4);
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for chunk in bytes.chunks(3) {
         let first = chunk[0];
         let second = *chunk.get(1).unwrap_or(&0);
@@ -1524,8 +1661,7 @@ mod tests {
         assert!(message_activities
             .iter()
             .any(|activity| activity.kind == "file"));
-        let file_activity = detail
-            .messages[1]
+        let file_activity = detail.messages[1]
             .activities
             .iter()
             .find(|activity| activity.kind == "file")
@@ -1533,8 +1669,7 @@ mod tests {
         assert_eq!(file_activity.changes.len(), 2);
         assert_eq!(file_activity.changes[0].path, "src/main.js");
         assert!(file_activity.changes[0].diff.is_empty());
-        assert!(detail
-            .messages[1]
+        assert!(detail.messages[1]
             .activities
             .iter()
             .any(|activity| activity.kind == "issue"));
@@ -1560,7 +1695,10 @@ mod tests {
 
         assert_eq!(detail.messages.len(), 2);
         assert_eq!(detail.messages[1].text, "已移除重复标题。");
-        assert_eq!(detail.messages[1].collapsed_messages, vec!["我会保留顶部会话标题。"]);
+        assert_eq!(
+            detail.messages[1].collapsed_messages,
+            vec!["我会保留顶部会话标题。"]
+        );
     }
 
     #[test]
@@ -1601,7 +1739,9 @@ mod tests {
         assert_eq!(detail.messages.len(), 1);
         assert!(detail.messages[0].text.is_empty());
         assert_eq!(detail.messages[0].images.len(), 1);
-        assert!(detail.messages[0].images[0].src.starts_with("data:image/png;base64,"));
+        assert!(detail.messages[0].images[0]
+            .src
+            .starts_with("data:image/png;base64,"));
     }
 
     #[test]
@@ -1637,6 +1777,30 @@ mod tests {
             day_key_from_value(&json!(1_704_067_200_000_i64)),
             Some("2024-01-01".to_owned())
         );
+    }
+
+    #[test]
+    fn trend_cache_key_changes_with_thread_update_time() {
+        let original = ThreadSummary {
+            id: "thr_12345678".to_owned(),
+            title: "缓存验证".to_owned(),
+            created_at: None,
+            updated_at: Some(json!(1_700_000_000_i64)),
+        };
+        let updated = ThreadSummary {
+            updated_at: Some(json!(1_700_000_001_i64)),
+            ..original.clone()
+        };
+
+        assert_ne!(
+            thread_trend_cache_key(&original),
+            thread_trend_cache_key(&updated)
+        );
+        assert!(thread_trend_cache_key(&ThreadSummary {
+            updated_at: None,
+            ..original
+        })
+        .is_none());
     }
 
     #[test]
@@ -1714,13 +1878,19 @@ mod tests {
 
     #[test]
     fn keeps_the_latest_five_hundred_messages_in_thread_detail() {
-        let items = (0..=MAX_MESSAGES)
-            .map(|index| json!({ "type": "agentMessage", "text": format!("回复 {index}") }))
+        // 同一回合内的中间助手消息会合并为折叠内容；这里应模拟 501 个独立回合，
+        // 才能覆盖详情区域按“可见消息”截断的真实边界。
+        let turns = (0..=MAX_MESSAGES)
+            .map(|index| {
+                json!({
+                    "items": [{ "type": "agentMessage", "text": format!("回复 {index}") }]
+                })
+            })
             .collect::<Vec<_>>();
         let detail = normalize_thread_detail(&json!({
             "thread": {
                 "id": "thread-12345678",
-                "turns": [{ "items": items }]
+                "turns": turns
             }
         }))
         .expect("会话详情应可归一化");

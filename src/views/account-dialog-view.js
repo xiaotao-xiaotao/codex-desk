@@ -11,14 +11,6 @@ export function createAccountOverviewView({ t, invoke }) {
   let loading = false;
   let error = null;
 
-  function maskEmail(value) {
-    const [localPart, domain] = String(value ?? "").split("@");
-    if (!localPart || !domain) return value;
-    // 账户区仅用于确认当前登录身份；展示时保留少量前缀和域名，避免暴露完整邮箱。
-    const visiblePrefix = localPart.slice(0, Math.min(3, localPart.length));
-    return `${visiblePrefix}***@${domain}`;
-  }
-
   function render() {
     if (loading) {
       email.textContent = plan.textContent = t("accountLoading");
@@ -26,7 +18,8 @@ export function createAccountOverviewView({ t, invoke }) {
       return;
     }
 
-    email.textContent = profile?.email ? maskEmail(profile.email) : t("accountEmailUnavailable");
+    // 用户已在本机账户看板中主动查看身份，因此按接口原样展示完整登录邮箱。
+    email.textContent = profile?.email ?? t("accountEmailUnavailable");
     plan.textContent = profile?.planType ?? t("accountPlanUnavailable");
     message.hidden = !error;
     message.textContent = error ? t(error.key, { error: error.detail }) : "";

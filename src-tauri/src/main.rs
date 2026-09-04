@@ -11,8 +11,8 @@ mod threads;
 mod tray;
 mod usage;
 
-use std::{path::Path, process::Command};
 use serde::Serialize;
+use std::{path::Path, process::Command};
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
@@ -62,7 +62,10 @@ async fn diagnose_codex(
     let quota = if app_server_ready.is_ok() {
         quota::read_quota(&state).await.map(|_| ())
     } else {
-        Err(app_server_ready.as_ref().expect_err("已确认启动失败").to_owned())
+        Err(app_server_ready
+            .as_ref()
+            .expect_err("已确认启动失败")
+            .to_owned())
     };
     let error = cli_version
         .as_ref()
@@ -81,18 +84,21 @@ async fn diagnose_codex(
 #[tauri::command]
 async fn search_threads(
     state: State<'_, app_server::AppServerState>,
+    list_state: State<'_, threads::ThreadListState>,
     query: String,
     page: u32,
+    force_refresh: bool,
 ) -> Result<threads::ThreadSearchResult, String> {
-    threads::search_threads(&state, &query, page).await
+    threads::search_threads(&state, &list_state, &query, page, force_refresh).await
 }
 
 #[tauri::command]
 async fn list_threads_for_selection(
     state: State<'_, app_server::AppServerState>,
+    list_state: State<'_, threads::ThreadListState>,
     query: String,
 ) -> Result<Vec<threads::ThreadSummary>, String> {
-    threads::list_threads_for_selection(&state, &query).await
+    threads::list_threads_for_selection(&state, &list_state, &query).await
 }
 
 #[tauri::command]
@@ -128,6 +134,7 @@ fn choose_export_path(
 async fn import_threads(
     state: State<'_, app_server::AppServerState>,
     trend_state: State<'_, threads::ThreadTrendState>,
+    list_state: State<'_, threads::ThreadListState>,
     bundle_json: String,
     imported_title_prefix: String,
     imported_history_intro: String,
@@ -141,6 +148,7 @@ async fn import_threads(
     .await?;
     if result.imported > 0 {
         trend_state.invalidate().await;
+        list_state.invalidate().await;
     }
     Ok(result)
 }
@@ -317,6 +325,7 @@ fn main() {
     tauri::Builder::default()
         .manage(app_server::AppServerState::default())
         .manage(threads::ThreadTrendState::default())
+        .manage(threads::ThreadListState::default())
         .plugin(tauri_plugin_notification::init())
         // 第二次启动由首个实例接收，并唤起已有窗口，避免重复启动 app-server 与悬浮窗。
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {

@@ -6,6 +6,7 @@ import { copyMessageContent, copyText } from "./utils/clipboard.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
+import { createRefreshController } from "./features/refresh-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createDiagnosticsDialogView } from "./views/diagnostics-dialog-view.js";
@@ -59,6 +60,7 @@ const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const copyMessageToClipboard = (message) => copyMessageContent(message, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
 const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
+let refreshController;
 const accountView = createAccountOverviewView({ t, invoke });
 const diagnosticsView = createDiagnosticsDialogView({
   t,
@@ -75,7 +77,7 @@ const dialogView = createThreadDialogView({
 });
 const trendView = createThreadTrendView({
   t,
-  onRangeChange: () => void refreshThreadTrends(),
+  onRangeChange: () => void refreshController?.refreshThreadTrends(),
 });
 const tokenUsageView = createTokenUsageTrendView({ t });
 const threadListView = createThreadListView({
@@ -91,20 +93,13 @@ let expanded = true;
 let sessionsExpanded = false;
 let windowMaximized = false;
 let sessionsExpandedBeforeMaximize = null;
-let latestQuota = null;
-let refreshing = false;
 let searchTimer = null;
 let searchRequestVersion = 0;
-let trendRequestVersion = 0;
-let tokenUsageRequestVersion = 0;
 let currentThreadPage = 1;
 let currentPageThreads = [];
 let currentThreadEmptyMessage = "";
 let selectedThreadIds = new Set();
 let transferInProgress = false;
-let nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
-let consecutiveRefreshFailures = 0;
-let autoRefreshPaused = false;
 let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
@@ -113,6 +108,28 @@ function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
 }
+
+refreshController = createRefreshController({
+  invoke,
+  quotaView,
+  quotaAlerts,
+  trendView,
+  tokenUsageView,
+  getExpanded: () => expanded,
+  getSessionsExpanded: () => sessionsExpanded,
+  refreshThreadList: (forceRefresh) => searchThreads(
+    threadListView.getSearchQuery(),
+    currentThreadPage,
+    forceRefresh,
+  ),
+  getTrendDays: () => Number(document.querySelector("#trend-range").value),
+  setStatus,
+  onRefreshingChange: (isRefreshing) => refreshButton.classList.toggle("is-loading", isRefreshing),
+  statusElement: status,
+  t,
+  autoRefreshIntervalMs: AUTO_REFRESH_INTERVAL_MS,
+  maxConsecutiveFailures: MAX_CONSECUTIVE_REFRESH_FAILURES,
+});
 
 function renderQuotaAlertStatus() {
   const enabled = quotaAlerts.isEnabled();
@@ -127,7 +144,7 @@ function renderQuotaAlertStatus() {
 async function toggleQuotaAlerts() {
   const updated = await quotaAlerts.toggle();
   // 用户在高用量时开启提醒，应立即检查当前额度而非等待下一轮自动刷新。
-  if (updated && quotaAlerts.isEnabled()) await quotaAlerts.notify(latestQuota);
+  if (updated && quotaAlerts.isEnabled()) await quotaAlerts.notify(refreshController.getLatestQuota());
   renderQuotaAlertStatus();
 }
 
@@ -207,7 +224,7 @@ async function exportThreadFromDialog(threadId) {
     filterName: t("exportFileDialogFilter"),
   });
   if (!outputPath) {
-    renderSyncedStatus();
+    refreshController.renderSyncedStatus();
     return;
   }
   setStatus(t("preparingExport", { count: 1 }));
@@ -235,7 +252,7 @@ async function exportSelectedThreads() {
       filterName: t("exportFileDialogFilter"),
     });
     if (!outputPath) {
-      renderSyncedStatus();
+      refreshController.renderSyncedStatus();
       return;
     }
     setStatus(t("preparingExport", { count: selectedThreadIds.size }));
@@ -282,7 +299,7 @@ async function importTransferFile(file) {
       // 文件格式由原生层统一校验；这里仅用于在可识别的批量包上显示配额提示。
     }
     if (threadCount > 0 && !window.confirm(t("importConfirmation", { count: threadCount }))) {
-      renderSyncedStatus();
+      refreshController.renderSyncedStatus();
       return;
     }
     setStatus(t("importingThreads"));
@@ -299,7 +316,7 @@ async function importTransferFile(file) {
     if (result.imported > 0) {
       currentThreadPage = 1;
       await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
-      void refreshThreadTrends(true);
+      void refreshController.refreshThreadTrends(true);
     }
   } catch (error) {
     console.error(error);
@@ -321,7 +338,7 @@ async function selectAllFilteredThreads() {
     });
     selectedThreadIds = new Set(threads.map((thread) => thread.id));
     renderCurrentThreadPage();
-    renderSyncedStatus();
+    refreshController.renderSyncedStatus();
   } catch (error) {
     console.error(error);
     setStatus(t("readFailed", { error: String(error) }), "error");
@@ -329,22 +346,6 @@ async function selectAllFilteredThreads() {
     transferInProgress = false;
     updateTransferControls();
   }
-}
-
-function renderSyncedStatus() {
-  if (!latestQuota || refreshing || autoRefreshPaused) return;
-  const seconds = Math.max(0, Math.ceil((nextAutoRefreshAt - Date.now()) / 1_000));
-  const plan = latestQuota.planType ? t("planPrefix", { plan: latestQuota.planType }) : "";
-  const countdown = document.createElement("span");
-  countdown.className = "status-refresh-countdown";
-  countdown.textContent = String(seconds);
-  status.replaceChildren(
-    document.createTextNode(t("syncedStatusPrefix", { plan })),
-    document.createTextNode(t("autoRefreshCountdownPrefix")),
-    countdown,
-    document.createTextNode(`${t("autoRefreshCountdownSuffix")}${t("syncedStatusSuffix")}`),
-  );
-  status.dataset.kind = "normal";
 }
 
 function renderTheme() {
@@ -406,9 +407,12 @@ function applyLanguage() {
   renderTheme();
   renderCurrentThreadPage();
   updateTransferControls();
-  if (latestQuota && !refreshing) quotaView.render(latestQuota);
-  else if (!refreshing && !autoRefreshPaused) setStatus(t("readingLocalData"));
-  if (autoRefreshPaused && !refreshing) {
+  if (refreshController.getLatestQuota() && !refreshController.isRefreshing()) {
+    quotaView.render(refreshController.getLatestQuota());
+  } else if (!refreshController.isRefreshing() && !refreshController.isAutoRefreshPaused()) {
+    setStatus(t("readingLocalData"));
+  }
+  if (refreshController.isAutoRefreshPaused() && !refreshController.isRefreshing()) {
     setStatus(t("autoRefreshPaused", { count: MAX_CONSECUTIVE_REFRESH_FAILURES }), "error");
   }
   renderSessionsVisibility();
@@ -421,82 +425,13 @@ function selectLanguage(nextLanguage) {
   applyLanguage();
 }
 
-async function refreshQuota(forceTrendRefresh = false, automatic = false) {
-  if (refreshing || (automatic && autoRefreshPaused)) return;
-  refreshing = true;
-  let refreshSucceeded = false;
-  refreshButton.classList.add("is-loading");
-  setStatus(t("readingLocalData"));
-  try {
-    latestQuota = await invoke("read_quota");
-    nextAutoRefreshAt = Date.now() + AUTO_REFRESH_INTERVAL_MS;
-    consecutiveRefreshFailures = 0;
-    autoRefreshPaused = false;
-    quotaView.render(latestQuota);
-    await quotaAlerts.notify(latestQuota);
-    refreshSucceeded = true;
-    if (expanded) {
-      if (sessionsExpanded) {
-        await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
-      }
-      void refreshThreadTrends(forceTrendRefresh);
-      void refreshTokenUsage();
-    }
-  } catch (error) {
-    console.error(error);
-    quotaView.showReadFailure(Boolean(latestQuota));
-    consecutiveRefreshFailures += 1;
-    if (consecutiveRefreshFailures >= MAX_CONSECUTIVE_REFRESH_FAILURES) {
-      autoRefreshPaused = true;
-      setStatus(t("autoRefreshPaused", { count: MAX_CONSECUTIVE_REFRESH_FAILURES }), "error");
-    } else {
-      setStatus(t("readFailed", { error: String(error) }), "error");
-    }
-  } finally {
-    refreshing = false;
-    refreshButton.classList.remove("is-loading");
-    if (refreshSucceeded) renderSyncedStatus();
-  }
-}
-
-async function refreshThreadTrends(forceRefresh = false) {
-  const requestVersion = ++trendRequestVersion;
-  trendView.showLoading();
-  try {
-    const data = await invoke("read_thread_trends", {
-      forceRefresh,
-      days: Number(document.querySelector("#trend-range").value),
-    });
-    if (requestVersion !== trendRequestVersion) return;
-    trendView.setData(data);
-  } catch (error) {
-    if (requestVersion !== trendRequestVersion) return;
-    console.error(error);
-    trendView.showError();
-  }
-}
-
-async function refreshTokenUsage() {
-  const requestVersion = ++tokenUsageRequestVersion;
-  tokenUsageView.showLoading();
-  try {
-    const data = await invoke("read_token_usage");
-    if (requestVersion !== tokenUsageRequestVersion) return;
-    tokenUsageView.setData(data);
-  } catch (error) {
-    if (requestVersion !== tokenUsageRequestVersion) return;
-    console.error(error);
-    tokenUsageView.showError();
-  }
-}
-
-async function searchThreads(query, page = 1) {
+async function searchThreads(query, page = 1, forceRefresh = false) {
   if (!expanded || !sessionsExpanded) return;
   const requestVersion = ++searchRequestVersion;
   const keyword = query.trim();
   threadListView.setSearchResult(t("readingSearch"));
   try {
-    const data = await invoke("search_threads", { query: keyword, page });
+    const data = await invoke("search_threads", { query: keyword, page, forceRefresh });
     if (requestVersion !== searchRequestVersion) return;
     currentThreadPage = data.page;
     currentPageThreads = data.threads;
@@ -555,7 +490,7 @@ async function setExpanded(nextExpanded) {
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
   if (expanded) {
     currentThreadPage = 1;
-    await refreshQuota(true);
+    await refreshController.refreshQuota(true);
   }
 }
 
@@ -663,7 +598,7 @@ async function bootstrap() {
   });
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
-  refreshButton.addEventListener("click", () => refreshQuota(true));
+  refreshButton.addEventListener("click", () => refreshController.refreshQuota(true));
   quotaAlertToggle.addEventListener("click", () => void toggleQuotaAlerts());
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
@@ -696,13 +631,13 @@ async function bootstrap() {
 
   await listen("quota://refresh", async () => {
     if (!expanded) await setExpanded(true);
-    else await refreshQuota();
+    else await refreshController.refreshQuota();
   });
   // 应用启动时直接展示看板；用户可通过标题栏的收起按钮主动切换为悬浮球。
   await setExpanded(true);
   void accountView.refresh();
-  window.setInterval(() => void refreshQuota(false, true), AUTO_REFRESH_INTERVAL_MS);
-  window.setInterval(renderSyncedStatus, 1_000);
+  window.setInterval(() => void refreshController.refreshQuota(false, true), AUTO_REFRESH_INTERVAL_MS);
+  window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
 }
 
 bootstrap().catch((error) => {

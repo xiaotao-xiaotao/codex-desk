@@ -29,6 +29,8 @@
 .account-billing-button:hover { color: #0958d9; text-decoration: underline; text-underline-offset: 2px; }
 /* 重置权益嵌入账户行的剩余空间；说明仅由信息图标触发，避免整段字段看起来可操作。 */
 .account-reset-credits { position: relative; display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 5px; }
+/* 作者样式会覆盖浏览器对 hidden 的默认 display:none；额度数据返回前不能露出空标题。 */
+.account-reset-credits[hidden] { display: none; }
 .account-reset-credits::before { align-self: stretch; width: 1px; margin-right: 3px; background: #dfe5ec; content: ""; }
 .account-reset-credits strong { min-width: 0; overflow: hidden; color: #344154; font-size: .62rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .reset-credits-info { display: inline-grid; flex: 0 0 auto; width: 12px; height: 12px; margin-left: -3px; margin-right: -1px; padding: 0; border: 0; place-items: center; color: #8a96a7; background: transparent; cursor: default; font-size: .68rem; line-height: 1; transform: translateY(-4px); }
