@@ -102,7 +102,11 @@ export function createRefreshController({
       consecutiveRefreshFailures += 1;
       if (consecutiveRefreshFailures >= maxConsecutiveFailures) {
         autoRefreshPaused = true;
-        setStatus(t("autoRefreshPaused", { count: maxConsecutiveFailures }), "error");
+        // 熔断提示必须保留底层错误，否则第三次失败后无法区分超时、登录失效等原因。
+        setStatus(t("autoRefreshPaused", {
+          count: maxConsecutiveFailures,
+          error: String(error),
+        }), "error");
       } else {
         setStatus(t("readFailed", { error: String(error) }), "error");
       }

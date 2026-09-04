@@ -10,7 +10,8 @@ use tokio::{
     time::{sleep, timeout, Duration},
 };
 
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
+/// 大多数 RPC 保持较短超时，避免会话等非核心读取长期占用单路连接。
+const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
 // 趋势等后台读取检测到交互请求后，短暂让出调度机会，避免循环让出 CPU。
 const BACKGROUND_REQUEST_YIELD_DELAY: Duration = Duration::from_millis(25);
 
@@ -64,10 +65,30 @@ impl AppServerState {
 
     /// 向 App Server 发起一次串行 JSON-RPC 调用。
     pub async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
+        self.request_with_timeout(method, params, DEFAULT_REQUEST_TIMEOUT)
+            .await
+    }
+
+    /// 向 App Server 发起一次可指定响应等待时间的串行 JSON-RPC 调用。
+    ///
+    /// 额度读取是首页的核心信息，服务端偶发慢响应不应按会话读取的短超时处理。
+    pub async fn request_with_timeout(
+        &self,
+        method: &str,
+        params: Value,
+        response_timeout: Duration,
+    ) -> Result<Value, String> {
         let _interactive_request = InteractiveRequestGuard::new(&self.interactive_requests);
         let request_id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
         let mut connection = self.server.lock().await;
-        Self::request_locked(&mut connection, request_id, method, params).await
+        Self::request_locked(
+            &mut connection,
+            request_id,
+            method,
+            params,
+            response_timeout,
+        )
+        .await
     }
 
     /// 执行可延后的后台读取。交互请求到达后，后台任务会在下一条 RPC 前主动让路。
@@ -89,7 +110,14 @@ impl AppServerState {
                 sleep(BACKGROUND_REQUEST_YIELD_DELAY).await;
                 continue;
             }
-            return Self::request_locked(&mut connection, request_id, method, params).await;
+            return Self::request_locked(
+                &mut connection,
+                request_id,
+                method,
+                params,
+                DEFAULT_REQUEST_TIMEOUT,
+            )
+            .await;
         }
     }
 
@@ -98,6 +126,7 @@ impl AppServerState {
         request_id: u64,
         method: &str,
         params: Value,
+        response_timeout: Duration,
     ) -> Result<Value, String> {
         if connection.is_none() {
             *connection = Some(CodexAppServer::connect().await?);
@@ -106,7 +135,7 @@ impl AppServerState {
         let result = connection
             .as_mut()
             .expect("已建立 app-server 连接")
-            .request(request_id, method, params)
+            .request(request_id, method, params, response_timeout)
             .await;
 
         if result.is_err() {
@@ -218,6 +247,7 @@ impl CodexAppServer {
                 1,
                 "initialize",
                 json!({ "clientInfo": { "name": "codex-desk", "version": "1.1.1" } }),
+                DEFAULT_REQUEST_TIMEOUT,
             )
             .await?;
         // initialized 是通知，不会返回 JSON-RPC 响应。
@@ -229,13 +259,19 @@ impl CodexAppServer {
         Ok(server)
     }
 
-    async fn request(&mut self, id: u64, method: &str, params: Value) -> Result<Value, String> {
+    async fn request(
+        &mut self,
+        id: u64,
+        method: &str,
+        params: Value,
+        response_timeout: Duration,
+    ) -> Result<Value, String> {
         let payload = json!({ "id": id, "method": method, "params": params });
         self.stdin
             .write_all(format!("{payload}\n").as_bytes())
             .await
             .map_err(|error| format!("发送 {method} 请求失败：{error}"))?;
-        wait_for_response(&mut self.reader, id).await
+        wait_for_response(&mut self.reader, id, response_timeout).await
     }
 
     async fn close(mut self) {
@@ -243,8 +279,12 @@ impl CodexAppServer {
     }
 }
 
-async fn wait_for_response(reader: &mut ResponseLines, request_id: u64) -> Result<Value, String> {
-    timeout(REQUEST_TIMEOUT, async {
+async fn wait_for_response(
+    reader: &mut ResponseLines,
+    request_id: u64,
+    response_timeout: Duration,
+) -> Result<Value, String> {
+    timeout(response_timeout, async {
         while let Some(line) = reader
             .next_line()
             .await
@@ -273,5 +313,10 @@ async fn wait_for_response(reader: &mut ResponseLines, request_id: u64) -> Resul
         Err("Codex app-server 已结束".to_owned())
     })
     .await
-    .map_err(|_| "Codex app-server 在 8 秒内未响应".to_owned())?
+    .map_err(|_| {
+        format!(
+            "Codex app-server 在 {} 秒内未响应",
+            response_timeout.as_secs()
+        )
+    })?
 }

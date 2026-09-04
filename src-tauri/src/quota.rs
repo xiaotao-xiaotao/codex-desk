@@ -2,6 +2,9 @@ use crate::app_server::AppServerState;
 use serde::Serialize;
 use serde_json::Value;
 
+/// 额度属于首页核心数据，允许服务端偶发慢响应，但不影响其他 RPC 的短超时策略。
+const QUOTA_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuotaWindow {
@@ -31,7 +34,11 @@ pub struct QuotaSnapshot {
 /// 仅从当前本机已登录的 Codex CLI 读取额度；不会读取或保存 auth.json。
 pub async fn read_quota(state: &AppServerState) -> Result<QuotaSnapshot, String> {
     let rate_limits = state
-        .request("account/rateLimits/read", Value::Null)
+        .request_with_timeout(
+            "account/rateLimits/read",
+            Value::Null,
+            QUOTA_REQUEST_TIMEOUT,
+        )
         .await?;
     normalize_quota(&rate_limits)
 }
