@@ -9,6 +9,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
   const quotaList = document.querySelector("#quota-list");
   const resetCreditsRow = document.querySelector("#reset-credits-row");
   const resetCreditsSummary = document.querySelector("#reset-credits-summary");
+  const resetCreditsInfo = document.querySelector("#reset-credits-info");
   const resetCreditsTooltip = document.querySelector("#reset-credits-tooltip");
 
   function formatOrbWindow(durationMinutes) {
@@ -31,6 +32,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     resetCreditsRow.hidden = resetCredits <= 0;
     if (resetCredits > 0) {
       resetCreditsSummary.textContent = t("resetCreditsCount", { count: resetCredits });
+      resetCreditsInfo.setAttribute("aria-label", t("resetCreditsDescription"));
       resetCreditsTooltip.replaceChildren();
       const description = document.createElement("span");
       description.className = "reset-credits-tooltip-description";

@@ -27,11 +27,14 @@
 .account-billing-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; margin-left: auto; }
 .account-billing-button { padding: 0; border: 0; color: #1677ff; background: transparent; cursor: pointer; font-size: .62rem; font-weight: 700; }
 .account-billing-button:hover { color: #0958d9; text-decoration: underline; text-underline-offset: 2px; }
-/* 重置权益嵌入账户行的剩余空间；具体到期信息仅在悬停时展开。 */
-.account-reset-credits { position: relative; display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 5px; cursor: help; }
+/* 重置权益嵌入账户行的剩余空间；说明仅由信息图标触发，避免整段字段看起来可操作。 */
+.account-reset-credits { position: relative; display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 5px; }
 .account-reset-credits::before { align-self: stretch; width: 1px; margin-right: 3px; background: #dfe5ec; content: ""; }
 .account-reset-credits strong { min-width: 0; overflow: hidden; color: #344154; font-size: .62rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.reset-credits-info { display: inline-grid; flex: 0 0 auto; width: 12px; height: 12px; margin-left: -3px; margin-right: -1px; padding: 0; border: 0; place-items: center; color: #8a96a7; background: transparent; cursor: default; font-size: .68rem; line-height: 1; transform: translateY(-4px); }
+.reset-credits-info:hover { color: #1677ff; }
+.reset-credits-info:focus-visible { border-radius: 50%; outline: 2px solid #91caff; outline-offset: 1px; }
 .reset-credits-tooltip { position: absolute; z-index: 4; top: calc(100% + 7px); left: 0; display: grid; width: max-content; max-width: 300px; gap: 3px; padding: 7px 8px; border: 1px solid #dce4ed; border-radius: 6px; color: #526173; background: rgba(255, 255, 255, .98); box-shadow: 0 7px 18px rgba(31, 35, 41, .12); font-size: .6rem; line-height: 1.4; opacity: 0; pointer-events: none; transform: translateY(-2px); transition: opacity .14s ease, transform .14s ease; visibility: hidden; }
-.account-reset-credits:hover .reset-credits-tooltip { opacity: 1; transform: translateY(0); visibility: visible; }
+.reset-credits-info:hover ~ .reset-credits-tooltip, .reset-credits-info:focus-visible ~ .reset-credits-tooltip { opacity: 1; transform: translateY(0); visibility: visible; }
 .reset-credits-tooltip-description { color: #738095; }
 .account-message { margin: 5px 1px 0; color: #cf1322; font-size: .65rem; line-height: 1.4; }

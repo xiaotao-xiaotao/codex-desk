@@ -78,9 +78,14 @@
               <strong id="account-plan">正在读取账号信息…</strong>
             </div>
             <div id="reset-credits-row" class="account-reset-credits" hidden>
-              <span class="account-detail-label" data-i18n="resetCreditsTitle">使用限额重置</span>
+              <span class="account-detail-label">
+                <span data-i18n="resetCreditsTitle">使用限额重置</span>
+                <button id="reset-credits-info" class="reset-credits-info" type="button" aria-describedby="reset-credits-tooltip" aria-label="查看使用限额重置说明">
+                  <span aria-hidden="true">ⓘ</span>
+                </button>
+                <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
+              </span>
               <strong id="reset-credits-summary"></strong>
-              <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
             </div>
             <div class="account-billing-actions">
               <button id="account-billing" class="account-billing-button" type="button" data-i18n="openBilling">查看订阅到期时间</button>
