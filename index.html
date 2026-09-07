@@ -177,11 +177,21 @@
     <input id="import-file-input" type="file" accept="application/json,.codex-desk.json" hidden />
     <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="thread-dialog-heading">
       <header class="thread-dialog-toolbar">
-        <h2 id="thread-dialog-heading" data-i18n="threadDetail">会话详情</h2>
+        <div class="thread-dialog-title">
+          <button id="thread-sidebar-toggle" class="thread-sidebar-toggle" type="button" aria-expanded="false" aria-controls="thread-sidebar">
+            <svg class="thread-sidebar-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="4" width="17" height="16" rx="2.5"></rect>
+              <path d="M9 4v16"></path>
+              <path class="thread-sidebar-toggle-expand" d="m11 9 3 3-3 3"></path>
+              <path class="thread-sidebar-toggle-collapse" d="m14 9-3 3 3 3"></path>
+            </svg>
+          </button>
+          <h2 id="thread-dialog-heading" data-i18n="threadDetail">会话详情</h2>
+        </div>
         <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
       </header>
-      <section class="dialog-content">
-        <aside class="dialog-sidebar">
+      <section class="dialog-content is-sidebar-collapsed">
+        <aside id="thread-sidebar" class="dialog-sidebar" hidden>
           <header class="dialog-header">
             <div>
               <h3 id="dialog-title">会话详情</h3>

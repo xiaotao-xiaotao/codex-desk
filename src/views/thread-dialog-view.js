@@ -70,6 +70,9 @@ export function createThreadDialogView({
   onExportThread,
 }) {
   const threadDialog = document.querySelector("#thread-dialog");
+  const dialogContent = document.querySelector(".dialog-content");
+  const dialogSidebar = document.querySelector("#thread-sidebar");
+  const sidebarToggle = document.querySelector("#thread-sidebar-toggle");
   const dialogTitle = document.querySelector("#dialog-title");
   const dialogMeta = document.querySelector("#dialog-meta");
   const dialogStatus = document.querySelector("#dialog-status");
@@ -93,6 +96,8 @@ export function createThreadDialogView({
     onViewFileChange: (activity) => fileDiffView.show(activity),
   });
   let currentDetail = null;
+  // 默认优先展示对话内容；概览信息按需展开，避免窄窗口被左侧栏挤占。
+  let sidebarExpanded = false;
   const messageSearch = createThreadMessageSearch({
     t,
     input: searchInput,
@@ -116,6 +121,14 @@ export function createThreadDialogView({
     exportButton.disabled = disabled;
     copyIdButton.disabled = disabled;
     refreshButton.disabled = disabled;
+  }
+
+  function renderSidebarVisibility() {
+    dialogContent.classList.toggle("is-sidebar-collapsed", !sidebarExpanded);
+    dialogSidebar.hidden = !sidebarExpanded;
+    sidebarToggle.setAttribute("aria-expanded", String(sidebarExpanded));
+    const labelKey = sidebarExpanded ? "threadCollapseSidebar" : "threadExpandSidebar";
+    sidebarToggle.title = sidebarToggle.ariaLabel = t(labelKey);
   }
 
   function setDialogTitle(title) {
@@ -289,6 +302,7 @@ export function createThreadDialogView({
 
   function updateLanguage() {
     renderCloseIconButton(dialogCloseButton, { label: t("closeThreadDetail") });
+    renderSidebarVisibility();
     imagePreviewView.updateLanguage();
     if (!threadDialog.open) {
       dialogTitle.textContent = t("threadDetail");
@@ -316,6 +330,10 @@ export function createThreadDialogView({
   }
 
   dialogCloseButton.addEventListener("click", () => threadDialog.close());
+  sidebarToggle.addEventListener("click", () => {
+    sidebarExpanded = !sidebarExpanded;
+    renderSidebarVisibility();
+  });
   copyIdButton.addEventListener("click", async () => {
     if (!currentDetail) return;
     copyIdButton.disabled = true;
@@ -363,5 +381,6 @@ export function createThreadDialogView({
     if (event.target === threadDialog) threadDialog.close();
   });
   renderSidebarActions();
+  renderSidebarVisibility();
   return { openLoading, showDetail, showReadFailure, updateLanguage };
 }

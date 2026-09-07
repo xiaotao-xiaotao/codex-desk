@@ -235,6 +235,8 @@ const TOKEN_USAGE_TRANSLATIONS = {
 
 const SESSION_ANALYTICS_TRANSLATIONS = {
   "zh-CN": {
+    threadExpandSidebar: "展开会话概览",
+    threadCollapseSidebar: "收起会话概览",
     recentThreads: "最近更新的会话",
     searchThreads: "搜索最近更新的会话",
     searchTotal: "共 {total} 个本机会话",
@@ -245,6 +247,8 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     threadFileChangesRecord: "文件变更记录", threadIssuesRecord: "异常记录", threadRecordCount: "共 {count} 条", threadNoFileChanges: "暂无文件变更", threadNoIssues: "暂无异常记录", threadViewAllRecords: "查看全部", threadCollapseRecords: "收起", threadTokenUsage: "Token 用量洞察", threadTokenTotal: "总消耗：{total} Token", threadTokenInputOutput: "输入：{input} ｜输出：{output}", threadTokenCached: "缓存输入：{tokens}", threadTokenReasoning: "推理输出：{tokens}", threadTokenToolsUnavailable: "工具调用：暂无独立统计", threadTokenUnavailable: "当前会话未保存 Token 快照。", threadMessageDuration: "用时 {value}", threadExport: "导出会话", threadCopyId: "复制 ID", threadRefresh: "刷新",
   },
   "zh-TW": {
+    threadExpandSidebar: "展開工作階段總覽",
+    threadCollapseSidebar: "收合工作階段總覽",
     recentThreads: "最近更新的工作階段",
     searchThreads: "搜尋最近更新的工作階段",
     searchTotal: "共 {total} 個本機工作階段",
@@ -255,6 +259,8 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     threadFileChangesRecord: "檔案變更記錄", threadIssuesRecord: "異常記錄", threadRecordCount: "共 {count} 筆", threadNoFileChanges: "暫無檔案變更", threadNoIssues: "暫無異常記錄", threadViewAllRecords: "檢視全部", threadCollapseRecords: "收合", threadTokenUsage: "Token 用量洞察", threadTokenTotal: "總消耗：{total} Token", threadTokenInputOutput: "輸入：{input} ｜輸出：{output}", threadTokenCached: "快取輸入：{tokens}", threadTokenReasoning: "推理輸出：{tokens}", threadTokenToolsUnavailable: "工具呼叫：暫無獨立統計", threadTokenUnavailable: "目前工作階段未儲存 Token 快照。", threadMessageDuration: "耗時 {value}", threadExport: "匯出工作階段", threadCopyId: "複製 ID", threadRefresh: "重新整理",
   },
   en: {
+    threadExpandSidebar: "Expand session overview",
+    threadCollapseSidebar: "Collapse session overview",
     recentThreads: "Recently updated sessions",
     searchThreads: "Search recently updated sessions",
     searchTotal: "{total} local sessions",
@@ -265,6 +271,8 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     threadFileChangesRecord: "FILE CHANGES", threadIssuesRecord: "ISSUES", threadRecordCount: "{count} total", threadNoFileChanges: "No file changes", threadNoIssues: "No issues", threadViewAllRecords: "View all", threadCollapseRecords: "Collapse", threadTokenUsage: "TOKEN USAGE", threadTokenTotal: "Total: {total} tokens", threadTokenInputOutput: "Input: {input} | Output: {output}", threadTokenCached: "Cached input: {tokens}", threadTokenReasoning: "Reasoning output: {tokens}", threadTokenToolsUnavailable: "Tool calls: no separate usage", threadTokenUnavailable: "No Token snapshot is saved for this session.", threadMessageDuration: "Took {value}", threadExport: "Export", threadCopyId: "Copy ID", threadRefresh: "Refresh",
   },
   ja: {
+    threadExpandSidebar: "セッション概要を展開",
+    threadCollapseSidebar: "セッション概要を折りたたむ",
     recentThreads: "最近更新したセッション",
     searchThreads: "最近更新したセッションを検索",
     searchTotal: "ローカルセッション：{total} 件",
@@ -275,6 +283,8 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     threadFileChangesRecord: "ファイル変更", threadIssuesRecord: "例外記録", threadRecordCount: "{count} 件", threadNoFileChanges: "ファイル変更はありません", threadNoIssues: "例外はありません", threadViewAllRecords: "すべて表示", threadCollapseRecords: "折りたたむ", threadTokenUsage: "Token 使用量", threadTokenTotal: "合計：{total} Token", threadTokenInputOutput: "入力：{input} ｜出力：{output}", threadTokenCached: "キャッシュ入力：{tokens}", threadTokenReasoning: "推論出力：{tokens}", threadTokenToolsUnavailable: "ツール呼び出し：個別集計なし", threadTokenUnavailable: "このセッションの Token スナップショットはありません。", threadMessageDuration: "所要時間 {value}", threadExport: "エクスポート", threadCopyId: "ID をコピー", threadRefresh: "更新",
   },
   ko: {
+    threadExpandSidebar: "세션 개요 펼치기",
+    threadCollapseSidebar: "세션 개요 접기",
     recentThreads: "최근 업데이트된 세션",
     searchThreads: "최근 업데이트된 세션 검색",
     searchTotal: "로컬 세션 {total}개",

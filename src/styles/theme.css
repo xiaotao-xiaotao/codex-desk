@@ -143,8 +143,11 @@
 :root[data-theme="dark"] .thread-sidebar-action { border-color: transparent; color: #b8c5d3; background: transparent; }
 :root[data-theme="dark"] .thread-sidebar-action:hover:not(:disabled) { border-color: transparent; color: #c7e2ff; background: #1b3857; }
 :root[data-theme="dark"] .dialog-messages-pane { background: #10151c; }
-:root[data-theme="dark"] .dialog-header { border-bottom-color: #2a3544; }
+:root[data-theme="dark"] .dialog-header { border-bottom-color: #2a4055; box-shadow: inset 3px 0 0 #4096ff; background: linear-gradient(105deg, #13243a 0%, #151b23 72%); }
+:root[data-theme="dark"] .dialog-header h3 { color: #d8e8fa; }
 :root[data-theme="dark"] .dialog-search { border-bottom-color: #2a3544; background: #10151c; }
+:root[data-theme="dark"] .thread-sidebar-toggle { color: #9ecbff; background: transparent; }
+:root[data-theme="dark"] .thread-sidebar-toggle:hover { color: #d7ebff; background: #1b3857; }
 :root[data-theme="dark"] .dialog-search input { border-color: #2c3948; color: #d9e2ec; background: #111820; }
 :root[data-theme="dark"] .dialog-search input::placeholder { color: #718096; }
 :root[data-theme="dark"] .dialog-search input:focus { border-color: #3b82d0; background: #111820; box-shadow: 0 0 0 3px rgba(64, 150, 255, .16); }
