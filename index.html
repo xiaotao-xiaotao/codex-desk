@@ -28,8 +28,8 @@
             <button id="collapse-button" class="icon-button" type="button" title="收起为悬浮球" aria-label="收起为悬浮球">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
             </button>
-            <button id="diagnostics-button" class="icon-button" type="button" title="诊断 Codex CLI" aria-label="诊断 Codex CLI">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 10v5M12 7.5h.01" /></svg>
+            <button id="settings-button" class="icon-button" type="button" title="设置" aria-label="打开设置">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
             </button>
             <div class="language-picker">
               <button id="language-button" class="icon-button" type="button" title="语言：跟随系统" aria-label="语言：跟随系统" aria-expanded="false" aria-controls="language-menu">
@@ -240,23 +240,41 @@
         <img id="thread-image-preview-image" alt="" />
       </section>
     </dialog>
-    <dialog id="diagnostics-dialog" class="diagnostics-dialog" aria-labelledby="diagnostics-title">
-      <section class="diagnostics-content">
-        <header class="diagnostics-header">
+    <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+      <form id="settings-form" class="settings-content">
+        <header class="settings-header">
           <div>
-            <p class="section-kicker" data-i18n="diagnosticsKicker">本机连接</p>
-            <h2 id="diagnostics-title" data-i18n="diagnostics">Codex 环境诊断</h2>
+            <p id="settings-kicker" class="section-kicker">本机偏好</p>
+            <h2 id="settings-title">设置</h2>
           </div>
-          <button id="diagnostics-close" class="close-icon-button" type="button" aria-label="关闭诊断"></button>
+          <button id="settings-close" class="close-icon-button" type="button" aria-label="关闭设置"></button>
         </header>
-        <p id="diagnostics-intro" class="diagnostics-intro" data-i18n="diagnosticsIntro">仅检查本机 Codex CLI、app-server 和当前登录态，不会读取认证文件或上传数据。</p>
-        <div id="diagnostics-results" class="diagnostics-results" aria-live="polite"></div>
-        <p id="diagnostics-error" class="diagnostics-error" hidden></p>
-        <footer class="diagnostics-actions">
-          <button id="diagnostics-copy" type="button" disabled></button>
-          <button id="diagnostics-run" class="thread-action-button thread-action-button-primary" type="button"></button>
+        <p id="settings-intro" class="settings-intro">配置 Codex CLI 和数据刷新方式，所有设置仅保存在本机。</p>
+        <section class="settings-group">
+          <label id="settings-cli-label" for="settings-cli-path">Codex CLI 路径</label>
+          <p id="settings-cli-hint" class="settings-hint">留空时使用系统 PATH 中的 codex。</p>
+          <div class="settings-path-row">
+            <input id="settings-cli-path" type="text" autocomplete="off" spellcheck="false" placeholder="使用系统 PATH" />
+            <button id="settings-cli-browse" class="settings-secondary-button" type="button">浏览</button>
+            <button id="settings-cli-reset" class="settings-secondary-button" type="button">使用系统 PATH</button>
+          </div>
+        </section>
+        <section class="settings-group">
+          <label id="settings-refresh-label" for="settings-refresh-interval">自动刷新间隔</label>
+          <p id="settings-refresh-hint" class="settings-hint">影响额度、趋势和已展开的会话列表。</p>
+          <select id="settings-refresh-interval">
+            <option value="30">30 秒</option>
+            <option value="60">1 分钟</option>
+            <option value="120">2 分钟</option>
+            <option value="300">5 分钟</option>
+          </select>
+        </section>
+        <p id="settings-status" class="settings-status" aria-live="polite" hidden></p>
+        <footer class="settings-actions">
+          <button id="settings-cancel" class="settings-secondary-button" type="button">取消</button>
+          <button id="settings-save" class="thread-action-button thread-action-button-primary" type="submit">保存并验证</button>
         </footer>
-      </section>
+      </form>
     </dialog>
     <script type="module" src="/src/main.js"></script>
   </body>

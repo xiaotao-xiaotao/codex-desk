@@ -97,10 +97,6 @@
 :root[data-theme="dark"] .copy-icon-button:hover:not(:disabled) { border: 0; color: #e6edf3; background: #2a3544; }
 :root[data-theme="dark"] .copy-icon-button.is-copied { border: 0; color: #77d9b5; background: transparent; }
 :root[data-theme="dark"] .copy-icon-button.is-failed { border: 0; color: #ff7875; background: transparent; }
-:root[data-theme="dark"] .copy-text-button { border-color: #315f90; color: #8dc5ff; background: #152b43; }
-:root[data-theme="dark"] .copy-text-button:hover:not(:disabled) { border-color: #4787c8; color: #c7e2ff; background: #1b3857; }
-:root[data-theme="dark"] .copy-text-button.is-copied { border-color: #245c4b; color: #77d9b5; background: #163a31; }
-:root[data-theme="dark"] .copy-text-button.is-failed { border-color: #8d3037; color: #ff7875; background: #2b171b; }
 :root[data-theme="dark"] .thread-transfer-actions { border-color: #294f78; }
 :root[data-theme="dark"] .thread-action-button { border-right-color: #294f78; color: #8dc5ff; background: #152b43; }
 :root[data-theme="dark"] .thread-action-button:hover:not(:disabled) { color: #c7e2ff; background: #1b3857; }
@@ -237,13 +233,6 @@
 :root[data-theme="dark"] .file-diff-side-by-side-line.is-hunk-label { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .file-diff-side-by-side-line.is-added { color: #8adcb9; background: #143a2c; }
 :root[data-theme="dark"] .file-diff-side-by-side-line.is-removed { color: #ffaaa5; background: #442623; }
-:root[data-theme="dark"] .diagnostics-dialog { border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
-:root[data-theme="dark"] .diagnostics-dialog::backdrop { background: rgba(0, 0, 0, .58); }
-:root[data-theme="dark"] .diagnostics-intro { color: #9aa9ba; }
-:root[data-theme="dark"] .diagnostic-row { border-color: #2c3948; background: #18212c; }
-:root[data-theme="dark"] .diagnostic-row span { color: #d5dfeb; }
-:root[data-theme="dark"] .diagnostic-row .is-ready { color: #77d9b5; }
-:root[data-theme="dark"] .diagnostic-row .is-unavailable { color: #ff7875; }
 :root[data-theme="dark"] .account-quota-divider { border-top-color: #2a3544; }
 :root[data-theme="dark"] .account-details { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .account-detail-label { color: #9aa9ba; }
@@ -255,3 +244,10 @@
 :root[data-theme="dark"] .reset-credits-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 7px 18px rgba(0, 0, 0, .35); }
 :root[data-theme="dark"] .reset-credits-tooltip-description { color: #9aa9ba; }
 :root[data-theme="dark"] .account-message { color: #ff7875; }
+:root[data-theme="dark"] .settings-dialog { border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
+:root[data-theme="dark"] .settings-dialog::backdrop { background: rgba(0, 0, 0, .58); }
+:root[data-theme="dark"] .settings-intro, :root[data-theme="dark"] .settings-hint { color: #9aa9ba; }
+:root[data-theme="dark"] .settings-group { border-color: #2c3948; background: #18212c; }
+:root[data-theme="dark"] .settings-group > label { color: #d5dfeb; }
+:root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-group select, :root[data-theme="dark"] .settings-secondary-button { border-color: #344456; color: #d5dfeb; background: #111820; }
+:root[data-theme="dark"] .settings-secondary-button:hover:not(:disabled) { border-color: #4096ff; color: #9ecbff; background: #182b42; }

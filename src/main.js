@@ -7,15 +7,15 @@ import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createRefreshController } from "./features/refresh-controller.js";
+import { createSettingsController } from "./features/settings-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createQuotaView } from "./views/quota-view.js";
-import { createDiagnosticsDialogView } from "./views/diagnostics-dialog-view.js";
+import { createSettingsDialogView } from "./views/settings-dialog-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
 import { createThreadListView } from "./views/thread-list-view.js";
 import { createThreadTrendView } from "./views/thread-trend-view.js";
 import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
 
-const AUTO_REFRESH_INTERVAL_MS = 60_000;
 // 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
 const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
 const DRAG_THRESHOLD_PX = 4;
@@ -61,12 +61,12 @@ const copyMessageToClipboard = (message) => copyMessageContent(message, t("clipb
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
 const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
 let refreshController;
-const accountView = createAccountOverviewView({ t, invoke });
-const diagnosticsView = createDiagnosticsDialogView({
-  t,
+let autoRefreshTimer = null;
+const settingsController = createSettingsController({
   invoke,
-  copyText: copyToClipboard,
+  onSettingsChanged: restartAutoRefreshTimer,
 });
+const accountView = createAccountOverviewView({ t, invoke });
 const dialogView = createThreadDialogView({
   t,
   formatUpdated,
@@ -74,6 +74,16 @@ const dialogView = createThreadDialogView({
   copyMessage: copyMessageToClipboard,
   onRefreshThread: (threadId) => invoke("read_thread", { threadId }),
   onExportThread: exportThreadFromDialog,
+});
+const settingsView = createSettingsDialogView({
+  t,
+  getSettings: settingsController.getSettings,
+  onBrowseCli: () => invoke("choose_cli_path"),
+  onSave: async (settings) => {
+    const version = await settingsController.save(settings);
+    void refreshController.refreshQuota(true);
+    return version;
+  },
 });
 const trendView = createThreadTrendView({
   t,
@@ -127,7 +137,7 @@ refreshController = createRefreshController({
   onRefreshingChange: (isRefreshing) => refreshButton.classList.toggle("is-loading", isRefreshing),
   statusElement: status,
   t,
-  autoRefreshIntervalMs: AUTO_REFRESH_INTERVAL_MS,
+  getAutoRefreshIntervalMs: settingsController.getRefreshIntervalMs,
   maxConsecutiveFailures: MAX_CONSECUTIVE_REFRESH_FAILURES,
 });
 
@@ -387,7 +397,7 @@ function applyLanguage() {
   collapseButton.title = collapseButton.ariaLabel = t("collapse");
   refreshButton.title = refreshButton.ariaLabel = t("refresh");
   renderCloseIconButton(quitButton, { label: t("quit") });
-  diagnosticsView.updateLanguage();
+  settingsView.updateLanguage();
   accountView.updateLanguage();
   renderQuotaAlertStatus();
   orb.title = t("orbTitle");
@@ -582,6 +592,15 @@ async function toggleWindowMaximized() {
   }
 }
 
+function restartAutoRefreshTimer() {
+  if (autoRefreshTimer !== null) window.clearInterval(autoRefreshTimer);
+  refreshController?.resetAutoRefreshSchedule();
+  autoRefreshTimer = window.setInterval(
+    () => void refreshController.refreshQuota(false, true),
+    settingsController.getRefreshIntervalMs(),
+  );
+}
+
 async function bootstrap() {
   applyLanguage();
   setupLanguageControls();
@@ -634,9 +653,16 @@ async function bootstrap() {
     else await refreshController.refreshQuota();
   });
   // 应用启动时直接展示看板；用户可通过标题栏的收起按钮主动切换为悬浮球。
+  try {
+    await settingsController.initialize();
+  } catch (error) {
+    // 自定义路径失效时保留设置供用户修正，同时继续尝试系统 PATH。
+    console.error("应用 Codex CLI 路径失败", error);
+    setStatus(t("settingsSaveFailed", { error: String(error) }), "error");
+  }
   await setExpanded(true);
   void accountView.refresh();
-  window.setInterval(() => void refreshController.refreshQuota(false, true), AUTO_REFRESH_INTERVAL_MS);
+  restartAutoRefreshTimer();
   window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
 }
 

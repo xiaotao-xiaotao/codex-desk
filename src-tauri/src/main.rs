@@ -11,7 +11,6 @@ mod threads;
 mod tray;
 mod usage;
 
-use serde::Serialize;
 use std::{path::Path, process::Command};
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
@@ -29,15 +28,6 @@ const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/#settings/Billing";
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct CodexDiagnostics {
-    cli_version: Option<String>,
-    app_server_ready: bool,
-    quota_available: bool,
-    error: Option<String>,
-}
-
 #[tauri::command]
 async fn read_quota(
     state: State<'_, app_server::AppServerState>,
@@ -52,33 +42,24 @@ async fn read_account(
     account::read_account(&state).await
 }
 
-/// 仅检查本机 CLI、app-server 和当前登录态，不读取认证文件也不上传诊断信息。
+/// 校验并切换 Codex CLI。返回版本信息，供设置中心在保存前确认目标可执行。
 #[tauri::command]
-async fn diagnose_codex(
+async fn configure_cli_path(
     state: State<'_, app_server::AppServerState>,
-) -> Result<CodexDiagnostics, String> {
-    let cli_version = app_server::read_cli_version().await;
-    let app_server_ready = state.warm_up().await;
-    let quota = if app_server_ready.is_ok() {
-        quota::read_quota(&state).await.map(|_| ())
-    } else {
-        Err(app_server_ready
-            .as_ref()
-            .expect_err("已确认启动失败")
-            .to_owned())
-    };
-    let error = cli_version
-        .as_ref()
-        .err()
-        .or_else(|| app_server_ready.as_ref().err())
-        .or_else(|| quota.as_ref().err())
-        .cloned();
-    Ok(CodexDiagnostics {
-        cli_version: cli_version.ok(),
-        app_server_ready: app_server_ready.is_ok(),
-        quota_available: quota.is_ok(),
-        error,
-    })
+    cli_path: String,
+) -> Result<String, String> {
+    let cli_path = app_server::normalize_cli_path(&cli_path)?;
+    let version = app_server::read_cli_version_from(cli_path.as_deref()).await?;
+    state.configure_cli_path(cli_path).await;
+    Ok(version)
+}
+
+#[tauri::command]
+fn choose_cli_path(window: WebviewWindow) -> Option<String> {
+    rfd::FileDialog::new()
+        .set_parent(&window)
+        .pick_file()
+        .map(|path| path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -329,13 +310,18 @@ fn main() {
         .plugin(tauri_plugin_notification::init())
         // 第二次启动由首个实例接收，并唤起已有窗口，避免重复启动 app-server 与悬浮窗。
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            tray::show_main_window(app);
         }))
         .setup(|app| {
             tray::setup(app)?;
+            if let Some(window) = app.get_webview_window("main") {
+                // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
+                // 否则前端加载异常或 Windows 恢复出错误窗口尺寸时，只能看到托盘图标。
+                if let Err(error) = resize_float_window(true, false, window) {
+                    eprintln!("初始化主面板尺寸失败：{error}");
+                }
+            }
+            tray::show_main_window(app.handle());
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(error) = app_handle
@@ -351,7 +337,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             read_quota,
             read_account,
-            diagnose_codex,
+            configure_cli_path,
+            choose_cli_path,
             search_threads,
             list_threads_for_selection,
             export_threads,

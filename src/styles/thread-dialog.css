@@ -101,12 +101,6 @@
 .copy-icon-button:disabled { cursor: default; opacity: .75; }
 .copy-icon-button.is-copied { color: #138b63; background: transparent; }
 .copy-icon-button.is-failed { color: #cf1322; background: transparent; }
-.copy-text-button { flex: 0 0 auto; padding: 3px 7px; border: 1px solid #dbe3ec; border-radius: 6px; color: #526173; background: #fff; cursor: pointer; font-size: .63rem; font-weight: 650; line-height: 1.2; transition: color .15s, border-color .15s, background .15s; }
-.copy-text-button:hover:not(:disabled) { border-color: #9fc5fa; color: #1668c6; background: #f5f9ff; }
-.copy-text-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
-.copy-text-button:disabled { cursor: default; opacity: .75; }
-.copy-text-button.is-copied { border-color: #b7ebd5; color: #138b63; background: #f0fbf6; }
-.copy-text-button.is-failed { border-color: #ffccc7; color: #cf1322; background: #fff1f0; }
 .message-user { justify-self: end; border-color: #cfe3ff; background: #eff6ff; text-align: right; }
 .message-assistant { justify-self: start; text-align: left; }
 .message-activity-disclosure { width: 100%; overflow: visible; border: 1px solid #e2e7ed; border-radius: 11px; background: #fff; box-shadow: 0 1px 2px rgba(31, 41, 55, .04); }

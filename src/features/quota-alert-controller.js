@@ -62,7 +62,7 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus }) {
     }
 
     try {
-      // 只由诊断弹窗中的显式点击触发权限请求，避免启动应用即弹出系统授权框。
+      // 只由首页提醒开关的显式点击触发权限请求，避免启动应用即弹出系统授权框。
       const granted = await isPermissionGranted();
       const permission = granted ? "granted" : await requestPermission();
       if (permission !== "granted") {

@@ -18,12 +18,12 @@ export function createRefreshController({
   onRefreshingChange,
   statusElement,
   t,
-  autoRefreshIntervalMs,
+  getAutoRefreshIntervalMs,
   maxConsecutiveFailures,
 }) {
   let latestQuota = null;
   let refreshing = false;
-  let nextAutoRefreshAt = Date.now() + autoRefreshIntervalMs;
+  let nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
   let consecutiveRefreshFailures = 0;
   let autoRefreshPaused = false;
   let trendRequestVersion = 0;
@@ -84,7 +84,7 @@ export function createRefreshController({
     setStatus(t("readingLocalData"));
     try {
       latestQuota = await invoke("read_quota");
-      nextAutoRefreshAt = Date.now() + autoRefreshIntervalMs;
+      nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
       consecutiveRefreshFailures = 0;
       autoRefreshPaused = false;
       quotaView.render(latestQuota);
@@ -125,5 +125,9 @@ export function createRefreshController({
     refreshThreadTrends,
     refreshTokenUsage,
     renderSyncedStatus,
+    resetAutoRefreshSchedule: () => {
+      nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
+      renderSyncedStatus();
+    },
   };
 }

@@ -1,12 +1,13 @@
 use serde_json::{json, Value};
 use std::{
+    path::{Path, PathBuf},
     process::Stdio,
     sync::atomic::{AtomicU64, AtomicUsize, Ordering},
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, ChildStdout, Command},
-    sync::Mutex,
+    sync::{Mutex, RwLock},
     time::{sleep, timeout, Duration},
 };
 
@@ -36,6 +37,8 @@ struct CodexAppServer {
 /// JSON-RPC 响应错误地交给当前调用方。
 pub struct AppServerState {
     server: Mutex<Option<CodexAppServer>>,
+    /// 为空时沿用系统 PATH 中的 codex；设置后版本验证和 app-server 请求共用该路径。
+    cli_path: RwLock<Option<PathBuf>>,
     /// 每次请求使用不同 JSON-RPC ID，便于协议日志定位，也为后续并发调度保留空间。
     next_request_id: AtomicU64,
     /// 交互请求排队或执行期间，后台任务不再抢占下一次 App Server 调用。
@@ -46,6 +49,7 @@ impl Default for AppServerState {
     fn default() -> Self {
         Self {
             server: Mutex::new(None),
+            cli_path: RwLock::new(None),
             // initialize 占用 JSON-RPC ID 1，业务请求从 2 开始。
             next_request_id: AtomicU64::new(2),
             interactive_requests: AtomicUsize::new(0),
@@ -58,7 +62,8 @@ impl AppServerState {
     pub async fn warm_up(&self) -> Result<(), String> {
         let mut connection = self.server.lock().await;
         if connection.is_none() {
-            *connection = Some(CodexAppServer::connect().await?);
+            let cli_path = self.cli_path.read().await.clone();
+            *connection = Some(CodexAppServer::connect(cli_path.as_deref()).await?);
         }
         Ok(())
     }
@@ -81,8 +86,10 @@ impl AppServerState {
         let _interactive_request = InteractiveRequestGuard::new(&self.interactive_requests);
         let request_id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
         let mut connection = self.server.lock().await;
+        let cli_path = self.cli_path.read().await.clone();
         Self::request_locked(
             &mut connection,
+            cli_path.as_deref(),
             request_id,
             method,
             params,
@@ -110,8 +117,10 @@ impl AppServerState {
                 sleep(BACKGROUND_REQUEST_YIELD_DELAY).await;
                 continue;
             }
+            let cli_path = self.cli_path.read().await.clone();
             return Self::request_locked(
                 &mut connection,
+                cli_path.as_deref(),
                 request_id,
                 method,
                 params,
@@ -123,13 +132,14 @@ impl AppServerState {
 
     async fn request_locked(
         connection: &mut Option<CodexAppServer>,
+        cli_path: Option<&Path>,
         request_id: u64,
         method: &str,
         params: Value,
         response_timeout: Duration,
     ) -> Result<Value, String> {
         if connection.is_none() {
-            *connection = Some(CodexAppServer::connect().await?);
+            *connection = Some(CodexAppServer::connect(cli_path).await?);
         }
 
         let result = connection
@@ -154,6 +164,15 @@ impl AppServerState {
             server.close().await;
         }
     }
+
+    /// 切换 CLI 前先结束旧连接，保证后续请求不会继续复用旧可执行文件启动的进程。
+    pub async fn configure_cli_path(&self, cli_path: Option<PathBuf>) {
+        let mut connection = self.server.lock().await;
+        if let Some(server) = connection.take() {
+            server.close().await;
+        }
+        *self.cli_path.write().await = cli_path;
+    }
 }
 
 /// 计数在 future 被取消时也必须释放，否则后台任务会永久误判为存在交互请求。
@@ -174,22 +193,72 @@ impl Drop for InteractiveRequestGuard<'_> {
     }
 }
 
-/// 诊断时独立读取 CLI 版本，便于把“未安装”与“已安装但未登录”区分开。
-pub async fn read_cli_version() -> Result<String, String> {
+/// 将用户输入规范化为现有文件；空值表示继续使用系统 PATH。
+pub fn normalize_cli_path(cli_path: &str) -> Result<Option<PathBuf>, String> {
+    let cli_path = cli_path.trim();
+    if cli_path.is_empty() {
+        return Ok(None);
+    }
+    let unquoted = cli_path
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+        .unwrap_or(cli_path);
+    let path = PathBuf::from(unquoted);
+    let path = if path.is_absolute() {
+        path
+    } else {
+        std::env::current_dir()
+            .map_err(|error| format!("无法解析 Codex CLI 路径：{error}"))?
+            .join(path)
+    };
+    if !path
+        .metadata()
+        .map_err(|error| format!("Codex CLI 路径不可用：{error}"))?
+        .is_file()
+    {
+        return Err("Codex CLI 路径必须指向文件".to_owned());
+    }
+    Ok(Some(path))
+}
+
+fn cli_command(cli_path: Option<&Path>, arguments: &[&str]) -> Command {
     #[cfg(target_os = "windows")]
     let mut command = {
-        let mut command = Command::new("cmd");
-        command.args(["/C", "codex.cmd", "--version"]);
-        command
+        let executable = cli_path
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| PathBuf::from("codex.cmd"));
+        let is_script = executable
+            .extension()
+            .and_then(|value| value.to_str())
+            .is_some_and(|value| {
+                value.eq_ignore_ascii_case("cmd") || value.eq_ignore_ascii_case("bat")
+            });
+        if is_script {
+            let mut command = Command::new("cmd");
+            command.args(["/D", "/C"]).arg(executable).args(arguments);
+            command
+        } else {
+            let mut command = Command::new(executable);
+            command.args(arguments);
+            command
+        }
     };
     #[cfg(not(target_os = "windows"))]
-    let mut command = Command::new("codex");
-
-    #[cfg(not(target_os = "windows"))]
-    command.arg("--version");
+    let mut command = {
+        let mut command = Command::new(cli_path.unwrap_or_else(|| Path::new("codex")));
+        command.args(arguments);
+        command
+    };
 
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
+
+    command
+}
+
+/// 设置保存前独立读取 CLI 版本，避免切换到无法执行的路径。
+pub async fn read_cli_version_from(cli_path: Option<&Path>) -> Result<String, String> {
+    let mut command = cli_command(cli_path, &["--version"]);
 
     let output = timeout(Duration::from_secs(5), command.output())
         .await
@@ -210,23 +279,9 @@ pub async fn read_cli_version() -> Result<String, String> {
 }
 
 impl CodexAppServer {
-    async fn connect() -> Result<Self, String> {
-        #[cfg(target_os = "windows")]
-        let mut command = {
-            let mut command = Command::new("cmd");
-            // npm 安装的 CLI 通常为 codex.cmd，必须经 cmd.exe 解析。
-            command.args(["/C", "codex.cmd", "app-server", "--stdio"]);
-            command
-        };
-        #[cfg(not(target_os = "windows"))]
-        let mut command = {
-            let mut command = Command::new("codex");
-            command.args(["app-server", "--stdio"]);
-            command
-        };
-
-        #[cfg(target_os = "windows")]
-        command.creation_flags(CREATE_NO_WINDOW);
+    async fn connect(cli_path: Option<&Path>) -> Result<Self, String> {
+        // npm 安装的 Windows CLI 通常是 .cmd，命令构造器会自动经 cmd.exe 解析。
+        let mut command = cli_command(cli_path, &["app-server", "--stdio"]);
 
         let mut child = command
             .stdin(Stdio::piped())
@@ -319,4 +374,24 @@ async fn wait_for_response(
             response_timeout.as_secs()
         )
     })?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_cli_path_keeps_system_default() {
+        assert_eq!(normalize_cli_path("  ").expect("空路径应合法"), None);
+    }
+
+    #[test]
+    fn quoted_cli_path_is_accepted() {
+        let executable = std::env::current_exe().expect("应取得测试进程路径");
+        let quoted = format!("\"{}\"", executable.display());
+        assert_eq!(
+            normalize_cli_path(&quoted).expect("带引号的可执行路径应合法"),
+            Some(executable)
+        );
+    }
 }

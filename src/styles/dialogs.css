@@ -1,22 +1,3 @@
-.diagnostics-dialog { width: min(520px, calc(100% - 32px)); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
-.diagnostics-dialog::backdrop { background: rgba(15, 23, 42, .38); }
-.diagnostics-content { padding: 12px 16px 16px; }
-.diagnostics-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-.diagnostics-header h2 { margin-top: 2px; }
-/* 诊断信息密度较高，标题区使用更小的关闭按钮和间距，避免首屏被无效留白占据。 */
-.diagnostics-intro { margin: 9px 0 10px; color: #6f7b88; font-size: .74rem; line-height: 1.45; }
-.diagnostics-results { display: grid; gap: 7px; min-height: 34px; color: #7d8792; font-size: .76rem; }
-.diagnostic-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid #e7edf3; border-radius: 8px; background: #fbfcfe; }
-.diagnostic-row span { color: #526173; }
-.diagnostic-row strong { max-width: 65%; overflow: hidden; font-size: .72rem; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-.diagnostic-row .is-ready { color: #13795b; }
-.diagnostic-row .is-unavailable { color: #cf1322; }
-.diagnostics-error { margin: 10px 0 0; color: #b54708; font-size: .72rem; line-height: 1.5; }
-.diagnostics-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; }
-/* 底部操作仅用于辅助排障，复制诊断与重新检查保持为一个紧凑的操作组。 */
-.diagnostics-actions .copy-text-button { padding: 3px 7px; font-size: .6rem; }
-.diagnostics-actions .thread-action-button { min-height: 25px; padding: 0 7px; font-size: .6rem; }
-
 .account-details { display: flex; min-width: 0; align-items: center; gap: 8px; min-height: 34px; margin: 0; padding: 6px 9px; border: 1px solid #e7edf3; border-radius: 7px; background: #fbfcfe; }
 .account-detail-item { display: flex; min-width: 0; align-items: center; gap: 5px; }
 .account-detail-label { flex: 0 0 auto; color: #738095; font-size: .62rem; font-weight: 650; }
@@ -40,3 +21,22 @@
 .reset-credits-info:hover ~ .reset-credits-tooltip, .reset-credits-info:focus-visible ~ .reset-credits-tooltip { opacity: 1; transform: translateY(0); visibility: visible; }
 .reset-credits-tooltip-description { color: #738095; }
 .account-message { margin: 5px 1px 0; color: #cf1322; font-size: .65rem; line-height: 1.4; }
+
+.settings-dialog { width: min(590px, calc(100% - 32px)); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
+.settings-dialog::backdrop { background: rgba(15, 23, 42, .38); }
+.settings-content { display: grid; gap: 12px; padding: 12px 16px 16px; }
+.settings-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.settings-header h2 { margin: 2px 0 0; }
+.settings-intro { margin: -2px 0 0; color: #6f7b88; font-size: .74rem; line-height: 1.45; }
+.settings-group { display: grid; gap: 5px; padding: 11px 12px; border: 1px solid #e7edf3; border-radius: 9px; background: #fbfcfe; }
+.settings-group > label { color: #344154; font-size: .74rem; font-weight: 720; }
+.settings-hint { margin: 0; color: #7d8792; font-size: .66rem; line-height: 1.4; }
+.settings-path-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+.settings-group input, .settings-group select { min-width: 0; height: 31px; box-sizing: border-box; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 7px; outline: 0; color: #334155; background: #fff; font-size: .7rem; }
+.settings-group input:focus, .settings-group select:focus { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
+.settings-secondary-button { min-height: 29px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 7px; color: #526173; background: #fff; cursor: pointer; font-size: .66rem; font-weight: 680; }
+.settings-secondary-button:hover:not(:disabled) { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
+.settings-status { margin: 0; color: #13795b; font-size: .68rem; line-height: 1.45; }
+.settings-status[data-kind="error"] { color: #cf1322; }
+.settings-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.settings-actions button:disabled, .settings-path-row button:disabled { cursor: wait; opacity: .65; }

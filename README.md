@@ -54,8 +54,8 @@ After installation, you still need to install and sign in to Codex CLI separatel
 - **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
 - **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate Codex app-server and floating-orb instances.
+- **Local settings**: choose a Codex CLI executable or launcher path and an auto-refresh interval from 30 seconds to 5 minutes. Custom paths are validated with `codex --version` before saving.
 - **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Authentication data is never read or stored, and no data is uploaded to third-party services.
-- **Local diagnostics**: diagnostics only check the local CLI, `app-server`, and quota access; no auth file is read and no data is uploaded.
 
 ## Screenshots
 
@@ -120,7 +120,7 @@ Build artifacts are generated under `src-tauri/target/release/bundle/`. Windows 
 ## Usage
 
 - Click the floating usage orb to show or hide the dashboard.
-- Use the top-right diagnostic button to verify the local connection and optionally enable 80% / 90% / 100% quota alerts.
+- Optionally enable system quota alerts at 80% / 90% / 100% usage from the dashboard.
 - Choose a 3-, 7-, or 30-day range for activity and Token trends, then toggle the activity metrics you want to compare.
 - Search, inspect, import, or export local sessions from the session list. In session details, open recorded file diffs, or double-click an image to enlarge it.
 - Copy `codex resume <session ID>` from a session detail page to continue it in the terminal.

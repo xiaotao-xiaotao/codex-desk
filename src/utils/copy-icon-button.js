@@ -6,23 +6,9 @@ const COPIED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.
  */
 export function renderCopyIconButton(button, { label, state = "idle" }) {
   button.classList.add("copy-icon-button");
-  button.classList.remove("copy-text-button");
   button.classList.toggle("is-copied", state === "copied");
   button.classList.toggle("is-failed", state === "failed");
   button.innerHTML = state === "copied" ? COPIED_ICON : COPY_ICON;
-  button.title = label;
-  button.ariaLabel = label;
-}
-
-/**
- * 用于诊断等独立操作：保留文字以明确说明将复制的内容。
- */
-export function renderCopyTextButton(button, { label, state = "idle" }) {
-  button.classList.remove("copy-icon-button");
-  button.classList.add("copy-text-button");
-  button.classList.toggle("is-copied", state === "copied");
-  button.classList.toggle("is-failed", state === "failed");
-  button.textContent = label;
   button.title = label;
   button.ariaLabel = label;
 }
