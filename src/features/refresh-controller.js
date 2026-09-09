@@ -16,6 +16,7 @@ export function createRefreshController({
   getTrendDays,
   setStatus,
   onRefreshingChange,
+  onAvailabilityChange,
   statusElement,
   t,
   getAutoRefreshIntervalMs,
@@ -87,6 +88,7 @@ export function createRefreshController({
       nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
       consecutiveRefreshFailures = 0;
       autoRefreshPaused = false;
+      onAvailabilityChange(true);
       quotaView.render(latestQuota);
       await quotaAlerts.notify(latestQuota);
       refreshSucceeded = true;
@@ -99,6 +101,8 @@ export function createRefreshController({
     } catch (error) {
       console.error(error);
       quotaView.showReadFailure(Boolean(latestQuota));
+      // 没有任何可回退数据时使用整页错误态，避免多个空卡片让请求失败看起来像无数据。
+      if (!latestQuota) onAvailabilityChange(false);
       consecutiveRefreshFailures += 1;
       if (consecutiveRefreshFailures >= maxConsecutiveFailures) {
         autoRefreshPaused = true;

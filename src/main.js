@@ -48,6 +48,10 @@ const sessionsToggle = document.querySelector("#sessions-toggle");
 const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
 const quotaAlertStatus = document.querySelector("#quota-alert-status");
 const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
+const dashboardError = document.querySelector("#dashboard-error");
+const dashboardErrorTitle = document.querySelector("#dashboard-error-title");
+const dashboardErrorDescription = document.querySelector("#dashboard-error-description");
+const dashboardRetry = document.querySelector("#dashboard-retry");
 
 const i18n = createI18n();
 const theme = createThemeController();
@@ -113,10 +117,19 @@ let transferInProgress = false;
 let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
+let dashboardUnavailable = false;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
+}
+
+function renderDashboardAvailability() {
+  panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
+  dashboardError.hidden = !dashboardUnavailable;
+  dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
+  dashboardErrorDescription.textContent = t("dashboardUnavailableDescription");
+  dashboardRetry.textContent = t("dashboardRetry");
 }
 
 refreshController = createRefreshController({
@@ -135,6 +148,10 @@ refreshController = createRefreshController({
   getTrendDays: () => Number(document.querySelector("#trend-range").value),
   setStatus,
   onRefreshingChange: (isRefreshing) => refreshButton.classList.toggle("is-loading", isRefreshing),
+  onAvailabilityChange: (available) => {
+    dashboardUnavailable = !available;
+    renderDashboardAvailability();
+  },
   statusElement: status,
   t,
   getAutoRefreshIntervalMs: settingsController.getRefreshIntervalMs,
@@ -412,6 +429,7 @@ function applyLanguage() {
   });
 
   dialogView.updateLanguage();
+  renderDashboardAvailability();
   trendView.render();
   tokenUsageView.render();
   renderTheme();
@@ -618,6 +636,7 @@ async function bootstrap() {
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshController.refreshQuota(true));
+  dashboardRetry.addEventListener("click", () => refreshController.refreshQuota(true));
   quotaAlertToggle.addEventListener("click", () => void toggleQuotaAlerts());
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());

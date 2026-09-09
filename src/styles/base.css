@@ -40,6 +40,16 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 @keyframes rotate { to { transform: rotate(360deg); } }
 
 .dashboard-section { flex: 0 0 auto; padding: 9px 10px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
+.dashboard-error { display: flex; flex: 1 1 auto; min-height: 0; align-items: center; justify-content: center; flex-direction: column; padding: 28px; text-align: center; }
+.dashboard-error[hidden] { display: none; }
+.dashboard-error-icon { width: 46px; height: 46px; margin-bottom: 12px; fill: none; stroke: #cf1322; stroke-width: 1.8; stroke-linecap: round; }
+.dashboard-error h2 { margin: 0; color: #1f2937; font-size: 1rem; }
+.dashboard-error p { max-width: 420px; margin: 7px 0 16px; color: #637286; font-size: .76rem; line-height: 1.6; }
+.dashboard-retry-button { min-width: 88px; padding: 7px 16px; border: 1px solid #1677ff; border-radius: 7px; color: #fff; background: #1677ff; font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.dashboard-retry-button:hover { border-color: #4096ff; background: #4096ff; }
+.dashboard-retry-button:focus-visible { outline: 2px solid rgba(22, 119, 255, .3); outline-offset: 2px; }
+.panel.is-dashboard-unavailable > .dashboard-section,
+.panel.is-dashboard-unavailable > .status { display: none; }
 .quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 5px; padding: 6px 9px; }
 /* 概览信息收进卡片上方的紧凑标题行，横向空间优先留给两个额度窗口。 */
 .quota-section .section-heading { align-items: center; margin: 0; }

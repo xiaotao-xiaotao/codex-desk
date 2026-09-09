@@ -57,6 +57,8 @@
 :root[data-theme="dark"] .badge { border-color: #254d78; color: #69b1ff; background: #152b43; }
 :root[data-theme="dark"] .trend-total,
 :root[data-theme="dark"] .trend-empty { color: #9aa9ba; }
+:root[data-theme="dark"] .dashboard-error h2 { color: #edf2f7; }
+:root[data-theme="dark"] .dashboard-error p { color: #9aa9ba; }
 :root[data-theme="dark"] .trend-range-picker { color: #9aa9ba; }
 :root[data-theme="dark"] .trend-range-picker:hover,
 :root[data-theme="dark"] .trend-range-picker:has(.trend-range:focus-visible) { color: #8dc5ff; background: #152b43; }
