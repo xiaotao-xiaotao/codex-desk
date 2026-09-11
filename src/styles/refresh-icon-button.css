@@ -1,5 +1,5 @@
 /* 所有刷新入口复用同一图标尺寸和旋转反馈，避免各视图单独维护。 */
-.refresh-icon-button .refresh-icon { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.refresh-icon-button .refresh-icon { width: 14px; height: 14px; fill: currentColor; stroke: none; }
 .refresh-icon-button.is-loading .refresh-icon { animation: refresh-icon-rotate .65s linear infinite; }
 
 @keyframes refresh-icon-rotate { to { transform: rotate(360deg); } }

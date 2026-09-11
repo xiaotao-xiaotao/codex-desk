@@ -14,9 +14,10 @@
 .update-banner-actions .update-banner-primary { border-color: #1677ff; color: #fff; background: #1677ff; }
 .update-banner-actions .update-banner-primary:hover { border-color: #0958d9; color: #fff; background: #0958d9; }
 .update-check-button:disabled { cursor: wait; opacity: .75; }
-.update-check-button.is-loading .update-check-icon { animation: update-check-pulse .65s ease-in-out infinite alternate; }
+.header-actions .update-check-button .update-check-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.update-check-button.is-loading .update-check-icon { animation: update-check-rotate .7s linear infinite; }
 
-@keyframes update-check-pulse { to { transform: translateY(2px); } }
+@keyframes update-check-rotate { to { transform: rotate(360deg); } }
 
 :root[data-theme="dark"] .update-banner { border-color: #315f90; color: #d5dfeb; background: rgba(24, 33, 44, .98); box-shadow: 0 16px 42px rgba(0, 0, 0, .48); }
 :root[data-theme="dark"] .update-banner h2 { color: #e6edf3; }
