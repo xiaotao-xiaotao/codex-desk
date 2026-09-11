@@ -27,6 +27,7 @@ const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
 const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/#settings/Billing";
+const GITHUB_RELEASES_URL: &str = "https://github.com/xiaotao-xiaotao/codex-desk/releases";
 
 #[tauri::command]
 async fn read_quota(
@@ -162,31 +163,40 @@ async fn read_token_usage(
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
 #[tauri::command]
 fn open_billing_page() -> Result<(), String> {
+    open_external_url(CHATGPT_BILLING_URL, "ChatGPT 账单页面")
+}
+
+#[tauri::command]
+fn open_update_page() -> Result<(), String> {
+    open_external_url(GITHUB_RELEASES_URL, "GitHub 更新页面")
+}
+
+fn open_external_url(url: &str, label: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let mut command = {
         let mut command = Command::new("cmd");
-        command.args(["/C", "start", "", CHATGPT_BILLING_URL]);
+        command.args(["/C", "start", "", url]);
         command
     };
     #[cfg(target_os = "macos")]
     let mut command = {
         let mut command = Command::new("open");
-        command.arg(CHATGPT_BILLING_URL);
+        command.arg(url);
         command
     };
     #[cfg(all(unix, not(target_os = "macos")))]
     let mut command = {
         let mut command = Command::new("xdg-open");
-        command.arg(CHATGPT_BILLING_URL);
+        command.arg(url);
         command
     };
     #[cfg(not(any(target_os = "windows", target_os = "macos", unix)))]
-    return Err("当前系统不支持打开外部账单页面".to_owned());
+    return Err(format!("当前系统不支持打开{label}"));
 
     command
         .spawn()
         .map(|_| ())
-        .map_err(|error| format!("无法打开 ChatGPT 账单页面：{error}"))
+        .map_err(|error| format!("无法打开{label}：{error}"))
 }
 
 #[tauri::command]
@@ -337,6 +347,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             read_quota,
             read_account,
+            open_update_page,
             configure_cli_path,
             choose_cli_path,
             search_threads,

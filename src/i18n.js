@@ -367,6 +367,14 @@ const SETTINGS_TRANSLATIONS = {
   ko: { settingsTitle: "설정", settingsKicker: "로컬 환경설정", openSettings: "설정 열기", closeSettings: "설정 닫기", settingsIntro: "Codex CLI와 데이터 새로 고침 방식을 설정합니다. 모든 설정은 이 기기에만 저장됩니다.", settingsCliPath: "Codex CLI 경로", settingsCliPathHint: "비워 두면 시스템 PATH의 codex를 사용합니다. .cmd/.bat 실행 파일도 지원합니다.", settingsCliPathPlaceholder: "시스템 PATH 사용", settingsBrowse: "찾아보기", settingsBrowseFailed: "CLI 파일을 선택할 수 없습니다: {error}", settingsUsePath: "시스템 PATH", settingsRefreshInterval: "자동 새로 고침 간격", settingsRefreshIntervalHint: "할당량, 추세 및 펼친 세션 목록에 적용됩니다.", settingsRefresh30Seconds: "30초", settingsRefresh60Seconds: "1분", settingsRefresh2Minutes: "2분", settingsRefresh5Minutes: "5분", settingsCancel: "취소", settingsSave: "저장 및 확인", settingsSaving: "Codex CLI 확인 중…", settingsSaved: "설정이 저장되었습니다. CLI {version}", settingsSaveFailed: "저장 실패: {error}" },
 };
 
+const UPDATE_TRANSLATIONS = {
+  "zh-CN": { currentVersionLabel: "当前版本 v{version}", checkForUpdates: "检查版本更新", checkingUpdatesTitle: "正在检查更新", checkingUpdatesDescription: "正在连接 GitHub 获取最新版本…", upToDateTitle: "已是最新版本", upToDateSummary: "当前已安装 Codex Desk v{current}", updateCheckFailedTitle: "检查更新失败", updateCheckFailedDescription: "无法获取 GitHub 版本信息，请检查网络后重试。", updateAvailableTitle: "发现 Codex Desk 新版本", updateVersionSummary: "当前 v{current} · 最新 v{latest}", updatePublishedAt: "发布于 {date}", updateNotesUnavailable: "仓库版本已升级，发布说明暂未提供。", updateViewRelease: "查看更新", updateLater: "稍后", updateDismiss: "知道了" },
+  "zh-TW": { currentVersionLabel: "目前版本 v{version}", checkForUpdates: "檢查版本更新", checkingUpdatesTitle: "正在檢查更新", checkingUpdatesDescription: "正在連線 GitHub 取得最新版本…", upToDateTitle: "已是最新版本", upToDateSummary: "目前已安裝 Codex Desk v{current}", updateCheckFailedTitle: "檢查更新失敗", updateCheckFailedDescription: "無法取得 GitHub 版本資訊，請檢查網路後重試。", updateAvailableTitle: "發現 Codex Desk 新版本", updateVersionSummary: "目前 v{current} · 最新 v{latest}", updatePublishedAt: "發佈於 {date}", updateNotesUnavailable: "儲存庫版本已升級，發佈說明暫未提供。", updateViewRelease: "查看更新", updateLater: "稍後", updateDismiss: "知道了" },
+  en: { currentVersionLabel: "Current version v{version}", checkForUpdates: "Check for updates", checkingUpdatesTitle: "Checking for updates", checkingUpdatesDescription: "Connecting to GitHub for the latest version…", upToDateTitle: "You're up to date", upToDateSummary: "Codex Desk v{current} is installed", updateCheckFailedTitle: "Update check failed", updateCheckFailedDescription: "Could not get version information from GitHub. Check your connection and try again.", updateAvailableTitle: "A Codex Desk update is available", updateVersionSummary: "Current v{current} · Latest v{latest}", updatePublishedAt: "Published {date}", updateNotesUnavailable: "The repository version has been updated, but release notes are not available yet.", updateViewRelease: "View update", updateLater: "Later", updateDismiss: "Got it" },
+  ja: { currentVersionLabel: "現在のバージョン v{version}", checkForUpdates: "更新を確認", checkingUpdatesTitle: "更新を確認中", checkingUpdatesDescription: "GitHub から最新バージョンを取得しています…", upToDateTitle: "最新バージョンです", upToDateSummary: "Codex Desk v{current} がインストールされています", updateCheckFailedTitle: "更新の確認に失敗しました", updateCheckFailedDescription: "GitHub からバージョン情報を取得できません。ネットワークを確認して再試行してください。", updateAvailableTitle: "Codex Desk の新しいバージョンがあります", updateVersionSummary: "現在 v{current} · 最新 v{latest}", updatePublishedAt: "{date} 公開", updateNotesUnavailable: "リポジトリのバージョンは更新されていますが、リリースノートはまだありません。", updateViewRelease: "更新を見る", updateLater: "後で", updateDismiss: "了解" },
+  ko: { currentVersionLabel: "현재 버전 v{version}", checkForUpdates: "업데이트 확인", checkingUpdatesTitle: "업데이트 확인 중", checkingUpdatesDescription: "GitHub에서 최신 버전을 가져오는 중…", upToDateTitle: "최신 버전입니다", upToDateSummary: "Codex Desk v{current}이 설치되어 있습니다", updateCheckFailedTitle: "업데이트 확인 실패", updateCheckFailedDescription: "GitHub에서 버전 정보를 가져올 수 없습니다. 네트워크를 확인한 후 다시 시도하세요.", updateAvailableTitle: "새 Codex Desk 버전이 있습니다", updateVersionSummary: "현재 v{current} · 최신 v{latest}", updatePublishedAt: "{date} 출시", updateNotesUnavailable: "저장소 버전이 업데이트되었지만 릴리스 설명은 아직 없습니다.", updateViewRelease: "업데이트 보기", updateLater: "나중에", updateDismiss: "확인" },
+};
+
 // 首页摘要使用独立短文案，避免状态提示占用账户用量和本地历史的首屏空间。
 const HOME_SUMMARY_TRANSLATIONS = {
   "zh-CN": { quotaAlertStatusEnabled: "提醒已开启（阈值80%/90%/100%）", quotaAlertStatusDisabled: "提醒未开启（阈值80%/90%/100%）", quotaAlertToggleEnable: "开启额度提醒", quotaAlertToggleDisable: "关闭额度提醒", syncedStatusPrefix: "本地 Codex 已同步{plan}（仅从本机读取 · ", autoRefreshCountdownPrefix: "", autoRefreshCountdownSuffix: " 秒后自动刷新", syncedStatusSuffix: "）", autoRefreshPaused: "连续刷新失败 {count} 次，已暂停自动刷新；点击“立即刷新”可重试。最后错误：{error}", dashboardUnavailableTitle: "网络连接异常", dashboardUnavailableDescription: "暂时无法获取 Codex 数据，请检查网络连接或登录状态后重试。", dashboardRetry: "重新加载" },
@@ -434,6 +442,7 @@ export function createI18n() {
   const t = (key, values = {}) => {
     const language = getLanguage();
     const text = QUOTA_LABEL_TRANSLATIONS[language]?.[key]
+      ?? UPDATE_TRANSLATIONS[language]?.[key]
       ?? SETTINGS_TRANSLATIONS[language]?.[key]
       ?? SESSION_SECTION_TRANSLATIONS[language]?.[key]
       ?? HOME_SUMMARY_TRANSLATIONS[language]?.[key]
@@ -448,6 +457,7 @@ export function createI18n() {
       ?? IMAGE_PREVIEW_TRANSLATIONS[language]?.[key]
       ?? TRANSLATIONS[language][key]
       ?? QUOTA_LABEL_TRANSLATIONS["zh-CN"]?.[key]
+      ?? UPDATE_TRANSLATIONS["zh-CN"]?.[key]
       ?? SETTINGS_TRANSLATIONS["zh-CN"]?.[key]
       ?? SESSION_SECTION_TRANSLATIONS["zh-CN"]?.[key]
       ?? HOME_SUMMARY_TRANSLATIONS["zh-CN"]?.[key]

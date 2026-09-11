@@ -1,5 +1,7 @@
 @import './styles/base.css';
 @import './styles/refresh-icon-button.css';
+@import './styles/loading-overlay.css';
+@import './styles/update-banner.css';
 @import './styles/thread-dialog.css';
 @import './styles/dialogs.css';
 @import './styles/scrollbar.css';

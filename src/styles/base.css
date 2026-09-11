@@ -20,6 +20,8 @@ button, input { font: inherit; }
 .window-drag-region { min-width: 16px; align-self: stretch; flex: 1 1 auto; cursor: grab; user-select: none; }
 .window-drag-region:active { cursor: grabbing; }
 .title-row { display: flex; align-items: baseline; gap: 7px; }
+.app-version { display: inline-flex; align-items: center; padding: 1px 5px; border: 1px solid #d8e7fa; border-radius: 999px; color: #53739b; background: #f3f8ff; font-size: .54rem; font-weight: 700; line-height: 1.35; }
+.app-version[hidden] { display: none; }
 .eyebrow { display: flex; align-items: center; gap: 4px; margin: 0; color: #1677ff; font-size: .62rem; font-weight: 700; }
 .eyebrow .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #52c41a; box-shadow: 0 0 0 3px #edf9e8; }
 h1 { margin: 0; color: #171a1f; font-size: 1.04rem; letter-spacing: -.035em; }

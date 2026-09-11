@@ -1,3 +1,4 @@
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { LANGUAGE_OPTIONS, createI18n } from "./i18n.js";
@@ -5,6 +6,7 @@ import { THEME_ICONS, createThemeController } from "./theme.js";
 import { copyMessageContent, copyText } from "./utils/clipboard.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
+import { createLoadingOverlay } from "./utils/loading-overlay.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "./utils/refresh-icon-button.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createRefreshController } from "./features/refresh-controller.js";
@@ -16,6 +18,7 @@ import { createThreadDialogView } from "./views/thread-dialog-view.js";
 import { createThreadListView } from "./views/thread-list-view.js";
 import { createThreadTrendView } from "./views/thread-trend-view.js";
 import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
+import { createUpdateBannerView } from "./views/update-banner-view.js";
 
 // 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
 const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
@@ -25,6 +28,7 @@ const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
 const status = document.querySelector("#status");
 const panel = document.querySelector(".panel");
+const appVersionElement = document.querySelector("#app-version");
 const windowDragRegion = document.querySelector("#window-drag-region");
 const languageButton = document.querySelector("#language-button");
 const languageMenu = document.querySelector("#language-menu");
@@ -33,6 +37,7 @@ const themeButton = document.querySelector("#theme-button");
 const themeIcon = document.querySelector("#theme-icon");
 const minimizeButton = document.querySelector("#minimize-button");
 const collapseButton = document.querySelector("#collapse-button");
+const updateCheckButton = document.querySelector("#update-check-button");
 const refreshButton = document.querySelector("#refresh-button");
 const quitButton = document.querySelector("#quit-button");
 const importThreadsButton = document.querySelector("#import-threads");
@@ -57,6 +62,10 @@ const dashboardRetry = document.querySelector("#dashboard-retry");
 const i18n = createI18n();
 const theme = createThemeController();
 const { t } = i18n;
+const dashboardLoadingOverlay = createLoadingOverlay({
+  container: panel,
+  className: "dashboard-loading-overlay",
+});
 const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime, formatUpdated } = createDateFormatters({
   getLocale: i18n.getLocale,
   t,
@@ -72,6 +81,13 @@ const settingsController = createSettingsController({
   onSettingsChanged: restartAutoRefreshTimer,
 });
 const accountView = createAccountOverviewView({ t, invoke });
+const updateView = createUpdateBannerView({
+  t,
+  invoke,
+  triggerButton: updateCheckButton,
+  getLanguage: i18n.getLanguage,
+  getCurrentVersion: getVersion,
+});
 const dialogView = createThreadDialogView({
   t,
   formatUpdated,
@@ -119,10 +135,27 @@ let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
 let dashboardUnavailable = false;
+let currentAppVersion = "";
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
+}
+
+function renderAppVersion() {
+  appVersionElement.hidden = !currentAppVersion;
+  if (!currentAppVersion) return;
+  appVersionElement.textContent = `v${currentAppVersion}`;
+  appVersionElement.title = t("currentVersionLabel", { version: currentAppVersion });
+}
+
+async function loadAppVersion() {
+  try {
+    currentAppVersion = await getVersion();
+    renderAppVersion();
+  } catch (error) {
+    console.warn("读取 Codex Desk 版本失败", error);
+  }
 }
 
 function renderDashboardAvailability() {
@@ -131,6 +164,15 @@ function renderDashboardAvailability() {
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
   dashboardErrorDescription.textContent = t("dashboardUnavailableDescription");
   dashboardRetry.textContent = t("dashboardRetry");
+}
+
+async function retryDashboard() {
+  dashboardLoadingOverlay.show(t("readingLocalData"));
+  try {
+    await refreshController.refreshQuota(true);
+  } finally {
+    dashboardLoadingOverlay.hide();
+  }
 }
 
 refreshController = createRefreshController({
@@ -417,6 +459,11 @@ function applyLanguage() {
   renderCloseIconButton(quitButton, { label: t("quit") });
   settingsView.updateLanguage();
   accountView.updateLanguage();
+  updateView.updateLanguage();
+  renderAppVersion();
+  if (dashboardLoadingOverlay.isVisible()) {
+    dashboardLoadingOverlay.setMessage(t("readingLocalData"));
+  }
   renderQuotaAlertStatus();
   orb.title = t("orbTitle");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
@@ -519,10 +566,6 @@ async function setExpanded(nextExpanded) {
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
-  if (expanded) {
-    currentThreadPage = 1;
-    await refreshController.refreshQuota(true);
-  }
 }
 
 function setupLanguageControls() {
@@ -624,6 +667,7 @@ function restartAutoRefreshTimer() {
 
 async function bootstrap() {
   applyLanguage();
+  void loadAppVersion();
   setupLanguageControls();
   themeButton.addEventListener("click", () => {
     theme.cycleMode();
@@ -639,7 +683,7 @@ async function bootstrap() {
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshController.refreshQuota(true));
-  dashboardRetry.addEventListener("click", () => refreshController.refreshQuota(true));
+  dashboardRetry.addEventListener("click", () => void retryDashboard());
   quotaAlertToggle.addEventListener("click", () => void toggleQuotaAlerts());
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
@@ -672,7 +716,7 @@ async function bootstrap() {
 
   await listen("quota://refresh", async () => {
     if (!expanded) await setExpanded(true);
-    else await refreshController.refreshQuota();
+    await refreshController.refreshQuota();
   });
   // 应用启动时直接展示看板；用户可通过标题栏的收起按钮主动切换为悬浮球。
   try {
@@ -683,6 +727,8 @@ async function bootstrap() {
     setStatus(t("settingsSaveFailed", { error: String(error) }), "error");
   }
   await setExpanded(true);
+  // 首次启动需要立即读取；后续从悬浮球展开只恢复视图，刷新仍由定时器或用户操作触发。
+  await refreshController.refreshQuota(true);
   void accountView.refresh();
   restartAutoRefreshTimer();
   window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);

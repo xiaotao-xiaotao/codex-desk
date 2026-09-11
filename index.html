@@ -20,6 +20,7 @@
           <div>
             <div class="title-row">
               <h1 data-i18n="appTitle">Codex 桌面控制台</h1>
+              <span id="app-version" class="app-version" hidden></span>
               <p class="eyebrow"><span class="status-dot"></span><span data-i18n="secureAccess">本机安全访问</span></p>
             </div>
           </div>
@@ -28,8 +29,13 @@
             <button id="collapse-button" class="icon-button" type="button" title="收起为悬浮球" aria-label="收起为悬浮球">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
             </button>
-            <button id="settings-button" class="icon-button" type="button" title="设置" aria-label="打开设置">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+            <button id="minimize-button" class="icon-button" type="button" title="最小化到系统托盘" aria-label="最小化到系统托盘">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
+            </button>
+            <button id="update-check-button" class="icon-button update-check-button" type="button" title="检查版本更新" aria-label="检查版本更新">
+              <svg class="update-check-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" />
+              </svg>
             </button>
             <div class="language-picker">
               <button id="language-button" class="icon-button" type="button" title="语言：跟随系统" aria-label="语言：跟随系统" aria-expanded="false" aria-controls="language-menu">
@@ -47,13 +53,26 @@
             <button id="theme-button" class="icon-button" type="button" title="主题：跟随系统" aria-label="主题：跟随系统">
               <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
             </button>
-            <button id="minimize-button" class="icon-button" type="button" title="最小化到系统托盘" aria-label="最小化到系统托盘">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
-            </button>
             <button id="refresh-button" class="icon-button refresh-icon-button" type="button" title="立即刷新" aria-label="立即刷新"></button>
+            <button id="settings-button" class="icon-button" type="button" title="设置" aria-label="打开设置">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+            </button>
             <button id="quit-button" class="close-icon-button" type="button" title="退出程序" aria-label="退出程序"></button>
           </div>
         </header>
+
+        <aside id="update-banner" class="update-banner" aria-live="polite" hidden>
+          <div class="update-banner-icon" aria-hidden="true">↑</div>
+          <div class="update-banner-content">
+            <h2 id="update-banner-title"></h2>
+            <p id="update-banner-version" class="update-banner-version"></p>
+            <div id="update-banner-notes" class="update-banner-notes app-scrollable"></div>
+            <div class="update-banner-actions">
+              <button id="update-banner-open" class="update-banner-primary" type="button"></button>
+              <button id="update-banner-dismiss" type="button"></button>
+            </div>
+          </div>
+        </aside>
 
         <section id="dashboard-error" class="dashboard-error" aria-live="assertive" hidden>
           <svg class="dashboard-error-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -231,10 +250,6 @@
           <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
         </section>
       </section>
-      <div id="dialog-status" class="thread-dialog-state" data-kind="normal" aria-live="polite" hidden>
-        <span class="thread-dialog-state-spinner" aria-hidden="true"></span>
-        <span id="dialog-status-text">正在读取会话…</span>
-      </div>
       <section id="file-diff-panel" class="file-diff-panel" role="dialog" aria-modal="true" aria-labelledby="file-diff-title" hidden>
         <header class="file-diff-toolbar">
           <div>

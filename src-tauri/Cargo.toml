@@ -1,18 +1,36 @@
 [package]
 name = "codex-desk"
-version = "1.1.1"
+# Cargo 包版本仅用于内部构建；应用及安装包版本统一读取 ../version.json。
+version = "0.0.0"
 description = "Codex 本地桌面控制台"
 authors = ["local"]
 edition = "2021"
 
 [build-dependencies]
+serde_json = "1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rfd = "0.15"
-tauri = { version = "2", features = ["tray-icon"] }
+# 保留桌面端默认能力，但关闭项目未使用的运行时动态 ACL。
+tauri = { version = "2", default-features = false, features = [
+    "common-controls-v6",
+    "compression",
+    "dbus",
+    "tray-icon",
+    "wry",
+    "x11",
+] }
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.3"
 tokio = { version = "1", features = ["fs", "io-util", "process", "sync", "time"] }
+
+[profile.release]
+# 桌面安装包更重视体积；LTO 与单代码生成单元可移除跨 crate 的冗余代码。
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = "symbols"

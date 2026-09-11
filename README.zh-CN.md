@@ -50,7 +50,7 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 
 ### 会话详情
 
-![Codex Desk 会话详情](docs/screenshots/session-details-zh.png)
+![Codex Desk 会话详情](docs/screenshots/session-details-en.png)
 
 ### 文件变更详情
 
@@ -77,7 +77,8 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 - **会话导入导出**：可选择单个会话、当前页或全部筛选结果，导出为可移植的 Codex Desk 会话包；可在另一台已登录 Codex CLI 的设备中导入为新会话。
 - **单实例运行**：重复启动会唤起已有窗口，避免重复启动 Codex app-server 与悬浮窗。
 - **本机设置**：可指定 Codex CLI 可执行文件或启动脚本路径，并配置 30 秒至 5 分钟的自动刷新间隔；路径会在保存前通过 `codex --version` 验证。
-- **本机数据边界**：账户、额度与会话数据通过本机 `codex app-server --stdio` 获取，Token 用量仅从本机 Codex 会话文件的累计快照读取。不会读取或保存 `auth.json`，也不会上传数据到第三方服务。
+- **版本更新提醒**：可从主面板手动检查 GitHub 仓库公开的版本文件；发现新版本后展示 Release 更新内容并提供下载入口。
+- **本机数据边界**：账户、额度与会话数据通过本机 `codex app-server --stdio` 获取，Token 用量仅从本机 Codex 会话文件的累计快照读取。不会读取或保存 `auth.json`，也不会上传本机数据；版本检查只向 GitHub 请求公开的版本和 Release 信息。
 
 ## 统计口径
 
@@ -147,6 +148,8 @@ npm run tauri dev
 ```
 
 ## 打包
+
+发布信息统一维护在仓库根目录的 `version.json`。新版本发布前只需修改其中的版本号、发布日期和多语言更新说明，Tauri、安装包、Codex app-server 客户端和更新检查都会读取该文件。
 
 ```powershell
 npm run tauri build

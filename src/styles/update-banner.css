@@ -1,0 +1,28 @@
+.update-banner { position: absolute; z-index: 20; top: 58px; right: 14px; display: grid; width: min(430px, calc(100% - 28px)); grid-template-columns: 32px minmax(0, 1fr); gap: 10px; padding: 12px; border: 1px solid #cfe0f5; border-radius: 11px; color: #344154; background: rgba(255, 255, 255, .98); box-shadow: 0 14px 38px rgba(31, 41, 55, .2); }
+.update-banner[hidden] { display: none; }
+.update-banner-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; color: #fff; background: #1677ff; font-size: 1rem; font-weight: 800; }
+.update-banner-content { min-width: 0; }
+.update-banner h2 { margin: 1px 0 0; color: #263445; font-size: .8rem; }
+.update-banner-version { margin: 3px 0 0; color: #738095; font-size: .64rem; }
+.update-banner-notes { display: grid; max-height: 116px; gap: 4px; margin-top: 9px; overflow-y: auto; color: #526173; font-size: .67rem; line-height: 1.45; }
+.update-banner-notes[hidden] { display: none; }
+.update-banner-notes p { position: relative; margin: 0; padding-left: 11px; }
+.update-banner-notes p::before { position: absolute; left: 0; color: #1677ff; content: "•"; }
+.update-banner-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.update-banner-actions button { min-height: 27px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 6px; color: #607084; background: #fff; cursor: pointer; font-size: .64rem; font-weight: 700; }
+.update-banner-actions button:hover { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
+.update-banner-actions .update-banner-primary { border-color: #1677ff; color: #fff; background: #1677ff; }
+.update-banner-actions .update-banner-primary:hover { border-color: #0958d9; color: #fff; background: #0958d9; }
+.update-check-button:disabled { cursor: wait; opacity: .75; }
+.update-check-button.is-loading .update-check-icon { animation: update-check-pulse .65s ease-in-out infinite alternate; }
+
+@keyframes update-check-pulse { to { transform: translateY(2px); } }
+
+:root[data-theme="dark"] .update-banner { border-color: #315f90; color: #d5dfeb; background: rgba(24, 33, 44, .98); box-shadow: 0 16px 42px rgba(0, 0, 0, .48); }
+:root[data-theme="dark"] .update-banner h2 { color: #e6edf3; }
+:root[data-theme="dark"] .update-banner-version { color: #9aa9ba; }
+:root[data-theme="dark"] .update-banner-notes { color: #b8c5d3; }
+:root[data-theme="dark"] .update-banner-actions button { border-color: #3a4758; color: #b8c5d3; background: #151b23; }
+:root[data-theme="dark"] .update-banner-actions button:hover { border-color: #4787c8; color: #c7e2ff; background: #1b3857; }
+:root[data-theme="dark"] .update-banner-actions .update-banner-primary { border-color: #4096ff; color: #fff; background: #1677ff; }
+:root[data-theme="dark"] .update-banner-actions .update-banner-primary:hover { border-color: #69b1ff; color: #fff; background: #1e80e8; }

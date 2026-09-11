@@ -23,12 +23,6 @@
 .dialog-messages-pane { display: flex; min-width: 0; min-height: 0; flex: 1 1 auto; flex-direction: column; background: #f7f8fa; }
 .dialog-meta { color: #8a94a0; font-size: .68rem; }
 .dialog-meta { margin: 0; padding: 8px 14px; border-bottom: 1px solid #edf0f3; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.thread-dialog-state { position: absolute; z-index: 6; inset: 42px 0 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 24px; color: #607084; background: rgba(247, 248, 250, .94); font-size: .72rem; font-weight: 650; text-align: center; }
-.thread-dialog-state[hidden] { display: none; }
-.thread-dialog-state-spinner { width: 22px; height: 22px; box-sizing: border-box; border: 2px solid #cfe2f7; border-top-color: #1677ff; border-radius: 50%; animation: thread-dialog-state-rotate .7s linear infinite; }
-.thread-dialog-state[data-kind="error"] { color: #cf1322; }
-.thread-dialog-state[data-kind="error"] .thread-dialog-state-spinner { display: none; }
-@keyframes thread-dialog-state-rotate { to { transform: rotate(360deg); } }
 .dialog-search { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 10px 20px 8px; border-bottom: 1px solid #e4e8ed; background: #f7f8fa; }
 .thread-sidebar-toggle { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #5f748c; background: transparent; cursor: pointer; }
 .thread-sidebar-toggle-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }

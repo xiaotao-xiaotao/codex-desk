@@ -55,7 +55,8 @@ After installation, you still need to install and sign in to Codex CLI separatel
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
 - **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate Codex app-server and floating-orb instances.
 - **Local settings**: choose a Codex CLI executable or launcher path and an auto-refresh interval from 30 seconds to 5 minutes. Custom paths are validated with `codex --version` before saving.
-- **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Authentication data is never read or stored, and no data is uploaded to third-party services.
+- **Update notifications**: manually check the public version file from the dashboard; when a newer version is available, show its Release notes and provide a download link.
+- **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Authentication data is never read or stored, and no local data is uploaded; update checks request only public version and Release information from GitHub.
 
 ## Screenshots
 
@@ -72,7 +73,7 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 ### Session details
 
-![Codex Desk session details](docs/screenshots/session-details-en.png)
+![Codex Desk session details](docs/screenshots/session-details-zh.png)
 
 ## Multilingual support
 
@@ -110,6 +111,8 @@ npm run tauri dev
 ```
 
 ## Build
+
+Release metadata has a single source of truth: `version.json` in the repository root. For a new release, update its version, publication date, and localized release notes; Tauri, the installer, the Codex app-server client, and update checks all use that file.
 
 ```powershell
 npm run tauri build

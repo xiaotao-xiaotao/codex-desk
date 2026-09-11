@@ -1,0 +1,31 @@
+{
+  "version": "1.1.2",
+  "publishedAt": "2026-09-11",
+  "releaseNotes": {
+    "zh-CN": [
+      "新增主面板手动检查版本更新，并展示发布说明",
+      "优化会话详情页面和刷新交互体验",
+      "统一应用版本配置，简化后续发布流程"
+    ],
+    "zh-TW": [
+      "新增主面板手動檢查版本更新，並顯示發佈說明",
+      "改善工作階段詳情頁面和重新整理互動體驗",
+      "統一應用程式版本設定，簡化後續發佈流程"
+    ],
+    "en": [
+      "Added manual update checks and release notes to the dashboard",
+      "Improved session details and refresh interactions",
+      "Centralized app version configuration for simpler releases"
+    ],
+    "ja": [
+      "メインパネルに手動更新確認とリリースノート表示を追加",
+      "セッション詳細画面と更新操作を改善",
+      "アプリのバージョン設定を一元化し、リリース手順を簡素化"
+    ],
+    "ko": [
+      "메인 패널에 수동 업데이트 확인 및 릴리스 노트 표시 추가",
+      "세션 상세 화면과 새로 고침 상호작용 개선",
+      "앱 버전 설정을 통합하여 릴리스 절차 간소화"
+    ]
+  }
+}

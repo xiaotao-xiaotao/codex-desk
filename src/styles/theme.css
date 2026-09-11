@@ -17,6 +17,7 @@
 :root[data-theme="dark"] h1,
 :root[data-theme="dark"] h2,
 :root[data-theme="dark"] .thread-title { color: #e6edf3; }
+:root[data-theme="dark"] .app-version { border-color: #315f90; color: #8dc5ff; background: #152b43; }
 :root[data-theme="dark"] .section-kicker,
 :root[data-theme="dark"] .search-result,
 :root[data-theme="dark"] .status,
@@ -126,9 +127,9 @@
 :root[data-theme="dark"] .thread-actions-popover button:hover:not(:disabled) { color: #c7e2ff; background: #1b3857; }
 :root[data-theme="dark"] .dialog-sidebar { border-right-color: #2a3544; background: #151b23; box-shadow: 12px 0 28px rgba(0, 0, 0, .34); }
 :root[data-theme="dark"] .dialog-meta { border-bottom-color: #2a3544; }
-:root[data-theme="dark"] .thread-dialog-state { color: #b8c5d3; background: rgba(16, 21, 28, .95); }
-:root[data-theme="dark"] .thread-dialog-state-spinner { border-color: #294766; border-top-color: #69b1ff; }
-:root[data-theme="dark"] .thread-dialog-state[data-kind="error"] { color: #ff7875; }
+:root[data-theme="dark"] .loading-overlay { color: #b8c5d3; background: rgba(16, 21, 28, .95); }
+:root[data-theme="dark"] .loading-overlay-spinner { border-color: #294766; border-top-color: #69b1ff; }
+:root[data-theme="dark"] .loading-overlay[data-kind="error"] { color: #ff7875; }
 :root[data-theme="dark"] .thread-overview-section,
 :root[data-theme="dark"] .thread-overview-disclosure,
 :root[data-theme="dark"] .dialog-insights { border-color: #2a3544; }

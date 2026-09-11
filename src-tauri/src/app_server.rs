@@ -301,7 +301,7 @@ impl CodexAppServer {
             .request(
                 1,
                 "initialize",
-                json!({ "clientInfo": { "name": "codex-desk", "version": "1.1.1" } }),
+                json!({ "clientInfo": { "name": "codex-desk", "version": env!("CODEX_DESK_VERSION") } }),
                 DEFAULT_REQUEST_TIMEOUT,
             )
             .await?;

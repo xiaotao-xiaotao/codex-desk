@@ -5,6 +5,7 @@ import { createThreadMessageSearch } from "./thread-message-search.js";
 import { createThreadOverviewView } from "./thread-overview-view.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
+import { createLoadingOverlay } from "../utils/loading-overlay.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "../utils/refresh-icon-button.js";
 
 const DIALOG_TITLE_MAX_LENGTH = 52;
@@ -76,8 +77,6 @@ export function createThreadDialogView({
   const sidebarToggle = document.querySelector("#thread-sidebar-toggle");
   const dialogTitle = document.querySelector("#dialog-title");
   const dialogMeta = document.querySelector("#dialog-meta");
-  const dialogStatus = document.querySelector("#dialog-status");
-  const dialogStatusText = document.querySelector("#dialog-status-text");
   const messageList = document.querySelector("#message-list");
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
@@ -86,6 +85,10 @@ export function createThreadDialogView({
   const exportButton = document.querySelector("#thread-export");
   const copyIdButton = document.querySelector("#thread-copy-id");
   const refreshButton = document.querySelector("#thread-refresh");
+  const statusOverlay = createLoadingOverlay({
+    container: threadDialog,
+    className: "thread-loading-overlay",
+  });
   const fileDiffView = createThreadFileDiffView({ t });
   const imagePreviewView = createThreadImagePreviewView({ t });
   const insightsView = createThreadInsightsView({ t });
@@ -98,6 +101,7 @@ export function createThreadDialogView({
     onViewFileChange: (activity) => fileDiffView.show(activity),
   });
   let currentDetail = null;
+  let currentReadError = null;
   // 默认优先展示对话内容；概览信息按需展开，避免窄窗口被左侧栏挤占。
   let sidebarExpanded = false;
   const messageSearch = createThreadMessageSearch({
@@ -110,10 +114,8 @@ export function createThreadDialogView({
   });
 
   function showStatus(message, error = false) {
-    dialogStatusText.textContent = message;
-    dialogStatus.dataset.kind = error ? "error" : "normal";
-    dialogStatus.setAttribute("aria-busy", String(!error));
-    dialogStatus.hidden = false;
+    if (error) statusOverlay.showError(message);
+    else statusOverlay.show(message);
   }
 
   function renderActions() {
@@ -275,6 +277,7 @@ export function createThreadDialogView({
 
   function openLoading(thread) {
     currentDetail = null;
+    currentReadError = null;
     messageSearch.reset();
     setDialogTitle(thread.title);
     setDialogMeta(thread.updatedAt);
@@ -290,11 +293,11 @@ export function createThreadDialogView({
 
   function showDetail(detail) {
     currentDetail = detail;
+    currentReadError = null;
     messageSearch.setMessages(detail.messages, { resetActiveMatch: true });
     setDialogTitle(detail.title);
     setDialogMeta(detail.updatedAt);
-    dialogStatus.hidden = true;
-    dialogStatus.setAttribute("aria-busy", "false");
+    statusOverlay.hide();
     insightsView.render(detail);
     overviewView.setDetail(detail);
     renderActions();
@@ -302,6 +305,7 @@ export function createThreadDialogView({
   }
 
   function showReadFailure(error) {
+    currentReadError = error;
     showStatus(t("readFailed", { error: String(error) }), true);
   }
 
@@ -331,7 +335,11 @@ export function createThreadDialogView({
       overviewView.clear();
       fileDiffView.clear();
       messageSearch.updateLanguage();
-      showStatus(t("readingThread"));
+      if (currentReadError !== null) showReadFailure(currentReadError);
+      else showStatus(t("readingThread"));
+    }
+    if (statusOverlay.isVisible() && statusOverlay.getKind() === "loading") {
+      statusOverlay.setMessage(t("readingThread"));
     }
   }
 
@@ -355,6 +363,7 @@ export function createThreadDialogView({
   });
   refreshButton.addEventListener("click", async () => {
     if (!currentDetail) return;
+    currentReadError = null;
     refreshButton.disabled = true;
     setRefreshIconButtonLoading(refreshButton, true);
     showStatus(t("readingThread"));
