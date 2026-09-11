@@ -244,7 +244,7 @@ fn cli_command(cli_path: Option<&Path>, arguments: &[&str]) -> Command {
         }
     };
     #[cfg(not(target_os = "windows"))]
-    let mut command = {
+    let command = {
         let mut command = Command::new(cli_path.unwrap_or_else(|| Path::new("codex")));
         command.args(arguments);
         command
