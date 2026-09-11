@@ -2,8 +2,8 @@
 .update-banner[hidden] { display: none; }
 .update-banner-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; color: #fff; background: #1677ff; font-size: 1rem; font-weight: 800; }
 .update-banner-content { min-width: 0; }
-.update-banner h2 { margin: 1px 0 0; color: #263445; font-size: .8rem; }
-.update-banner-version { margin: 3px 0 0; color: #738095; font-size: .64rem; }
+.update-banner h2 { margin: 1px 0 0; color: #263445; font-size: .8rem; line-height: 1.35; }
+.update-banner-version { margin: 7px 0 0; color: #738095; font-size: .64rem; line-height: 1.45; }
 .update-banner-notes { display: grid; max-height: 116px; gap: 4px; margin-top: 9px; overflow-y: auto; color: #526173; font-size: .67rem; line-height: 1.45; }
 .update-banner-notes[hidden] { display: none; }
 .update-banner-notes p { position: relative; margin: 0; padding-left: 11px; }
