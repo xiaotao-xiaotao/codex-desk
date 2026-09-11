@@ -103,8 +103,8 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     }
   }
 
-  function showReadFailure(hasPreviousQuota) {
-    if (!hasPreviousQuota) orbValue.textContent = "!";
+  function showReadFailure(showOrbWarning) {
+    if (showOrbWarning) orbValue.textContent = "!";
   }
 
   return { render, showReadFailure };

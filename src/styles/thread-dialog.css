@@ -1,19 +1,34 @@
 .thread-dialog { position: relative; width: min(1080px, calc(100% - 32px)); height: min(88vh, 780px); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
 .thread-dialog::backdrop { background: rgba(15, 23, 42, .38); }
 .thread-dialog-toolbar { display: flex; height: 42px; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #e7ebef; background: #fff; }
-.thread-dialog-title { display: flex; min-width: 0; align-items: center; gap: 6px; }
-.thread-dialog-toolbar h2 { margin: 0; color: #263445; font-size: .95rem; font-weight: 760; letter-spacing: .01em; }
-/* 会话概览与消息区始终横向排列，避免窄窗口将左栏推至消息区上方。 */
-.dialog-content { display: flex; height: calc(100% - 42px); min-height: 0; flex-direction: row; }
-.dialog-sidebar { display: flex; min-width: 0; min-height: 0; flex: 0 0 220px; flex-direction: column; border-right: 1px solid #edf0f3; background: #fff; }
+.thread-dialog-title { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 6px; }
+.thread-dialog-toolbar h2 { display: flex; min-width: 0; margin: 0; align-items: baseline; gap: 5px; color: #263445; font-size: .95rem; font-weight: 760; letter-spacing: .01em; }
+#dialog-title { overflow: hidden; color: #536273; font-size: .76rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.thread-dialog-title-separator { color: #a3adb8; font-weight: 500; }
+.thread-dialog-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; }
+.thread-toolbar-action { display: grid; width: 28px; height: 28px; padding: 0; place-items: center; border: 0; border-radius: 6px; color: #6f7d8d; background: transparent; cursor: pointer; list-style: none; }
+.thread-toolbar-action::-webkit-details-marker { display: none; }
+.thread-toolbar-action svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+.thread-toolbar-action:hover:not(:disabled), .thread-actions-menu[open] > summary { color: #1668c6; background: #edf5ff; }
+.thread-toolbar-action:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
+.thread-toolbar-action:disabled { cursor: default; opacity: .45; }
+.thread-actions-menu { position: relative; }
+.thread-actions-popover { position: absolute; z-index: 8; top: calc(100% + 6px); right: 0; display: grid; width: 142px; padding: 5px; border: 1px solid #dfe5ec; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(31, 41, 55, .16); }
+.thread-actions-popover button { min-height: 30px; padding: 6px 9px; border: 0; border-radius: 5px; color: #526173; background: transparent; cursor: pointer; font-size: .67rem; font-weight: 650; text-align: left; }
+.thread-actions-popover button:hover:not(:disabled) { color: #1668c6; background: #edf5ff; }
+.thread-actions-popover button:disabled { cursor: default; opacity: .45; }
+/* 概览作为覆盖式抽屉出现，避免在桌面悬浮窗中长期挤压会话正文。 */
+.dialog-content { position: relative; display: flex; height: calc(100% - 42px); min-height: 0; flex-direction: row; }
+.dialog-sidebar { position: absolute; z-index: 2; inset: 0 auto 0 0; display: flex; width: min(240px, calc(100% - 56px)); min-width: 0; min-height: 0; flex-direction: column; border-right: 1px solid #dfe5ec; background: #fff; box-shadow: 12px 0 28px rgba(31, 41, 55, .12); }
 .dialog-messages-pane { display: flex; min-width: 0; min-height: 0; flex: 1 1 auto; flex-direction: column; background: #f7f8fa; }
-.dialog-header { display: flex; flex: 0 0 auto; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #e5ebf1; box-shadow: inset 3px 0 0 #1677ff; background: linear-gradient(105deg, #f4f8ff 0%, #fbfcfe 72%); }
-.dialog-header > div { min-width: 0; width: 100%; }
-/* 会话标题常来自用户首条消息；固定单行并以省略号截断，避免长异常文本挤占侧栏。 */
-.dialog-header h3 { margin: 0; overflow: hidden; color: #263d59; font-size: .78rem; font-weight: 720; letter-spacing: .01em; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
-.dialog-meta, .dialog-status { color: #8a94a0; font-size: .68rem; }
-.dialog-meta { margin: 5px 0 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.dialog-status { flex: 0 0 auto; margin: 10px 14px 0; }
+.dialog-meta { color: #8a94a0; font-size: .68rem; }
+.dialog-meta { margin: 0; padding: 8px 14px; border-bottom: 1px solid #edf0f3; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.thread-dialog-state { position: absolute; z-index: 6; inset: 42px 0 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 24px; color: #607084; background: rgba(247, 248, 250, .94); font-size: .72rem; font-weight: 650; text-align: center; }
+.thread-dialog-state[hidden] { display: none; }
+.thread-dialog-state-spinner { width: 22px; height: 22px; box-sizing: border-box; border: 2px solid #cfe2f7; border-top-color: #1677ff; border-radius: 50%; animation: thread-dialog-state-rotate .7s linear infinite; }
+.thread-dialog-state[data-kind="error"] { color: #cf1322; }
+.thread-dialog-state[data-kind="error"] .thread-dialog-state-spinner { display: none; }
+@keyframes thread-dialog-state-rotate { to { transform: rotate(360deg); } }
 .dialog-search { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 10px 20px 8px; border-bottom: 1px solid #e4e8ed; background: #f7f8fa; }
 .thread-sidebar-toggle { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #5f748c; background: transparent; cursor: pointer; }
 .thread-sidebar-toggle-icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
@@ -26,20 +41,13 @@
 .dialog-search input::placeholder { color: #9ba6b2; }
 .dialog-search input:focus { border-color: #1677ff; background: #fff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .12); }
 .dialog-search-result { min-width: 44px; overflow: hidden; color: #788697; font-size: .65rem; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-/* 左侧只保留会话级汇总，具体操作随消息展示，便于理解每次修改来自哪轮对话。 */
-.dialog-insights { flex: 0 0 auto; padding: 12px 14px; border-bottom: 1px solid #edf0f3; background: #fff; }
-.insight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.insight-metric { min-width: 0; padding: 6px 7px; border: 1px solid #e4eaf2; border-radius: 8px; background: #fff; }
-.insight-metric strong { display: block; overflow: hidden; color: #2d3b4c; font-size: 1rem; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
-.insight-metric span { display: block; margin-top: 1px; color: #7a8797; font-size: .61rem; font-weight: 650; }
-.insight-metric-blue { border-color: #d7e8ff; background: #f7fbff; }
-.insight-metric-blue strong { color: #1677ff; }
-.insight-metric-violet { border-color: #e5ddff; background: #faf8ff; }
-.insight-metric-violet strong { color: #7454d6; }
-.insight-metric-emerald { border-color: #cfeddf; background: #f6fdf9; }
-.insight-metric-emerald strong { color: #19956a; }
-.insight-metric-amber { border-color: #ffe3b0; background: #fffaf0; }
-.insight-metric-amber strong { color: #c77900; }
+/* 汇总只保留消息与工具数量，文件和失败记录统一在下方查看。 */
+.dialog-insights { flex: 0 0 auto; padding: 12px 14px 10px; border-bottom: 1px solid #edf0f3; background: #fff; }
+.insight-list { display: grid; gap: 8px; }
+.insight-summary-primary { display: flex; align-items: center; gap: 0; color: #6e7d8e; font-size: .68rem; }
+.insight-summary-item { white-space: nowrap; }
+.insight-summary-item + .insight-summary-item::before { margin: 0 7px; color: #bcc4cd; content: "·"; }
+.insight-summary-item strong { color: #344154; font-size: .76rem; font-variant-numeric: tabular-nums; }
 .activity-summary-hint { overflow: hidden; color: #98a4b2; font-size: .67rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .activity-list { display: grid; height: 100%; min-height: 0; align-content: start; gap: 0; overflow-x: hidden; overflow-y: scroll; padding: 2px 3px 2px 0; border: 1px solid #e7ebef; border-radius: 8px; background: #fff; scrollbar-gutter: stable; touch-action: pan-y; }
 /* 保持原有紧凑单行布局，列表只在纵向滚动，避免长路径破坏卡片层级。 */
@@ -183,10 +191,9 @@
 .file-diff-side-by-side-line.is-added { color: #176b4f; background: #eaf8f0; }
 .file-diff-side-by-side-line.is-removed { color: #a83e38; background: #fff0ef; }
 
-/* 左侧会话概览按“指标、基础信息、记录、操作”分区，右侧始终保留完整聊天内容。 */
-.dialog-sidebar { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; overflow: hidden; }
+/* 左侧会话概览按“摘要、更新时间、记录”分区，正文始终使用完整宽度。 */
+.dialog-sidebar { display: grid; grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; }
 .dialog-sidebar[hidden] { display: none; }
-.dialog-status { margin: 0; padding: 7px 14px 0; }
 .thread-overview { min-height: 0; overflow-y: auto; padding: 0 14px; }
 .thread-overview-section { padding: 12px 0; border-bottom: 1px solid #edf0f3; }
 .thread-overview-section h4 { margin: 0 0 7px; color: #536273; font-size: .66rem; font-weight: 760; letter-spacing: .04em; }
@@ -217,13 +224,7 @@
 .thread-overview-issue-row span { color: #9a876d; }
 .thread-token-usage { display: grid; gap: 4px; padding: 0 0 9px; color: #718094; font-size: .63rem; line-height: 1.4; }
 .thread-token-usage strong { color: #356fae; font-size: .68rem; }
-.thread-sidebar-actions { display: grid; height: 53px; min-height: 53px; max-height: 53px; box-sizing: border-box; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; padding: 12px 8px; border-top: 1px solid #e6ebf0; background: #fafbfd; }
-.thread-sidebar-action { min-width: 0; height: 28px; min-height: 28px; padding: 0 5px; border: 0; border-radius: 6px; color: #607084; background: transparent; cursor: pointer; font-size: .62rem; font-weight: 700; white-space: nowrap; }
-.thread-sidebar-action:hover:not(:disabled) { color: #1668c6; background: #edf5ff; }
-.thread-sidebar-action:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
-.thread-sidebar-action:disabled { cursor: default; opacity: .55; }
-
 @media (max-width: 760px) {
   .thread-dialog { width: calc(100% - 18px); height: min(92vh, 780px); }
-  .dialog-sidebar { flex-basis: 180px; }
+  .dialog-sidebar { width: min(224px, calc(100% - 44px)); }
 }

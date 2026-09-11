@@ -5,6 +5,7 @@ import { THEME_ICONS, createThemeController } from "./theme.js";
 import { copyMessageContent, copyText } from "./utils/clipboard.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
+import { renderRefreshIconButton, setRefreshIconButtonLoading } from "./utils/refresh-icon-button.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createRefreshController } from "./features/refresh-controller.js";
 import { createSettingsController } from "./features/settings-controller.js";
@@ -147,7 +148,7 @@ refreshController = createRefreshController({
   ),
   getTrendDays: () => Number(document.querySelector("#trend-range").value),
   setStatus,
-  onRefreshingChange: (isRefreshing) => refreshButton.classList.toggle("is-loading", isRefreshing),
+  onRefreshingChange: (isRefreshing) => setRefreshIconButtonLoading(refreshButton, isRefreshing),
   onAvailabilityChange: (available) => {
     dashboardUnavailable = !available;
     renderDashboardAvailability();
@@ -412,7 +413,7 @@ function applyLanguage() {
 
   minimizeButton.title = minimizeButton.ariaLabel = t("minimize");
   collapseButton.title = collapseButton.ariaLabel = t("collapse");
-  refreshButton.title = refreshButton.ariaLabel = t("refresh");
+  renderRefreshIconButton(refreshButton, { label: t("refresh") });
   renderCloseIconButton(quitButton, { label: t("quit") });
   settingsView.updateLanguage();
   accountView.updateLanguage();
@@ -437,6 +438,8 @@ function applyLanguage() {
   updateTransferControls();
   if (refreshController.getLatestQuota() && !refreshController.isRefreshing()) {
     quotaView.render(refreshController.getLatestQuota());
+    // 连续失败后的感叹号优先于旧额度，避免切换语言时恢复显示已过期的百分比。
+    if (refreshController.isAutoRefreshPaused()) quotaView.showReadFailure(true);
   } else if (!refreshController.isRefreshing() && !refreshController.isAutoRefreshPaused()) {
     setStatus(t("readingLocalData"));
   }

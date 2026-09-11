@@ -1,28 +1,9 @@
 const SIDEBAR_FILE_LIMIT = 6;
 
-function formatTokens(value) {
-  return String(Math.round(Number(value) || 0));
-}
-
-function createSection(title, className = "") {
-  const section = document.createElement("section");
-  section.className = `thread-overview-section ${className}`.trim();
-  const heading = document.createElement("h4");
-  heading.textContent = title;
-  section.append(heading);
-  return section;
-}
-
-function createInfoRow(label, value, { code = false } = {}) {
-  const row = document.createElement("div");
-  row.className = "thread-overview-info-row";
-  const term = document.createElement("dt");
-  term.textContent = label;
-  const description = document.createElement(code ? "code" : "dd");
-  description.textContent = value || "—";
-  description.title = value || "";
-  row.append(term, description);
-  return row;
+function formatTokens(value, compact = false) {
+  return new Intl.NumberFormat(document.documentElement.lang || undefined, compact
+    ? { notation: "compact", maximumFractionDigits: 1 }
+    : { maximumFractionDigits: 0 }).format(Math.round(Number(value) || 0));
 }
 
 function fileEntries(detail) {
@@ -50,28 +31,15 @@ function fileChangeTypeLabel(t, changeType) {
 }
 
 /**
- * 左栏会话概览独立管理基础信息、文件、异常和 Token 明细，避免详情弹窗承担过多渲染职责。
+ * 左栏会话概览独立管理文件、异常和 Token 明细，避免详情弹窗承担过多渲染职责。
  */
-export function createThreadOverviewView({ t, formatUpdated, onViewFileChange }) {
+export function createThreadOverviewView({ t, onViewFileChange }) {
   const overview = document.querySelector("#thread-overview");
   let currentDetail = null;
   let showAllFiles = false;
   let filesOpen = false;
   let issuesOpen = false;
-  let tokenOpen = true;
-
-  function renderBasicInfo(detail) {
-    const section = createSection(t("threadBasicInfo"));
-    const list = document.createElement("dl");
-    list.className = "thread-overview-info-list";
-    list.append(
-      createInfoRow(t("threadCreatedLabel"), formatUpdated(detail.createdAt)),
-      createInfoRow(t("threadUpdatedLabel"), formatUpdated(detail.updatedAt)),
-      createInfoRow(t("threadIdLabel"), detail.id, { code: true }),
-    );
-    section.append(list);
-    return section;
-  }
+  let tokenOpen = false;
 
   function renderFileChanges(detail) {
     const files = fileEntries(detail);
@@ -172,6 +140,13 @@ export function createThreadOverviewView({ t, formatUpdated, onViewFileChange })
     const title = document.createElement("strong");
     title.textContent = t("threadTokenUsage");
     summary.append(title);
+    if (detail.tokenUsage) {
+      const total = document.createElement("span");
+      total.textContent = t("threadTokenCompact", {
+        total: formatTokens(detail.tokenUsage.totalTokens, true),
+      });
+      summary.append(total);
+    }
     disclosure.append(summary);
 
     const usage = detail.tokenUsage;
@@ -194,9 +169,7 @@ export function createThreadOverviewView({ t, formatUpdated, onViewFileChange })
       cached.textContent = t("threadTokenCached", { tokens: formatTokens(usage.cachedInputTokens) });
       const reasoning = document.createElement("span");
       reasoning.textContent = t("threadTokenReasoning", { tokens: formatTokens(usage.reasoningOutputTokens) });
-      const tool = document.createElement("span");
-      tool.textContent = t("threadTokenToolsUnavailable");
-      content.append(total, inputOutput, cached, reasoning, tool);
+      content.append(total, inputOutput, cached, reasoning);
     }
     disclosure.append(content);
     return disclosure;
@@ -205,17 +178,20 @@ export function createThreadOverviewView({ t, formatUpdated, onViewFileChange })
   function render() {
     overview.replaceChildren();
     if (!currentDetail) return;
-    overview.append(
-      renderBasicInfo(currentDetail),
-      renderFileChanges(currentDetail),
-      renderIssues(currentDetail),
-      renderTokenUsage(currentDetail),
-    );
+    const sections = [];
+    // 零条记录不占据概览空间；异常存在时由上方摘要提示并默认展开详情。
+    if (fileEntries(currentDetail).length > 0) sections.push(renderFileChanges(currentDetail));
+    if (issueEntries(currentDetail).length > 0) sections.push(renderIssues(currentDetail));
+    sections.push(renderTokenUsage(currentDetail));
+    overview.append(...sections);
   }
 
   function setDetail(detail) {
     currentDetail = detail;
     showAllFiles = false;
+    filesOpen = false;
+    issuesOpen = issueEntries(detail).length > 0;
+    tokenOpen = false;
     render();
   }
 
@@ -224,7 +200,7 @@ export function createThreadOverviewView({ t, formatUpdated, onViewFileChange })
     showAllFiles = false;
     filesOpen = false;
     issuesOpen = false;
-    tokenOpen = true;
+    tokenOpen = false;
     overview.replaceChildren();
   }
 

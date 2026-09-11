@@ -100,10 +100,14 @@ export function createRefreshController({
       }
     } catch (error) {
       console.error(error);
-      quotaView.showReadFailure(Boolean(latestQuota));
+      consecutiveRefreshFailures += 1;
+      // 无缓存时立即提示；已有旧额度时仅在连续失败达到阈值后将悬浮球切换为感叹号，
+      // 避免短暂抖动覆盖仍可参考的额度，同时防止长期展示过期百分比。
+      quotaView.showReadFailure(
+        !latestQuota || consecutiveRefreshFailures >= maxConsecutiveFailures,
+      );
       // 没有任何可回退数据时使用整页错误态，避免多个空卡片让请求失败看起来像无数据。
       if (!latestQuota) onAvailabilityChange(false);
-      consecutiveRefreshFailures += 1;
       if (consecutiveRefreshFailures >= maxConsecutiveFailures) {
         autoRefreshPaused = true;
         // 熔断提示必须保留底层错误，否则第三次失败后无法区分超时、登录失效等原因。

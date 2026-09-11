@@ -50,9 +50,7 @@
             <button id="minimize-button" class="icon-button" type="button" title="最小化到系统托盘" aria-label="最小化到系统托盘">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
             </button>
-            <button id="refresh-button" class="icon-button" type="button" title="立即刷新" aria-label="立即刷新">
-              <svg class="refresh-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 16.24 7.76L13 11h7V4z" /></svg>
-            </button>
+            <button id="refresh-button" class="icon-button refresh-icon-button" type="button" title="立即刷新" aria-label="立即刷新"></button>
             <button id="quit-button" class="close-icon-button" type="button" title="退出程序" aria-label="退出程序"></button>
           </div>
         </header>
@@ -196,28 +194,33 @@
               <path class="thread-sidebar-toggle-collapse" d="m14 9-3 3 3 3"></path>
             </svg>
           </button>
-          <h2 id="thread-dialog-heading" data-i18n="threadDetail">会话详情</h2>
+          <h2 id="thread-dialog-heading">
+            <span data-i18n="threadDetail">会话详情</span>
+            <span class="thread-dialog-title-separator" aria-hidden="true">·</span>
+            <span id="dialog-title"></span>
+          </h2>
         </div>
-        <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
+        <div class="thread-dialog-actions">
+          <button id="thread-refresh" class="icon-button refresh-icon-button" type="button"></button>
+          <details id="thread-actions-menu" class="thread-actions-menu">
+            <summary class="thread-toolbar-action" aria-label="更多操作">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>
+            </summary>
+            <div class="thread-actions-popover">
+              <button id="thread-export" type="button"></button>
+              <button id="thread-copy-id" type="button"></button>
+            </div>
+          </details>
+          <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
+        </div>
       </header>
       <section class="dialog-content is-sidebar-collapsed">
         <aside id="thread-sidebar" class="dialog-sidebar" hidden>
-          <header class="dialog-header">
-            <div>
-              <h3 id="dialog-title">会话详情</h3>
-              <p id="dialog-meta" class="dialog-meta"></p>
-            </div>
-          </header>
           <section class="dialog-insights" aria-label="会话洞察">
             <div id="thread-insights" class="insight-list"></div>
           </section>
-          <div id="dialog-status" class="dialog-status" data-i18n="readingThread">正在读取会话…</div>
+          <p id="dialog-meta" class="dialog-meta"></p>
           <div id="thread-overview" class="thread-overview app-scrollable"></div>
-          <footer class="thread-sidebar-actions">
-            <button id="thread-export" class="thread-sidebar-action" type="button"></button>
-            <button id="thread-copy-id" class="thread-sidebar-action" type="button"></button>
-            <button id="thread-refresh" class="thread-sidebar-action" type="button"></button>
-          </footer>
         </aside>
         <section class="dialog-messages-pane" aria-label="聊天消息">
           <div class="dialog-search" role="search">
@@ -228,6 +231,10 @@
           <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
         </section>
       </section>
+      <div id="dialog-status" class="thread-dialog-state" data-kind="normal" aria-live="polite" hidden>
+        <span class="thread-dialog-state-spinner" aria-hidden="true"></span>
+        <span id="dialog-status-text">正在读取会话…</span>
+      </div>
       <section id="file-diff-panel" class="file-diff-panel" role="dialog" aria-modal="true" aria-labelledby="file-diff-title" hidden>
         <header class="file-diff-toolbar">
           <div>

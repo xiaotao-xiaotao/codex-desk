@@ -33,11 +33,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .language-menu button.is-active::after { float: right; content: "✓"; font-weight: 800; }
 .icon-button { display: grid; width: 27px; height: 27px; padding: 0; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: #fff; cursor: pointer; transition: background .15s, color .15s; }
 .icon-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
-.icon-button .refresh-icon { width: 16px; height: 16px; fill: currentColor; stroke: none; }
 .icon-button:hover { border-color: #b7d4ff; color: #1677ff; background: #f5f9ff; }
-.icon-button.is-loading svg { animation: rotate .65s linear infinite; }
-/* 刷新按钮加载时使用的唯一动画，紧邻其调用处维护。 */
-@keyframes rotate { to { transform: rotate(360deg); } }
 
 .dashboard-section { flex: 0 0 auto; padding: 9px 10px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
 .dashboard-error { display: flex; flex: 1 1 auto; min-height: 0; align-items: center; justify-content: center; flex-direction: column; padding: 28px; text-align: center; }
@@ -208,5 +204,5 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .page-indicator { min-width: 40px; color: #7f8a97; font-size: .68rem; text-align: center; }
 .status { flex: 0 0 auto; min-height: 13px; margin-top: 4px; color: #637286; font-size: .64rem; }
 .status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: .66rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.status[data-kind="error"], .dialog-status[data-kind="error"] { color: #cf1322; }
+.status[data-kind="error"] { color: #cf1322; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }

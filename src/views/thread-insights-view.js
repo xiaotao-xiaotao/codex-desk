@@ -1,14 +1,12 @@
 import { groupConsecutiveActivities } from "./activity-summary.js";
 
-function createMetric(label, value, tone) {
-  const metric = document.createElement("div");
-  metric.className = `insight-metric insight-metric-${tone}`;
+function createSummaryItem(label, value) {
+  const item = document.createElement("span");
+  item.className = "insight-summary-item";
   const metricValue = document.createElement("strong");
   metricValue.textContent = String(value ?? 0);
-  const metricLabel = document.createElement("span");
-  metricLabel.textContent = label;
-  metric.append(metricValue, metricLabel);
-  return metric;
+  item.append(metricValue, document.createTextNode(` ${label}`));
+  return item;
 }
 
 /**
@@ -19,12 +17,13 @@ export function createThreadInsightsView({ t }) {
 
   function render(detail) {
     const insights = detail.insights ?? {};
-    insightList.replaceChildren(
-      createMetric(t("insightMessages"), insights.messages, "blue"),
-      createMetric(t("insightToolCalls"), insights.toolCalls, "violet"),
-      createMetric(t("insightFileChanges"), insights.fileChanges, "emerald"),
-      createMetric(t("insightIssues"), insights.issues, "amber"),
+    const primary = document.createElement("div");
+    primary.className = "insight-summary-primary";
+    primary.append(
+      createSummaryItem(t("insightMessages"), insights.messages),
+      createSummaryItem(t("insightToolCalls"), insights.toolCalls),
     );
+    insightList.replaceChildren(primary);
   }
 
   function clear() {
