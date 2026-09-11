@@ -22,7 +22,7 @@ If Codex Desk helps you manage your sessions, please consider giving the project
 
 Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao/codex-desk/releases):
 
-- **Windows**: download the `.exe` installer for Windows 10/11.
+- **Windows**: download the `.exe` installer for a standard Windows 10/11 installation, or the `.msi` package for enterprise or managed deployment.
 - **macOS**: download the `.dmg` installer that matches your Mac's chip.
 - **Linux**: download the `.deb` package for Debian/Ubuntu, or the `.AppImage` package for most other desktop distributions.
 
@@ -40,7 +40,7 @@ After installation, you still need to install and sign in to Codex CLI separatel
 ### First launch in two steps
 
 1. Install and sign in to Codex CLI: `npm install -g @openai/codex`, then run `codex` to complete sign-in.
-2. Launch Codex Desk. If quota is unavailable, use the top-right **Diagnose Codex CLI** button to check the CLI, `app-server`, and quota access. Diagnostic results can be copied into an Issue.
+2. Launch Codex Desk. If quota is unavailable, confirm the Codex CLI path in **Settings**, then select **Refresh now** to retry.
 
 ## Features
 
@@ -49,12 +49,13 @@ After installation, you still need to install and sign in to Codex CLI separatel
 - **Activity trends**: view the last 3, 7, or 30 days and independently show or hide messages, tool calls, file changes, and errors in a code-drawn line chart.
 - **Token insights**: aggregate daily Token usage and totals for the last 3, 7, or 30 days from cumulative snapshots in local Codex session files; session details also show total, input, output, cached-input, and reasoning-output usage.
 - **Local sessions**: browse non-archived local sessions, search by title or session ID, and view creation and update times.
-- **Session details and insights**: inspect user messages and Codex replies, with intermediate replies from the same turn collapsed under elapsed time while the final reply stays expanded. Enlarge images in a dedicated preview, copy messages with images when the system clipboard supports rich content, and review aggregate activity metrics.
+- **Session details and insights**: inspect user messages and Codex replies, with intermediate replies from the same turn collapsed under elapsed time while the final reply stays expanded. Expand the overview sidebar on demand, use full-area loading feedback while details are being read or refreshed, enlarge images in a dedicated preview, copy messages with images when the system clipboard supports rich content, and review aggregate activity metrics.
 - **File change comparison**: aggregate file and tool activity below the relevant reply. File cards show filenames and added/removed line counts, and can be expanded before opening side-by-side or inline diffs. Historical diffs are shown from the session record and are not read from the current workspace.
 - **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
 - **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate Codex app-server and floating-orb instances.
 - **Local settings**: choose a Codex CLI executable or launcher path and an auto-refresh interval from 30 seconds to 5 minutes. Custom paths are validated with `codex --version` before saving.
+- **Connection recovery**: if the initial read fails, the dashboard shows a full-page connection state with a reload action. Auto-refresh pauses after repeated failures and resumes after a successful manual refresh.
 - **Update notifications**: manually check the public version file from the dashboard; when a newer version is available, show its Release notes and provide a download link.
 - **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Authentication data is never read or stored, and no local data is uploaded; update checks request only public version and Release information from GitHub.
 
@@ -73,7 +74,7 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 ### Session details
 
-![Codex Desk session details](docs/screenshots/session-details-zh.png)
+![Codex Desk session details](docs/screenshots/session-details-en.png)
 
 ## Multilingual support
 
@@ -122,14 +123,14 @@ Build artifacts are generated under `src-tauri/target/release/bundle/`. Windows 
 
 ## Usage
 
-- Click the floating usage orb to show or hide the dashboard.
+- Click the floating usage orb to expand the dashboard; use **Collapse to floating orb** in the title bar to return to the orb.
 - Optionally enable system quota alerts at 80% / 90% / 100% usage from the dashboard.
 - Choose a 3-, 7-, or 30-day range for activity and Token trends, then toggle the activity metrics you want to compare.
 - Search, inspect, import, or export local sessions from the session list. In session details, open recorded file diffs, or double-click an image to enlarge it.
 - Copy `codex resume <session ID>` from a session detail page to continue it in the terminal.
 - Drag the title area to reposition the floating window.
-- The app refreshes automatically every 60 seconds and shows the countdown in the status bar; use the refresh button for an immediate update.
-- Closing the window hides it. Use the system tray menu to show the dashboard again.
+- Auto-refresh uses the configured interval (60 seconds by default) and shows the countdown in the status bar. Expanding from the orb keeps the existing data and refresh schedule; use **Refresh now** for an immediate update.
+- Use **Minimize to system tray** to hide the dashboard and reopen it from the tray menu. Use **Quit** to exit the app.
 
 ## License
 
