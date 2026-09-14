@@ -96,7 +96,11 @@ nav{
   grid-template-columns:1fr 1fr;
   align-items:center;
   gap:20px;
-  padding-block:24px 36px}
+  padding-block:16px 36px}
+/* 文案顶部独立对齐，避免右侧球体高度让短标题上方出现额外留白。 */
+.hero-copy{
+  align-self:start;
+  padding-top:20px}
 .eyebrow{
   font:12px/1.5 ui-monospace,monospace;
   letter-spacing:2px;
@@ -515,9 +519,10 @@ nav>a:first-child{
   font-size:18px}
 .hero{
   grid-template-columns:1fr;
-  padding-block:32px 24px;
+  padding-block:20px 24px;
   gap:20px}
 .hero-copy{
+  padding-top:0;
   position:relative;
   z-index:1}
 h1{
