@@ -764,6 +764,55 @@ nav{
   .corner-top{top:5px;left:5px}
   .corner-bottom{bottom:5px;right:5px}
   .screenshot-stage .dashboard-frame{transform:none}}
+/* 正文保持自然阅读；等宽字与刻度装饰只用于标签和编号。 */
+h1,h2{
+  font-family:"Segoe UI Variable Display","Segoe UI","Microsoft YaHei",sans-serif;
+  font-weight:600;
+  text-wrap:balance}
+html[lang="zh-CN"] h1{
+  letter-spacing:-.035em}
+html[lang="zh-CN"] h2{
+  letter-spacing:-.025em}
+html[lang="en"] h2{
+  letter-spacing:-.04em}
+.heading-accent{
+  color:#2463db}
+.hero-description{
+  max-width:34em;
+  letter-spacing:.005em}
+.eyebrow{
+  font-family:"Cascadia Code","SFMono-Regular",Consolas,monospace;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:.11em;
+  width:fit-content;
+  max-width:100%;
+  padding:7px 11px;
+  border-left:2px solid #4387e5;
+  background:linear-gradient(90deg,#e5efff,transparent);
+  border-radius:0 4px 4px 0}
+.feature-number{
+  display:inline-block;
+  padding:6px 10px;
+  color:#2463db;
+  background:#e9f2ff;
+  border:1px solid #c4daf6;
+  border-radius:4px;
+  font-family:"Cascadia Code",Consolas,monospace;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.08em}
+.feature-list h3{
+  font-weight:600;
+  letter-spacing:-.025em}
+.manifesto p{
+  font-weight:600;
+  letter-spacing:.025em}
+.platforms,.setup-step>span{
+  font-family:"Cascadia Code",Consolas,monospace;
+  font-variant-numeric:tabular-nums}
+@media(max-width:760px){
+  .eyebrow{font-size:12px;letter-spacing:.07em}
+  .hero-description{line-height:1.8}}
 @media(prefers-reduced-motion:reduce){
   html{
   scroll-behavior:auto}
