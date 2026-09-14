@@ -47,3 +47,31 @@ scene.addEventListener('pointerleave', () => {
   scene.style.setProperty('--rx', '0deg');
   scene.style.setProperty('--ry', '0deg');
 });
+
+// 用固定底座计算指针位置，避免截图倾斜改变测量区域而产生抖动。
+document.querySelectorAll('.screenshot-stage').forEach(stage => {
+  let frame = 0;
+  const reset = () => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    stage.style.removeProperty('--screen-rx');
+    stage.style.removeProperty('--screen-ry');
+  };
+  stage.addEventListener('pointermove', event => {
+    if (reducedMotion.matches || !finePointer.matches || event.pointerType === 'touch') return;
+    const bounds = stage.getBoundingClientRect();
+    const x = Math.max(-.5, Math.min(.5, (event.clientX - bounds.left) / bounds.width - .5));
+    const y = Math.max(-.5, Math.min(.5, (event.clientY - bounds.top) / bounds.height - .5));
+    cancelAnimationFrame(frame);
+    // 截图最多倾斜 2 度，保留正文阅读所需的稳定性。
+    frame = requestAnimationFrame(() => {
+      stage.style.setProperty('--screen-rx', `${-y * 4}deg`);
+      stage.style.setProperty('--screen-ry', `${x * 4}deg`);
+      frame = 0;
+    });
+  });
+  stage.addEventListener('pointerleave', reset);
+  stage.addEventListener('pointercancel', reset);
+  reducedMotion.addEventListener('change', reset);
+  finePointer.addEventListener('change', reset);
+});

@@ -601,7 +601,7 @@ footer>span{
 nav{
   gap:12px}
 }
-/* 科技装饰集中在概念视觉内，避免扫描光遮挡正文与产品截图。 */
+/* 扫描光仅用于概念球体；截图的光效放在展示底座外围，保持界面可读。 */
 .header{
   position:relative}
 .header::after{
@@ -693,6 +693,77 @@ nav{
 @media(max-width:760px){
   .coordinate-top{left:0;top:0}
   .coordinate-bottom{right:0;bottom:15px}}
+.screenshot-stage{
+  position:relative;
+  isolation:isolate;
+  padding:28px 28px 48px;
+  border:1px solid #c4dcf8;
+  border-radius:24px;
+  perspective:1800px;
+  background:radial-gradient(ellipse at 50% 100%,#90c8ff45,transparent 65%),repeating-linear-gradient(90deg,#689de515 0 1px,transparent 1px 32px),repeating-linear-gradient(0deg,#689de515 0 1px,transparent 1px 32px),#edf5ff;
+  box-shadow:inset 0 1px 0 #fff,0 30px 60px -35px #2463db66}
+.screenshot-stage::before{
+  content:"";
+  position:absolute;
+  inset:10px;
+  padding:2px;
+  border-radius:18px;
+  background:linear-gradient(115deg,#a7d3ff33 15%,#a7d3ff33 35%,#3a8aff 47%,#e7faff 50%,#3a8aff 53%,#a7d3ff33 65%);
+  background-size:300% 100%;
+  mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+  animation:stage-light 10s linear infinite;
+  pointer-events:none}
+.screenshot-stage::after{
+  content:"";
+  position:absolute;
+  left:9%;
+  right:9%;
+  bottom:19px;
+  height:13px;
+  border:1px solid #6baaff70;
+  border-radius:50%;
+  background:#c7e5ff80;
+  box-shadow:0 0 18px #5aa1fa66,0 5px 0 -2px #eaf5ff,0 9px 0 -3px #8fbbef;
+  pointer-events:none}
+.screenshot-stage .dashboard-frame{
+  z-index:1;
+  transform:rotateX(var(--screen-rx,2deg)) rotateY(var(--screen-ry,0deg));
+  transition:transform .25s ease-out;
+  box-shadow:0 1px 0 3px #ffffff,0 5px 0 3px #d2e1f4,0 9px 0 3px #b6cce7,0 24px 35px -12px #245eaa55}
+.stage-corner{
+  position:absolute;
+  width:20px;
+  height:20px;
+  border-color:#357cdf;
+  border-style:solid;
+  pointer-events:none}
+.corner-top{
+  top:9px;
+  left:9px;
+  border-width:2px 0 0 2px;
+  border-top-left-radius:8px}
+.corner-bottom{
+  right:9px;
+  bottom:9px;
+  border-width:0 2px 2px 0;
+  border-bottom-right-radius:8px}
+.session-stage{
+  max-width:1016px;
+  margin:48px auto 0}
+.session-stage .session-frame{
+  margin:0 auto}
+@keyframes stage-light{
+  from{background-position:150% 0}
+  to{background-position:-150% 0}}
+@media(max-width:760px){
+  .screenshot-stage{padding:15px 15px 34px;border-radius:18px}
+  .screenshot-stage::before{inset:5px;border-radius:14px}
+  .screenshot-stage::after{bottom:12px;height:9px}
+  .stage-corner{width:12px;height:12px}
+  .corner-top{top:5px;left:5px}
+  .corner-bottom{bottom:5px;right:5px}
+  .screenshot-stage .dashboard-frame{transform:none}}
 @media(prefers-reduced-motion:reduce){
   html{
   scroll-behavior:auto}
@@ -701,6 +772,6 @@ nav{
   transition:none!important}
 .space-object{
   transform:none!important}
-.dashboard-frame{
+.dashboard-frame,.screenshot-stage .dashboard-frame{
   transform:none}
 }
