@@ -1,4 +1,4 @@
-# Codex Desk
+# Codex Desk — Codex CLI 额度监控与会话管理工具
 
 [English](README.md)
 

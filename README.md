@@ -1,4 +1,4 @@
-# Codex Desk
+# Codex Desk — Codex CLI Quota Monitor & Session Manager
 
 [中文](README.zh-CN.md)
 
