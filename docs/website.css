@@ -431,11 +431,24 @@ h2{
 .start{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:70px;
+  gap:28px 70px;
 
   border-top:1px solid var(--line)}
 .start .button{
-  margin-top:30px}
+  margin-top:20px}
+.start-heading,.release-banner{
+  grid-column:1 / -1}
+.release-banner{
+  margin:0;
+  overflow:hidden;
+  border:1px solid #b9d3f3;
+  border-radius:16px;
+  background:#06162a;
+  box-shadow:0 12px 32px #2463db18}
+.release-banner img{
+  display:block;
+  width:100%;
+  height:auto}
 .setup{
   padding-top:5px}
 .setup-step{
