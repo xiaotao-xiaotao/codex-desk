@@ -202,7 +202,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .thread-meta time { display: inline-flex; min-width: 0; align-items: center; gap: 7px; overflow: hidden; color: #7f8a97; font-size: .59rem; font-variant-numeric: tabular-nums; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .thread-meta time::before { width: 1px; height: 10px; flex: 0 0 1px; background: #d8e0e8; content: ""; }
 /* 复制只在当前卡片被操作时显现，不干扰常态阅读，也不会遮挡预留了右侧空间的标题。 */
-.thread-item .id-copy-button { position: absolute; top: 6px; right: 10px; opacity: 0; pointer-events: none; transition: color .15s, background .15s, opacity .15s; }
+.thread-item .id-copy-button { position: absolute; top: 2px; right: 6px; opacity: 0; pointer-events: none; transition: color .15s, background .15s, opacity .15s; }
 .thread-item:hover .id-copy-button,
 .thread-item:focus-within .id-copy-button { opacity: 1; pointer-events: auto; }
 .thread-empty { display: grid; grid-column: 1 / -1; grid-row: 1 / -1; align-content: center; justify-items: center; gap: 10px; min-height: 0; padding: 24px; border: 1px dashed #ccd6e2; border-radius: 8px; color: #7d8792; background: #fafcff; text-align: center; }
