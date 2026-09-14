@@ -23,7 +23,8 @@ function setLanguage(language) {
 let savedLanguage;
 // 存储不可用时仍允许切换语言，例如浏览器限制站点存储的情况。
 try { savedLanguage = localStorage.getItem('codex-desk-language'); } catch {}
-setLanguage(['zh-CN', 'en'].includes(savedLanguage) ? savedLanguage : (navigator.language.startsWith('zh') ? 'zh-CN' : 'en'));
+// 首次访问统一展示英文；仅恢复用户明确选择过的语言。
+setLanguage(['zh-CN', 'en'].includes(savedLanguage) ? savedLanguage : 'en');
 languageButton.hidden = false;
 languageButton.addEventListener('click', () => {
   const language = root.lang === 'zh-CN' ? 'en' : 'zh-CN';
