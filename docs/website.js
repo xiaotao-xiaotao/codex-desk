@@ -18,7 +18,7 @@ function setLanguage(language) {
   dashboard.alt = chinese ? 'Codex Desk 中文控制台，展示额度、用量趋势和会话列表' : 'Codex Desk dashboard showing quota, usage trends, and local sessions';
   sessionDetails.src = `screenshots/session-details-${chinese ? 'zh' : 'en'}.png`;
   sessionDetails.alt = chinese ? 'Codex Desk 中文会话详情，展示历史对话与 Token 用量概览' : 'Codex Desk session details showing conversation history and token usage';
-  document.querySelector('#release-preview').alt = chinese ? 'Codex Desk 产品展示，包含悬浮额度球、账户额度和 Token 活动控制台' : 'Codex Desk product overview with floating quota indicator, account usage, and token activity dashboard';
+  document.querySelector('#quota-orb').alt = chinese ? 'Codex Desk 桌面悬浮额度指示器' : 'Codex Desk floating quota indicator';
   document.querySelector('#docs-link').href = `https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README${chinese ? '.zh-CN' : ''}.md`;
 }
 let savedLanguage;
@@ -32,22 +32,8 @@ languageButton.addEventListener('click', () => {
   setLanguage(language);
   try { localStorage.setItem('codex-desk-language', language); } catch {}
 });
-const scene = document.querySelector('.scene');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = matchMedia('(pointer: fine)');
-// 只在鼠标设备上启用有限幅度的空间倾斜，触屏保持自然滚动。
-scene.addEventListener('pointermove', event => {
-  if (reducedMotion.matches || !finePointer.matches) return;
-  const bounds = scene.getBoundingClientRect();
-  const x = (event.clientX - bounds.left) / bounds.width - .5;
-  const y = (event.clientY - bounds.top) / bounds.height - .5;
-  scene.style.setProperty('--rx', `${-y * 12}deg`);
-  scene.style.setProperty('--ry', `${x * 16}deg`);
-});
-scene.addEventListener('pointerleave', () => {
-  scene.style.setProperty('--rx', '0deg');
-  scene.style.setProperty('--ry', '0deg');
-});
 
 // 用固定底座计算指针位置，避免截图倾斜改变测量区域而产生抖动。
 document.querySelectorAll('.screenshot-stage').forEach(stage => {

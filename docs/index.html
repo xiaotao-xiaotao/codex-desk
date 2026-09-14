@@ -7,6 +7,12 @@
   <meta name="description" content="Codex Desk is an open-source desktop companion for Codex CLI. Monitor your quota, explore token usage, and resume local sessions on Windows, macOS, and Linux.">
   <link rel="canonical" href="https://xiaotao-xiaotao.github.io/codex-desk/">
   <meta name="theme-color" content="#f7faff">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Codex Desk — Your desktop companion for Codex CLI">
+  <meta property="og:description" content="Monitor quota, explore usage, and resume local sessions.">
+  <meta property="og:url" content="https://xiaotao-xiaotao.github.io/codex-desk/">
+  <meta property="og:image" content="https://xiaotao-xiaotao.github.io/codex-desk/screenshots/social-preview-1280x640.jpg">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="website.css">
   <script src="website.js" defer></script>
 </head>
@@ -23,48 +29,54 @@
   <main id="main">
     <section class="hero wrap" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="status-dot"></span><span data-zh>为 Codex CLI 而造</span><span data-en>A COMPANION FOR CODEX CLI</span></p>
-        <h1 id="hero-title"><span data-zh>Codex，<span class="subtle">尽在掌握</span></span><span data-en>Codex, <span class="subtle">in focus.</span></span></h1>
-        <p class="hero-description"><span data-zh>监控额度，追踪用量，接续本地会话。<br>在桌面上，掌握 Codex 的工作状态。</span><span data-en>Monitor quota. Track usage. Resume sessions.<br>Your Codex CLI workspace, in one desktop view.</span></p>
-        <div class="actions"><a class="button primary" href="https://github.com/xiaotao-xiaotao/codex-desk/releases/latest"><span data-zh>下载 Codex Desk</span><span data-en>Download Codex Desk</span><span aria-hidden="true">↗</span></a><a class="text-link" href="#workspace"><span data-zh>探索工作空间</span><span data-en>Explore the workspace</span><span aria-hidden="true">↓</span></a></div>
-        <p class="platforms">Windows <span> / </span> macOS <span> / </span> Linux</p>
+        <p class="eyebrow"><span data-zh>Codex CLI 桌面助手</span><span data-en>YOUR CODEX CLI COMPANION</span></p>
+        <h1 id="hero-title">Codex Desk<span class="brand-dot">.</span></h1>
+        <p class="hero-tagline"><span data-zh>额度、用量、会话，一处掌握。</span><span data-en>Your quota. Your sessions. One place.</span></p>
+        <p class="hero-description"><span data-zh>在桌面查看剩余额度，了解 Token 用量，找回并接续本地会话。</span><span data-en>Keep an eye on your quota, understand token usage, and pick up your local conversations.</span></p>
+        <div class="actions"><a class="button primary" href="https://github.com/xiaotao-xiaotao/codex-desk/releases/latest"><span data-zh>下载 Codex Desk</span><span data-en>Download Codex Desk</span> <span aria-hidden="true">↗</span></a><a class="text-link" href="#workspace"><span data-zh>查看功能</span><span data-en>Explore features</span> ↓</a></div>
+        <p class="platforms">Windows · macOS · Linux</p>
       </div>
-      <div class="scene" aria-hidden="true">
-        <div class="scene-grid"></div><div class="ambient"></div>
-        <div class="instrument-ring"></div><div class="scene-axis axis-x"></div><div class="scene-axis axis-y"></div>
-        <div class="space-object">
-          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-          <div class="sphere"><div class="sphere-grid"></div><div class="sphere-scan"></div><div class="sphere-content"><span>CODEX DESK</span><strong>In flow<span class="tiny-dot">.</span></strong><span>YOUR DESKTOP COMPANION</span></div></div>
-          <div class="satellite top"><span class="mini-icon">◉</span><div><small data-zh>额度，随时可见</small><small data-en>Quota at a glance</small><b>Always in sight</b></div><span class="signal"><i></i><i></i><i></i><i></i></span></div>
-          <div class="satellite bottom"><span class="mini-icon">↳</span><div><small data-zh>接着上次的思路</small><small data-en>Pick up your last thought</small><b>codex resume <span>_</span></b></div></div>
-        </div>
-        <div class="scene-caption"><span>01 / DESKTOP COMPANION</span><span data-zh>概念视觉</span><span data-en>CONCEPT VISUAL</span></div>
+      <div class="hero-visual screenshot-stage">
+        <figure class="app-frame"><img id="dashboard" src="screenshots/dashboard-light-en.png" width="820" height="550" alt="Codex Desk dashboard showing quota, usage trends, and local sessions" fetchpriority="high"><figcaption><span data-zh>额度、趋势和历史会话，在同一个窗口查看。</span><span data-en>Quota, trends, and session history in one window.</span></figcaption></figure>
+        <div class="mini-orb" aria-hidden="true"></div>
       </div>
     </section>
-    <div class="manifesto wrap"><p><span data-zh>额度 · 用量 · 会话</span><span data-en>Quota. Usage. Sessions.</span></p><span data-zh>本地运行 · 开放源码 · 跨平台</span><span data-en>Local processing / Open source / Cross-platform</span></div>
-    <section class="workspace wrap" id="workspace" aria-labelledby="workspace-title">
-      <div class="section-heading"><div><p class="eyebrow">01 — WORKSPACE</p><h2 id="workspace-title"><span data-zh><span class="heading-accent">工作全景</span></span><span data-en><span class="heading-accent">Your workspace</span></span></h2></div><p><span data-zh>平时安静地待在桌面。展开后，额度、用量趋势和本地会话，都在眼前。</span><span data-en>Quietly on your desktop. Open it up for your quota, usage trends, and local sessions in one place.</span></p></div>
-      <div class="screenshot-stage">
-      <span class="stage-corner corner-top" aria-hidden="true"></span><span class="stage-corner corner-bottom" aria-hidden="true"></span>
-      <figure class="dashboard-frame"><div class="window-bar"><span class="window-dots">● ● ●</span><span>Codex Desk / Workspace</span><span class="window-status">● LOCAL</span></div><img id="dashboard" src="screenshots/dashboard-light-en.png" width="820" height="550" alt="Codex Desk dashboard showing quota, usage trends, and local sessions" loading="lazy"><figcaption><span data-zh>真实应用界面 · 中文与英文均可在应用内切换</span><span data-en>The real app · Switch between Chinese, English, and more in settings</span></figcaption></figure>
+    <div class="trust-strip wrap"><span><span data-zh>开源项目</span><span data-en>Open source</span></span><span><span data-zh>本地处理</span><span data-en>Local processing</span></span><span><span data-zh>支持三大桌面平台</span><span data-en>Built for your desktop</span></span></div>
+    <section class="feature-row quota-section wrap" id="workspace" aria-labelledby="quota-title">
+      <div class="feature-copy">
+        <p class="eyebrow"><span data-zh>额度与用量</span><span data-en>QUOTA & USAGE</span></p>
+        <h2 id="quota-title"><span data-zh>额度，心中有数</span><span data-en>Know your quota</span></h2>
+        <p class="section-intro"><span data-zh>悬浮球留在桌面，额度状态随时可见。需要更多信息时，再展开控制台。</span><span data-en>Keep the floating indicator on your desktop. Open the dashboard when you need the details.</span></p>
+        <ul class="feature-points">
+          <li><strong><span data-zh>查看额度</span><span data-en>See your limits</span></strong><span><span data-zh>查看额度窗口、使用比例和重置时间。</span><span data-en>Check quota windows, usage percentages, and reset times.</span></span></li>
+          <li><strong><span data-zh>接收提醒</span><span data-en>Get a heads-up</span></strong><span><span data-zh>启用通知后，在用量达到阈值时收到提醒。</span><span data-en>Enable notifications for alerts at usage thresholds.</span></span></li>
+          <li><strong><span data-zh>了解用量</span><span data-en>Understand usage</span></strong><span><span data-zh>按天查看 Token 消耗与活动趋势。</span><span data-en>Explore daily token usage and activity trends.</span></span></li>
+        </ul>
       </div>
-      <div class="feature-list"><article><span class="feature-number">01 /</span><h3><span data-zh>额度监控</span><span data-en>Quota monitoring</span></h3><p><span data-zh>查看额度窗口、使用比例与重置时间。启用通知后，在接近用量阈值时收到提醒。</span><span data-en>Check quota windows, usage, and reset times. Enable notifications to get a heads-up as usage reaches alert thresholds.</span></p></article><article><span class="feature-number">02 /</span><h3><span data-zh>会话接续</span><span data-en>Session continuity</span></h3><p><span data-zh>搜索历史对话，查看文件变更。复制恢复命令，就能在终端里继续之前的会话。</span><span data-en>Find a conversation and review its file changes. Copy the resume command to carry on in your terminal.</span></p></article><article><span class="feature-number">03 /</span><h3><span data-zh>用量洞察</span><span data-en>Usage insights</span></h3><p><span data-zh>按天查看 Token 用量和活动趋势，了解自己的工作节奏。数据来自本地会话记录。</span><span data-en>Explore daily token usage and activity trends. Understand your work patterns from local session records.</span></p></article></div>
-    </section>
-    <section class="local-section wrap"><p class="eyebrow">02 — LOCAL BY DESIGN</p><div class="local-layout"><h2><span data-zh><span class="heading-accent">会话留在本地</span></span><span data-en><span class="heading-accent">Your context, local.</span></span></h2><div><p><span data-zh>账户、额度和会话通过本机 Codex 进程读取。Codex Desk 不读取或保存 auth.json，也不向第三方服务上传本地会话数据。</span><span data-en>Account, quota, and session data come from your local Codex process. Codex Desk never reads or stores auth.json, or uploads local session data to third-party services.</span></p><p class="fine-print"><span data-zh>检查更新时，仅请求 GitHub 上的公开版本信息。</span><span data-en>Update checks only request public release information from GitHub.</span></p><a class="text-link" href="https://github.com/xiaotao-xiaotao/codex-desk"><span data-zh>源码就在这里</span><span data-en>See the source</span> ↗</a></div></div>
-      <div class="screenshot-stage session-stage">
-      <span class="stage-corner corner-top" aria-hidden="true"></span><span class="stage-corner corner-bottom" aria-hidden="true"></span>
-      <figure class="dashboard-frame session-frame">
-        <div class="window-bar"><span class="window-dots">● ● ●</span><span data-zh>Codex Desk / 会话详情</span><span data-en>Codex Desk / Session details</span><span class="window-status">● LOCAL</span></div>
-        <img id="session-details" src="screenshots/session-details-en.png" width="820" height="830" alt="Codex Desk session details showing conversation history and token usage" loading="lazy">
-        <figcaption><span data-zh>从历史对话到会话用量，在本地查看每一次工作的上下文。</span><span data-en>Review your conversation and session usage, with your work's context kept locally.</span></figcaption>
+      <figure class="quota-visual">
+        <div class="orb-display"><div class="orb-ring" aria-hidden="true"></div><img src="screenshots/quota-orb-light-en.png" width="120" height="120" alt="Codex Desk floating quota indicator" id="quota-orb" loading="lazy"></div>
+        <figcaption><span data-zh>一个小窗口，随时掌握额度。</span><span data-en>A small indicator. A clear view of your quota.</span></figcaption>
+        <div class="quota-labels"><span><span data-zh>悬浮显示</span><span data-en>Floating indicator</span></span><span><span data-zh>阈值提醒</span><span data-en>Usage alerts</span></span></div>
       </figure>
-      </div>
     </section>
-    <section class="start wrap" aria-labelledby="start-title"><div class="start-heading"><p class="eyebrow">03 — READY WHEN YOU ARE</p><h2 id="start-title"><span data-zh><span class="heading-accent">即刻开始</span></span><span data-en><span class="heading-accent">Get started</span></span></h2></div>
-      <figure class="release-banner">
-        <img id="release-preview" src="screenshots/social-preview-1280x640.jpg" width="1280" height="640" alt="Codex Desk product overview with floating quota indicator, account usage, and token activity dashboard" loading="lazy" decoding="async">
-      </figure>
-      <div class="download-action"><a class="button primary" href="https://github.com/xiaotao-xiaotao/codex-desk/releases/latest"><span data-zh>下载最新版本</span><span data-en>Get the latest release</span> ↗</a></div><div class="setup"><div class="setup-step"><span>01</span><div><h3><span data-zh>准备好 Codex CLI</span><span data-en>Start with Codex CLI</span></h3><p><span data-zh>安装后运行 codex，完成登录。</span><span data-en>Install it, then run codex to sign in.</span></p><code>npm install -g @openai/codex</code></div></div><div class="setup-step"><span>02</span><div><h3><span data-zh>安装并打开 Codex Desk</span><span data-en>Open Codex Desk</span></h3><p><span data-zh>选择适合你系统的安装包，就可以开始了。</span><span data-en>Choose the installer for your system, and you're ready.</span></p><a id="docs-link" class="text-link" href="https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README.md"><span data-zh>安装说明与常见问题</span><span data-en>Installation guide & troubleshooting</span> ↗</a></div></div></div></section>
+    <section class="feature-row session-section wrap" aria-labelledby="session-title">
+      <div class="feature-copy">
+        <p class="eyebrow"><span data-zh>本地会话</span><span data-en>LOCAL SESSIONS</span></p>
+        <h2 id="session-title"><span data-zh>接着上次的思路</span><span data-en>Pick up the thread</span></h2>
+        <p class="section-intro"><span data-zh>找回之前的讨论，看清修改过程，再回到终端继续工作。</span><span data-en>Find a previous conversation, review what changed, and carry on in your terminal.</span></p>
+        <ul class="feature-points">
+          <li><strong><span data-zh>查找历史</span><span data-en>Find a conversation</span></strong><span><span data-zh>搜索本地会话，查看对话内容和用量概览。</span><span data-en>Search local sessions and review messages and usage.</span></span></li>
+          <li><strong><span data-zh>查看变更</span><span data-en>Review changes</span></strong><span><span data-zh>回看会话记录中的文件修改和差异。</span><span data-en>Inspect recorded file changes and diffs.</span></span></li>
+          <li><strong><span data-zh>恢复工作</span><span data-en>Resume your work</span></strong><span><span data-zh>复制恢复命令，在终端接续会话。</span><span data-en>Copy the resume command to continue in your terminal.</span></span></li>
+        </ul>
+        <aside class="privacy-note"><strong><span data-zh>会话留在本地</span><span data-en>Your sessions stay local</span></strong><p><span data-zh>不向第三方上传本地会话，也不读取或保存 auth.json。更新检查仅请求 GitHub 公开版本信息。</span><span data-en>Local sessions are never uploaded to third-party services. Codex Desk does not read or store auth.json. Update checks request only public GitHub release information.</span></p></aside>
+      </div>
+      <figure class="app-frame session-frame"><img id="session-details" src="screenshots/session-details-en.png" width="820" height="830" alt="Codex Desk session details showing conversation history and token usage" loading="lazy"><figcaption><span data-zh>会话详情与用量概览</span><span data-en>Conversation details and usage overview</span></figcaption></figure>
+    </section>
+    <section class="download-section wrap" aria-labelledby="start-title">
+      <div><p class="eyebrow"><span data-zh>即刻开始</span><span data-en>GET STARTED</span></p><h2 id="start-title"><span data-zh>给 Codex 一个桌面</span><span data-en>Bring Codex to your desk</span></h2><p><span data-zh>先安装并登录 Codex CLI，再打开 Codex Desk。</span><span data-en>Install and sign in to Codex CLI, then open Codex Desk.</span></p><a id="docs-link" class="text-link" href="https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README.md"><span data-zh>安装说明与常见问题</span><span data-en>Installation guide & troubleshooting</span> ↗</a></div>
+      <div class="download-action"><a class="button primary" href="https://github.com/xiaotao-xiaotao/codex-desk/releases/latest"><span data-zh>下载 Codex Desk</span><span data-en>Download Codex Desk</span> <span aria-hidden="true">↗</span></a><p class="platforms">Windows · macOS · Linux</p></div>
+    </section>
   </main>
   <footer class="wrap"><a class="brand" href="./">Codex Desk<span class="tiny-dot">.</span></a><span data-zh>为 Codex CLI 打造的桌面工具。</span><span data-en>A desktop companion for Codex CLI.</span><a href="https://github.com/xiaotao-xiaotao/codex-desk/issues"><span data-zh>反馈与建议</span><span data-en>Feedback & ideas</span> ↗</a></footer>
 </body>
