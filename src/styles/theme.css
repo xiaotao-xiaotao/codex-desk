@@ -238,6 +238,8 @@
 :root[data-theme="dark"] .account-details { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .account-detail-label { color: #9aa9ba; }
 :root[data-theme="dark"] .account-detail-item strong { color: #d5dfeb; }
+:root[data-theme="dark"] .email-visibility-button { color: #9aa9ba; }
+:root[data-theme="dark"] .email-visibility-button:hover { color: #9ecbff; background: #20354d; }
 :root[data-theme="dark"] .account-billing-button { color: #8dc5ff; background: transparent; }
 :root[data-theme="dark"] .account-billing-button:hover { color: #c7e2ff; }
 :root[data-theme="dark"] .account-email-item::after, :root[data-theme="dark"] .account-reset-credits::before { background: #3a4758; }

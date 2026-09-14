@@ -99,6 +99,15 @@
             <div class="account-detail-item account-email-item">
               <span class="account-detail-label" data-i18n="accountEmail">登录邮箱</span>
               <strong id="account-email">正在读取账号信息…</strong>
+              <button id="account-email-visibility" class="email-visibility-button" type="button" aria-pressed="true" hidden>
+                <svg class="email-visibility-icon email-visibility-icon-show" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </svg>
+                <svg class="email-visibility-icon email-visibility-icon-hide" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 3l18 18M10.6 6.1A9.3 9.3 0 0 1 12 6c6 0 9.5 6 9.5 6a15.2 15.2 0 0 1-2.1 2.8M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.8-.4 3.9-1" />
+                </svg>
+              </button>
             </div>
             <div class="account-detail-item">
               <span class="account-detail-label" data-i18n="accountPlan">订阅方案</span>

@@ -3,6 +3,13 @@
 .account-detail-label { flex: 0 0 auto; color: #738095; font-size: .62rem; font-weight: 650; }
 .account-detail-label::after { content: "："; }
 .account-detail-item strong { min-width: 0; overflow: hidden; color: #344154; font-size: .68rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.email-visibility-button { display: inline-grid; flex: 0 0 auto; width: 20px; height: 20px; margin-left: -2px; padding: 0; border: 0; border-radius: 5px; place-items: center; color: #8995a5; background: transparent; cursor: pointer; }
+.email-visibility-button[hidden] { display: none; }
+.email-visibility-button:hover { color: #1677ff; background: #eaf3ff; }
+.email-visibility-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
+.email-visibility-icon { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.email-visibility-icon-hide, .email-visibility-button.is-concealed .email-visibility-icon-show { display: none; }
+.email-visibility-button.is-concealed .email-visibility-icon-hide { display: block; }
 /* 字段按内容宽度排列；仅将按钮推到右侧，避免邮箱后产生无意义的大块空白。 */
 .account-email-item::after { align-self: stretch; width: 1px; margin-left: 3px; background: #dfe5ec; content: ""; }
 .account-billing-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; margin-left: auto; }
