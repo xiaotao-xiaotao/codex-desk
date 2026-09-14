@@ -1,10 +1,10 @@
 :root{
-  color-scheme:dark;
-  --bg:#080b10;
-  --fg:#f2f4f7;
-  --muted:#9da6b6;
-  --accent:#b6f36a;
-  --line:#252c35;
+  color-scheme:light;
+  --bg:#f7faff;
+  --fg:#172b4d;
+  --muted:#526784;
+  --accent:#2463db;
+  --line:#d8e4f3;
   --rx:0deg;
   --ry:0deg}
 *{
@@ -22,7 +22,7 @@ body::before{
   position:absolute;
   inset:0 0 auto;
   height:900px;
-  background:radial-gradient(ellipse at 75% 25%,#182b333b,transparent 60%);
+  background:radial-gradient(ellipse at 75% 25%,#85b8ff30,transparent 60%);
   pointer-events:none;
   z-index:-1}
 html[lang="zh-CN"] [data-en],html[lang="en"] [data-zh]{
@@ -67,7 +67,7 @@ a:focus-visible,button:focus-visible{
   place-content:center;
   width:32px;
   height:32px;
-  border:1px solid #718090;
+  border:1px solid #94b4df;
   border-radius:9px;
   font:20px/1 monospace;
   display:flex;
@@ -80,7 +80,7 @@ nav{
   align-items:center;
   gap:30px;
   font-size:14px;
-  color:#cad0d8}
+  color:#405a7c}
 #language{
   background:transparent;
   border:1px solid var(--line);
@@ -110,7 +110,7 @@ nav{
   height:6px;
   border-radius:50%;
   background:var(--accent);
-  box-shadow:0 0 12px #b6f36680}
+  box-shadow:0 0 12px #2463db50}
 h1{
   font-size:clamp(44px,4.7vw,70px);
   line-height:1.24;
@@ -121,7 +121,7 @@ html[lang=en] h1{
   font-size:clamp(48px,5.2vw,77px);
   line-height:1.07}
 .subtle{
-  color:#8993a2}
+  color:#6888b1}
 .hero-description{
   font-size:17px;
   color:var(--muted);
@@ -143,10 +143,10 @@ html[lang=en] h1{
   transition:transform .2s,background .2s}
 .primary{
   background:var(--accent);
-  color:#16220b}
+  color:#ffffff}
 .primary:hover{
-  background:#cdf998;
-  color:#16220b;
+  background:#194db4;
+  color:#ffffff;
   transform:translateY(-2px)}
 .text-link{
   font-size:14px;
@@ -154,12 +154,12 @@ html[lang=en] h1{
   align-items:center;
   gap:12px}
 .platforms{
-  color:#8d98a8;
+  color:#526784;
   font:12px/1.5 ui-monospace,monospace;
   margin-top:25px}
 .platforms span{
   padding:0 10px;
-  color:#404b5a}
+  color:#8098b9}
 .scene{
   position:relative;
   height:540px;
@@ -169,13 +169,13 @@ html[lang=en] h1{
 .ambient{
   position:absolute;
   inset:12%;
-  background:#a1dd7620;
+  background:#70aeff38;
   filter:blur(75px);
   border-radius:50%}
 .scene-grid{
   position:absolute;
   inset:20% -6% 0;
-  background-image:linear-gradient(#73808812 1px,transparent 1px),linear-gradient(90deg,#73808812 1px,transparent 1px);
+  background-image:linear-gradient(#4e8ce022 1px,transparent 1px),linear-gradient(90deg,#4e8ce022 1px,transparent 1px);
   background-size:36px 36px;
   transform:rotateX(65deg) rotateZ(-25deg);
   mask-image:radial-gradient(ellipse,#000,transparent 70%)}
@@ -194,21 +194,21 @@ html[lang=en] h1{
   margin:-160px;
   border-radius:50%;
   overflow:hidden;
-  background:radial-gradient(circle at 32% 20%,#d6f9bc55 0%,#546f5750 15%,#172829 39%,#091012 70%);
-  box-shadow:inset 3px 4px 9px #e1ffd644,inset -20px -24px 40px #000,0 24px 70px #000b,0 0 70px #a3e5730d;
+  background:radial-gradient(circle at 30% 18%,#ffffff 0%,#d7edff 17%,#75b4f5 43%,#2d75d3 70%,#174890 100%);
+  box-shadow:inset 3px 4px 12px #ffffffcc,inset -20px -24px 40px #12417c66,0 30px 65px #2d69b333,0 0 70px #8ac3ff20;
   animation:levitate 7s ease-in-out infinite}
 .sphere::after{
   content:"";
   position:absolute;
   inset:0;
-  border:1px solid #bfd9c04d;
+  border:1px solid #ffffff99;
   border-radius:50%;
-  background:radial-gradient(ellipse at 34% 12%,#f2ffec66,transparent 30%);
+  background:radial-gradient(ellipse at 34% 12%,#ffffffbb,transparent 30%);
   pointer-events:none}
 .sphere-grid{
   position:absolute;
   inset:-45%;
-  background:repeating-radial-gradient(ellipse at center,transparent 0 22px,#acd4ac20 23px 24px,transparent 25px 40px);
+  background:repeating-radial-gradient(ellipse at center,transparent 0 22px,#ffffff40 23px 24px,transparent 25px 40px);
   transform:rotate(-32deg) scaleX(.7)}
 .sphere-content{
   position:absolute;
@@ -219,11 +219,12 @@ html[lang=en] h1{
   align-items:center;
   gap:14px;
   transform:rotate(-8deg);
-  text-shadow:0 2px 12px #000}
+  color:#103f7a;
+  text-shadow:0 1px 12px #ffffff88}
 .sphere-content>span{
   font:9px/1.5 monospace;
   letter-spacing:2px;
-  color:#b8c6bd}
+  color:#174477}
 .sphere-content strong{
   font-size:47px;
   font-weight:500;
@@ -237,7 +238,7 @@ html[lang=en] h1{
   width:460px;
   height:460px;
   margin:-230px;
-  border:1px solid #b7d4ba40;
+  border:1px solid #528fe370;
   border-radius:50%;
   transform-style:preserve-3d}
 .orbit-one{
@@ -257,7 +258,7 @@ html[lang=en] h1{
   width:405px;
   height:405px;
   margin:-202.5px;
-  border-color:#76948f24;
+  border-color:#7ba7df55;
   transform:rotateY(68deg) rotateX(24deg)}
 .satellite{
   position:absolute;
@@ -265,10 +266,10 @@ html[lang=en] h1{
   align-items:center;
   gap:14px;
   padding:17px 19px;
-  border:1px solid #71857e45;
+  border:1px solid #ffffffdd;
   border-radius:12px;
-  background:linear-gradient(135deg,#293a34dc,#131b22e8);
-  box-shadow:0 20px 45px #0005;
+  background:linear-gradient(135deg,#ffffffed,#e7f2ffeb);
+  box-shadow:0 20px 45px #3165a624;
   backdrop-filter:blur(14px);
   transform:translateZ(65px)}
 .satellite.top{
@@ -282,7 +283,7 @@ html[lang=en] h1{
 .satellite small{
   display:block;
   font-size:11px;
-  color:#adb9b8;
+  color:#526784;
   margin-bottom:5px}
 .satellite b{
   display:block;
@@ -317,7 +318,7 @@ html[lang=en] h1{
   width:100%;
   display:flex;
   justify-content:space-between;
-  color:#6f7e8d;
+  color:#607797;
   font:10px/1.4 monospace;
   letter-spacing:1px}
 .manifesto{
@@ -356,11 +357,11 @@ h2{
 .dashboard-frame{
   margin:0;
   position:relative;
-  border:1px solid #47554b;
+  border:1px solid #c4d8f1;
   border-radius:12px;
-  box-shadow:0 0 90px #94c97a0b,0 25px 70px #0006;
+  box-shadow:0 0 90px #91beff14,0 25px 70px #2d5c941a;
   overflow:hidden;
-  background:#11171b;
+  background:#ffffff;
   transform:perspective(1600px) rotateX(3deg);
   transition:transform .6s}
 .dashboard-frame:hover{
@@ -372,12 +373,12 @@ h2{
   align-items:center;
   gap:15px;
   font:11px/1.5 monospace;
-  color:#a0aca8;
-  border-bottom:1px solid #334238}
+  color:#526784;
+  border-bottom:1px solid #d8e4f3}
 .window-dots{
   font-size:10px;
   letter-spacing:4px;
-  color:#66756d}
+  color:#91aaca}
 .window-status{
   color:var(--accent)}
 .dashboard-frame img{
@@ -395,7 +396,7 @@ h2{
   margin-top:65px}
 .feature-number{
   font:12px/1 monospace;
-  color:#8f9b88}
+  color:#58769c}
 .feature-list h3{
   font-size:22px;
   font-weight:500;
@@ -407,6 +408,12 @@ h2{
 .local-section{
   border-top:1px solid var(--line);
   padding-block:70px 85px}
+.session-frame{
+  max-width:960px;
+  margin:48px auto 0}
+.session-frame img{
+  max-width:820px;
+  margin-inline:auto}
 .local-layout{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -416,7 +423,7 @@ h2{
   margin:0 0 20px}
 .local-layout .fine-print{
   font-size:13px;
-  color:#87929f}
+  color:#607797}
 .start{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -446,12 +453,12 @@ h2{
 .setup-step code{
   display:block;
   padding:12px 16px;
-  background:#121920;
+  background:#edf4ff;
   border:1px solid var(--line);
   border-radius:5px;
   font-size:13px;
   overflow-wrap:anywhere;
-  color:#d7e4d1}
+  color:#214c87}
 footer{
   border-top:1px solid var(--line);
   padding-block:30px;

@@ -1,6 +1,7 @@
 const root = document.documentElement;
 const languageButton = document.querySelector('#language');
 const dashboard = document.querySelector('#dashboard');
+const sessionDetails = document.querySelector('#session-details');
 const descriptions = {
   'zh-CN': 'Codex Desk 是开源的 Codex CLI 桌面工具，提供悬浮额度监控、Token 用量统计与本地会话管理，支持 Windows、macOS 和 Linux。',
   en: 'Codex Desk is an open-source desktop companion for Codex CLI. Monitor your quota, explore token usage, and resume local sessions on Windows, macOS, and Linux.'
@@ -15,6 +16,8 @@ function setLanguage(language) {
   document.querySelector('nav').setAttribute('aria-label', chinese ? '主要导航' : 'Main navigation');
   dashboard.src = `screenshots/dashboard-light-${chinese ? 'zh' : 'en'}.png`;
   dashboard.alt = chinese ? 'Codex Desk 中文控制台，展示额度、用量趋势和会话列表' : 'Codex Desk dashboard showing quota, usage trends, and local sessions';
+  sessionDetails.src = `screenshots/session-details-${chinese ? 'zh' : 'en'}.png`;
+  sessionDetails.alt = chinese ? 'Codex Desk 中文会话详情，展示历史对话与 Token 用量概览' : 'Codex Desk session details showing conversation history and token usage';
   document.querySelector('#docs-link').href = `https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README${chinese ? '.zh-CN' : ''}.md`;
 }
 let savedLanguage;
