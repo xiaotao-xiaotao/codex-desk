@@ -91,12 +91,12 @@ nav{
   font-size:14px}
 .hero{
   overflow:clip;
-  min-height:760px;
+  min-height:0;
   display:grid;
   grid-template-columns:1fr 1fr;
   align-items:center;
   gap:20px;
-  padding-block:70px 90px}
+  padding-block:24px 36px}
 .eyebrow{
   font:12px/1.5 ui-monospace,monospace;
   letter-spacing:2px;
@@ -162,7 +162,7 @@ html[lang=en] h1{
   color:#8098b9}
 .scene{
   position:relative;
-  height:540px;
+  height:460px;
   min-width:0;
   perspective:1100px;
   isolation:isolate}
@@ -481,17 +481,13 @@ footer>span,footer>a:last-child{
 to{
   transform:rotateX(68deg) rotateY(-18deg) rotateZ(335deg)}
 }
-@media(min-width:1500px){
-  .hero{
-  overflow:clip;
-  min-height:820px}
-}
+
 @media(max-width:1000px){
   .wrap{
   width:calc(100% - 56px)}
 .hero{
   gap:0;
-  min-height:670px}
+  min-height:0}
 .scene{
   transform:scale(.83);
   transform-origin:center}
@@ -519,7 +515,7 @@ nav>a:first-child{
   font-size:18px}
 .hero{
   grid-template-columns:1fr;
-  padding-block:55px 24px;
+  padding-block:32px 24px;
   gap:20px}
 .hero-copy{
   position:relative;
@@ -653,17 +649,7 @@ nav{
   height:93%;
   width:1px;
   background:linear-gradient(transparent,#7ea9de 15%,transparent 28% 72%,#7ea9de 85%,transparent)}
-.coordinate{
-  position:absolute;
-  font:10px/1.5 ui-monospace,monospace;
-  letter-spacing:2px;
-  color:#5879a5}
-.coordinate-top{
-  left:12px;
-  top:30px}
-.coordinate-bottom{
-  right:10px;
-  bottom:55px}
+
 .sphere-scan{
   position:absolute;
   inset:-50% 0;
@@ -690,9 +676,7 @@ nav{
   25%{opacity:.7}
   65%{opacity:.7}
   80%,100%{transform:translateY(30%) rotate(-25deg);opacity:0}}
-@media(max-width:760px){
-  .coordinate-top{left:0;top:0}
-  .coordinate-bottom{right:0;bottom:15px}}
+
 .screenshot-stage{
   position:relative;
   isolation:isolate;
