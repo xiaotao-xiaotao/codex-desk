@@ -765,10 +765,20 @@ nav{
   .corner-bottom{bottom:5px;right:5px}
   .screenshot-stage .dashboard-frame{transform:none}}
 /* 正文保持自然阅读；等宽字与刻度装饰只用于标签和编号。 */
+/* 精简标题配合自适应字号，窄屏或文字放大时允许自然换行。 */
+.hero h1,html[lang=en] .hero h1{
+  font-size:clamp(28px,3.4vw,49px);
+  line-height:1.25;
+  letter-spacing:-.04em}
+h2{
+  font-size:clamp(27px,2.6vw,37px)}
+@media(max-width:760px){
+  .hero h1,html[lang=en] .hero h1{
+    font-size:clamp(28px,6.7vw,46px)}}
 h1,h2{
   font-family:"Segoe UI Variable Display","Segoe UI","Microsoft YaHei",sans-serif;
   font-weight:600;
-  text-wrap:balance}
+  text-wrap:wrap}
 html[lang="zh-CN"] h1{
   letter-spacing:-.035em}
 html[lang="zh-CN"] h2{
