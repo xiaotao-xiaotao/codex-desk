@@ -4,7 +4,7 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
 button, input { font: inherit; }
 .float-app { position: relative; width: 100%; height: 100%; }
 
-.quota-orb { --quota-progress: 0%; position: absolute; z-index: 3; inset: 0; width: 56px; height: 56px; margin: auto; padding: 0; border: 0; border-radius: 50%; color: #fff; background: conic-gradient(#1677ff var(--quota-progress), #e5eaf2 0); box-shadow: none; cursor: pointer; transition: transform .2s ease, opacity .18s ease; }
+.quota-orb { --quota-progress: 0%; position: absolute; z-index: 3; inset: 0; width: 56px; height: 56px; margin: auto; padding: 0; border: 0; border-radius: 50%; color: #fff; background: conic-gradient(var(--orb-progress-color, #1677ff) var(--quota-progress), #e5eaf2 0); box-shadow: none; cursor: pointer; transition: transform .2s ease, opacity .18s ease; }
 .quota-orb:hover { transform: scale(1.045); }
 .quota-orb:active { transform: scale(.98); }
 .orb-ring { position: absolute; inset: 4px; border-radius: 50%; background: #fff; }
@@ -139,12 +139,16 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .quota-reset-at { min-width: 0; overflow: hidden; color: #53708f; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 /* 预警只在接近耗尽时出现，避免普通用量状态被不必要的颜色干扰。 */
 .quota-alert { margin-left: 3px; padding: 1px 4px; border-radius: 3px; font-size: .58rem; font-weight: 750; line-height: 1.25; }
+.quota-orb.is-warning { --orb-progress-color: #fa8c16; }
 .quota-card.is-warning { border-color: #ffd591; box-shadow: inset 3px 0 0 #fa8c16; }
-.quota-card.is-warning .quota-value strong { color: #d46b08; }
+.quota-card.is-warning .quota-value strong,
+.quota-orb.is-warning .orb-value { color: #d46b08; }
 .quota-card.is-warning .progress-track span { background: #fa8c16; }
 .quota-card.is-warning .quota-alert { color: #ad6800; background: #fff7e6; }
+.quota-orb.is-critical { --orb-progress-color: #f5222d; }
 .quota-card.is-critical { border-color: #ffb3b3; box-shadow: inset 3px 0 0 #f5222d; }
-.quota-card.is-critical .quota-value strong { color: #cf1322; }
+.quota-card.is-critical .quota-value strong,
+.quota-orb.is-critical .orb-value { color: #cf1322; }
 .quota-card.is-critical .progress-track span { background: #f5222d; }
 .quota-card.is-critical .quota-alert { color: #cf1322; background: #fff1f0; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: #1677ff; transition: width .35s ease; }

@@ -20,6 +20,12 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     return t("quotaWindowMinutes", { count: minutes });
   }
 
+  // 小球与卡片共用取整后的阈值，确保同一剩余额度呈现相同告警状态。
+  function getQuotaState(remainingPercent) {
+    if (remainingPercent === null) return "normal";
+    return remainingPercent <= 10 ? "critical" : remainingPercent <= 20 ? "warning" : "normal";
+  }
+
   function render(quota) {
     const primary = quota.windows?.[0];
     const remaining = primary ? Math.round(primary.remainingPercent) : null;
@@ -27,6 +33,10 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     // 悬浮球只呈现当前主额度窗口，Pro 等无短周期额度时会自然回退为 7 天窗口。
     orbLabel.textContent = primary ? formatOrbWindow(primary.durationMinutes) : t("remaining");
     orb.style.setProperty("--quota-progress", `${remaining === null ? 0 : remaining}%`);
+    const primaryState = getQuotaState(remaining);
+    for (const state of ["normal", "warning", "critical"]) {
+      orb.classList.toggle(`is-${state}`, primaryState === state);
+    }
     const resetCredits = Number(quota.resetCredits ?? 0);
     const resetCreditDetails = Array.isArray(quota.resetCreditDetails) ? quota.resetCreditDetails : [];
     resetCreditsRow.hidden = resetCredits <= 0;
@@ -59,7 +69,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
       const progress = Math.max(0, Math.min(100, window.remainingPercent));
       const item = document.createElement("article");
       item.className = "quota-card";
-      const quotaState = remainingPercent <= 10 ? "critical" : remainingPercent <= 20 ? "warning" : "normal";
+      const quotaState = getQuotaState(remainingPercent);
       item.classList.add(`is-${quotaState}`);
 
       // 每个额度窗口都展示名称，避免首个窗口因复用标题区而与其他卡片层级不一致。

@@ -1,6 +1,6 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
 :root[data-theme="dark"] { color: #e6edf3; color-scheme: dark; }
-:root[data-theme="dark"] .quota-orb { background: conic-gradient(#4096ff var(--quota-progress), #334155 0); box-shadow: 0 7px 18px rgba(0, 0, 0, .32); }
+:root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: 0 7px 18px rgba(0, 0, 0, .32); }
 :root[data-theme="dark"] .orb-ring { background: #151b23; }
 :root[data-theme="dark"] .orb-value { color: #69b1ff; }
 :root[data-theme="dark"] .orb-label { color: #aab7c7; }
@@ -77,12 +77,16 @@
 :root[data-theme="dark"] .quota-used { color: #9aa9ba; }
 :root[data-theme="dark"] .progress-track { background: #2a3544; }
 :root[data-theme="dark"] .progress-track span { background: #4096ff; }
+:root[data-theme="dark"] .quota-orb.is-warning { --orb-progress-color: #faad14; }
 :root[data-theme="dark"] .quota-card.is-warning { border-color: #7a5426; box-shadow: inset 3px 0 0 #faad14; }
-:root[data-theme="dark"] .quota-card.is-warning .quota-value strong { color: #ffc53d; }
+:root[data-theme="dark"] .quota-card.is-warning .quota-value strong,
+:root[data-theme="dark"] .quota-orb.is-warning .orb-value { color: #ffc53d; }
 :root[data-theme="dark"] .quota-card.is-warning .progress-track span { background: #faad14; }
 :root[data-theme="dark"] .quota-card.is-warning .quota-alert { color: #ffd666; background: #45320f; }
+:root[data-theme="dark"] .quota-orb.is-critical { --orb-progress-color: #ff7875; }
 :root[data-theme="dark"] .quota-card.is-critical { border-color: #73323a; box-shadow: inset 3px 0 0 #ff7875; }
-:root[data-theme="dark"] .quota-card.is-critical .quota-value strong { color: #ff7875; }
+:root[data-theme="dark"] .quota-card.is-critical .quota-value strong,
+:root[data-theme="dark"] .quota-orb.is-critical .orb-value { color: #ff7875; }
 :root[data-theme="dark"] .quota-card.is-critical .progress-track span { background: #ff7875; }
 :root[data-theme="dark"] .quota-card.is-critical .quota-alert { color: #ffaaa7; background: #4a1f24; }
 :root[data-theme="dark"] .thread-item:hover,
