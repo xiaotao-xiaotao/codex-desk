@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex Desk — Codex CLI 额度监控与会话管理工具</title>
+  <meta name="description" content="Codex Desk 是开源的 Codex CLI 桌面工具，支持悬浮额度监控、额度提醒、Token 用量统计、本地会话管理与恢复，适用于 Windows、macOS 和 Linux。">
+  <link rel="canonical" href="https://xiaotao-xiaotao.github.io/codex-desk/">
+  <meta name="theme-color" content="#101820">
+  <style>
+    :root { color-scheme: dark; --bg: #101820; --text: #edf3f6; --muted: #b5c3ce; --accent: #8ce6cb; --line: #33434f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 1rem/1.8 system-ui, "Microsoft YaHei", sans-serif; }
+    a { color: var(--accent); text-underline-offset: .25em; }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+    .wrap { width: min(1120px, 90%); margin: auto; }
+    header, footer { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.5rem 0; }
+    header { border-bottom: 1px solid var(--line); }
+    .brand { font-weight: 750; color: var(--text); text-decoration: none; }
+    nav { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+    .hero { padding: 5rem 0 3rem; max-width: 850px; }
+    .eyebrow { color: var(--accent); font-size: .875rem; letter-spacing: .08em; }
+    h1 { margin: .5rem 0 1.5rem; font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1.2; letter-spacing: -.035em; }
+    h1 span { display: block; margin-top: .7rem; font-size: .6em; line-height: 1.5; letter-spacing: 0; }
+    p { color: var(--muted); }
+    .lead { max-width: 720px; font-size: 1.125rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 1rem; }
+    .button { display: inline-block; padding: .7rem 1.4rem; border: 1px solid var(--line); border-radius: .5rem; text-decoration: none; font-weight: 650; }
+    .primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    figure { margin: 0; }
+    figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: .8rem; }
+    figcaption { margin-top: .75rem; color: var(--muted); font-size: .875rem; }
+    section { padding: 3rem 0; }
+    h2 { margin: 0 0 1.5rem; font-size: 1.8rem; line-height: 1.4; }
+    h3 { margin: 0; font-size: 1.125rem; }
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+    .features article { border-top: 2px solid var(--line); padding-top: 1.3rem; }
+    .features p { margin-bottom: 0; }
+    .getting-started { border-top: 1px solid var(--line); }
+    li { margin-bottom: .8rem; }
+    code { overflow-wrap: anywhere; color: var(--accent); }
+    footer { border-top: 1px solid var(--line); font-size: .875rem; color: var(--muted); flex-wrap: wrap; }
+    @media (max-width: 700px) { .hero { padding-top: 3rem; } .features { grid-template-columns: 1fr; } header { align-items: flex-start; } nav { gap: .8rem; } section { padding: 2rem 0; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="./">Codex Desk</a>
+      <nav aria-label="主要导航">
+        <a href="#features">功能</a>
+        <a href="#start">快速开始</a>
+        <a href="https://github.com/xiaotao-xiaotao/codex-desk">GitHub ↗</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="title">
+        <div class="eyebrow" lang="en">CODEX CLI QUOTA MONITOR &amp; SESSION MANAGER</div>
+        <h1 id="title">Codex Desk<span>额度一眼可见，会话随时接续。</span></h1>
+        <p class="lead">为 Codex CLI 打造的开源桌面工具。通过悬浮球掌握剩余额度，查看 Token 用量，找回本地对话并快速继续工作。</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/xiaotao-xiaotao/codex-desk/releases/latest">下载最新版本</a>
+          <a class="button" href="https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README.zh-CN.md">阅读使用文档</a>
+        </div>
+        <p>Windows 10/11 · macOS · Linux</p>
+      </section>
+      <figure>
+        <img src="screenshots/dashboard-light-zh.png" alt="Codex Desk 中文控制台，展示账户额度、Token 用量趋势和本地会话列表" fetchpriority="high">
+        <figcaption>额度、活动趋势与本地会话，在一个桌面窗口中查看。</figcaption>
+      </figure>
+      <section id="features" aria-labelledby="features-title">
+        <h2 id="features-title">让日常使用 Codex 更方便</h2>
+        <div class="features">
+          <article><h3>悬浮额度监控</h3><p>在桌面随时查看额度状态与重置时间。启用通知后，在用量达到阈值时收到提醒。</p></article>
+          <article><h3>会话管理与恢复</h3><p>搜索本地会话、查看对话与文件变更，复制恢复命令继续工作，也能导入和导出会话。</p></article>
+          <article><h3>本地用量洞察</h3><p>查看 Token 用量与活动趋势。账户和会话数据在本机处理，不上传到第三方服务。</p></article>
+        </div>
+      </section>
+      <section id="start" class="getting-started" aria-labelledby="start-title">
+        <h2 id="start-title">两步开始使用</h2>
+        <ol>
+          <li>先安装 <a href="https://github.com/openai/codex">Codex CLI</a>：<code>npm install -g @openai/codex</code>，然后运行 <code>codex</code> 完成登录。</li>
+          <li>从 <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases/latest">Releases</a> 下载对应系统的 Codex Desk 安装包，安装后启动。</li>
+        </ol>
+        <p>首次安装、macOS 打开方式及连接问题，请查看<a href="https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README.zh-CN.md">完整使用说明</a>。</p>
+      </section>
+    </main>
+    <footer><span>Codex Desk · 开源桌面工具</span><a href="https://github.com/xiaotao-xiaotao/codex-desk/issues">反馈问题与建议 ↗</a></footer>
+  </div>
+</body>
+</html>
