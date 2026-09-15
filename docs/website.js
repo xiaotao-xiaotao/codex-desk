@@ -83,15 +83,23 @@ const imagePreview = document.createElement('dialog');
 imagePreview.className = 'image-preview-dialog';
 const previewImage = document.createElement('img');
 const closePreview = document.createElement('button');
+let previewScale = 1;
 closePreview.type = 'button';
 closePreview.textContent = '×';
 closePreview.setAttribute('aria-label', '关闭图片预览');
 imagePreview.append(previewImage, closePreview);
 document.body.append(imagePreview);
 
+const applyPreviewScale = () => {
+  previewImage.style.transform = `scale(${previewScale})`;
+  previewImage.classList.toggle('is-zoomed', previewScale > 1);
+};
+
 const openImagePreview = image => {
   previewImage.src = image.currentSrc || image.src;
   previewImage.alt = image.alt;
+  previewScale = 1;
+  applyPreviewScale();
   document.body.classList.add('image-preview-open');
   imagePreview.showModal();
   closePreview.focus();
@@ -101,7 +109,17 @@ closePreview.addEventListener('click', () => imagePreview.close());
 imagePreview.addEventListener('click', event => {
   if (event.target === imagePreview) imagePreview.close();
 });
-imagePreview.addEventListener('close', () => document.body.classList.remove('image-preview-open'));
+imagePreview.addEventListener('wheel', event => {
+  event.preventDefault();
+  const nextScale = previewScale + (event.deltaY < 0 ? .2 : -.2);
+  previewScale = Math.min(3, Math.max(1, Number(nextScale.toFixed(1))));
+  applyPreviewScale();
+}, { passive: false });
+imagePreview.addEventListener('close', () => {
+  document.body.classList.remove('image-preview-open');
+  previewImage.style.removeProperty('transform');
+  previewImage.classList.remove('is-zoomed');
+});
 
 document.querySelectorAll('[data-zoomable]').forEach(frame => {
   const image = frame.querySelector('img');
