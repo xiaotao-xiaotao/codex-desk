@@ -93,7 +93,8 @@ h2 { margin: 0 0 16px; color: #182e50; font-size: clamp(29px, 3vw, 42px); font-w
 .feature-points li > span { display: block; margin-top: 2px; color: var(--muted); font-size: 14px; }
 .quota-visual { position: relative; z-index: 1; margin: 0; overflow: hidden; padding: 34px 20px; border: 1px solid #d7e7f8; border-radius: 22px; background: radial-gradient(circle at 50% 36%, #b7ddff9a, transparent 30%), linear-gradient(145deg, #f4faff, #eaf4ff); text-align: center; }
 .orb-display { position: relative; display: grid; height: 225px; place-items: center; }
-.orb-display img { position: relative; z-index: 2; width: 120px; height: auto; filter: drop-shadow(0 15px 19px #2864a04d); animation: orb-float 5s ease-in-out infinite; }
+/* 原始额度球截图没有透明通道；screen 会让纯黑底与浅色舞台融合，仅保留蓝白球体。 */
+.orb-display img { position: relative; z-index: 2; width: 120px; height: auto; mix-blend-mode: screen; filter: drop-shadow(0 15px 19px #2864a04d); animation: orb-float 5s ease-in-out infinite; }
 .orb-ring { position: absolute; width: 178px; height: 178px; border: 1px solid #74aeec; border-radius: 50%; box-shadow: 0 0 0 18px #a9ceff4a, 0 0 0 43px #a9ceff25; animation: ring-pulse 4s ease-in-out infinite; }
 .quota-visual figcaption { color: #57718f; font-size: 14px; }
 .quota-labels { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 18px; }
