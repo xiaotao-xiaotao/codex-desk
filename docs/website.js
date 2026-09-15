@@ -83,6 +83,8 @@ const imagePreview = document.createElement('dialog');
 imagePreview.className = 'image-preview-dialog';
 const previewImage = document.createElement('img');
 previewImage.draggable = false;
+const previewCanvas = document.createElement('div');
+previewCanvas.className = 'image-preview-canvas';
 const closePreview = document.createElement('button');
 let previewScale = 1;
 let previewOffsetX = 0;
@@ -91,17 +93,18 @@ let panStart;
 closePreview.type = 'button';
 closePreview.textContent = '×';
 closePreview.setAttribute('aria-label', '关闭图片预览');
-imagePreview.append(previewImage, closePreview);
+previewCanvas.append(previewImage);
+imagePreview.append(previewCanvas, closePreview);
 document.body.append(imagePreview);
 
 const applyPreviewScale = () => {
   // 基于缩放后的可视边界约束位移，避免拖动后整张图片离开预览画布。
-  const viewport = imagePreview.getBoundingClientRect();
+  const viewport = previewCanvas.getBoundingClientRect();
   const imageBounds = previewImage.getBoundingClientRect();
   const baseWidth = imageBounds.width / previewScale;
   const baseHeight = imageBounds.height / previewScale;
-  const maxOffsetX = Math.max(0, (baseWidth * previewScale - (viewport.width - 80)) / 2);
-  const maxOffsetY = Math.max(0, (baseHeight * previewScale - (viewport.height - 80)) / 2);
+  const maxOffsetX = Math.max(0, (baseWidth * previewScale - viewport.width) / 2);
+  const maxOffsetY = Math.max(0, (baseHeight * previewScale - viewport.height) / 2);
   previewOffsetX = Math.min(maxOffsetX, Math.max(-maxOffsetX, previewOffsetX));
   previewOffsetY = Math.min(maxOffsetY, Math.max(-maxOffsetY, previewOffsetY));
   previewImage.style.transform = `translate(${previewOffsetX}px, ${previewOffsetY}px) scale(${previewScale})`;
@@ -131,14 +134,14 @@ imagePreview.addEventListener('wheel', event => {
   applyPreviewScale();
 }, { passive: false });
 previewImage.addEventListener('dragstart', event => event.preventDefault());
-previewImage.addEventListener('pointerdown', event => {
+previewCanvas.addEventListener('pointerdown', event => {
   if (previewScale <= 1) return;
   event.preventDefault();
   panStart = { x: event.clientX, y: event.clientY, offsetX: previewOffsetX, offsetY: previewOffsetY };
-  previewImage.setPointerCapture(event.pointerId);
+  previewCanvas.setPointerCapture(event.pointerId);
   previewImage.classList.add('is-panning');
 });
-previewImage.addEventListener('pointermove', event => {
+previewCanvas.addEventListener('pointermove', event => {
   if (!panStart) return;
   event.preventDefault();
   previewOffsetX = panStart.offsetX + event.clientX - panStart.x;
@@ -147,12 +150,12 @@ previewImage.addEventListener('pointermove', event => {
 });
 const stopPreviewPan = event => {
   if (!panStart) return;
-  if (previewImage.hasPointerCapture(event.pointerId)) previewImage.releasePointerCapture(event.pointerId);
+  if (previewCanvas.hasPointerCapture(event.pointerId)) previewCanvas.releasePointerCapture(event.pointerId);
   panStart = undefined;
   previewImage.classList.remove('is-panning');
 };
-previewImage.addEventListener('pointerup', stopPreviewPan);
-previewImage.addEventListener('pointercancel', stopPreviewPan);
+previewCanvas.addEventListener('pointerup', stopPreviewPan);
+previewCanvas.addEventListener('pointercancel', stopPreviewPan);
 imagePreview.addEventListener('close', () => {
   document.body.classList.remove('image-preview-open');
   previewOffsetX = 0;

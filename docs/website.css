@@ -81,6 +81,7 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .image-preview-dialog { inset: 0; display: none; width: 100vw; max-width: none; height: 100vh; max-height: none; margin: 0; padding: 40px; overflow: hidden; border: 0; border-radius: 0; background: #06101cf2; box-shadow: none; }
 .image-preview-dialog[open] { display: grid; place-items: center; }
 .image-preview-dialog::backdrop { background: #06101cbd; backdrop-filter: blur(6px); }
+.image-preview-canvas { display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; touch-action: none; }
 .image-preview-dialog img { display: block; width: auto; max-width: 100%; max-height: 100%; margin: 0; border-radius: 8px; cursor: zoom-in; object-fit: contain; user-select: none; touch-action: none; transform-origin: center; transition: transform .16s ease-out; }
 .image-preview-dialog img.is-zoomed { cursor: grab; }
 .image-preview-dialog img.is-panning { cursor: grabbing; transition: none; }
