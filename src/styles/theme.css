@@ -1,6 +1,7 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
 :root[data-theme="dark"] { color: #e6edf3; color-scheme: dark; }
-:root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: 0 7px 18px rgba(0, 0, 0, .32); }
+/* 收起态窗口本身透明，悬浮球不投射阴影，避免桌面上出现误认为底色的灰色区域。 */
+:root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: none; }
 :root[data-theme="dark"] .orb-ring { background: #151b23; }
 :root[data-theme="dark"] .orb-value { color: #69b1ff; }
 :root[data-theme="dark"] .orb-label { color: #aab7c7; }
