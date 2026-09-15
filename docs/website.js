@@ -129,8 +129,9 @@ imagePreview.addEventListener('click', event => {
 });
 imagePreview.addEventListener('wheel', event => {
   event.preventDefault();
-  const nextScale = previewScale + (event.deltaY < 0 ? .2 : -.2);
-  previewScale = Math.min(3, Math.max(1, Number(nextScale.toFixed(1))));
+  // 首次滚轮即放大到 1.6 倍，确保大屏幕上也立即有可拖动的溢出区域。
+  const nextScale = previewScale + (event.deltaY < 0 ? .6 : -.6);
+  previewScale = Math.min(3.4, Math.max(1, Number(nextScale.toFixed(1))));
   applyPreviewScale();
 }, { passive: false });
 previewImage.addEventListener('dragstart', event => event.preventDefault());
