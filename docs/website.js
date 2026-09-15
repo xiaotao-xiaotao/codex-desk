@@ -18,7 +18,10 @@ function setLanguage(language) {
   dashboard.alt = chinese ? 'Codex Desk 中文控制台，展示额度、用量趋势和会话列表' : 'Codex Desk dashboard showing quota, usage trends, and local sessions';
   sessionDetails.src = `screenshots/session-details-${chinese ? 'zh' : 'en'}.png`;
   sessionDetails.alt = chinese ? 'Codex Desk 中文会话详情，展示历史对话与 Token 用量概览' : 'Codex Desk session details showing conversation history and token usage';
-  document.querySelector('#quota-orb').alt = chinese ? 'Codex Desk 桌面悬浮额度指示器' : 'Codex Desk floating quota indicator';
+  const quotaOrb = document.querySelector('#quota-orb');
+  // 额度球中的重置时间与当前语言一致，切换语言时同步替换为对应的新版图标。
+  quotaOrb.src = `screenshots/quota-orb-light-${chinese ? 'zh' : 'en'}.png`;
+  quotaOrb.alt = chinese ? 'Codex Desk 桌面悬浮额度指示器' : 'Codex Desk floating quota indicator';
   document.querySelector('#docs-link').href = `https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README${chinese ? '.zh-CN' : ''}.md`;
 }
 let savedLanguage;
