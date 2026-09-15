@@ -76,6 +76,13 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .app-frame { overflow: hidden; border: 1px solid #a7c6e364; border-radius: 13px; background: #fff; box-shadow: 0 1px 0 2px #ffffff0c, 0 16px 34px -14px #020b18cc; }
 .app-frame img { display: block; width: 100%; height: auto; }
 .app-frame figcaption { padding: 9px 13px; border-top: 1px solid #dce7f1; color: #52677f; background: #fff; font-size: 12px; }
+.app-frame[data-zoomable] { cursor: zoom-in; }
+.app-frame[data-zoomable]:focus-visible { outline: 3px solid #2376e8; outline-offset: 4px; }
+.image-preview-dialog { width: min(1200px, calc(100vw - 32px)); max-width: none; max-height: calc(100vh - 32px); margin: auto; padding: 12px; overflow: visible; border: 0; border-radius: 16px; background: #071426; box-shadow: 0 28px 70px #020914b8; }
+.image-preview-dialog::backdrop { background: #06101cbd; backdrop-filter: blur(6px); }
+.image-preview-dialog img { display: block; width: auto; max-width: 100%; max-height: calc(100vh - 56px); margin: 0 auto; border-radius: 8px; }
+.image-preview-dialog button { position: absolute; top: -14px; right: -14px; display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #fff4; border-radius: 50%; background: #18365d; color: #fff; cursor: pointer; font-size: 24px; line-height: 1; }
+body.image-preview-open { overflow: hidden; }
 .hero-app-frame { position: relative; z-index: 2; width: min(100%, 570px); margin: 0 auto -1px; transform: perspective(900px) rotateX(3deg) rotateY(-4deg) rotateZ(.4deg); transform-origin: 50% 100%; animation: app-float 5.6s ease-in-out infinite; }
 .hero-app-frame::after { position: absolute; inset: -1px; border-radius: inherit; content: ''; box-shadow: 0 0 0 1px #9de8ff70, 0 0 26px #55b9ff45; pointer-events: none; }
 

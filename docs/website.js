@@ -77,3 +77,42 @@ if (!reducedMotion.matches && 'IntersectionObserver' in window) {
 } else {
   revealTargets.forEach(target => target.classList.add('is-visible'));
 }
+
+// 官网截图保持原始分辨率，通过弹层查看细节，避免首屏为兼顾版式而牺牲可读性。
+const imagePreview = document.createElement('dialog');
+imagePreview.className = 'image-preview-dialog';
+const previewImage = document.createElement('img');
+const closePreview = document.createElement('button');
+closePreview.type = 'button';
+closePreview.textContent = '×';
+closePreview.setAttribute('aria-label', '关闭图片预览');
+imagePreview.append(previewImage, closePreview);
+document.body.append(imagePreview);
+
+const openImagePreview = image => {
+  previewImage.src = image.currentSrc || image.src;
+  previewImage.alt = image.alt;
+  document.body.classList.add('image-preview-open');
+  imagePreview.showModal();
+  closePreview.focus();
+};
+
+closePreview.addEventListener('click', () => imagePreview.close());
+imagePreview.addEventListener('click', event => {
+  if (event.target === imagePreview) imagePreview.close();
+});
+imagePreview.addEventListener('close', () => document.body.classList.remove('image-preview-open'));
+
+document.querySelectorAll('[data-zoomable]').forEach(frame => {
+  const image = frame.querySelector('img');
+  if (!image) return;
+  frame.tabIndex = 0;
+  frame.setAttribute('role', 'button');
+  frame.setAttribute('aria-label', `${image.alt}，点击放大`);
+  frame.addEventListener('click', () => openImagePreview(image));
+  frame.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openImagePreview(image);
+  });
+});
