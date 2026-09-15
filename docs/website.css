@@ -52,25 +52,34 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .platforms { margin: 16px 0 0; color: #71839b; font-size: 13px; letter-spacing: .03em; }
 
 /* 动效标识与截图采用上下两个独立层：截图绝不裁切或覆盖标识。 */
-.brand-motion-stage { position: relative; z-index: 1; display: flex; min-width: 0; flex-direction: column; align-items: center; overflow: hidden; padding: 28px 28px 0; border: 1px solid #c8e2fa; border-radius: 26px; background: radial-gradient(circle at 50% 16%, #9edbff99, transparent 28%), radial-gradient(circle at 10% 94%, #d5d5ff63, transparent 36%), linear-gradient(145deg, #fafdff, #e7f4ff 54%, #f6faff); box-shadow: inset 0 1px #fff, 0 28px 45px -30px #6b9ac65e; }
-.brand-motion-stage::before { position: absolute; inset: 0; z-index: 0; content: ''; opacity: .42; pointer-events: none; background-image: linear-gradient(#348ee21b 1px, transparent 1px), linear-gradient(90deg, #348ee21b 1px, transparent 1px); background-size: 24px 24px; mask-image: linear-gradient(to bottom, #000, transparent 75%); }
-.brand-motion-stage::after { position: absolute; right: 10%; bottom: 3%; left: 10%; z-index: 1; height: 36px; border-radius: 50%; content: ''; background: #4d9fe85b; filter: blur(16px); animation: stage-shadow 5.6s ease-in-out infinite; }
-.brand-motion { position: relative; z-index: 2; width: 196px; height: 176px; flex: none; }
-.motion-glow, .motion-orbit, .motion-spark, .motion-mark { position: absolute; display: block; }
-.motion-glow { border-radius: 50%; filter: blur(2px); }
-.glow-one { inset: 13px; background: radial-gradient(circle, #b4f7ffb8, #3983ee3d 42%, transparent 70%); animation: glow-breathe 4.2s ease-in-out infinite; }
-.glow-two { inset: 30px; border: 1px solid #b8f7ffbf; box-shadow: 0 0 28px #4cb3ff80, inset 0 0 20px #58baff4f; animation: glow-breathe 4.2s ease-in-out -2.1s infinite reverse; }
-.motion-orbit { top: 50%; left: 50%; border: 1px solid #d2f8ff91; border-radius: 50%; transform: translate(-50%, -50%); }
-.orbit-one { width: 188px; height: 74px; animation: orbit-turn 8s linear infinite; }
-.orbit-two { width: 78px; height: 174px; border-color: #d0bcff82; animation: orbit-turn 6s linear infinite reverse; }
-.motion-spark { width: 7px; height: 7px; border-radius: 50%; background: #e5fbff; box-shadow: 0 0 15px 5px #72d9ff9c; }
-.spark-one { top: 25px; left: 38px; animation: spark-one 5.5s linear infinite; }
-.spark-two { right: 22px; bottom: 51px; width: 5px; height: 5px; background: #dbcdff; box-shadow: 0 0 13px 4px #aa85ff9a; animation: spark-two 4.8s linear infinite; }
-.spark-three { top: 79px; right: 13px; width: 4px; height: 4px; animation: spark-three 3.8s ease-in-out infinite; }
-.motion-mark { top: 50%; left: 50%; display: flex; align-items: baseline; justify-content: center; width: 86px; height: 86px; border: 1px solid #d5faffcc; border-radius: 27px; background: linear-gradient(145deg, #9aeeff, #3979e9 56%, #5136b1); box-shadow: 0 0 0 9px #70d9ff14, 0 18px 34px #020914a8, inset 1px 1px #fff9; color: white; font: 55px/.9 "Cascadia Code", Consolas, monospace; letter-spacing: -10px; transform: translate(-50%, -50%) rotate(-7deg); animation: logo-float 5.6s ease-in-out infinite; }
-.motion-mark-c { transform: translateX(-1px); }
-.motion-mark-cursor { margin-left: -2px; color: #ecfdff; animation: cursor-blink 1.2s step-end infinite; }
-.motion-caption { position: relative; z-index: 2; margin: -2px 0 15px; color: #527293; text-align: center; font: 11px/1.5 "Cascadia Code", Consolas, monospace; letter-spacing: .13em; text-transform: uppercase; }
+.brand-motion-stage { position: relative; z-index: 1; display: flex; min-width: 0; flex-direction: column; align-items: center; overflow: hidden; padding: 22px 28px 0; border: 1px solid #beddf8; border-radius: 26px; background: radial-gradient(circle at 18% 90%, #3cb6ffb8, transparent 42%), radial-gradient(circle at 90% 4%, #ffefff99, transparent 35%), radial-gradient(circle at 12% 0%, #9b4fd07d, transparent 40%), linear-gradient(135deg, #9161cb, #5e74dc 53%, #6551c5); box-shadow: inset 0 1px #fff5, 0 28px 45px -30px #6b9ac65e; }
+.brand-motion-stage::before { position: absolute; inset: 0; z-index: 0; content: ''; opacity: .22; pointer-events: none; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 36px 36px; mask-image: linear-gradient(to bottom, #000, transparent 75%); }
+.brand-motion-stage::after { position: absolute; right: 10%; bottom: 3%; left: 10%; z-index: 1; height: 36px; border-radius: 50%; content: ''; background: #302d9c52; filter: blur(16px); }
+.brand-motion { position: relative; z-index: 2; width: min(100%, 420px); height: 220px; flex: none; }
+.motion-wordmark { position: absolute; top: 83px; left: 50%; display: inline-flex; align-items: center; gap: 14px; color: #fff; font: 600 clamp(25px, 4vw, 38px)/1 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: -.055em; white-space: nowrap; transform: translateX(-50%); animation: wordmark-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-smile { width: 45px; height: 24px; border-bottom: 8px solid currentColor; border-radius: 0 0 45px 45px; transform: translateY(-4px); }
+.motion-edit-canvas { position: absolute; inset: 0; display: block; opacity: 0; animation: editor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-path { position: absolute; top: 98px; left: 50%; width: 138px; height: 62px; border: 11px solid #fff; border-top: 0; border-radius: 0 0 96px 96px; transform: translateX(-50%) rotate(-3deg); animation: path-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-guide { position: absolute; display: block; border-color: #ffffffa3; border-style: solid; opacity: 0; animation: guide-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.guide-top, .guide-bottom { left: calc(50% - 105px); width: 210px; border-top-width: 2px; }
+.guide-top { top: 59px; }
+.guide-bottom { top: 172px; }
+.guide-left, .guide-right { top: 59px; height: 115px; border-left-width: 2px; }
+.guide-left { left: calc(50% - 105px); }
+.guide-right { left: calc(50% + 105px); }
+.motion-anchor { position: absolute; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 4px; background: #ffffff; opacity: 0; animation: anchor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.anchor-top-left { top: 52px; left: calc(50% - 112px); }
+.anchor-top-right { top: 52px; left: calc(50% + 96px); }
+.anchor-bottom-left { top: 165px; left: calc(50% - 112px); }
+.anchor-bottom-right { top: 165px; left: calc(50% + 96px); }
+.motion-handle { position: absolute; top: 130px; width: 72px; border-top: 4px solid #ffffff8f; opacity: 0; animation: handle-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-handle::after { position: absolute; top: -7px; width: 13px; height: 13px; border-radius: 50%; content: ''; background: #ffffffa3; }
+.handle-left { left: calc(50% - 74px); transform: rotate(8deg); transform-origin: right center; }
+.handle-left::after { left: -5px; }
+.handle-right { left: calc(50% + 2px); transform: rotate(-8deg); transform-origin: left center; }
+.handle-right::after { right: -5px; }
+.motion-cursor { position: absolute; top: 68px; left: calc(50% + 75px); width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 18px solid #fff; filter: drop-shadow(0 3px 4px #24358c5c); opacity: 0; animation: cursor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-caption { position: relative; z-index: 2; margin: -4px 0 15px; color: #eff8ff; text-align: center; font: 11px/1.5 "Cascadia Code", Consolas, monospace; letter-spacing: .08em; }
 .app-frame { overflow: hidden; border: 1px solid #a7c6e364; border-radius: 13px; background: #fff; box-shadow: 0 1px 0 2px #ffffff0c, 0 16px 34px -14px #020b18cc; }
 .app-frame img { display: block; width: 100%; height: auto; }
 .app-frame figcaption { padding: 9px 13px; border-top: 1px solid #dce7f1; color: #52677f; background: #fff; font-size: 12px; }
@@ -124,15 +133,34 @@ footer > span, footer > a:last-child { color: var(--muted); font-size: 13px; }
 [data-reveal] { opacity: 0; transform: translateY(18px); transition: opacity .65s ease, transform .65s cubic-bezier(.2, .8, .2, 1); }
 [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
 
-@keyframes logo-float { 0%, 100% { transform: translate(-50%, -50%) rotate(-7deg) translateY(0); } 50% { transform: translate(-50%, -50%) rotate(5deg) translateY(-8px); } }
+/* 6.1 秒循环对应参考片段：字标 → 路径编辑 → 轮廓收束 → 字标回归。 */
+@keyframes wordmark-cycle {
+  0%, 14% { opacity: 1; transform: translateX(-50%) scale(1); }
+  22% { opacity: 0; transform: translateX(-50%) scale(.84); }
+  72% { opacity: 0; transform: translateX(-50%) scale(1.12); }
+  84%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes editor-cycle {
+  0%, 18% { opacity: 0; transform: scale(.82); }
+  29%, 62% { opacity: 1; transform: scale(1); }
+  72%, 100% { opacity: 0; transform: scale(1.13); }
+}
+@keyframes path-cycle {
+  0%, 22% { opacity: 0; transform: translateX(-50%) scale(.25) rotate(-28deg); }
+  34% { opacity: 1; transform: translateX(-50%) scale(1) rotate(-3deg); }
+  48% { transform: translateX(-50%) scaleX(1.36) scaleY(.72) rotate(9deg); }
+  61% { opacity: 1; transform: translateX(-50%) scaleX(.86) scaleY(1.18) rotate(-8deg); }
+  72%, 100% { opacity: 0; transform: translateX(-50%) scale(.45) rotate(18deg); }
+}
+@keyframes guide-cycle { 0%, 27% { opacity: 0; } 36%, 56% { opacity: .72; } 67%, 100% { opacity: 0; } }
+@keyframes anchor-cycle { 0%, 28% { opacity: 0; transform: scale(.2); } 38%, 58% { opacity: 1; transform: scale(1); } 67%, 100% { opacity: 0; transform: scale(.4); } }
+@keyframes handle-cycle { 0%, 32% { opacity: 0; transform: scaleX(.2); } 40%, 57% { opacity: 1; transform: scaleX(1); } 66%, 100% { opacity: 0; transform: scaleX(.2); } }
+@keyframes cursor-cycle {
+  0%, 21% { opacity: 0; transform: translate(-12px, -10px) rotate(-18deg); }
+  31%, 53% { opacity: 1; transform: translate(0, 0) rotate(-18deg); }
+  65%, 100% { opacity: 0; transform: translate(-125px, 65px) rotate(-18deg); }
+}
 @keyframes app-float { 0%, 100% { transform: perspective(900px) rotateX(3deg) rotateY(-4deg) rotateZ(.4deg) translateY(0); } 50% { transform: perspective(900px) rotateX(1deg) rotateY(-1deg) rotateZ(-.4deg) translateY(-7px); } }
-@keyframes orbit-turn { to { transform: translate(-50%, -50%) rotate(360deg); } }
-@keyframes glow-breathe { 0%, 100% { opacity: .52; transform: scale(.86); } 50% { opacity: 1; transform: scale(1.08); } }
-@keyframes cursor-blink { 50% { opacity: .14; } }
-@keyframes stage-shadow { 0%, 100% { opacity: .45; transform: scale(.9); } 50% { opacity: .8; transform: scale(1.08); } }
-@keyframes spark-one { 0% { transform: translate(0, 0); opacity: 0; } 15%, 75% { opacity: 1; } 100% { transform: translate(116px, 99px); opacity: 0; } }
-@keyframes spark-two { 0% { transform: translate(0, 0); opacity: 0; } 20%, 70% { opacity: 1; } 100% { transform: translate(-112px, -111px); opacity: 0; } }
-@keyframes spark-three { 0%, 100% { opacity: .15; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.4); } }
 @keyframes orb-float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
 @keyframes ring-pulse { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
 @keyframes stage-light { from { background-position: 150% 0; } to { background-position: -150% 0; } }
@@ -154,7 +182,7 @@ footer > span, footer > a:last-child { color: var(--muted); font-size: 13px; }
   h1 { font-size: clamp(40px, 13vw, 56px); }
   .hero-description { margin-bottom: 23px; }
   .brand-motion-stage { padding: 20px 14px 0; border-radius: 20px; }
-  .brand-motion { width: 170px; height: 157px; }
+  .brand-motion { width: min(100%, 320px); height: 195px; }
   .motion-caption { margin-bottom: 11px; font-size: 10px; }
   .hero-app-frame { width: 100%; animation: none; transform: none; }
   .trust-strip { grid-template-columns: 1fr; }
