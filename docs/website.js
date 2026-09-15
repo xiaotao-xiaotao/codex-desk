@@ -90,6 +90,12 @@ let previewScale = 1;
 let previewOffsetX = 0;
 let previewOffsetY = 0;
 let panStart;
+let previewBaseWidth = 0;
+let previewBaseHeight = 0;
+const PREVIEW_MAX_SCALE = 3.4;
+const PREVIEW_ZOOM_STEP = .6;
+// 首次放大至少让图片的两个方向都溢出画布，避免竖图只能上下拖动。
+const PREVIEW_PAN_MARGIN = 1.12;
 closePreview.type = 'button';
 closePreview.textContent = '×';
 closePreview.setAttribute('aria-label', '关闭图片预览');
@@ -97,19 +103,38 @@ previewCanvas.append(previewImage);
 imagePreview.append(previewCanvas, closePreview);
 document.body.append(imagePreview);
 
-const applyPreviewScale = () => {
-  // 预览图采用绝对定位：拖拽修改中心位置，缩放只作用于图片本身，二者互不干扰。
+const fitPreviewImage = () => {
   const viewport = previewCanvas.getBoundingClientRect();
-  const imageBounds = previewImage.getBoundingClientRect();
-  const baseWidth = imageBounds.width / previewScale;
-  const baseHeight = imageBounds.height / previewScale;
-  const maxOffsetX = Math.max(0, (baseWidth * previewScale - viewport.width) / 2);
-  const maxOffsetY = Math.max(0, (baseHeight * previewScale - viewport.height) / 2);
+  if (!previewImage.naturalWidth || !viewport.width || !viewport.height) return;
+  const fitRatio = Math.min(viewport.width / previewImage.naturalWidth, viewport.height / previewImage.naturalHeight);
+  previewBaseWidth = previewImage.naturalWidth * fitRatio;
+  previewBaseHeight = previewImage.naturalHeight * fitRatio;
+  // 先按画布等比放大到最大，确保全屏预览不会在大屏上显示成小图。
+  previewImage.style.width = `${previewBaseWidth}px`;
+  previewImage.style.height = `${previewBaseHeight}px`;
+  return viewport;
+};
+
+const applyPreviewScale = () => {
+  // 拖拽只修改中心位置，缩放只作用于图片本身，两个状态互不影响。
+  const viewport = fitPreviewImage();
+  if (!viewport) return;
+  const maxOffsetX = Math.max(0, (previewBaseWidth * previewScale - viewport.width) / 2);
+  const maxOffsetY = Math.max(0, (previewBaseHeight * previewScale - viewport.height) / 2);
   previewOffsetX = Math.min(maxOffsetX, Math.max(-maxOffsetX, previewOffsetX));
   previewOffsetY = Math.min(maxOffsetY, Math.max(-maxOffsetY, previewOffsetY));
   previewImage.style.left = `calc(50% + ${previewOffsetX}px)`;
   previewImage.style.top = `calc(50% + ${previewOffsetY}px)`;
   previewImage.style.transform = `translate(-50%, -50%) scale(${previewScale})`;
+};
+
+const getMinimumPanScale = () => {
+  const viewport = fitPreviewImage();
+  if (!viewport) return 1;
+  return Math.min(PREVIEW_MAX_SCALE, Math.max(1, PREVIEW_PAN_MARGIN * Math.max(
+    viewport.width / previewBaseWidth,
+    viewport.height / previewBaseHeight
+  )));
 };
 
 const openImagePreview = image => {
@@ -130,14 +155,21 @@ imagePreview.addEventListener('click', event => {
 });
 previewCanvas.addEventListener('wheel', event => {
   event.preventDefault();
-  // 首次滚轮即放大到 1.6 倍，确保大屏幕上也立即有可拖动的溢出区域。
-  const nextScale = previewScale + (event.deltaY < 0 ? .6 : -.6);
-  previewScale = Math.min(3.4, Math.max(1, Number(nextScale.toFixed(1))));
+  const zoomingIn = event.deltaY < 0;
+  const nextScale = previewScale + (zoomingIn ? PREVIEW_ZOOM_STEP : -PREVIEW_ZOOM_STEP);
+  previewScale = Math.min(PREVIEW_MAX_SCALE, Math.max(1, Number(nextScale.toFixed(1))));
+  // 竖向截图在宽屏中必须放大得更多，才能和横向截图一样支持左右拖拽。
+  if (zoomingIn && previewScale > 1) previewScale = Math.max(previewScale, getMinimumPanScale());
   applyPreviewScale();
 }, { passive: false });
 previewImage.addEventListener('dragstart', event => event.preventDefault());
 previewCanvas.addEventListener('pointerdown', event => {
   event.preventDefault();
+  // 图片完整展示时本来没有可平移的溢出区域；用户直接拖动则自动进入双向可平移的放大状态。
+  if (previewScale === 1) {
+    previewScale = getMinimumPanScale();
+    applyPreviewScale();
+  }
   panStart = { x: event.clientX, y: event.clientY, offsetX: previewOffsetX, offsetY: previewOffsetY };
   previewCanvas.setPointerCapture(event.pointerId);
   previewImage.classList.add('is-panning');
@@ -158,6 +190,9 @@ const stopPreviewPan = event => {
 previewCanvas.addEventListener('pointerup', stopPreviewPan);
 previewCanvas.addEventListener('pointercancel', stopPreviewPan);
 previewImage.addEventListener('load', applyPreviewScale);
+window.addEventListener('resize', () => {
+  if (imagePreview.open) applyPreviewScale();
+});
 imagePreview.addEventListener('close', () => {
   document.body.classList.remove('image-preview-open');
   previewOffsetX = 0;
@@ -165,6 +200,8 @@ imagePreview.addEventListener('close', () => {
   panStart = undefined;
   previewImage.style.removeProperty('left');
   previewImage.style.removeProperty('top');
+  previewImage.style.removeProperty('width');
+  previewImage.style.removeProperty('height');
   previewImage.style.removeProperty('transform');
   previewImage.classList.remove('is-panning');
 });
