@@ -98,7 +98,7 @@ imagePreview.append(previewCanvas, closePreview);
 document.body.append(imagePreview);
 
 const applyPreviewScale = () => {
-  // 基于缩放后的可视边界约束位移，避免拖动后整张图片离开预览画布。
+  // 预览图采用绝对定位：拖拽修改中心位置，缩放只作用于图片本身，二者互不干扰。
   const viewport = previewCanvas.getBoundingClientRect();
   const imageBounds = previewImage.getBoundingClientRect();
   const baseWidth = imageBounds.width / previewScale;
@@ -107,8 +107,9 @@ const applyPreviewScale = () => {
   const maxOffsetY = Math.max(0, (baseHeight * previewScale - viewport.height) / 2);
   previewOffsetX = Math.min(maxOffsetX, Math.max(-maxOffsetX, previewOffsetX));
   previewOffsetY = Math.min(maxOffsetY, Math.max(-maxOffsetY, previewOffsetY));
-  previewImage.style.transform = `translate(${previewOffsetX}px, ${previewOffsetY}px) scale(${previewScale})`;
-  previewImage.classList.toggle('is-zoomed', previewScale > 1);
+  previewImage.style.left = `calc(50% + ${previewOffsetX}px)`;
+  previewImage.style.top = `calc(50% + ${previewOffsetY}px)`;
+  previewImage.style.transform = `translate(-50%, -50%) scale(${previewScale})`;
 };
 
 const openImagePreview = image => {
@@ -117,9 +118,9 @@ const openImagePreview = image => {
   previewScale = 1;
   previewOffsetX = 0;
   previewOffsetY = 0;
-  applyPreviewScale();
   document.body.classList.add('image-preview-open');
   imagePreview.showModal();
+  applyPreviewScale();
   closePreview.focus();
 };
 
@@ -127,7 +128,7 @@ closePreview.addEventListener('click', () => imagePreview.close());
 imagePreview.addEventListener('click', event => {
   if (event.target === imagePreview) imagePreview.close();
 });
-imagePreview.addEventListener('wheel', event => {
+previewCanvas.addEventListener('wheel', event => {
   event.preventDefault();
   // 首次滚轮即放大到 1.6 倍，确保大屏幕上也立即有可拖动的溢出区域。
   const nextScale = previewScale + (event.deltaY < 0 ? .6 : -.6);
@@ -136,7 +137,6 @@ imagePreview.addEventListener('wheel', event => {
 }, { passive: false });
 previewImage.addEventListener('dragstart', event => event.preventDefault());
 previewCanvas.addEventListener('pointerdown', event => {
-  if (previewScale <= 1) return;
   event.preventDefault();
   panStart = { x: event.clientX, y: event.clientY, offsetX: previewOffsetX, offsetY: previewOffsetY };
   previewCanvas.setPointerCapture(event.pointerId);
@@ -157,13 +157,16 @@ const stopPreviewPan = event => {
 };
 previewCanvas.addEventListener('pointerup', stopPreviewPan);
 previewCanvas.addEventListener('pointercancel', stopPreviewPan);
+previewImage.addEventListener('load', applyPreviewScale);
 imagePreview.addEventListener('close', () => {
   document.body.classList.remove('image-preview-open');
   previewOffsetX = 0;
   previewOffsetY = 0;
   panStart = undefined;
+  previewImage.style.removeProperty('left');
+  previewImage.style.removeProperty('top');
   previewImage.style.removeProperty('transform');
-  previewImage.classList.remove('is-zoomed', 'is-panning');
+  previewImage.classList.remove('is-panning');
 });
 
 document.querySelectorAll('[data-zoomable]').forEach(frame => {
