@@ -59,29 +59,29 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .hero-product-stage::before { position: absolute; inset: 6px; padding: 2px; border-radius: 20px; content: ''; background: linear-gradient(115deg, #a7d3ff00 35%, #2c90f5 47%, #fff 50%, #2c90f5 53%, #a7d3ff00 65%); background-size: 300% 100%; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; animation: stage-light 7s linear infinite; pointer-events: none; }
 .hero-product-stage::after { position: absolute; right: 12%; bottom: 12px; left: 12%; height: 8px; border: 1px solid #77baff72; border-radius: 50%; content: ''; background: #9fd6ff47; box-shadow: 0 0 14px #5aa1fa57; pointer-events: none; }
 .brand-motion { position: relative; z-index: 2; display: block; }
-.motion-wordmark { position: absolute; top: 83px; left: 50%; display: inline-flex; align-items: center; gap: 14px; color: #fff; font: 600 clamp(25px, 4vw, 38px)/1 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: -.055em; white-space: nowrap; transform: translateX(-50%); animation: wordmark-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-wordmark { position: absolute; top: 83px; left: 50%; display: inline-flex; align-items: center; gap: 14px; color: #1b64c8; font: 600 clamp(25px, 4vw, 38px)/1 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: -.055em; text-shadow: 0 2px 10px #4f9fff3b; white-space: nowrap; transform: translateX(-50%); animation: wordmark-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
 .motion-smile { width: 45px; height: 24px; border-bottom: 8px solid currentColor; border-radius: 0 0 45px 45px; transform: translateY(-4px); }
 .motion-edit-canvas { position: absolute; inset: 0; display: block; opacity: 0; animation: editor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-path { position: absolute; top: 98px; left: 50%; width: 138px; height: 62px; border: 11px solid #fff; border-top: 0; border-radius: 0 0 96px 96px; transform: translateX(-50%) rotate(-3deg); animation: path-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-guide { position: absolute; display: block; border-color: #ffffffa3; border-style: solid; opacity: 0; animation: guide-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-path { position: absolute; top: 98px; left: 50%; width: 138px; height: 62px; border: 11px solid #1b70dc; border-top: 0; border-radius: 0 0 96px 96px; box-shadow: 0 7px 18px #2e82e84f; transform: translateX(-50%) rotate(-3deg); animation: path-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-guide { position: absolute; display: block; border-color: #77a8df; border-style: solid; opacity: 0; animation: guide-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
 .guide-top, .guide-bottom { left: calc(50% - 105px); width: 210px; border-top-width: 2px; }
 .guide-top { top: 59px; }
 .guide-bottom { top: 172px; }
 .guide-left, .guide-right { top: 59px; height: 115px; border-left-width: 2px; }
 .guide-left { left: calc(50% - 105px); }
 .guide-right { left: calc(50% + 105px); }
-.motion-anchor { position: absolute; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 4px; background: #ffffff; opacity: 0; animation: anchor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-anchor { position: absolute; width: 16px; height: 16px; border: 2px solid #1d70db; border-radius: 4px; background: #eef7ff; box-shadow: 0 2px 7px #2b78d94a; opacity: 0; animation: anchor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
 .anchor-top-left { top: 52px; left: calc(50% - 112px); }
 .anchor-top-right { top: 52px; left: calc(50% + 96px); }
 .anchor-bottom-left { top: 165px; left: calc(50% - 112px); }
 .anchor-bottom-right { top: 165px; left: calc(50% + 96px); }
-.motion-handle { position: absolute; top: 130px; width: 72px; border-top: 4px solid #ffffff8f; opacity: 0; animation: handle-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-handle::after { position: absolute; top: -7px; width: 13px; height: 13px; border-radius: 50%; content: ''; background: #ffffffa3; }
+.motion-handle { position: absolute; top: 130px; width: 72px; border-top: 4px solid #77a8df; opacity: 0; animation: handle-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-handle::after { position: absolute; top: -7px; width: 13px; height: 13px; border-radius: 50%; content: ''; background: #4287d9; }
 .handle-left { left: calc(50% - 74px); transform: rotate(8deg); transform-origin: right center; }
 .handle-left::after { left: -5px; }
 .handle-right { left: calc(50% + 2px); transform: rotate(-8deg); transform-origin: left center; }
 .handle-right::after { right: -5px; }
-.motion-cursor { position: absolute; top: 68px; left: calc(50% + 75px); width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 18px solid #fff; filter: drop-shadow(0 3px 4px #24358c5c); opacity: 0; animation: cursor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-cursor { position: absolute; top: 68px; left: calc(50% + 75px); width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 18px solid #1b70dc; filter: drop-shadow(0 3px 4px #397bd15c); opacity: 0; animation: cursor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
 .app-frame { overflow: hidden; border: 1px solid #a7c6e364; border-radius: 13px; background: #fff; box-shadow: 0 1px 0 2px #ffffff0c, 0 16px 34px -14px #020b18cc; }
 .app-frame img { display: block; width: 100%; height: auto; }
 .app-frame figcaption { padding: 9px 13px; border-top: 1px solid #dce7f1; color: #52677f; background: #fff; font-size: 12px; }
