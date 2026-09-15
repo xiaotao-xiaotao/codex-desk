@@ -52,10 +52,13 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .platforms { margin: 16px 0 0; color: #71839b; font-size: 13px; letter-spacing: .03em; }
 
 /* 动效标识与截图采用上下两个独立层：截图绝不裁切或覆盖标识。 */
-.brand-motion-stage { position: relative; z-index: 1; display: flex; min-width: 0; flex-direction: column; align-items: center; overflow: hidden; padding: 22px 28px 0; border: 1px solid #beddf8; border-radius: 26px; background: radial-gradient(circle at 18% 90%, #3cb6ffb8, transparent 42%), radial-gradient(circle at 90% 4%, #ffefff99, transparent 35%), radial-gradient(circle at 12% 0%, #9b4fd07d, transparent 40%), linear-gradient(135deg, #9161cb, #5e74dc 53%, #6551c5); box-shadow: inset 0 1px #fff5, 0 28px 45px -30px #6b9ac65e; }
-.brand-motion-stage::before { position: absolute; inset: 0; z-index: 0; content: ''; opacity: .22; pointer-events: none; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 36px 36px; mask-image: linear-gradient(to bottom, #000, transparent 75%); }
-.brand-motion-stage::after { position: absolute; right: 10%; bottom: 3%; left: 10%; z-index: 1; height: 36px; border-radius: 50%; content: ''; background: #302d9c52; filter: blur(16px); }
-.brand-motion { position: relative; z-index: 2; width: min(100%, 420px); height: 220px; flex: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.title-motion { position: relative; height: 220px; margin: 0 0 12px; }
+.title-motion .brand-motion { width: min(100%, 420px); height: 220px; }
+.hero-product-stage { position: relative; z-index: 1; display: grid; min-width: 0; min-height: 100%; place-items: center; overflow: hidden; padding: 25px; border: 1px solid #c8e2fa; border-radius: 26px; background: radial-gradient(ellipse at 50% 100%, #88c5ff80, transparent 68%), repeating-linear-gradient(90deg, #4f9fe51c 0 1px, transparent 1px 28px), repeating-linear-gradient(0deg, #4f9fe51c 0 1px, transparent 1px 28px), #eff8ff; box-shadow: inset 0 1px #fff, 0 28px 45px -30px #6b9ac65e; perspective: 1800px; }
+.hero-product-stage::before { position: absolute; inset: 6px; padding: 2px; border-radius: 20px; content: ''; background: linear-gradient(115deg, #a7d3ff00 35%, #2c90f5 47%, #fff 50%, #2c90f5 53%, #a7d3ff00 65%); background-size: 300% 100%; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; animation: stage-light 7s linear infinite; pointer-events: none; }
+.hero-product-stage::after { position: absolute; right: 12%; bottom: 12px; left: 12%; height: 8px; border: 1px solid #77baff72; border-radius: 50%; content: ''; background: #9fd6ff47; box-shadow: 0 0 14px #5aa1fa57; pointer-events: none; }
+.brand-motion { position: relative; z-index: 2; display: block; }
 .motion-wordmark { position: absolute; top: 83px; left: 50%; display: inline-flex; align-items: center; gap: 14px; color: #fff; font: 600 clamp(25px, 4vw, 38px)/1 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: -.055em; white-space: nowrap; transform: translateX(-50%); animation: wordmark-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
 .motion-smile { width: 45px; height: 24px; border-bottom: 8px solid currentColor; border-radius: 0 0 45px 45px; transform: translateY(-4px); }
 .motion-edit-canvas { position: absolute; inset: 0; display: block; opacity: 0; animation: editor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
@@ -79,7 +82,6 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .handle-right { left: calc(50% + 2px); transform: rotate(-8deg); transform-origin: left center; }
 .handle-right::after { right: -5px; }
 .motion-cursor { position: absolute; top: 68px; left: calc(50% + 75px); width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 18px solid #fff; filter: drop-shadow(0 3px 4px #24358c5c); opacity: 0; animation: cursor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-caption { position: relative; z-index: 2; margin: -4px 0 15px; color: #eff8ff; text-align: center; font: 11px/1.5 "Cascadia Code", Consolas, monospace; letter-spacing: .08em; }
 .app-frame { overflow: hidden; border: 1px solid #a7c6e364; border-radius: 13px; background: #fff; box-shadow: 0 1px 0 2px #ffffff0c, 0 16px 34px -14px #020b18cc; }
 .app-frame img { display: block; width: 100%; height: auto; }
 .app-frame figcaption { padding: 9px 13px; border-top: 1px solid #dce7f1; color: #52677f; background: #fff; font-size: 12px; }
@@ -169,7 +171,7 @@ footer > span, footer > a:last-child { color: var(--muted); font-size: 13px; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 38px; }
   .hero-copy { max-width: 600px; }
-  .brand-motion-stage { width: min(100%, 650px); justify-self: center; }
+  .hero-product-stage { width: min(100%, 650px); justify-self: center; }
   .feature-row { gap: 42px; }
 }
 @media (max-width: 720px) {
@@ -181,9 +183,9 @@ footer > span, footer > a:last-child { color: var(--muted); font-size: 13px; }
   .hero { gap: 30px; padding: 34px 22px; border-radius: 24px; }
   h1 { font-size: clamp(40px, 13vw, 56px); }
   .hero-description { margin-bottom: 23px; }
-  .brand-motion-stage { padding: 20px 14px 0; border-radius: 20px; }
-  .brand-motion { width: min(100%, 320px); height: 195px; }
-  .motion-caption { margin-bottom: 11px; font-size: 10px; }
+  .title-motion { height: 190px; }
+  .title-motion .brand-motion { width: min(100%, 320px); height: 190px; }
+  .hero-product-stage { padding: 14px; border-radius: 20px; }
   .hero-app-frame { width: 100%; animation: none; transform: none; }
   .trust-strip { grid-template-columns: 1fr; }
   .trust-strip > span { padding-block: 12px; }
