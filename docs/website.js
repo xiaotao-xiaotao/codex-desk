@@ -82,6 +82,7 @@ if (!reducedMotion.matches && 'IntersectionObserver' in window) {
 const imagePreview = document.createElement('dialog');
 imagePreview.className = 'image-preview-dialog';
 const previewImage = document.createElement('img');
+previewImage.draggable = false;
 const closePreview = document.createElement('button');
 let previewScale = 1;
 let previewOffsetX = 0;
@@ -129,14 +130,17 @@ imagePreview.addEventListener('wheel', event => {
   previewScale = Math.min(3, Math.max(1, Number(nextScale.toFixed(1))));
   applyPreviewScale();
 }, { passive: false });
+previewImage.addEventListener('dragstart', event => event.preventDefault());
 previewImage.addEventListener('pointerdown', event => {
   if (previewScale <= 1) return;
+  event.preventDefault();
   panStart = { x: event.clientX, y: event.clientY, offsetX: previewOffsetX, offsetY: previewOffsetY };
   previewImage.setPointerCapture(event.pointerId);
   previewImage.classList.add('is-panning');
 });
 previewImage.addEventListener('pointermove', event => {
   if (!panStart) return;
+  event.preventDefault();
   previewOffsetX = panStart.offsetX + event.clientX - panStart.x;
   previewOffsetY = panStart.offsetY + event.clientY - panStart.y;
   applyPreviewScale();
