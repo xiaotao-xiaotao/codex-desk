@@ -62,3 +62,18 @@ document.querySelectorAll('.screenshot-stage').forEach(stage => {
   reducedMotion.addEventListener('change', reset);
   finePointer.addEventListener('change', reset);
 });
+
+// 分段进入视口时再显示，避免长页面在首次加载时同时抢夺注意力。
+const revealTargets = document.querySelectorAll('[data-reveal]');
+if (!reducedMotion.matches && 'IntersectionObserver' in window) {
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      revealObserver.unobserve(entry.target);
+    });
+  }, { threshold: .12 });
+  revealTargets.forEach(target => revealObserver.observe(target));
+} else {
+  revealTargets.forEach(target => target.classList.add('is-visible'));
+}
