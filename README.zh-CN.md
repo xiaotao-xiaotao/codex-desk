@@ -41,7 +41,7 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 以下截图展示悬浮额度球、会话总览与会话详情界面。
 
 <p align="center">
-  <img src="docs/screenshots/quota-orb-dark-zh.png" alt="Codex Desk 深色悬浮额度球" width="120" />
+  <img src="docs/screenshots/quota-orb-light-zh.png" alt="Codex Desk 浅色悬浮额度球" width="120" />
 </p>
 
 ### 展开总览
