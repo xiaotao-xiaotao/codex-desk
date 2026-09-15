@@ -96,6 +96,8 @@ const PREVIEW_MAX_SCALE = 3.4;
 const PREVIEW_ZOOM_STEP = .6;
 // 首次放大至少让图片的两个方向都溢出画布，避免竖图只能上下拖动。
 const PREVIEW_PAN_MARGIN = 1.12;
+// 未缩放时仍允许少量原样平移，便于直接拖拽调整查看位置。
+const PREVIEW_IDLE_PAN_RATIO = .14;
 closePreview.type = 'button';
 closePreview.textContent = '×';
 closePreview.setAttribute('aria-label', '关闭图片预览');
@@ -119,8 +121,12 @@ const applyPreviewScale = () => {
   // 拖拽只修改中心位置，缩放只作用于图片本身，两个状态互不影响。
   const viewport = fitPreviewImage();
   if (!viewport) return;
-  const maxOffsetX = Math.max(0, (previewBaseWidth * previewScale - viewport.width) / 2);
-  const maxOffsetY = Math.max(0, (previewBaseHeight * previewScale - viewport.height) / 2);
+  const scaledWidth = previewBaseWidth * previewScale;
+  const scaledHeight = previewBaseHeight * previewScale;
+  const idlePanX = previewScale === 1 ? viewport.width * PREVIEW_IDLE_PAN_RATIO : 0;
+  const idlePanY = previewScale === 1 ? viewport.height * PREVIEW_IDLE_PAN_RATIO : 0;
+  const maxOffsetX = Math.max(idlePanX, (scaledWidth - viewport.width) / 2);
+  const maxOffsetY = Math.max(idlePanY, (scaledHeight - viewport.height) / 2);
   previewOffsetX = Math.min(maxOffsetX, Math.max(-maxOffsetX, previewOffsetX));
   previewOffsetY = Math.min(maxOffsetY, Math.max(-maxOffsetY, previewOffsetY));
   previewImage.style.left = `calc(50% + ${previewOffsetX}px)`;
@@ -165,11 +171,6 @@ previewCanvas.addEventListener('wheel', event => {
 previewImage.addEventListener('dragstart', event => event.preventDefault());
 previewCanvas.addEventListener('pointerdown', event => {
   event.preventDefault();
-  // 图片完整展示时本来没有可平移的溢出区域；用户直接拖动则自动进入双向可平移的放大状态。
-  if (previewScale === 1) {
-    previewScale = getMinimumPanScale();
-    applyPreviewScale();
-  }
   panStart = { x: event.clientX, y: event.clientY, offsetX: previewOffsetX, offsetY: previewOffsetY };
   previewCanvas.setPointerCapture(event.pointerId);
   previewImage.classList.add('is-panning');
