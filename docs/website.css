@@ -59,29 +59,20 @@ h1 { margin: 0 0 18px; font-size: clamp(44px, 5.3vw, 70px); font-weight: 650; le
 .hero-product-stage::before { position: absolute; inset: 6px; padding: 2px; border-radius: 20px; content: ''; background: linear-gradient(115deg, #a7d3ff00 35%, #2c90f5 47%, #fff 50%, #2c90f5 53%, #a7d3ff00 65%); background-size: 300% 100%; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; animation: stage-light 7s linear infinite; pointer-events: none; }
 .hero-product-stage::after { position: absolute; right: 12%; bottom: 12px; left: 12%; height: 8px; border: 1px solid #77baff72; border-radius: 50%; content: ''; background: #9fd6ff47; box-shadow: 0 0 14px #5aa1fa57; pointer-events: none; }
 .brand-motion { position: relative; z-index: 2; display: block; }
-.motion-wordmark { position: absolute; top: 83px; left: 50%; display: inline-flex; align-items: center; gap: 14px; color: #1b64c8; font: 600 clamp(25px, 4vw, 38px)/1 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: -.055em; text-shadow: 0 2px 10px #4f9fff3b; white-space: nowrap; transform: translateX(-50%); animation: wordmark-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-smile { width: 45px; height: 24px; border-bottom: 8px solid currentColor; border-radius: 0 0 45px 45px; transform: translateY(-4px); }
-.motion-edit-canvas { position: absolute; inset: 0; display: block; opacity: 0; animation: editor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-path { position: absolute; top: 98px; left: 50%; width: 138px; height: 62px; border: 11px solid #1b70dc; border-top: 0; border-radius: 0 0 96px 96px; box-shadow: 0 7px 18px #2e82e84f; transform: translateX(-50%) rotate(-3deg); animation: path-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-guide { position: absolute; display: block; border-color: #77a8df; border-style: solid; opacity: 0; animation: guide-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.guide-top, .guide-bottom { left: calc(50% - 105px); width: 210px; border-top-width: 2px; }
-.guide-top { top: 59px; }
-.guide-bottom { top: 172px; }
-.guide-left, .guide-right { top: 59px; height: 115px; border-left-width: 2px; }
-.guide-left { left: calc(50% - 105px); }
-.guide-right { left: calc(50% + 105px); }
-.motion-anchor { position: absolute; width: 16px; height: 16px; border: 2px solid #1d70db; border-radius: 4px; background: #eef7ff; box-shadow: 0 2px 7px #2b78d94a; opacity: 0; animation: anchor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.anchor-top-left { top: 52px; left: calc(50% - 112px); }
-.anchor-top-right { top: 52px; left: calc(50% + 96px); }
-.anchor-bottom-left { top: 165px; left: calc(50% - 112px); }
-.anchor-bottom-right { top: 165px; left: calc(50% + 96px); }
-.motion-handle { position: absolute; top: 130px; width: 72px; border-top: 4px solid #77a8df; opacity: 0; animation: handle-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
-.motion-handle::after { position: absolute; top: -7px; width: 13px; height: 13px; border-radius: 50%; content: ''; background: #4287d9; }
-.handle-left { left: calc(50% - 74px); transform: rotate(8deg); transform-origin: right center; }
-.handle-left::after { left: -5px; }
-.handle-right { left: calc(50% + 2px); transform: rotate(-8deg); transform-origin: left center; }
-.handle-right::after { right: -5px; }
-.motion-cursor { position: absolute; top: 68px; left: calc(50% + 75px); width: 0; height: 0; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 18px solid #1b70dc; filter: drop-shadow(0 3px 4px #397bd15c); opacity: 0; animation: cursor-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-wordmark { position: absolute; top: 85px; left: 50%; color: #1b64c8; font: 650 clamp(29px, 4.4vw, 42px)/1 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: -.06em; text-shadow: 0 2px 10px #4f9fff3b; white-space: nowrap; transform: translateX(-50%); animation: wordmark-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+/* 额度环来自应用的悬浮球：它先成为主视觉，再过渡为当前工作强度的趋势线。 */
+.motion-usage-orb { position: absolute; top: 23px; left: 50%; display: grid; width: 166px; height: 166px; place-content: center; border-radius: 50%; background: conic-gradient(#1c74ea 0 173deg, #68a7ff 173deg 242deg, #d4e6fd 242deg 360deg); box-shadow: 0 16px 28px #236fd850, 0 0 0 12px #2c82ed12; transform: translateX(-50%); animation: usage-orb-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.motion-usage-orb::before { position: absolute; inset: 10px; border-radius: inherit; content: ''; background: #fafdff; box-shadow: inset 0 0 0 1px #d5e8fa; }
+.usage-value, .usage-window { position: relative; z-index: 1; display: block; text-align: center; }
+.usage-value { color: #1a73e8; font: 700 42px/1 "Segoe UI", sans-serif; letter-spacing: -.07em; }
+.usage-value span { font-size: 21px; }
+.usage-window { margin-top: 5px; color: #6d829b; font: 650 14px/1 "Cascadia Code", Consolas, monospace; }
+.motion-trend { position: absolute; top: 52px; left: 50%; width: 270px; overflow: visible; transform: translateX(-50%); opacity: 0; animation: trend-cycle 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.trend-grid { stroke: #a9c6e8; stroke-width: 1.5; stroke-dasharray: 3 5; }
+.trend-line { stroke-linecap: round; stroke-linejoin: round; stroke-width: 6; stroke-dasharray: 340; animation: trend-draw 6.1s cubic-bezier(.65, 0, .35, 1) infinite; }
+.trend-primary { stroke: #1c74ea; }
+.trend-secondary { stroke: #7959dd; }
+.motion-trend circle { fill: #fff; stroke: #1c74ea; stroke-width: 4; }
 .app-frame { overflow: hidden; border: 1px solid #a7c6e364; border-radius: 13px; background: #fff; box-shadow: 0 1px 0 2px #ffffff0c, 0 16px 34px -14px #020b18cc; }
 .app-frame img { display: block; width: 100%; height: auto; }
 .app-frame figcaption { padding: 9px 13px; border-top: 1px solid #dce7f1; color: #52677f; background: #fff; font-size: 12px; }
@@ -135,33 +126,24 @@ footer > span, footer > a:last-child { color: var(--muted); font-size: 13px; }
 [data-reveal] { opacity: 0; transform: translateY(18px); transition: opacity .65s ease, transform .65s cubic-bezier(.2, .8, .2, 1); }
 [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
 
-/* 6.1 秒循环对应参考片段：字标 → 路径编辑 → 轮廓收束 → 字标回归。 */
+/* 6.1 秒循环：字标 → 额度环放大 → 用量趋势绘制 → 字标回归。 */
 @keyframes wordmark-cycle {
   0%, 14% { opacity: 1; transform: translateX(-50%) scale(1); }
   22% { opacity: 0; transform: translateX(-50%) scale(.84); }
   72% { opacity: 0; transform: translateX(-50%) scale(1.12); }
   84%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
 }
-@keyframes editor-cycle {
-  0%, 18% { opacity: 0; transform: scale(.82); }
-  29%, 62% { opacity: 1; transform: scale(1); }
-  72%, 100% { opacity: 0; transform: scale(1.13); }
+@keyframes usage-orb-cycle {
+  0%, 14% { opacity: 0; transform: translateX(-50%) scale(.45) rotate(-35deg); }
+  27%, 47% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0); }
+  57%, 100% { opacity: 0; transform: translateX(-50%) scale(.7) rotate(24deg); }
 }
-@keyframes path-cycle {
-  0%, 22% { opacity: 0; transform: translateX(-50%) scale(.25) rotate(-28deg); }
-  34% { opacity: 1; transform: translateX(-50%) scale(1) rotate(-3deg); }
-  48% { transform: translateX(-50%) scaleX(1.36) scaleY(.72) rotate(9deg); }
-  61% { opacity: 1; transform: translateX(-50%) scaleX(.86) scaleY(1.18) rotate(-8deg); }
-  72%, 100% { opacity: 0; transform: translateX(-50%) scale(.45) rotate(18deg); }
+@keyframes trend-cycle {
+  0%, 48% { opacity: 0; transform: translateX(-50%) scale(.75); }
+  58%, 74% { opacity: 1; transform: translateX(-50%) scale(1); }
+  83%, 100% { opacity: 0; transform: translateX(-50%) scale(1.08); }
 }
-@keyframes guide-cycle { 0%, 27% { opacity: 0; } 36%, 56% { opacity: .72; } 67%, 100% { opacity: 0; } }
-@keyframes anchor-cycle { 0%, 28% { opacity: 0; transform: scale(.2); } 38%, 58% { opacity: 1; transform: scale(1); } 67%, 100% { opacity: 0; transform: scale(.4); } }
-@keyframes handle-cycle { 0%, 32% { opacity: 0; transform: scaleX(.2); } 40%, 57% { opacity: 1; transform: scaleX(1); } 66%, 100% { opacity: 0; transform: scaleX(.2); } }
-@keyframes cursor-cycle {
-  0%, 21% { opacity: 0; transform: translate(-12px, -10px) rotate(-18deg); }
-  31%, 53% { opacity: 1; transform: translate(0, 0) rotate(-18deg); }
-  65%, 100% { opacity: 0; transform: translate(-125px, 65px) rotate(-18deg); }
-}
+@keyframes trend-draw { 0%, 55% { stroke-dashoffset: 340; } 72%, 100% { stroke-dashoffset: 0; } }
 @keyframes app-float { 0%, 100% { transform: perspective(900px) rotateX(3deg) rotateY(-4deg) rotateZ(.4deg) translateY(0); } 50% { transform: perspective(900px) rotateX(1deg) rotateY(-1deg) rotateZ(-.4deg) translateY(-7px); } }
 @keyframes orb-float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
 @keyframes ring-pulse { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
