@@ -1,37 +1,57 @@
 const root = document.documentElement;
-const languageButton = document.querySelector('#language');
+const languageSelect = document.querySelector('#language');
 const dashboard = document.querySelector('#dashboard');
 const sessionDetails = document.querySelector('#session-details');
-const descriptions = {
-  'zh-CN': 'Codex Desk 是开源的 Codex CLI 桌面工具，提供悬浮额度监控、Token 用量统计与本地会话管理，支持 Windows、macOS 和 Linux。',
-  en: 'Codex Desk is an open-source desktop companion for Codex CLI. Monitor your quota, explore token usage, and resume local sessions on Windows, macOS, and Linux.'
+const localizedLabels = {
+  'zh-TW': ['跳至內容', '工作區', '你的 Codex CLI 桌面助手', '額度、工作階段，盡在一處。', '隨時留意額度、了解 Token 用量，並接續本機對話。', '下載 Codex Desk', '探索功能', '在同一個視窗查看額度、趨勢和工作階段記錄。', '開放原始碼', '本機處理', '為你的桌面而生', '額度與用量', '掌握額度', '讓懸浮指示器留在桌面上；需要詳細資訊時再開啟控制台。', '查看限制', '查看額度視窗、使用百分比和重設時間。', '取得提醒', '在用量達到門檻時啟用通知提醒。', '了解用量', '探索每日 Token 用量和活動趨勢。', '小巧指示器，清楚掌握額度。', '懸浮指示器', '用量提醒', '本機工作階段', '接續思路', '找回之前的對話、檢視變更，然後在終端機繼續工作。', '尋找對話', '搜尋本機工作階段並檢視訊息與用量。', '檢視變更', '查看記錄中的檔案變更和差異。', '繼續工作', '複製恢復命令以在終端機接續工作階段。', '工作階段留在本機', '本機工作階段絕不會上傳至第三方服務。Codex Desk 不會讀取或儲存 auth.json；更新檢查只會要求 GitHub 的公開版本資訊。', '對話詳情與用量概覽', '立即開始', '把 Codex 帶到桌面', '安裝並登入 Codex CLI，然後開啟 Codex Desk。', '安裝指南與疑難排解', '下載 Codex Desk', 'Codex CLI 的桌面助手。', '意見回饋'],
+  ko: ['콘텐츠로 건너뛰기', '작업 공간', 'CODEX CLI 데스크톱 도우미', '할당량과 세션을 한곳에서 관리하세요.', '할당량을 확인하고 토큰 사용량을 살펴보며 로컬 대화를 이어가세요.', 'Codex Desk 다운로드', '기능 살펴보기', '하나의 창에서 할당량, 추세, 세션 기록을 확인하세요.', '오픈 소스', '로컬 처리', '데스크톱을 위해 제작', '할당량 및 사용량', '할당량 파악하기', '데스크톱에 플로팅 표시기를 두고, 자세한 정보가 필요할 때 대시보드를 여세요.', '한도 보기', '할당량 기간, 사용률, 재설정 시간을 확인하세요.', '미리 알림 받기', '사용량이 기준에 도달하면 알림을 받으세요.', '사용량 이해하기', '일별 토큰 사용량과 활동 추세를 살펴보세요.', '작은 표시기 하나로 할당량을 명확하게 확인하세요.', '플로팅 표시기', '사용량 알림', '로컬 세션', '작업 이어가기', '이전 대화를 찾고 변경 사항을 검토한 뒤 터미널에서 계속 작업하세요.', '대화 찾기', '로컬 세션을 검색하고 메시지와 사용량을 검토하세요.', '변경 사항 검토', '기록된 파일 변경 사항과 차이를 확인하세요.', '작업 재개', '재개 명령을 복사해 터미널에서 세션을 계속하세요.', '세션은 로컬에 유지됩니다', '로컬 세션은 제3자 서비스에 업로드되지 않습니다. Codex Desk는 auth.json을 읽거나 저장하지 않으며, 업데이트 확인에는 GitHub의 공개 릴리스 정보만 요청합니다.', '대화 세부 정보 및 사용량 개요', '시작하기', 'Codex를 데스크톱으로', 'Codex CLI를 설치하고 로그인한 다음 Codex Desk를 여세요.', '설치 가이드 및 문제 해결', 'Codex Desk 다운로드', 'Codex CLI를 위한 데스크톱 도우미.', '피드백 및 제안'],
+  ja: ['コンテンツへ移動', 'ワークスペース', 'CODEX CLI のデスクトップコンパニオン', '使用量もセッションも、一か所で。', '使用量を確認し、トークン利用状況を把握して、ローカルの会話を再開できます。', 'Codex Desk をダウンロード', '機能を見る', '使用量、推移、セッション履歴を一つのウィンドウで確認できます。', 'オープンソース', 'ローカル処理', 'デスクトップのために設計', '使用量とクォータ', '使用量を把握', 'フローティングインジケーターをデスクトップに置き、詳細が必要なときにダッシュボードを開きます。', '上限を確認', 'クォータ期間、使用率、リセット時刻を確認できます。', '事前通知を受け取る', '使用量がしきい値に達したときに通知を受け取れます。', '使用量を理解する', '日ごとのトークン使用量とアクティビティの推移を確認できます。', '小さなインジケーターで、使用量を明確に把握。', 'フローティングインジケーター', '使用量アラート', 'ローカルセッション', '作業を続ける', '以前の会話を見つけ、変更を確認して、ターミナルで作業を続けられます。', '会話を探す', 'ローカルセッションを検索し、メッセージと使用量を確認できます。', '変更を確認', '記録されたファイル変更と差分を確認できます。', '作業を再開', '再開コマンドをコピーして、ターミナルでセッションを続けます。', 'セッションはローカルに保持されます', 'ローカルセッションが第三者サービスにアップロードされることはありません。Codex Desk は auth.json を読み取り・保存せず、更新確認では GitHub の公開リリース情報のみを取得します。', '会話の詳細と使用量の概要', '今すぐ始める', 'Codex をデスクへ', 'Codex CLI をインストールしてサインインし、Codex Desk を開きます。', 'インストールガイドとトラブルシューティング', 'Codex Desk をダウンロード', 'Codex CLI のデスクトップコンパニオン。', 'フィードバックと提案']
 };
+const languageMetadata = {
+  en: { title: 'Codex Desk — Codex CLI Quota Monitor & Session Manager', description: 'Codex Desk is an open-source desktop companion for Codex CLI. Monitor your quota, explore token usage, and resume local sessions on Windows, macOS, and Linux.', nav: 'Main navigation', dashboardAlt: 'Codex Desk dashboard showing quota, usage trends, and local sessions', sessionAlt: 'Codex Desk session details showing conversation history and token usage', orbAlt: 'Codex Desk floating quota indicator' },
+  'zh-CN': { title: 'Codex Desk — Codex CLI 额度监控与会话管理工具', description: 'Codex Desk 是开源的 Codex CLI 桌面工具，提供悬浮额度监控、Token 用量统计与本地会话管理，支持 Windows、macOS 和 Linux。', nav: '主要导航', dashboardAlt: 'Codex Desk 中文控制台，展示额度、用量趋势和会话列表', sessionAlt: 'Codex Desk 中文会话详情，展示历史对话与 Token 用量概览', orbAlt: 'Codex Desk 桌面悬浮额度指示器' },
+  'zh-TW': { title: 'Codex Desk — Codex CLI 額度監控與工作階段管理工具', description: 'Codex Desk 是開放原始碼的 Codex CLI 桌面工具，提供懸浮額度監控、Token 用量統計與本機工作階段管理，支援 Windows、macOS 和 Linux。', nav: '主要導覽', dashboardAlt: 'Codex Desk 控制台，顯示額度、用量趨勢和工作階段清單', sessionAlt: 'Codex Desk 工作階段詳細資料，顯示對話記錄與 Token 用量概覽', orbAlt: 'Codex Desk 桌面懸浮額度指示器' },
+  ko: { title: 'Codex Desk — Codex CLI 할당량 모니터 및 세션 관리자', description: 'Codex Desk는 Codex CLI를 위한 오픈 소스 데스크톱 도우미입니다. 할당량을 모니터링하고 토큰 사용량을 살펴보며 로컬 세션을 이어가세요.', nav: '주요 탐색', dashboardAlt: '할당량, 사용량 추세 및 로컬 세션을 보여주는 Codex Desk 대시보드', sessionAlt: '대화 기록과 토큰 사용량을 보여주는 Codex Desk 세션 상세 정보', orbAlt: 'Codex Desk 플로팅 할당량 표시기' },
+  ja: { title: 'Codex Desk — Codex CLI の使用量モニターとセッションマネージャー', description: 'Codex Desk は Codex CLI 向けのオープンソース・デスクトップコンパニオンです。使用量を確認し、トークン利用状況を把握して、ローカルセッションを再開できます。', nav: 'メインナビゲーション', dashboardAlt: '使用量、利用推移、ローカルセッションを表示する Codex Desk ダッシュボード', sessionAlt: '会話履歴とトークン使用量を表示する Codex Desk セッション詳細', orbAlt: 'Codex Desk のフローティング使用量インジケーター' }
+};
+const englishLabels = [...document.querySelectorAll('[data-en]')].map(element => element.textContent);
 function setLanguage(language) {
-  const chinese = language === 'zh-CN';
+  const chinese = language === 'zh-CN' || language === 'zh-TW';
+  const metadata = languageMetadata[language];
+  const labels = localizedLabels[language] || englishLabels;
   root.lang = language;
-  document.title = chinese ? 'Codex Desk — Codex CLI 额度监控与会话管理工具' : 'Codex Desk — Codex CLI Quota Monitor & Session Manager';
-  document.querySelector('meta[name="description"]').content = descriptions[language];
-  languageButton.textContent = chinese ? 'EN ↔' : '中文 ↔';
-  languageButton.setAttribute('aria-label', chinese ? 'Switch to English' : '切换为中文');
-  document.querySelector('nav').setAttribute('aria-label', chinese ? '主要导航' : 'Main navigation');
+  document.querySelectorAll('[data-en]').forEach((element, index) => { element.textContent = labels[index]; });
+  document.title = metadata.title;
+  document.querySelector('meta[name="description"]').content = metadata.description;
+  document.querySelector('nav').setAttribute('aria-label', metadata.nav);
+  languageSelect.setAttribute('aria-label', {
+    en: 'Select language',
+    'zh-CN': '选择语言',
+    'zh-TW': '選擇語言',
+    ko: '언어 선택',
+    ja: '言語を選択'
+  }[language]);
   dashboard.src = `screenshots/dashboard-light-${chinese ? 'zh' : 'en'}.png`;
-  dashboard.alt = chinese ? 'Codex Desk 中文控制台，展示额度、用量趋势和会话列表' : 'Codex Desk dashboard showing quota, usage trends, and local sessions';
+  dashboard.alt = metadata.dashboardAlt;
   sessionDetails.src = `screenshots/session-details-${chinese ? 'zh' : 'en'}.png`;
-  sessionDetails.alt = chinese ? 'Codex Desk 中文会话详情，展示历史对话与 Token 用量概览' : 'Codex Desk session details showing conversation history and token usage';
+  sessionDetails.alt = metadata.sessionAlt;
   const quotaOrb = document.querySelector('#quota-orb');
-  // 额度球中的重置时间与当前语言一致，切换语言时同步替换为对应的新版图标。
+  // 现有产品截图仅有英文与简体中文版本，其他语言使用最接近的可读截图。
   quotaOrb.src = `screenshots/quota-orb-light-${chinese ? 'zh' : 'en'}.png`;
-  quotaOrb.alt = chinese ? 'Codex Desk 桌面悬浮额度指示器' : 'Codex Desk floating quota indicator';
+  quotaOrb.alt = metadata.orbAlt;
   document.querySelector('#docs-link').href = `https://github.com/xiaotao-xiaotao/codex-desk/blob/main/README${chinese ? '.zh-CN' : ''}.md`;
 }
 let savedLanguage;
 // 存储不可用时仍允许切换语言，例如浏览器限制站点存储的情况。
 try { savedLanguage = localStorage.getItem('codex-desk-language'); } catch {}
 // 首次访问统一展示英文；仅恢复用户明确选择过的语言。
-setLanguage(['zh-CN', 'en'].includes(savedLanguage) ? savedLanguage : 'en');
-languageButton.hidden = false;
-languageButton.addEventListener('click', () => {
-  const language = root.lang === 'zh-CN' ? 'en' : 'zh-CN';
+const supportedLanguages = Object.keys(languageMetadata);
+const initialLanguage = supportedLanguages.includes(savedLanguage) ? savedLanguage : 'en';
+setLanguage(initialLanguage);
+languageSelect.value = initialLanguage;
+languageSelect.hidden = false;
+languageSelect.addEventListener('change', () => {
+  const language = languageSelect.value;
   setLanguage(language);
   try { localStorage.setItem('codex-desk-language', language); } catch {}
 });
