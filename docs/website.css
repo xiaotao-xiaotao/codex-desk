@@ -43,6 +43,7 @@ nav { display: flex; align-items: center; gap: 22px; color: #60728a; font-size: 
 .language-picker:has(#language[aria-expanded="true"])::after { transform: translateY(2px) rotate(225deg); }
 /* 自定义列表规避原生 select 在不同浏览器中不可控的边框与选中色。 */
 .language-menu { position: absolute; top: calc(100% + 10px); right: -8px; z-index: 20; display: grid; min-width: 146px; padding: 6px; border: 1px solid #c9def2; border-radius: 14px; background: #fffd; box-shadow: 0 18px 34px -18px #234e8175, 0 3px 8px -5px #234e8138; backdrop-filter: blur(14px); }
+.language-picker[hidden], .language-menu[hidden] { display: none !important; }
 .language-menu button { min-height: 34px; border: 0; border-radius: 9px; background: transparent; color: #466887; cursor: pointer; font: 500 14px/1.2 "Segoe UI", "Microsoft YaHei", sans-serif; padding: 7px 11px; text-align: left; transition: background .16s ease, color .16s ease; }
 .language-menu button:hover, .language-menu button:focus-visible { background: #e8f4ff; color: #156dd7; outline: 0; }
 .language-menu button[aria-selected="true"] { background: linear-gradient(90deg, #e5f3ff, #f5faff); color: #176fd9; font-weight: 650; }
