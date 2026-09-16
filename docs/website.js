@@ -1,5 +1,9 @@
 const root = document.documentElement;
-const languageSelect = document.querySelector('#language');
+const languagePicker = document.querySelector('#language-picker');
+const languageButton = document.querySelector('#language');
+const languageLabel = document.querySelector('#language-label');
+const languageMenu = document.querySelector('#language-menu');
+const languageOptions = [...languageMenu.querySelectorAll('[data-language]')];
 const dashboard = document.querySelector('#dashboard');
 const sessionDetails = document.querySelector('#session-details');
 const localizedLabels = {
@@ -24,13 +28,18 @@ function setLanguage(language) {
   document.title = metadata.title;
   document.querySelector('meta[name="description"]').content = metadata.description;
   document.querySelector('nav').setAttribute('aria-label', metadata.nav);
-  languageSelect.setAttribute('aria-label', {
+  const languageMenuLabel = {
     en: 'Select language',
     'zh-CN': '选择语言',
     'zh-TW': '選擇語言',
     ko: '언어 선택',
     ja: '言語を選択'
-  }[language]);
+  }[language];
+  languageButton.setAttribute('aria-label', languageMenuLabel);
+  languageMenu.setAttribute('aria-label', languageMenuLabel);
+  const selectedOption = languageOptions.find(option => option.dataset.language === language);
+  languageLabel.textContent = selectedOption.textContent;
+  languageOptions.forEach(option => option.setAttribute('aria-selected', String(option === selectedOption)));
   dashboard.src = `screenshots/dashboard-light-${chinese ? 'zh' : 'en'}.png`;
   dashboard.alt = metadata.dashboardAlt;
   sessionDetails.src = `screenshots/session-details-${chinese ? 'zh' : 'en'}.png`;
@@ -48,12 +57,31 @@ try { savedLanguage = localStorage.getItem('codex-desk-language'); } catch {}
 const supportedLanguages = Object.keys(languageMetadata);
 const initialLanguage = supportedLanguages.includes(savedLanguage) ? savedLanguage : 'en';
 setLanguage(initialLanguage);
-languageSelect.value = initialLanguage;
-languageSelect.hidden = false;
-languageSelect.addEventListener('change', () => {
-  const language = languageSelect.value;
+languagePicker.hidden = false;
+const closeLanguageMenu = () => {
+  languageMenu.hidden = true;
+  languageButton.setAttribute('aria-expanded', 'false');
+};
+languageButton.addEventListener('click', () => {
+  const opening = languageMenu.hidden;
+  languageMenu.hidden = !opening;
+  languageButton.setAttribute('aria-expanded', String(opening));
+});
+languageOptions.forEach(option => option.addEventListener('click', () => {
+  const language = option.dataset.language;
   setLanguage(language);
   try { localStorage.setItem('codex-desk-language', language); } catch {}
+  closeLanguageMenu();
+  languageButton.focus();
+}));
+document.addEventListener('pointerdown', event => {
+  if (!languagePicker.contains(event.target)) closeLanguageMenu();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !languageMenu.hidden) {
+    closeLanguageMenu();
+    languageButton.focus();
+  }
 });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = matchMedia('(pointer: fine)');

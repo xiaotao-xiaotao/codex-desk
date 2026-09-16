@@ -24,13 +24,16 @@
     <nav aria-label="Main navigation">
       <a href="#workspace"><span data-zh>工作空间</span><span data-en>Workspace</span></a>
       <a href="https://github.com/xiaotao-xiaotao/codex-desk">GitHub <span aria-hidden="true">↗</span></a>
-      <label class="language-picker" for="language"><span class="sr-only">Language</span><select id="language" aria-label="Select language" hidden>
-        <option value="en">English</option>
-        <option value="zh-CN">简体中文</option>
-        <option value="zh-TW">繁體中文</option>
-        <option value="ko">한국어</option>
-        <option value="ja">日本語</option>
-      </select></label>
+      <div class="language-picker" id="language-picker" hidden>
+        <button id="language" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="language-label">English</span></button>
+        <div class="language-menu" id="language-menu" role="listbox" aria-label="Select language" hidden>
+          <button type="button" role="option" data-language="en">English</button>
+          <button type="button" role="option" data-language="zh-CN">简体中文</button>
+          <button type="button" role="option" data-language="zh-TW">繁體中文</button>
+          <button type="button" role="option" data-language="ko">한국어</button>
+          <button type="button" role="option" data-language="ja">日本語</button>
+        </div>
+      </div>
     </nav>
   </header>
   <main id="main">
