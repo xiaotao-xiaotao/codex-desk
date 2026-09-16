@@ -69,9 +69,10 @@ async fn search_threads(
     list_state: State<'_, threads::ThreadListState>,
     query: String,
     page: u32,
+    page_size: u32,
     force_refresh: bool,
 ) -> Result<threads::ThreadSearchResult, String> {
-    threads::search_threads(&state, &list_state, &query, page, force_refresh).await
+    threads::search_threads(&state, &list_state, &query, page, page_size, force_refresh).await
 }
 
 #[tauri::command]

@@ -64,18 +64,44 @@ function releaseNoteLines(notes) {
 }
 
 /** 仅在用户主动触发时访问 GitHub，并在同一提示卡中反馈所有检查结果。 */
-export function createUpdateBannerView({ t, invoke, triggerButton, getLanguage, getCurrentVersion }) {
+export function createUpdateBannerView({
+  t,
+  invoke,
+  triggerButton,
+  getLanguage,
+  getCurrentVersion,
+  autoDismissDurationMs,
+}) {
   const banner = document.querySelector("#update-banner");
   const icon = document.querySelector(".update-banner-icon");
   const title = document.querySelector("#update-banner-title");
   const version = document.querySelector("#update-banner-version");
   const notes = document.querySelector("#update-banner-notes");
+  const actions = document.querySelector(".update-banner-actions");
   const openButton = document.querySelector("#update-banner-open");
   const dismissButton = document.querySelector("#update-banner-dismiss");
   let result = null;
   let state = "idle";
+  let currentVersionDismissTimer = null;
+
+  function clearCurrentVersionDismissTimer() {
+    if (currentVersionDismissTimer === null) return;
+    window.clearTimeout(currentVersionDismissTimer);
+    currentVersionDismissTimer = null;
+  }
+
+  function scheduleCurrentVersionDismiss() {
+    clearCurrentVersionDismissTimer();
+    currentVersionDismissTimer = window.setTimeout(() => {
+      currentVersionDismissTimer = null;
+      if (state !== "current") return;
+      state = "idle";
+      render();
+    }, autoDismissDurationMs);
+  }
 
   function render() {
+    if (state !== "current") clearCurrentVersionDismissTimer();
     triggerButton.title = triggerButton.ariaLabel = t("checkForUpdates");
     triggerButton.disabled = state === "checking";
     triggerButton.classList.toggle("is-loading", state === "checking");
@@ -86,6 +112,8 @@ export function createUpdateBannerView({ t, invoke, triggerButton, getLanguage, 
     notes.hidden = state !== "available";
     openButton.hidden = state !== "available";
     dismissButton.hidden = state === "checking";
+    // 当前版本既支持“我知道了”立即关闭，也保留 4 秒自动关闭作为兜底。
+    actions.hidden = state === "checking";
     dismissButton.textContent = state === "available" ? t("updateLater") : t("updateDismiss");
     icon.textContent = { checking: "…", current: "✓", error: "!", available: "↑" }[state];
 
@@ -102,6 +130,7 @@ export function createUpdateBannerView({ t, invoke, triggerButton, getLanguage, 
     if (state === "current") {
       title.textContent = t("upToDateTitle");
       version.textContent = t("upToDateSummary", { current: result.currentVersion });
+      scheduleCurrentVersionDismiss();
       return;
     }
 
@@ -169,6 +198,7 @@ export function createUpdateBannerView({ t, invoke, triggerButton, getLanguage, 
     }
   });
   dismissButton.addEventListener("click", () => {
+    clearCurrentVersionDismissTimer();
     state = "idle";
     render();
   });

@@ -1,5 +1,9 @@
 .sessions-section { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 16px rgba(31, 35, 41, .035); }
-.sessions-section .section-heading { min-height: 26px; margin-bottom: 7px; padding-bottom: 6px; border-bottom: 1px solid #edf1f5; }
+/* 搜索与导入导出按钮留在一级标题栏内。 */
+.sessions-section .section-heading { min-height: 26px; margin-bottom: 7px; padding-bottom: 8px; border-bottom: 1px solid #edf1f5; }
+/* 常规展开态与另外两个一级标题区统一为 38px：29px 工具栏 + 4px 下方留白。 */
+.sessions-section:not(.is-collapsed):not(.is-module-expanded) { padding-top: 3px; }
+.sessions-section:not(.is-collapsed):not(.is-module-expanded) .section-heading { flex: 0 0 34px; margin-bottom: 0; padding-bottom: 4px; }
 .sessions-heading-actions { display: flex; align-items: center; gap: 4px; }
 .sessions-content { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; }
 .sessions-content[hidden] { display: none; }
@@ -14,15 +18,21 @@
 .thread-search input { width: 200px; height: 29px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 8px; outline: 0; color: #1f2937; background: #fff; font-size: .7rem; transition: border-color .18s ease, box-shadow .18s ease; }
 .thread-search input::placeholder { color: #a8b0bb; }
 .thread-search input:focus { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .12); }
-.thread-transfer-actions { display: flex; overflow: hidden; border: 1px solid #d7e2f0; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .025); }
+.thread-transfer-actions { display: flex; gap: 5px; }
 .thread-action-button { min-height: 29px; padding: 0 9px; border: 0; border-right: 1px solid #e1e8f0; color: #3979c9; background: #fff; cursor: pointer; font-size: .67rem; font-weight: 700; }
 .thread-action-button:last-child { border-right: 0; }
+.thread-transfer-actions .thread-action-button { border: 1px solid #d7e2f0; border-radius: 7px; box-shadow: 0 1px 2px rgba(15, 23, 42, .025); }
+.thread-transfer-actions .thread-action-button:last-child { border-right: 1px solid #d7e2f0; }
+/* 放大本地历史时，工具栏与标题栏的下边线使用同一紧凑高度。 */
+.sessions-section.is-module-expanded .thread-search input,
+.sessions-section.is-module-expanded .thread-action-button { min-height: 27px; height: 27px; }
 .thread-action-button:hover:not(:disabled) { color: #1668c6; background: #f2f7ff; }
 .thread-action-button-primary { color: #1668c6; background: #edf5ff; }
 .thread-action-button-primary:hover:not(:disabled) { color: #0958d9; background: #dcecff; }
 .thread-action-button:disabled { cursor: default; opacity: .48; }
 .search-result { min-width: 82px; color: #78828d; font-size: .67rem; text-align: right; }
 .thread-selection-bar { position: relative; z-index: 1; display: flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 27px; margin: -1px 0 6px; padding: 2px 0 4px; border-bottom: 1px solid #edf1f5; background: #fff; }
+.sessions-section:not(.is-collapsed):not(.is-module-expanded) .thread-selection-bar { margin-top: 0; }
 .thread-selection-bar[hidden] { display: none; }
 .selection-button { padding: 3px 7px; border: 1px solid #dbe3ec; border-radius: 6px; color: #526173; background: #fff; cursor: pointer; font-size: .6rem; font-weight: 650; transition: color .15s, border-color .15s, background .15s; }
 .selection-button:hover { border-color: #9fc5fa; color: #1668c6; background: #f5f9ff; }

@@ -62,7 +62,8 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .module-expand-trigger > .section-title-row { grid-column: 1; cursor: text; user-select: text; }
 .module-expand-trigger > .insights-range-picker,
 .module-expand-trigger > .sessions-heading-actions { grid-column: 3; justify-self: end; }
-.module-expand-hint { position: absolute; z-index: 4; top: 50%; left: 50%; display: none; align-items: center; gap: 4px; padding: 5px 8px; border: 1px solid #b9d8f7; border-radius: 6px; color: #3979c9; background: rgba(255, 255, 255, .98); box-shadow: 0 3px 10px rgba(22, 104, 198, .09); font-size: .62rem; font-weight: 700; line-height: 1.2; pointer-events: none; white-space: nowrap; animation: module-expand-hint-enter .16s ease both; }
+/* 两个可放大模块共用同一提示锚点；略向左偏移，为本地历史的会话统计留出安全间距。 */
+.module-expand-hint { position: absolute; z-index: 4; top: 50%; left: calc(50% - 2.5rem); display: none; align-items: center; gap: 4px; padding: 5px 8px; border: 1px solid #b9d8f7; border-radius: 6px; color: #3979c9; background: rgba(255, 255, 255, .98); box-shadow: 0 3px 10px rgba(22, 104, 198, .09); font-size: .62rem; font-weight: 700; line-height: 1.2; pointer-events: none; white-space: nowrap; animation: module-expand-hint-enter .16s ease both; }
 .module-expand-hint-icon { display: grid; width: .74rem; height: .74rem; place-items: center; }
 .module-expand-hint-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .module-expand-trigger:hover .module-expand-hint,
@@ -70,7 +71,6 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .module-expand-trigger.is-module-expanded { cursor: zoom-out; }
 .module-expand-trigger.is-module-expanded .module-expand-hint { border-color: #91caff; color: #1668c6; background: #e6f4ff; }
 @keyframes module-expand-hint-enter { from { opacity: 0; transform: translate(-50%, calc(-50% - 2px)); } to { opacity: 1; transform: translate(-50%, -50%); } }
-
 /* 放大态保持在当前窗口内，顶部程序栏仍可操作；未放大的模块只隐藏，不改变其原布局状态。 */
 .panel.is-module-expanded > .dashboard-section:not(.is-module-expanded),
 .panel.is-module-expanded > .status { opacity: 0; pointer-events: none; user-select: none; }
@@ -81,10 +81,11 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .insights-overview.is-module-expanded .word-cloud,
 .insights-overview.is-module-expanded .word-cloud-section { min-height: 0; }
 .sessions-section.is-module-expanded { display: flex; flex-direction: column; }
-.sessions-section.is-module-expanded .section-heading { flex: 0 0 auto; margin-bottom: 10px; padding-bottom: 8px; }
+.sessions-section.is-module-expanded .section-heading { flex: 0 0 auto; margin-bottom: 8px; padding-bottom: 5px; }
 .sessions-section.is-module-expanded .sessions-content { min-height: 0; }
 .sessions-section.is-module-expanded .section-collapse-button { display: none; }
-.sessions-section.is-module-expanded .thread-list { grid-template-rows: repeat(5, minmax(60px, 1fr)); }
+/* 行数由容器高度同步：维持紧凑卡片，优先增加可见会话数而非拉伸卡片。 */
+.sessions-section.is-module-expanded .thread-list { grid-template-rows: repeat(var(--expanded-thread-row-count, 10), minmax(54px, 1fr)); }
 
 .status { flex: 0 0 auto; min-height: 13px; margin-top: 2px; color: #637286; font-size: .64rem; }
 .status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: .66rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }

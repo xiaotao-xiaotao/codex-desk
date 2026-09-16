@@ -17,6 +17,13 @@
 .activity-trend-section .section-title-row .section-kicker,
 .token-usage-section .section-title-row .section-kicker,
 .word-cloud-section .section-title-row .section-kicker { font-size: .7rem; }
+/* 三张图的统计值异步返回；统计为空时连同分隔符隐藏，避免加载态只剩孤立竖线。 */
+.activity-trend-section .section-title-row .section-kicker::after,
+.token-usage-section .section-title-row .section-kicker::after,
+.word-cloud-section .section-title-row .section-kicker::after { content: none; }
+.activity-trend-section .section-title-row:has(> .trend-total:not(:empty)) .section-kicker::after,
+.token-usage-section .section-title-row:has(> .trend-total:not(:empty)) .section-kicker::after,
+.word-cloud-section .section-title-row:has(> .word-cloud-summary:not(:empty)) .section-kicker::after { margin-left: 5px; content: "｜"; }
 .word-cloud-heading { min-width: 0; margin-bottom: 2px; }
 .word-cloud-summary { min-width: 0; overflow: hidden; color: #9aa5b2; font-size: .54rem; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .word-cloud { position: relative; display: grid; min-height: 212px; place-items: center; overflow: hidden; padding: 2px 0 0; }

@@ -24,7 +24,16 @@ import { createWordCloudView } from "./views/word-cloud-view.js";
 // 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
 const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
 const DRAG_THRESHOLD_PX = 4;
-const MODULE_EXPAND_HINT_DURATION_MS = 4_000;
+const AUTO_DISMISS_DURATION_MS = 4_000;
+const THREAD_PAGE_SIZE = { normal: 10 };
+const EXPANDED_THREAD_LAYOUT = {
+  columns: 2,
+  minRows: 10,
+  maxRows: 15,
+  targetRowHeightPx: 60,
+  rowGapPx: 8,
+};
+const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -45,6 +54,7 @@ const quitButton = document.querySelector("#quit-button");
 const importThreadsButton = document.querySelector("#import-threads");
 const exportThreadsButton = document.querySelector("#export-threads");
 const importFileInput = document.querySelector("#import-file-input");
+const threadListElement = document.querySelector("#thread-list");
 const threadSelectionBar = document.querySelector("#thread-selection-bar");
 const selectPageThreadsButton = document.querySelector("#select-page-threads");
 const selectAllThreadsButton = document.querySelector("#select-all-threads");
@@ -94,6 +104,7 @@ const updateView = createUpdateBannerView({
   triggerButton: updateCheckButton,
   getLanguage: i18n.getLanguage,
   getCurrentVersion: getVersion,
+  autoDismissDurationMs: AUTO_DISMISS_DURATION_MS,
 });
 const dialogView = createThreadDialogView({
   t,
@@ -142,6 +153,8 @@ let moduleExpandFocusOrigin = null;
 let moduleExpandHintTimer = null;
 let searchTimer = null;
 let searchRequestVersion = 0;
+let expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
+let expandedThreadLayoutTimer = null;
 let currentThreadPage = 1;
 let currentPageThreads = [];
 let currentThreadEmptyMessage = "";
@@ -258,17 +271,17 @@ function setModuleExpanded(nextModule, focusOrigin = null) {
     : null;
   const previousModule = expandedModule;
   const next = previousModule === normalizedModule ? null : normalizedModule;
+  const openingSessionsModule = next === "sessions" && previousModule !== "sessions";
+  const wasSessionsExpanded = sessionsExpanded;
+  const shouldRestoreNormalThreadPage = previousModule === "sessions"
+    && next !== "sessions"
+    && sessionsExpandedBeforeModule === true;
 
   if (previousModule === "sessions" && next !== "sessions" && sessionsExpandedBeforeModule === false) {
     void setSessionsExpanded(false, { resizeWindow: false });
   }
   if (previousModule === "sessions" && next !== "sessions") {
     sessionsExpandedBeforeModule = null;
-  }
-
-  if (next === "sessions" && previousModule !== "sessions") {
-    sessionsExpandedBeforeModule = sessionsExpanded;
-    if (!sessionsExpanded) void setSessionsExpanded(true, { resizeWindow: false });
   }
 
   expandedModule = next;
@@ -279,11 +292,31 @@ function setModuleExpanded(nextModule, focusOrigin = null) {
   });
   updateModuleExpandTriggers();
 
+  if (openingSessionsModule) {
+    sessionsExpandedBeforeModule = wasSessionsExpanded;
+    currentThreadPage = 1;
+    if (wasSessionsExpanded) {
+      void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+    } else {
+      // 先写入放大状态，再加载数据，确保首个请求就按 20 条分页。
+      void setSessionsExpanded(true, { resizeWindow: false });
+    }
+  } else if (shouldRestoreNormalThreadPage) {
+    // 退出放大后回到常规 10 条分页，避免页码与可见条数不一致。
+    currentThreadPage = 1;
+    void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+  }
+  if (previousModule === "sessions" && next !== "sessions") {
+    expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
+    threadListElement.style.removeProperty("--expanded-thread-row-count");
+  }
+
   // 覆盖层完成 Grid/Flex 布局后，使用实际尺寸重绘两张 SVG 与词云。
   window.requestAnimationFrame(() => {
     trendView.render();
     tokenUsageView.render();
     wordCloudView.render();
+    syncExpandedThreadLayout();
   });
 
   if (!next && moduleExpandFocusOrigin && expanded) {
@@ -307,7 +340,7 @@ function showModuleExpandHints() {
   moduleExpandHintTimer = window.setTimeout(() => {
     moduleExpandHintTimer = null;
     moduleExpandTriggers.forEach((trigger) => trigger.classList.remove("is-module-expand-hint-visible"));
-  }, MODULE_EXPAND_HINT_DURATION_MS);
+  }, AUTO_DISMISS_DURATION_MS);
 }
 
 function setupModuleExpansion() {
@@ -603,13 +636,50 @@ function selectLanguage(nextLanguage) {
   applyLanguage();
 }
 
+function getExpandedThreadRowCount() {
+  const availableHeight = threadListElement.clientHeight;
+  if (availableHeight === 0) return EXPANDED_THREAD_LAYOUT.minRows;
+
+  // 以不超过常规 60px 卡高为目标计算行数，窗口变大时优先增加会话数而非拉大卡片。
+  const rows = Math.ceil(
+    (availableHeight + EXPANDED_THREAD_LAYOUT.rowGapPx)
+    / (EXPANDED_THREAD_LAYOUT.targetRowHeightPx + EXPANDED_THREAD_LAYOUT.rowGapPx),
+  );
+  return Math.min(
+    EXPANDED_THREAD_LAYOUT.maxRows,
+    Math.max(EXPANDED_THREAD_LAYOUT.minRows, rows),
+  );
+}
+
+function syncExpandedThreadLayout() {
+  if (expandedModule !== "sessions" || !sessionsExpanded) return;
+  const nextRowCount = getExpandedThreadRowCount();
+  if (nextRowCount === expandedThreadRowCount) return;
+
+  expandedThreadRowCount = nextRowCount;
+  threadListElement.style.setProperty("--expanded-thread-row-count", String(nextRowCount));
+  currentThreadPage = 1;
+  void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+}
+
+function scheduleExpandedThreadLayoutSync() {
+  if (expandedThreadLayoutTimer !== null) window.clearTimeout(expandedThreadLayoutTimer);
+  expandedThreadLayoutTimer = window.setTimeout(() => {
+    expandedThreadLayoutTimer = null;
+    syncExpandedThreadLayout();
+  }, THREAD_LAYOUT_RESIZE_DEBOUNCE_MS);
+}
+
 async function searchThreads(query, page = 1, forceRefresh = false) {
   if (!expanded || !sessionsExpanded) return;
   const requestVersion = ++searchRequestVersion;
   const keyword = query.trim();
   threadListView.setSearchResult(t("readingSearch"));
   try {
-    const data = await invoke("search_threads", { query: keyword, page, forceRefresh });
+    const pageSize = expandedModule === "sessions"
+      ? expandedThreadRowCount * EXPANDED_THREAD_LAYOUT.columns
+      : THREAD_PAGE_SIZE.normal;
+    const data = await invoke("search_threads", { query: keyword, page, pageSize, forceRefresh });
     if (requestVersion !== searchRequestVersion) return;
     currentThreadPage = data.page;
     currentPageThreads = data.threads;
@@ -824,6 +894,9 @@ async function bootstrap() {
     await importTransferFile(file);
   });
   setupWindowDragging();
+  const threadListResizeObserver = new ResizeObserver(scheduleExpandedThreadLayoutSync);
+  threadListResizeObserver.observe(threadListElement);
+  window.addEventListener("resize", scheduleExpandedThreadLayoutSync);
   threadListView.onSearchInput(() => {
     window.clearTimeout(searchTimer);
     currentThreadPage = 1;

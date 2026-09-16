@@ -105,8 +105,8 @@
 :root[data-theme="dark"] .copy-icon-button:hover:not(:disabled) { border: 0; color: #e6edf3; background: #2a3544; }
 :root[data-theme="dark"] .copy-icon-button.is-copied { border: 0; color: #77d9b5; background: transparent; }
 :root[data-theme="dark"] .copy-icon-button.is-failed { border: 0; color: #ff7875; background: transparent; }
-:root[data-theme="dark"] .thread-transfer-actions { border-color: #294f78; }
 :root[data-theme="dark"] .thread-action-button { border-right-color: #294f78; color: #8dc5ff; background: #152b43; }
+:root[data-theme="dark"] .thread-transfer-actions .thread-action-button { border-color: #294f78; }
 :root[data-theme="dark"] .thread-action-button:hover:not(:disabled) { color: #c7e2ff; background: #1b3857; }
 :root[data-theme="dark"] .thread-action-button-primary { color: #eaf4ff; background: #1769c2; }
 :root[data-theme="dark"] .thread-action-button-primary:hover:not(:disabled) { color: #fff; background: #2a80df; }

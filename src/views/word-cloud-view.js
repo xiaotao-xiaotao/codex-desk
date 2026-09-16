@@ -51,19 +51,25 @@ function staysInsideBounds(box, width, height, padding = 5) {
   );
 }
 
-function placeWord(word, occupied, width, height, index) {
+function placeWord(word, occupied, width, height, index, total) {
   // 螺旋半径以短边为基准；长边额外展开，最大化后的宽词云不会只聚成中央圆团。
   const shortestSide = Math.max(1, Math.min(width, height));
   const horizontalSpread = width / shortestSide;
   const verticalSpread = height / shortestSide;
+  // 高频词靠近中心，低频词按排名逐步向边缘分散；大尺寸卡片不再只复用中心区域。
+  const rank = total <= 1 ? 0 : index / (total - 1);
+  const preferredDistance = Math.sqrt(rank) * shortestSide * 0.43;
+  const radialStep = Math.max(0.65, shortestSide / 1_100);
   // 发生碰撞时逐步缩字后重试；词云中的词保持单行，不能退化成竖排标签。
   for (let sizeAttempt = 0; sizeAttempt < 4; sizeAttempt += 1) {
     const metrics = measureWord(word);
     const phase = (wordHash(word.name) % 360) * (Math.PI / 180) + index * 0.21;
     for (let step = 0; step < 1_800; step += 1) {
       const angle = phase + step * 0.31;
-      // 扩张速度覆盖整张卡片；比圆形边界下的紧凑词团更接近自然散开的阅读感。
-      const distance = step === 0 ? 0 : 2 + angle * 0.3;
+      // 围绕目标半径向内、向外交替探测，既能填满边缘，也能在碰撞后寻找邻近空位。
+      const distance = step === 0
+        ? preferredDistance
+        : Math.max(0, preferredDistance + (step % 2 === 0 ? 1 : -1) * Math.ceil(step / 2) * radialStep);
       const box = {
         x: width / 2 + Math.cos(angle) * distance * horizontalSpread,
         y: height / 2 + Math.sin(angle) * distance * verticalSpread,
@@ -145,7 +151,7 @@ export function createWordCloudView({ t }) {
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
     // 卡片变大时同步放大文字，但设置上限，避免宽屏下高频词占据整个画布。
-    const fontScale = Math.min(1.28, Math.max(1, Math.sqrt((width * height) / (340 * 260))));
+    const fontScale = Math.min(1.65, Math.max(1, Math.sqrt((width * height) / (340 * 260))));
     const isDark = document.documentElement.dataset.theme === "dark";
     const occupied = [];
     const placedWords = [];
@@ -161,7 +167,7 @@ export function createWordCloudView({ t }) {
         rotation: ROTATIONS[wordHash(name) % ROTATIONS.length],
         hue: 188 + (wordHash(name) % 138),
       };
-      const position = placeWord(word, occupied, width, height, index);
+      const position = placeWord(word, occupied, width, height, index, items.length);
       if (!position) continue;
       occupied.push(position);
       placedWords.push({ ...word, ...position });

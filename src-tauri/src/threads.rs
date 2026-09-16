@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 
 const RECENT_THREAD_LIMIT: usize = 100;
 const THREAD_LIST_BATCH_SIZE: usize = 100;
-const THREAD_PAGE_SIZE: usize = 10;
+const MAX_THREAD_PAGE_SIZE: usize = 30;
 const MAX_TRANSFER_THREADS: usize = 5_000;
 const MAX_TRANSFER_BUNDLE_BYTES: usize = 64 * 1_024 * 1_024;
 const MAX_THREAD_TITLE_LENGTH: usize = 160;
@@ -304,6 +304,7 @@ pub async fn search_threads(
     list_state: &ThreadListState,
     query: &str,
     page: u32,
+    page_size: u32,
     force_refresh: bool,
 ) -> Result<ThreadSearchResult, String> {
     let query = query.trim();
@@ -312,7 +313,11 @@ pub async fn search_threads(
     }
     let threads = list_all_threads(state, list_state, force_refresh).await?;
     let threads = filter_threads(threads, query);
-    Ok(paginate_threads(threads, page as usize))
+    Ok(paginate_threads(
+        threads,
+        page as usize,
+        normalize_thread_page_size(page_size),
+    ))
 }
 
 /// 返回当前筛选条件下的全部会话，供“全选筛选结果”直接取得稳定的会话标识。
@@ -1831,25 +1836,30 @@ fn fuzzy_matches(value: &str, keyword: &str) -> bool {
         .all(|target| characters.by_ref().any(|value| value == target))
 }
 
-fn paginate_threads(threads: Vec<ThreadSummary>, requested_page: usize) -> ThreadSearchResult {
+/// 前端会根据容器形态请求不同页长；限制到 1–30 条，避免异常参数造成大批量渲染。
+fn normalize_thread_page_size(requested_page_size: u32) -> usize {
+    (requested_page_size as usize).clamp(1, MAX_THREAD_PAGE_SIZE)
+}
+
+fn paginate_threads(
+    threads: Vec<ThreadSummary>,
+    requested_page: usize,
+    page_size: usize,
+) -> ThreadSearchResult {
     let total = threads.len();
-    let total_pages = total.div_ceil(THREAD_PAGE_SIZE);
+    let total_pages = total.div_ceil(page_size);
     let page = if total_pages == 0 {
         1
     } else {
         requested_page.max(1).min(total_pages)
     };
-    let start = (page - 1) * THREAD_PAGE_SIZE;
+    let start = (page - 1) * page_size;
     ThreadSearchResult {
-        threads: threads
-            .into_iter()
-            .skip(start)
-            .take(THREAD_PAGE_SIZE)
-            .collect(),
+        threads: threads.into_iter().skip(start).take(page_size).collect(),
         total,
         limit: RECENT_THREAD_LIMIT,
         page,
-        page_size: THREAD_PAGE_SIZE,
+        page_size,
         total_pages,
     }
 }
