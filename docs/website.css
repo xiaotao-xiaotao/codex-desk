@@ -32,14 +32,13 @@ button { font: inherit; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 88px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: #173157; font-size: 20px; font-weight: 700; letter-spacing: -.6px; }
 .brand-icon { display: inline-flex; align-items: center; justify-content: center; width: 33px; height: 33px; overflow: hidden; border: 1px solid #b8f6ff8a; border-radius: 11px; background: linear-gradient(145deg, #75dcf5, #386ce4 60%, #4e3db7); box-shadow: 0 0 24px #49c5ff3d, inset 1px 1px #fff8; font: 19px/1 "Cascadia Code", Consolas, monospace; }
-nav { display: flex; align-items: center; gap: 26px; color: #60728a; font-size: 14px; }
-/* 语言入口沿用页面的浅色玻璃质感，避免浏览器原生下拉框割裂导航视觉。 */
-.language-picker { position: relative; display: inline-flex; align-items: center; min-height: 38px; overflow: hidden; border: 1px solid #b9d6f3; border-radius: 999px; background: linear-gradient(135deg, #fff, #edf7ff); box-shadow: 0 7px 18px -13px #1966b9a8, inset 0 1px #fff; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-.language-picker::before { position: absolute; z-index: 1; left: 11px; display: grid; width: 19px; height: 19px; place-items: center; border: 1px solid #a8d1f5; border-radius: 50%; color: #2478d9; content: '文'; font: 700 11px/1 "Microsoft YaHei", sans-serif; pointer-events: none; }
-.language-picker::after { position: absolute; right: 14px; width: 7px; height: 7px; border-right: 1.5px solid #3973ae; border-bottom: 1.5px solid #3973ae; content: ''; pointer-events: none; transform: translateY(-2px) rotate(45deg); }
-.language-picker:hover { border-color: #7eb8ed; box-shadow: 0 10px 22px -14px #1966b9c7, inset 0 1px #fff; transform: translateY(-1px); }
-.language-picker:focus-within { border-color: #4c9eed; box-shadow: 0 0 0 3px #4d9fed2b, 0 10px 22px -14px #1966b9c7, inset 0 1px #fff; }
-#language { position: relative; z-index: 2; min-width: 142px; height: 36px; appearance: none; border: 0; outline: 0; background: transparent; color: #1f4e80; cursor: pointer; font: 600 13px/1.2 "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: .01em; padding: 0 35px 0 37px; }
+nav { display: flex; align-items: center; gap: 22px; color: #60728a; font-size: 14px; }
+/* 语言选择器作为导航的第三个文本项，用分隔线建立层级而不抢占主视觉。 */
+.language-picker { position: relative; display: inline-flex; align-items: center; min-height: 28px; padding-left: 20px; border-left: 1px solid #d6e2ef; transition: border-color .2s ease; }
+.language-picker::after { position: absolute; right: 3px; width: 6px; height: 6px; border-right: 1.5px solid #5d84ad; border-bottom: 1.5px solid #5d84ad; content: ''; pointer-events: none; transform: translateY(-2px) rotate(45deg); }
+.language-picker:hover, .language-picker:focus-within { border-color: #8bbbe9; }
+.language-picker:hover #language { color: var(--accent); }
+#language { min-width: 99px; height: 28px; appearance: none; border: 0; outline: 0; background: transparent; color: #526f8e; cursor: pointer; font: 500 14px/1.2 "Segoe UI", "Microsoft YaHei", sans-serif; padding: 0 18px 0 0; transition: color .2s ease; }
 #language option { background: #fff; color: var(--ink); font-weight: 500; }
 
 .hero { position: relative; display: grid; grid-template-columns: .84fr 1.16fr; align-items: center; gap: clamp(36px, 5vw, 72px); overflow: hidden; padding: clamp(42px, 6vw, 76px); border: 1px solid #c9e0f7; border-radius: 34px; background: radial-gradient(circle at 12% 12%, #bde5ff8c, transparent 25rem), linear-gradient(135deg, #fff, #eef7ff 57%, #f7faff); box-shadow: 0 34px 70px -54px #3c96ef75; }
