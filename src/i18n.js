@@ -5,9 +5,9 @@ const SUPPORTED_LANGUAGES = ["system", "zh-CN", "zh-TW", "en", "ja", "ko"];
 
 export const LANGUAGE_OPTIONS = [
   { value: "system", labelKey: "languageSystem" },
+  { value: "en", labelKey: "languageEn" },
   { value: "zh-CN", labelKey: "languageZhCN" },
   { value: "zh-TW", labelKey: "languageZhTW" },
-  { value: "en", labelKey: "languageEn" },
   { value: "ja", labelKey: "languageJa" },
   { value: "ko", labelKey: "languageKo" },
 ];
