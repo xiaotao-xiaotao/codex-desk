@@ -16,12 +16,12 @@ use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
 
-// 820px 在减少桌面占用的同时，为标题栏、额度卡和趋势图保留必要的横向空间。
-const EXPANDED_WINDOW_WIDTH: f64 = 820.0;
-// 会话卡收紧后同步压缩展开高度，避免分页前留下空白区域。
+// 900px 为右侧词云留出更舒展的排版空间，同时仍保持为紧凑悬浮看板。
+const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
+// 展开会话保持正常阅读密度；内容超出固定高度时由列表自身滚动承接。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
-// 本地历史收起后仍展示账户概览、两张趋势图和同步状态，避免底部内容被窗口边缘裁切。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 550.0;
+// 本地历史收起后刚好容纳完整洞察区与刷新状态，避免底部留下大块无效空白。
+const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 600.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。

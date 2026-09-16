@@ -1,9 +1,11 @@
 use crate::app_server::AppServerState;
 use crate::local_usage::{read_thread_token_usage, ThreadTokenUsage};
+use jieba_rs::Jieba;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
@@ -19,6 +21,9 @@ const TRANSFER_VERSION: u32 = 1;
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
+// 词云只保留最具代表性的少量主题，避免紧凑看板因单词过多失去阅读重点。
+const MAX_WORD_CLOUD_ITEMS: usize = 48;
+const MIN_WORD_CLOUD_COUNT: usize = 2;
 // 搜索输入会连续触发多次；短暂缓存完整摘要可避免每次都重新遍历所有会话分页。
 const THREAD_LIST_CACHE_TTL: Duration = Duration::from_secs(20);
 // 图片随会话详情返回前会转换为 data URL；限制单张图片大小，避免历史会话拖慢弹窗渲染。
@@ -180,6 +185,23 @@ pub struct ThreadTrendPoint {
 pub struct ThreadTrendResponse {
     days: usize,
     points: Vec<ThreadTrendPoint>,
+    word_cloud: ThreadWordCloudResponse,
+}
+
+/// 词云只向 WebView 暴露聚合后的主题与词频，原始用户输入始终留在本机 Codex 数据中。
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadWordCloudResponse {
+    total_messages: usize,
+    total_unique: usize,
+    items: Vec<ThreadWordCloudItem>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadWordCloudItem {
+    name: String,
+    value: usize,
 }
 
 struct CachedThreadTrend {
@@ -192,6 +214,15 @@ struct CachedThreadTrend {
 struct ThreadTrendContribution {
     message_days: Vec<String>,
     turn_insights: Vec<(String, ThreadInsights)>,
+    // 词频按自然日压缩后进入缓存，避免长会话为每条输入都保留一张独立词表。
+    user_word_days: Vec<ThreadWordCloudDay>,
+}
+
+#[derive(Clone)]
+struct ThreadWordCloudDay {
+    day: String,
+    messages: usize,
+    tokens: HashMap<String, usize>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1008,6 +1039,12 @@ async fn build_thread_trends(
     days: usize,
 ) -> Result<ThreadTrendResponse, String> {
     let mut points = recent_day_points(days);
+    let visible_days = points
+        .iter()
+        .map(|point| point.day.clone())
+        .collect::<HashSet<_>>();
+    let mut word_counts = HashMap::<String, usize>::new();
+    let mut total_word_cloud_messages = 0_usize;
     let threads = list_recent_threads(state).await?;
 
     // 最近列表至多 100 条，清理已不在范围内的旧版本，防止缓存随会话更新无限增长。
@@ -1076,9 +1113,41 @@ async fn build_thread_trends(
             point.file_changes += insights.file_changes;
             point.issues += insights.issues;
         }
+        for word_day in contribution.user_word_days {
+            if !visible_days.contains(&word_day.day) {
+                continue;
+            }
+            total_word_cloud_messages += word_day.messages;
+            for (token, count) in word_day.tokens {
+                *word_counts.entry(token).or_default() += count;
+            }
+        }
     }
 
-    Ok(ThreadTrendResponse { days, points })
+    let mut word_items = word_counts
+        .into_iter()
+        .filter(|(_, count)| *count >= MIN_WORD_CLOUD_COUNT)
+        .map(|(name, value)| ThreadWordCloudItem { name, value })
+        .collect::<Vec<_>>();
+    // 相同词频按文字排序，避免 HashMap 遍历顺序造成每次刷新词云无意义跳动。
+    word_items.sort_unstable_by(|left, right| {
+        right
+            .value
+            .cmp(&left.value)
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    let total_unique = word_items.len();
+    word_items.truncate(MAX_WORD_CLOUD_ITEMS);
+
+    Ok(ThreadTrendResponse {
+        days,
+        points,
+        word_cloud: ThreadWordCloudResponse {
+            total_messages: total_word_cloud_messages,
+            total_unique,
+            items: word_items,
+        },
+    })
 }
 
 fn thread_trend_cache_key(summary: &ThreadSummary) -> Option<ThreadTrendCacheKey> {
@@ -1108,6 +1177,7 @@ fn thread_trend_contribution(
         // 消息本身没有独立时间戳，因此以所属回合的时间进行按天归档。
         message_days: recent_message_days(thread, fallback_day),
         turn_insights,
+        user_word_days: user_word_days(thread, fallback_day),
     }
 }
 
@@ -1204,6 +1274,192 @@ fn extract_user_message(item: &Value) -> String {
         .filter(|text| !text.is_empty())
         .collect::<Vec<_>>()
         .join("\n\n")
+}
+
+const WORD_CLOUD_STOPWORDS_ZH: &[&str] = &[
+    "的", "了", "是", "我", "你", "他", "她", "它", "我们", "你们", "他们", "这", "那", "一个",
+    "一下", "以及", "还有", "但是", "因为", "所以", "如果", "然后", "可以", "需要", "怎么", "什么",
+    "请", "帮我", "请问",
+];
+const WORD_CLOUD_STOPWORDS_EN: &[&str] = &[
+    "the", "a", "an", "and", "or", "to", "of", "in", "on", "for", "with", "is", "are", "was",
+    "were", "be", "been", "it", "this", "that", "these", "those", "i", "you", "we", "they", "he",
+    "she", "as", "at", "by", "from", "not",
+];
+// 这类词多数来自截图标注、样式示例或工具输出，出现频率高但无法表达用户真正的输入主题。
+const WORD_CLOUD_TECHNICAL_NOISE: &[&str] = &[
+    "px", "image", "img", "style", "margin", "padding", "docs", "doc",
+];
+// 默认词典不会覆盖全部产品术语；这组词只服务于 Desk 的输入主题，体积可忽略不计。
+const WORD_CLOUD_DOMAIN_TERMS: &[&str] = &[
+    "词云",
+    "分词",
+    "关键词",
+    "关键词提取",
+    "安装包",
+    "包体",
+    "本地历史",
+    "会话列表",
+    "活动洞察",
+    "输入主题",
+    "Token洞察",
+];
+// 词典加载与构建开销只在首次统计词云时发生；后续会话复用同一个只读实例。
+static WORD_CLOUD_JIEBA: OnceLock<Jieba> = OnceLock::new();
+
+/// 从 App Server 返回的用户输入提取主题；只纳入用户消息，词典分词器由进程全局复用。
+fn user_word_days(thread: &Value, fallback_day: Option<&str>) -> Vec<ThreadWordCloudDay> {
+    let mut messages = Vec::new();
+    for turn in thread
+        .get("turns")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some(day) = turn_day_key(turn).or_else(|| fallback_day.map(str::to_owned)) else {
+            continue;
+        };
+        for item in turn
+            .get("items")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if item.get("type").and_then(Value::as_str) != Some("userMessage") {
+                continue;
+            }
+            let text = extract_user_message(item);
+            if text.trim().is_empty() {
+                continue;
+            }
+            messages.push((day.clone(), tokenize_user_text(&text)));
+        }
+    }
+    // 与详情和活动趋势一致，只使用每个会话最近的可见消息窗口，避免超长会话占据全部主题。
+    let start = messages.len().saturating_sub(MAX_MESSAGES);
+    let mut word_days = HashMap::<String, ThreadWordCloudDay>::new();
+    for (day, tokens) in messages.into_iter().skip(start) {
+        let bucket = word_days
+            .entry(day.clone())
+            .or_insert_with(|| ThreadWordCloudDay {
+                day,
+                messages: 0,
+                tokens: HashMap::new(),
+            });
+        bucket.messages += 1;
+        for (token, count) in tokens {
+            *bucket.tokens.entry(token).or_default() += count;
+        }
+    }
+    word_days.into_values().collect()
+}
+
+fn tokenize_user_text(text: &str) -> HashMap<String, usize> {
+    let mut tokens = HashMap::new();
+    let cleaned = strip_code_segments(text);
+
+    // URL 中的域名和路径通常不是用户主题，整段跳过也避免把 https 等噪声传入分词器。
+    let readable_text = cleaned
+        .split_whitespace()
+        .filter(|segment| !segment.contains("://") && !segment.starts_with("www."))
+        .collect::<Vec<_>>()
+        .join(" ");
+    add_english_tokens(&readable_text, &mut tokens);
+
+    // 使用词典切分中文词，替换原先会产生“内空”“空间”等重叠碎片的 2/3-gram。
+    for piece in word_cloud_jieba().cut(&readable_text, false) {
+        let word = piece.word.trim();
+        if word.chars().count() < 2 || !word.chars().all(is_chinese_character) {
+            continue;
+        }
+        add_chinese_word(&mut tokens, word.to_owned());
+    }
+    tokens
+}
+
+fn word_cloud_jieba() -> &'static Jieba {
+    WORD_CLOUD_JIEBA.get_or_init(|| {
+        let mut jieba = Jieba::new();
+        for term in WORD_CLOUD_DOMAIN_TERMS {
+            // 较高词频让产品术语优先作为完整词输出，避免退化成“词 / 云”一类单字。
+            jieba.add_word(term, Some(100_000), None);
+        }
+        jieba
+    })
+}
+
+/// 去除 Markdown 代码围栏与行内代码，保留普通文本；这是为了不让依赖名和示例命令主导主题。
+fn strip_code_segments(text: &str) -> String {
+    let mut output = String::with_capacity(text.len());
+    let mut characters = text.chars().peekable();
+    let mut in_fenced_code = false;
+    let mut in_inline_code = false;
+
+    while let Some(character) = characters.next() {
+        if character == '`' {
+            let is_fence = characters.peek() == Some(&'`');
+            if is_fence {
+                characters.next();
+                if characters.peek() == Some(&'`') {
+                    characters.next();
+                    in_fenced_code = !in_fenced_code;
+                    output.push(' ');
+                    continue;
+                }
+                output.push(' ');
+                continue;
+            }
+            if !in_fenced_code {
+                in_inline_code = !in_inline_code;
+            }
+            output.push(' ');
+            continue;
+        }
+        if !in_fenced_code && !in_inline_code {
+            output.push(character);
+        }
+    }
+    output
+}
+
+fn add_english_tokens(segment: &str, tokens: &mut HashMap<String, usize>) {
+    let bytes = segment.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if !bytes[index].is_ascii_alphabetic() {
+            index += 1;
+            continue;
+        }
+        let start = index;
+        index += 1;
+        while index < bytes.len()
+            && (bytes[index].is_ascii_alphanumeric() || matches!(bytes[index], b'_' | b'-'))
+        {
+            index += 1;
+        }
+        let token = segment[start..index].to_ascii_lowercase();
+        if !(2..=30).contains(&token.len())
+            || WORD_CLOUD_STOPWORDS_EN.contains(&token.as_str())
+            || WORD_CLOUD_TECHNICAL_NOISE.contains(&token.as_str())
+        {
+            continue;
+        }
+        add_word_count(tokens, token);
+    }
+}
+
+fn is_chinese_character(character: char) -> bool {
+    ('\u{4e00}'..='\u{9fff}').contains(&character)
+}
+
+fn add_chinese_word(tokens: &mut HashMap<String, usize>, token: String) {
+    if !WORD_CLOUD_STOPWORDS_ZH.contains(&token.as_str()) {
+        add_word_count(tokens, token);
+    }
+}
+
+fn add_word_count(tokens: &mut HashMap<String, usize>, token: String) {
+    *tokens.entry(token).or_default() += 1;
 }
 
 /// App Server 的图片输入可能是内嵌 base64、HTTPS 地址或本机路径。
@@ -1914,5 +2170,50 @@ mod tests {
 
         assert_eq!(days.len(), MAX_MESSAGES);
         assert!(days.iter().all(|day| day == "2026-08-21"));
+    }
+
+    #[test]
+    fn word_cloud_tokenizer_keeps_topics_and_ignores_code_and_urls() {
+        let tokens = tokenize_user_text(
+            "请帮我给 Tauri 添加词云。参考 `npm install echarts` 和 https://example.com/desk。",
+        );
+
+        assert_eq!(tokens.get("tauri"), Some(&1));
+        assert_eq!(tokens.get("词云"), Some(&1));
+        assert!(!tokens.contains_key("npm"));
+        assert!(!tokens.contains_key("echarts"));
+        assert!(!tokens.contains_key("example"));
+    }
+
+    #[test]
+    fn word_cloud_tokenizer_uses_dictionary_words_instead_of_character_ngrams() {
+        let tokens = tokenize_user_text("请调整词云布局，图片尺寸为 16px。");
+
+        assert_eq!(tokens.get("词云"), Some(&1));
+        assert_eq!(tokens.get("布局"), Some(&1));
+        assert!(!tokens.contains_key("云布"));
+        assert!(!tokens.contains_key("px"));
+    }
+
+    #[test]
+    fn word_cloud_only_collects_user_messages_with_their_turn_day() {
+        let contribution = thread_trend_contribution(
+            &json!({
+                "turns": [{
+                    "startedAt": "2026-09-16T10:00:00+08:00",
+                    "items": [
+                        { "type": "userMessage", "content": [{ "type": "text", "text": "实现词云布局" }] },
+                        { "type": "agentMessage", "text": "这是回复，不应进入词云。" }
+                    ]
+                }]
+            }),
+            None,
+        );
+
+        assert_eq!(contribution.user_word_days.len(), 1);
+        assert_eq!(contribution.user_word_days[0].day, "2026-09-16");
+        assert_eq!(contribution.user_word_days[0].messages, 1);
+        assert_eq!(contribution.user_word_days[0].tokens.get("词云"), Some(&1));
+        assert!(!contribution.user_word_days[0].tokens.contains_key("回复"));
     }
 }

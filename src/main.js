@@ -19,10 +19,12 @@ import { createThreadListView } from "./views/thread-list-view.js";
 import { createThreadTrendView } from "./views/thread-trend-view.js";
 import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
 import { createUpdateBannerView } from "./views/update-banner-view.js";
+import { createWordCloudView } from "./views/word-cloud-view.js";
 
 // 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
 const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
 const DRAG_THRESHOLD_PX = 4;
+const MODULE_EXPAND_HINT_DURATION_MS = 4_000;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -52,6 +54,11 @@ const sessionsSection = document.querySelector(".sessions-section");
 const sessionsContent = document.querySelector("#sessions-content");
 const sessionsToggle = document.querySelector("#sessions-toggle");
 const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
+const moduleExpandTriggers = [...document.querySelectorAll("[data-module-expand]")];
+const moduleSections = {
+  insights: document.querySelector("#insights-section"),
+  sessions: document.querySelector("#sessions-section"),
+};
 const quotaAlertStatus = document.querySelector("#quota-alert-status");
 const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
 const dashboardError = document.querySelector("#dashboard-error");
@@ -108,9 +115,14 @@ const settingsView = createSettingsDialogView({
 });
 const trendView = createThreadTrendView({
   t,
-  onRangeChange: () => void refreshController?.refreshThreadTrends(),
+  onRangeChange: (days) => {
+    tokenUsageView.setRange(days);
+    wordCloudView.setRange(days);
+    void refreshController?.refreshThreadTrends();
+  },
 });
 const tokenUsageView = createTokenUsageTrendView({ t });
+const wordCloudView = createWordCloudView({ t });
 const threadListView = createThreadListView({
   t,
   formatUpdated,
@@ -124,6 +136,10 @@ let expanded = true;
 let sessionsExpanded = false;
 let windowMaximized = false;
 let sessionsExpandedBeforeMaximize = null;
+let expandedModule = null;
+let sessionsExpandedBeforeModule = null;
+let moduleExpandFocusOrigin = null;
+let moduleExpandHintTimer = null;
 let searchTimer = null;
 let searchRequestVersion = 0;
 let currentThreadPage = 1;
@@ -181,6 +197,7 @@ refreshController = createRefreshController({
   quotaAlerts,
   trendView,
   tokenUsageView,
+  wordCloudView,
   getExpanded: () => expanded,
   getSessionsExpanded: () => sessionsExpanded,
   refreshThreadList: (forceRefresh) => searchThreads(
@@ -188,7 +205,7 @@ refreshController = createRefreshController({
     currentThreadPage,
     forceRefresh,
   ),
-  getTrendDays: () => Number(document.querySelector("#trend-range").value),
+  getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
   onRefreshingChange: (isRefreshing) => setRefreshIconButtonLoading(refreshButton, isRefreshing),
   onAvailabilityChange: (available) => {
@@ -229,6 +246,85 @@ function renderSessionsVisibility() {
   const labelKey = sessionsExpanded ? "collapseLocalHistory" : "expandLocalHistory";
   sessionsToggle.title = sessionsToggle.ariaLabel = t(labelKey);
   sessionsToggleLabel.textContent = t(labelKey);
+}
+
+/**
+ * 一级模块在当前面板内覆盖展开，不修改原生窗口尺寸；本地历史进入放大态时
+ * 临时展开列表，以便用户直接搜索和浏览更多会话，退出后恢复此前的折叠状态。
+ */
+function setModuleExpanded(nextModule, focusOrigin = null) {
+  const normalizedModule = Object.prototype.hasOwnProperty.call(moduleSections, nextModule)
+    ? nextModule
+    : null;
+  const previousModule = expandedModule;
+  const next = previousModule === normalizedModule ? null : normalizedModule;
+
+  if (previousModule === "sessions" && next !== "sessions" && sessionsExpandedBeforeModule === false) {
+    void setSessionsExpanded(false, { resizeWindow: false });
+  }
+  if (previousModule === "sessions" && next !== "sessions") {
+    sessionsExpandedBeforeModule = null;
+  }
+
+  if (next === "sessions" && previousModule !== "sessions") {
+    sessionsExpandedBeforeModule = sessionsExpanded;
+    if (!sessionsExpanded) void setSessionsExpanded(true, { resizeWindow: false });
+  }
+
+  expandedModule = next;
+  moduleExpandFocusOrigin = next ? focusOrigin : moduleExpandFocusOrigin;
+  panel.classList.toggle("is-module-expanded", Boolean(next));
+  Object.entries(moduleSections).forEach(([name, section]) => {
+    section.classList.toggle("is-module-expanded", name === next);
+  });
+  updateModuleExpandTriggers();
+
+  // 覆盖层完成 Grid/Flex 布局后，使用实际尺寸重绘两张 SVG 与词云。
+  window.requestAnimationFrame(() => {
+    trendView.render();
+    tokenUsageView.render();
+    wordCloudView.render();
+  });
+
+  if (!next && moduleExpandFocusOrigin && expanded) {
+    moduleExpandFocusOrigin.focus();
+    moduleExpandFocusOrigin = null;
+  }
+}
+
+function updateModuleExpandTriggers() {
+  moduleExpandTriggers.forEach((trigger) => {
+    const isExpanded = trigger.dataset.moduleExpand === expandedModule;
+    trigger.classList.toggle("is-module-expanded", isExpanded);
+    trigger.ariaLabel = t(isExpanded ? "moduleRestoreLabel" : "moduleExpandLabel");
+    trigger.querySelector(".module-expand-hint-text").textContent = t(isExpanded ? "moduleRestore" : "moduleExpand");
+  });
+}
+
+function showModuleExpandHints() {
+  if (moduleExpandHintTimer !== null) window.clearTimeout(moduleExpandHintTimer);
+  moduleExpandTriggers.forEach((trigger) => trigger.classList.add("is-module-expand-hint-visible"));
+  moduleExpandHintTimer = window.setTimeout(() => {
+    moduleExpandHintTimer = null;
+    moduleExpandTriggers.forEach((trigger) => trigger.classList.remove("is-module-expand-hint-visible"));
+  }, MODULE_EXPAND_HINT_DURATION_MS);
+}
+
+function setupModuleExpansion() {
+  moduleExpandTriggers.forEach((trigger) => {
+    trigger.addEventListener("dblclick", (event) => {
+      // 标题文字仍可双击选中复制；仅标题栏空白区用于切换模块放大。
+      if (event.target !== trigger) return;
+      event.preventDefault();
+      setModuleExpanded(trigger.dataset.moduleExpand, trigger);
+    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !expandedModule) return;
+    event.preventDefault();
+    setModuleExpanded(null);
+  });
+  updateModuleExpandTriggers();
 }
 
 async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
@@ -424,6 +520,8 @@ function renderTheme() {
   themeButton.title = `${t("theme")}：${t(`theme${mode[0].toUpperCase()}${mode.slice(1)}`)}`;
   themeButton.ariaLabel = themeButton.title;
   themeIcon.innerHTML = THEME_ICONS[mode];
+  // 词云颜色由当前主题计算，主题切换后按已有数据重新排版并更新颜色。
+  wordCloudView.render();
 }
 
 /**
@@ -465,6 +563,7 @@ function applyLanguage() {
     dashboardLoadingOverlay.setMessage(t("readingLocalData"));
   }
   renderQuotaAlertStatus();
+  updateModuleExpandTriggers();
   orb.title = t("orbTitle");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
@@ -480,6 +579,7 @@ function applyLanguage() {
   renderDashboardAvailability();
   trendView.render();
   tokenUsageView.render();
+  wordCloudView.render();
   renderTheme();
   renderCurrentThreadPage();
   updateTransferControls();
@@ -542,13 +642,29 @@ async function openThread(thread) {
 }
 
 async function setExpanded(nextExpanded) {
+  // 收起时必须先在 WebView 隐藏完整面板，再让原生窗口缩为 56px。
+  // 否则 Windows 会先裁切旧面板的一帧，产生“Codex”标题残影。
+  if (!nextExpanded) {
+    setModuleExpanded(null);
+    setLanguageMenuOpen(false);
+    app.classList.add("is-collapsing");
+    app.classList.remove("is-expanded");
+    // 将隐藏状态提交给渲染队列后再发起原生缩窗，避免尺寸变化抢在样式更新之前。
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  }
+
   try {
-    // 由原生层统一控制窗口尺寸和锚点，前端仅在成功后更新自身状态。
+    // 原生层统一控制窗口尺寸和锚点；展开时保持先扩窗、后显示面板的原有顺序。
     await invoke("resize_float_window", {
       expanded: nextExpanded,
       sessionsExpanded,
     });
   } catch (error) {
+    if (!nextExpanded) {
+      // 原生层调整失败时还原面板，不能让用户停留在一个透明的大窗口中。
+      app.classList.remove("is-collapsing", "is-compact");
+      app.classList.add("is-expanded");
+    }
     console.error("调整悬浮窗尺寸失败", error);
     setStatus(t("windowResizeFailed", { error: String(error) }), "error");
     return;
@@ -565,6 +681,8 @@ async function setExpanded(nextExpanded) {
   if (!expanded) setLanguageMenuOpen(false);
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
+  app.classList.remove("is-collapsing");
+  if (expanded) showModuleExpandHints();
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 }
 
@@ -669,6 +787,7 @@ async function bootstrap() {
   applyLanguage();
   void loadAppVersion();
   setupLanguageControls();
+  setupModuleExpansion();
   themeButton.addEventListener("click", () => {
     theme.cycleMode();
     renderTheme();

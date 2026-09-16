@@ -1,5 +1,3 @@
-import { createSelectMenu } from "../utils/select-menu.js";
-
 const SVG_NS = "http://www.w3.org/2000/svg";
 const TOKEN_COLOR = "#1677ff";
 
@@ -35,18 +33,17 @@ function shouldRenderDayLabel(index, totalDays) {
 }
 
 /**
- * 账户 Token 使用量由 app-server 按日聚合；该视图仅负责筛选日期与绘制，
- * 让范围切换无需额外发起网络请求。
+ * 账户 Token 使用量由 app-server 按日聚合；洞察总览统一传入时间范围，
+ * 因此范围切换只需按日筛选并重绘，无需额外发起网络请求。
  */
 export function createTokenUsageTrendView({ t }) {
-  const range = document.querySelector("#token-usage-range");
-  const rangeMenu = createSelectMenu(range);
   const chart = document.querySelector("#token-usage-chart");
   const total = document.querySelector("#token-usage-total");
   const trendSection = chart.closest(".trend-section");
   let response = null;
   let selectedDays = 7;
   let chartExpanded = false;
+  let resizeFrame = null;
 
   function updateChartAccessibility() {
     const actionKey = chartExpanded ? "trendCollapse" : "trendExpand";
@@ -84,19 +81,6 @@ export function createTokenUsageTrendView({ t }) {
     const [threshold, suffix] = unit;
     const compact = (numeric / threshold).toFixed(1).replace(/\.0$/, "");
     return `${compact}${suffix}`;
-  }
-
-  function renderRange() {
-    range.replaceChildren();
-    for (const days of [3, 7, 30]) {
-      const option = document.createElement("option");
-      option.value = String(days);
-      option.selected = days === selectedDays;
-      option.textContent = t(`tokenUsageRange${days}`);
-      range.append(option);
-    }
-    range.setAttribute("aria-label", t("tokenUsageRangeLabel"));
-    rangeMenu.sync();
   }
 
   function pointsForRange() {
@@ -147,7 +131,8 @@ export function createTokenUsageTrendView({ t }) {
     total.textContent = t("tokenUsageTotal", { total: formatCompactTokens(totalTokens) });
     const valueMax = Math.max(...points.map((point) => point.tokens), 1);
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
-    const width = Math.max(760, Math.round(chart.clientWidth) || 760);
+    // Token 趋势位于双列洞察区左栏，不能继续按全窗口宽度创建 viewBox。
+    const width = Math.max(320, Math.round(chart.clientWidth) || 320);
     const height = Math.max(108, Math.round(chart.clientHeight) || 108);
     const left = 40;
     const right = 12;
@@ -205,8 +190,17 @@ export function createTokenUsageTrendView({ t }) {
     chart.append(svg, tooltip.tooltip);
   }
 
+  function scheduleResizeRender() {
+    if (!response) return;
+    if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
+    // 容器变宽后重建 SVG，避免旧 viewBox 被 CSS 放大而导致坐标轴和曲线模糊。
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = null;
+      renderChart();
+    });
+  }
+
   function render() {
-    renderRange();
     updateChartAccessibility();
     if (response) renderChart();
   }
@@ -231,12 +225,12 @@ export function createTokenUsageTrendView({ t }) {
     total.textContent = "";
   }
 
-  range.addEventListener("change", () => {
-    const days = Number(range.value);
+  function setRange(days) {
     if (![3, 7, 30].includes(days) || days === selectedDays) return;
     selectedDays = days;
-    renderChart();
-  });
+    if (response) renderChart();
+  }
+
   chart.addEventListener("dblclick", (event) => {
     event.preventDefault();
     toggleChartExpanded();
@@ -249,10 +243,12 @@ export function createTokenUsageTrendView({ t }) {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && chartExpanded) toggleChartExpanded();
   });
-  window.addEventListener("resize", () => {
-    if (chartExpanded && response) renderChart();
-  });
+  if (typeof ResizeObserver === "function") {
+    const chartResizeObserver = new ResizeObserver(scheduleResizeRender);
+    chartResizeObserver.observe(chart);
+  } else {
+    window.addEventListener("resize", scheduleResizeRender);
+  }
   updateChartAccessibility();
-  renderRange();
-  return { render, setData: (data) => { response = data; renderChart(); }, showLoading, showError };
+  return { render, setData: (data) => { response = data; renderChart(); }, setRange, showLoading, showError };
 }

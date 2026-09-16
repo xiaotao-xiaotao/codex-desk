@@ -10,6 +10,7 @@ export function createRefreshController({
   quotaAlerts,
   trendView,
   tokenUsageView,
+  wordCloudView,
   getExpanded,
   getSessionsExpanded,
   refreshThreadList,
@@ -49,6 +50,7 @@ export function createRefreshController({
   async function refreshThreadTrends(forceRefresh = false) {
     const requestVersion = ++trendRequestVersion;
     trendView.showLoading();
+    wordCloudView.showLoading();
     try {
       const data = await invoke("read_thread_trends", {
         forceRefresh,
@@ -56,10 +58,12 @@ export function createRefreshController({
       });
       if (requestVersion !== trendRequestVersion) return;
       trendView.setData(data);
+      wordCloudView.setData(data.wordCloud, data.days);
     } catch (error) {
       if (requestVersion !== trendRequestVersion) return;
       console.error(error);
       trendView.showError();
+      wordCloudView.showError();
     }
   }
 

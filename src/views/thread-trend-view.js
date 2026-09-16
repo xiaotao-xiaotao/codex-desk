@@ -33,7 +33,7 @@ function shouldRenderDayLabel(index, totalDays) {
  */
 export function createThreadTrendView({ t, onRangeChange }) {
   const controls = document.querySelector("#trend-controls");
-  const range = document.querySelector("#trend-range");
+  const range = document.querySelector("#insights-range");
   const rangeMenu = createSelectMenu(range);
   const chart = document.querySelector("#thread-trend-chart");
   const total = document.querySelector("#trend-total");
@@ -42,6 +42,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
   let selectedDays = 7;
   const visibleMetrics = new Set(Object.keys(TREND_SERIES));
   let chartExpanded = false;
+  let resizeFrame = null;
 
   function updateChartAccessibility() {
     const actionKey = chartExpanded ? "trendCollapse" : "trendExpand";
@@ -158,7 +159,8 @@ export function createThreadTrendView({ t, onRangeChange }) {
     );
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
     // 放大时使用容器的真实尺寸，避免固定 viewBox 被拉伸后导致文字和坐标轴失真。
-    const width = Math.max(760, Math.round(chart.clientWidth) || 760);
+    // 双列布局下图表会收窄到左栏，按真实宽度生成 viewBox 才不会把文字缩得过小。
+    const width = Math.max(320, Math.round(chart.clientWidth) || 320);
     const height = Math.max(108, Math.round(chart.clientHeight) || 108);
     const left = 35;
     const right = 12;
@@ -235,6 +237,16 @@ export function createThreadTrendView({ t, onRangeChange }) {
     total.textContent = t("trendTotal", { total: sum, days: response.days ?? points.length });
   }
 
+  function scheduleResizeRender() {
+    if (!response) return;
+    if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
+    // 等 Grid 和原生窗口的尺寸变更完成后，再用实际容器宽度创建 SVG viewBox，避免放大后被拉伸发虚。
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = null;
+      renderChart();
+    });
+  }
+
   function render() {
     renderRange();
     renderControls();
@@ -287,9 +299,12 @@ export function createThreadTrendView({ t, onRangeChange }) {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && chartExpanded) toggleChartExpanded();
   });
-  window.addEventListener("resize", () => {
-    if (chartExpanded && response) renderChart();
-  });
+  if (typeof ResizeObserver === "function") {
+    const chartResizeObserver = new ResizeObserver(scheduleResizeRender);
+    chartResizeObserver.observe(chart);
+  } else {
+    window.addEventListener("resize", scheduleResizeRender);
+  }
   range.addEventListener("change", () => {
     const days = Number(range.value);
     if (![3, 7, 30].includes(days) || days === selectedDays) return;

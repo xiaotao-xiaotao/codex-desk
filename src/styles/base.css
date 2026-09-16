@@ -4,10 +4,12 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
 button, input { font: inherit; }
 .float-app { position: relative; width: 100%; height: 100%; }
 
-.panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 10px; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 3px 8px 6px; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
 .is-expanded .panel { opacity: 1; pointer-events: auto; transform: scale(1); }
 .is-expanded .quota-orb { opacity: 0; pointer-events: none; transform: scale(.78); }
-.panel-header { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; margin: 0 0 6px; padding: 6px 10px; border: 1px solid #e7e9ee; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); user-select: text; }
+/* 收窗前两层都立即隐藏，避免原生窗口先缩小时把旧面板裁成一块短暂残影。 */
+.is-collapsing .panel, .is-collapsing .quota-orb { visibility: hidden; transition: none; }
+.panel-header { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; margin: 0 0 2px; padding: 2px 8px; border: 1px solid #e7e9ee; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); user-select: text; }
 /* 仅中间空白拖动区移动窗口，标题和其余文字始终可以正常框选、复制。 */
 .window-drag-region { min-width: 16px; align-self: stretch; flex: 1 1 auto; cursor: grab; user-select: none; }
 .window-drag-region:active { cursor: grabbing; }
@@ -35,7 +37,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .icon-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .icon-button:hover { border-color: #b7d4ff; color: #1677ff; background: #f5f9ff; }
 
-.dashboard-section { flex: 0 0 auto; padding: 9px 10px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
+.dashboard-section { flex: 0 0 auto; padding: 7px 8px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
 .dashboard-error { display: flex; flex: 1 1 auto; min-height: 0; align-items: center; justify-content: center; flex-direction: column; padding: 28px; text-align: center; }
 .dashboard-error[hidden] { display: none; }
 .dashboard-error-icon { width: 46px; height: 46px; margin-bottom: 12px; fill: none; stroke: #cf1322; stroke-width: 1.8; stroke-linecap: round; }
@@ -55,7 +57,32 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .section-title-row .section-kicker::after { margin-left: 5px; color: #d4dce5; content: "｜"; }
 .section-title-row h2 { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
 
-.status { flex: 0 0 auto; min-height: 13px; margin-top: 4px; color: #637286; font-size: .64rem; }
+/* 一级模块仅由标题栏空白区响应双击，标题文字与右侧控件始终可正常选中或操作。 */
+.module-expand-trigger { position: relative; min-width: 0; cursor: zoom-in; outline: 0; user-select: none; }
+.module-expand-trigger > .section-title-row { position: relative; cursor: text; user-select: text; }
+.module-expand-hint { position: absolute; z-index: 4; top: 50%; left: calc(100% + 8px); display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border: 1px solid #b9d8f7; border-radius: 6px; color: #3979c9; background: rgba(255, 255, 255, .98); box-shadow: 0 3px 10px rgba(22, 104, 198, .09); font-size: .62rem; font-weight: 700; line-height: 1.2; pointer-events: none; white-space: nowrap; opacity: 0; visibility: hidden; transform: translate(-5px, -50%); transition: opacity .16s ease, visibility .16s ease, transform .16s ease; }
+.module-expand-hint-icon { font-size: .72rem; line-height: 1; }
+.module-expand-trigger:hover .module-expand-hint,
+.module-expand-trigger.is-module-expand-hint-visible .module-expand-hint { opacity: 1; visibility: visible; transform: translate(0, -50%); }
+.module-expand-trigger.is-module-expanded { cursor: zoom-out; }
+.module-expand-trigger.is-module-expanded .module-expand-hint { border-color: #91caff; color: #1668c6; background: #e6f4ff; }
+
+/* 放大态保持在当前窗口内，顶部程序栏仍可操作；未放大的模块只隐藏，不改变其原布局状态。 */
+.panel.is-module-expanded > .dashboard-section:not(.is-module-expanded),
+.panel.is-module-expanded > .status { opacity: 0; pointer-events: none; user-select: none; }
+.panel > .dashboard-section.is-module-expanded { position: absolute; z-index: 30; inset: 42px 8px 6px; min-height: 0; margin: 0; padding: 12px; overflow: hidden; border-color: #d9e3ee; box-shadow: 0 16px 38px rgba(15, 23, 42, .14); isolation: isolate; }
+.panel > .insights-overview.is-module-expanded { display: flex; flex-direction: column; gap: 8px; }
+.insights-overview.is-module-expanded .insights-overview-heading { flex: 0 0 auto; margin-bottom: 0; }
+.insights-overview.is-module-expanded .insights-layout { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.insights-overview.is-module-expanded .word-cloud,
+.insights-overview.is-module-expanded .word-cloud-section { min-height: 0; }
+.sessions-section.is-module-expanded { display: flex; flex-direction: column; }
+.sessions-section.is-module-expanded .section-heading { flex: 0 0 auto; margin-bottom: 10px; padding-bottom: 8px; }
+.sessions-section.is-module-expanded .sessions-content { min-height: 0; }
+.sessions-section.is-module-expanded .section-collapse-button { display: none; }
+.sessions-section.is-module-expanded .thread-list { grid-template-rows: repeat(5, minmax(60px, 1fr)); }
+
+.status { flex: 0 0 auto; min-height: 13px; margin-top: 2px; color: #637286; font-size: .64rem; }
 .status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: .66rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .status[data-kind="error"] { color: #cf1322; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }

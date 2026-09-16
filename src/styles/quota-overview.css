@@ -6,9 +6,10 @@
 .orb-value { top: 15px; color: #1677ff; font-size: 14px; font-weight: 750; letter-spacing: -.45px; }
 .orb-label { top: 33px; overflow: hidden; color: #7d8792; font-size: 7px; font-weight: 650; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; }
 
-.quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 5px; padding: 6px 9px; }
+.quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 3px; padding: 2px 8px 4px; }
 /* 概览信息收进卡片上方的紧凑标题行，横向空间优先留给两个额度窗口。 */
-.quota-section .section-heading { align-items: center; margin: 0; }
+/* 三个一级模块统一使用 28px 标题栏，标题相对卡片顶边的距离保持一致。 */
+.quota-section .section-heading { min-height: 26px; align-items: center; margin: 0; }
 .quota-section .account-details { margin: 2px 0; }
 /* 账户资料与用量概览共用一张卡，通过细分隔线保留信息层次。 */
 .account-quota-divider { margin: 1px 0 2px; border-top: 1px solid #edf1f5; }

@@ -132,44 +132,60 @@
           <div id="quota-list" class="quota-list" aria-live="polite"></div>
         </section>
 
-        <section class="dashboard-section trend-section" aria-labelledby="trend-heading">
-          <div class="section-heading trend-heading">
+        <section id="insights-section" class="dashboard-section insights-overview" aria-labelledby="insights-overview-heading">
+          <div class="section-heading insights-overview-heading module-expand-trigger" data-module-expand="insights" aria-controls="insights-section">
             <div class="section-title-row">
-              <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
-              <div class="trend-range-summary">
-                <div class="trend-range-picker select-menu">
-                  <select id="trend-range" class="trend-range" aria-label="趋势范围"></select>
-                </div>
-                <span id="trend-total" class="trend-total"></span>
-              </div>
+              <p class="section-kicker" data-i18n="insightsOverview">数据洞察</p>
+              <h2 id="insights-overview-heading" data-i18n="insightsOverviewTitle">趋势总览</h2>
+              <span class="module-expand-hint" aria-hidden="true"><span class="module-expand-hint-icon">⤢</span><span class="module-expand-hint-text">双击放大</span></span>
             </div>
-            <div class="trend-heading-actions">
-              <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
+            <div class="insights-range-picker select-menu">
+              <select id="insights-range" class="trend-range" aria-label="趋势范围"></select>
             </div>
           </div>
-          <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
-        </section>
 
-        <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
-          <div class="section-heading trend-heading">
-            <div class="section-title-row">
-              <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token 洞察</p>
-              <div class="trend-range-summary">
-                <div class="trend-range-picker select-menu">
-                  <select id="token-usage-range" class="trend-range" aria-label="Token 趋势范围"></select>
+          <div class="insights-layout">
+            <section class="dashboard-section trend-section activity-trend-section" aria-labelledby="trend-heading">
+              <div class="section-heading trend-heading">
+                <div class="section-title-row">
+                  <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
+                  <span id="trend-total" class="trend-total"></span>
                 </div>
-                <span id="token-usage-total" class="trend-total"></span>
+                <div class="trend-heading-actions">
+                  <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
+                </div>
               </div>
-            </div>
+              <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
+            </section>
+
+            <section class="dashboard-section word-cloud-section" aria-labelledby="word-cloud-heading">
+              <div class="section-heading word-cloud-heading">
+                <div class="section-title-row">
+                  <p id="word-cloud-heading" class="section-kicker" data-i18n="wordCloudKicker">关键词词云</p>
+                  <span id="word-cloud-summary" class="word-cloud-summary"></span>
+                </div>
+              </div>
+              <div id="word-cloud" class="word-cloud" aria-live="polite"></div>
+            </section>
+
+            <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
+              <div class="section-heading trend-heading">
+                <div class="section-title-row">
+                  <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token洞察</p>
+                  <span id="token-usage-total" class="trend-total"></span>
+                </div>
+              </div>
+              <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
+            </section>
           </div>
-          <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
         </section>
 
-        <section class="dashboard-section sessions-section" aria-labelledby="threads-heading">
-          <div class="section-heading sessions-heading">
+        <section id="sessions-section" class="dashboard-section sessions-section" aria-labelledby="threads-heading">
+          <div class="section-heading sessions-heading module-expand-trigger" data-module-expand="sessions" aria-controls="sessions-section">
             <div class="section-title-row">
               <p class="section-kicker" data-i18n="localHistory">本地历史</p>
               <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
+              <span class="module-expand-hint" aria-hidden="true"><span class="module-expand-hint-icon">⤢</span><span class="module-expand-hint-text">双击放大</span></span>
             </div>
             <div class="sessions-heading-actions">
               <div class="thread-tools">

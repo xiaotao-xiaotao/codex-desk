@@ -70,6 +70,9 @@
 :root[data-theme="dark"] .trend-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 7px 18px rgba(0, 0, 0, .35); }
 :root[data-theme="dark"] .status-refresh-countdown { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .trend-section.is-chart-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
+:root[data-theme="dark"] .module-expand-hint { border-color: #315f90; color: #8dc5ff; background: rgba(21, 43, 67, .98); box-shadow: 0 3px 10px rgba(0, 0, 0, .24); }
+:root[data-theme="dark"] .module-expand-trigger.is-module-expanded .module-expand-hint { border-color: #4c85b8; color: #c7e2ff; background: #152f4f; }
+:root[data-theme="dark"] .panel > .dashboard-section.is-module-expanded { border-color: #2a3544; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
 :root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(120deg, #17253a, #151b23 68%); box-shadow: inset 3px 0 0 #4096ff; }
 :root[data-theme="dark"] .quota-card h3 { color: #c0cddd; }
 :root[data-theme="dark"] .quota-value strong { color: #69b1ff; }

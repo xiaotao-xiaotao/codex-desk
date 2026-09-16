@@ -57,6 +57,8 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "中断",
     activityStatusUnknown: "未知",
     trendKicker: "活动洞察",
+    insightsOverview: "数据洞察",
+    insightsOverviewTitle: "趋势总览",
     trendTitle: "近 7 天趋势",
     trendRangeLabel: "趋势范围",
     trendRange3: "近3天趋势",
@@ -90,6 +92,8 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "中斷",
     activityStatusUnknown: "未知",
     trendKicker: "活動洞察",
+    insightsOverview: "資料洞察",
+    insightsOverviewTitle: "趨勢總覽",
     trendTitle: "近 7 天趨勢",
     trendRangeLabel: "趨勢範圍",
     trendRange3: "近3天趨勢",
@@ -123,6 +127,8 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "Interrupted",
     activityStatusUnknown: "Unknown",
     trendKicker: "ACTIVITY INSIGHTS",
+    insightsOverview: "Data insights",
+    insightsOverviewTitle: "Trend overview",
     trendTitle: "Last 7 days",
     trendRangeLabel: "Trend range",
     trendRange3: "Last 3 days",
@@ -156,6 +162,8 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "中断",
     activityStatusUnknown: "不明",
     trendKicker: "アクティビティ分析",
+    insightsOverview: "データインサイト",
+    insightsOverviewTitle: "トレンド概要",
     trendTitle: "過去 7 日間の推移",
     trendRangeLabel: "期間",
     trendRange3: "過去3日間",
@@ -189,6 +197,8 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "중단됨",
     activityStatusUnknown: "알 수 없음",
     trendKicker: "활동 인사이트",
+    insightsOverview: "데이터 인사이트",
+    insightsOverviewTitle: "추세 개요",
     trendTitle: "최근 7일 추이",
     trendRangeLabel: "추이 기간",
     trendRange3: "최근 3일",
@@ -226,11 +236,20 @@ const IMAGE_PREVIEW_TRANSLATIONS = {
 
 // 会话清单文案明确时间字段和消息总数，避免误读为会话数量。
 const TOKEN_USAGE_TRANSLATIONS = {
-  "zh-CN": { tokenUsageKicker: "Token 洞察", tokenUsageTitle: "Token 使用趋势", tokenUsageRangeLabel: "Token 趋势范围", tokenUsageRange3: "近3天趋势", tokenUsageRange7: "近7天趋势", tokenUsageRange30: "近30天趋势", tokenUsageTotal: "合计：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageLoading: "正在读取 Token 使用数据…", tokenUsageUnavailable: "Token 使用数据暂时不可用。", tokenUsageNoData: "近 {days} 天暂无可展示的 Token 数据。" },
+  "zh-CN": { tokenUsageKicker: "Token洞察", tokenUsageTitle: "Token 使用趋势", tokenUsageRangeLabel: "Token 趋势范围", tokenUsageRange3: "近3天趋势", tokenUsageRange7: "近7天趋势", tokenUsageRange30: "近30天趋势", tokenUsageTotal: "合计：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageLoading: "正在读取 Token 使用数据…", tokenUsageUnavailable: "Token 使用数据暂时不可用。", tokenUsageNoData: "近 {days} 天暂无可展示的 Token 数据。" },
   "zh-TW": { tokenUsageKicker: "Token 洞察", tokenUsageTitle: "Token 使用趨勢", tokenUsageRangeLabel: "Token 趨勢範圍", tokenUsageRange3: "近3天趨勢", tokenUsageRange7: "近7天趨勢", tokenUsageRange30: "近30天趨勢", tokenUsageTotal: "合計：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageLoading: "正在讀取 Token 使用資料…", tokenUsageUnavailable: "Token 使用資料暫時無法使用。", tokenUsageNoData: "近 {days} 天沒有可顯示的 Token 資料。" },
   en: { tokenUsageKicker: "TOKEN INSIGHTS", tokenUsageTitle: "Token usage trend", tokenUsageRangeLabel: "Token range", tokenUsageRange3: "Last 3 days", tokenUsageRange7: "Last 7 days", tokenUsageRange30: "Last 30 days", tokenUsageTotal: "Total: {total} tokens", tokenUsageTooltipDate: "Date", tokenUsageTooltipTokens: "Tokens", tokenUsageLoading: "Reading token usage…", tokenUsageUnavailable: "Token usage is unavailable.", tokenUsageNoData: "No token data for the last {days} days." },
   ja: { tokenUsageKicker: "Token インサイト", tokenUsageTitle: "Token 使用量の推移", tokenUsageRangeLabel: "Token の期間", tokenUsageRange3: "過去3日", tokenUsageRange7: "過去7日", tokenUsageRange30: "過去30日", tokenUsageTotal: "合計：{total} Token", tokenUsageTooltipDate: "日付", tokenUsageTooltipTokens: "Token", tokenUsageLoading: "Token 使用量を読み込み中…", tokenUsageUnavailable: "Token 使用量を取得できません。", tokenUsageNoData: "過去 {days} 日の Token データはありません。" },
   ko: { tokenUsageKicker: "Token 인사이트", tokenUsageTitle: "Token 사용량 추세", tokenUsageRangeLabel: "Token 기간", tokenUsageRange3: "최근 3일", tokenUsageRange7: "최근 7일", tokenUsageRange30: "최근 30일", tokenUsageTotal: "합계: {total} Token", tokenUsageTooltipDate: "날짜", tokenUsageTooltipTokens: "Token", tokenUsageLoading: "Token 사용량을 읽는 중…", tokenUsageUnavailable: "Token 사용량을 사용할 수 없습니다.", tokenUsageNoData: "최근 {days}일의 Token 데이터가 없습니다." },
+};
+
+// 三张洞察图共用同一时间范围；词云文案独立维护以保持卡片足够紧凑。
+const WORD_CLOUD_TRANSLATIONS = {
+  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudWordCount: "{word}：出现 {count} 次", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
+  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudWordCount: "{word}：出現 {count} 次", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
+  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudWordCount: "{word}: {count} occurrences", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
+  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudWordCount: "{word}：{count} 回", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
+  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudWordCount: "{word}: {count}회", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
 };
 
 const SESSION_ANALYTICS_TRANSLATIONS = {
@@ -359,6 +378,15 @@ const SESSION_SECTION_TRANSLATIONS = {
   ko: { expandLocalHistory: "로컬 기록 펼치기", collapseLocalHistory: "로컬 기록 접기", openBillingPortal: "청구 열기" },
 };
 
+// 一级模块统一使用标题区双击放大，避免会话、额度和洞察各自使用不同的提示语。
+const MODULE_EXPAND_TRANSLATIONS = {
+  "zh-CN": { moduleExpand: "双击放大", moduleRestore: "双击还原", moduleExpandLabel: "双击标题栏空白区域放大此模块", moduleRestoreLabel: "再次双击标题栏空白区域还原；也可按 Esc 退出" },
+  "zh-TW": { moduleExpand: "按兩下放大", moduleRestore: "按兩下還原", moduleExpandLabel: "按兩下標題列空白處放大此模組", moduleRestoreLabel: "再次按兩下標題列空白處還原；也可按 Esc 離開" },
+  en: { moduleExpand: "Double-click to expand", moduleRestore: "Double-click to restore", moduleExpandLabel: "Double-click the empty title-bar area to expand this section", moduleRestoreLabel: "Double-click the empty title-bar area to restore; press Esc to exit" },
+  ja: { moduleExpand: "ダブルクリックで拡大", moduleRestore: "ダブルクリックで元に戻す", moduleExpandLabel: "タイトルバーの空白部分をダブルクリックしてこのセクションを拡大します", moduleRestoreLabel: "タイトルバーの空白部分をもう一度ダブルクリックして元に戻します。Esc で終了できます" },
+  ko: { moduleExpand: "더블 클릭하여 확대", moduleRestore: "더블 클릭하여 복원", moduleExpandLabel: "제목 표시줄의 빈 영역을 더블 클릭하여 이 섹션을 확대합니다", moduleRestoreLabel: "제목 표시줄의 빈 영역을 다시 더블 클릭하여 복원합니다. Esc를 눌러 종료할 수 있습니다" },
+};
+
 const SETTINGS_TRANSLATIONS = {
   "zh-CN": { settingsTitle: "设置", settingsKicker: "本机偏好", openSettings: "打开设置", closeSettings: "关闭设置", settingsIntro: "配置 Codex CLI 和数据刷新方式，所有设置仅保存在本机。", settingsCliPath: "Codex CLI 路径", settingsCliPathHint: "留空时使用系统 PATH 中的 codex；支持可执行文件及 .cmd/.bat 启动脚本。", settingsCliPathPlaceholder: "使用系统 PATH", settingsBrowse: "浏览", settingsBrowseFailed: "无法选择 CLI 文件：{error}", settingsUsePath: "使用系统 PATH", settingsRefreshInterval: "自动刷新间隔", settingsRefreshIntervalHint: "影响额度、趋势和已展开的会话列表。", settingsRefresh30Seconds: "30 秒", settingsRefresh60Seconds: "1 分钟", settingsRefresh2Minutes: "2 分钟", settingsRefresh5Minutes: "5 分钟", settingsCancel: "取消", settingsSave: "保存并验证", settingsSaving: "正在验证 Codex CLI…", settingsSaved: "设置已保存，CLI {version}", settingsSaveFailed: "保存失败：{error}" },
   "zh-TW": { settingsTitle: "設定", settingsKicker: "本機偏好", openSettings: "開啟設定", closeSettings: "關閉設定", settingsIntro: "設定 Codex CLI 與資料重新整理方式，所有設定只保存在本機。", settingsCliPath: "Codex CLI 路徑", settingsCliPathHint: "留空時使用系統 PATH 中的 codex；支援執行檔及 .cmd/.bat 啟動指令碼。", settingsCliPathPlaceholder: "使用系統 PATH", settingsBrowse: "瀏覽", settingsBrowseFailed: "無法選擇 CLI 檔案：{error}", settingsUsePath: "使用系統 PATH", settingsRefreshInterval: "自動重新整理間隔", settingsRefreshIntervalHint: "影響額度、趨勢與已展開的工作階段清單。", settingsRefresh30Seconds: "30 秒", settingsRefresh60Seconds: "1 分鐘", settingsRefresh2Minutes: "2 分鐘", settingsRefresh5Minutes: "5 分鐘", settingsCancel: "取消", settingsSave: "儲存並驗證", settingsSaving: "正在驗證 Codex CLI…", settingsSaved: "設定已儲存，CLI {version}", settingsSaveFailed: "儲存失敗：{error}" },
@@ -445,14 +473,16 @@ export function createI18n() {
       ?? UPDATE_TRANSLATIONS[language]?.[key]
       ?? SETTINGS_TRANSLATIONS[language]?.[key]
       ?? SESSION_SECTION_TRANSLATIONS[language]?.[key]
+      ?? MODULE_EXPAND_TRANSLATIONS[language]?.[key]
       ?? HOME_SUMMARY_TRANSLATIONS[language]?.[key]
       ?? DIALOG_SEARCH_TRANSLATIONS[language]?.[key]
       ?? ACCOUNT_TRANSLATIONS[language]?.[key]
       ?? PRODUCT_TRANSLATIONS[language]?.[key]
       ?? TRANSFER_TRANSLATIONS[language]?.[key]
-      ?? SESSION_ANALYTICS_TRANSLATIONS[language]?.[key]
-      ?? TOKEN_USAGE_TRANSLATIONS[language]?.[key]
-      ?? ANALYTICS_TRANSLATIONS[language]?.[key]
+       ?? SESSION_ANALYTICS_TRANSLATIONS[language]?.[key]
+       ?? TOKEN_USAGE_TRANSLATIONS[language]?.[key]
+       ?? WORD_CLOUD_TRANSLATIONS[language]?.[key]
+       ?? ANALYTICS_TRANSLATIONS[language]?.[key]
       ?? FILE_DIFF_TRANSLATIONS[language]?.[key]
       ?? IMAGE_PREVIEW_TRANSLATIONS[language]?.[key]
       ?? TRANSLATIONS[language][key]
@@ -460,14 +490,16 @@ export function createI18n() {
       ?? UPDATE_TRANSLATIONS["zh-CN"]?.[key]
       ?? SETTINGS_TRANSLATIONS["zh-CN"]?.[key]
       ?? SESSION_SECTION_TRANSLATIONS["zh-CN"]?.[key]
+      ?? MODULE_EXPAND_TRANSLATIONS["zh-CN"]?.[key]
       ?? HOME_SUMMARY_TRANSLATIONS["zh-CN"]?.[key]
       ?? DIALOG_SEARCH_TRANSLATIONS["zh-CN"]?.[key]
       ?? ACCOUNT_TRANSLATIONS["zh-CN"]?.[key]
       ?? PRODUCT_TRANSLATIONS["zh-CN"]?.[key]
       ?? TRANSFER_TRANSLATIONS["zh-CN"]?.[key]
-      ?? SESSION_ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]
-      ?? TOKEN_USAGE_TRANSLATIONS["zh-CN"]?.[key]
-      ?? ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]
+       ?? SESSION_ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]
+       ?? TOKEN_USAGE_TRANSLATIONS["zh-CN"]?.[key]
+       ?? WORD_CLOUD_TRANSLATIONS["zh-CN"]?.[key]
+       ?? ANALYTICS_TRANSLATIONS["zh-CN"]?.[key]
       ?? FILE_DIFF_TRANSLATIONS["zh-CN"]?.[key]
       ?? IMAGE_PREVIEW_TRANSLATIONS["zh-CN"]?.[key]
       ?? TRANSLATIONS["zh-CN"][key]
