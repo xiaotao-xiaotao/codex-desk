@@ -29,7 +29,7 @@ button { font: inherit; }
 .skip:focus { top: 10px; }
 
 /* 顶部保持克制，让首屏 Logo 与产品界面成为唯一主角。 */
-.header { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 88px; }
+.header { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 88px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: #173157; font-size: 20px; font-weight: 700; letter-spacing: -.6px; }
 .brand-icon { display: inline-flex; align-items: center; justify-content: center; width: 33px; height: 33px; overflow: hidden; border: 1px solid #b8f6ff8a; border-radius: 11px; background: linear-gradient(145deg, #75dcf5, #386ce4 60%, #4e3db7); box-shadow: 0 0 24px #49c5ff3d, inset 1px 1px #fff8; font: 19px/1 "Cascadia Code", Consolas, monospace; }
 nav { display: flex; align-items: center; gap: 22px; color: #60728a; font-size: 14px; }
