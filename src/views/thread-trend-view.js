@@ -1,3 +1,5 @@
+import { createSelectMenu } from "../utils/select-menu.js";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const TREND_SERIES = {
@@ -32,6 +34,7 @@ function shouldRenderDayLabel(index, totalDays) {
 export function createThreadTrendView({ t, onRangeChange }) {
   const controls = document.querySelector("#trend-controls");
   const range = document.querySelector("#trend-range");
+  const rangeMenu = createSelectMenu(range);
   const chart = document.querySelector("#thread-trend-chart");
   const total = document.querySelector("#trend-total");
   const trendSection = chart.closest(".trend-section");
@@ -96,6 +99,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
       range.append(option);
     }
     range.setAttribute("aria-label", t("trendRangeLabel"));
+    rangeMenu.sync();
   }
 
   function createTooltip() {

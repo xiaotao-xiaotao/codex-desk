@@ -1,0 +1,26 @@
+/* SelectMenu：所有自定义下拉的结构、交互状态与深色主题统一在此维护。 */
+.select-menu { position: relative; display: inline-flex; min-width: 0; }
+.select-menu-native { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.select-menu-trigger { display: inline-flex; width: 100%; min-width: 0; height: 27px; align-items: center; padding: 0 24px 0 9px; border: 1px solid transparent; border-radius: 999px; outline: 0; color: inherit; background: transparent; cursor: pointer; font: inherit; line-height: 1; text-align: left; white-space: nowrap; transition: border-color .16s ease, color .16s ease, background-color .16s ease, box-shadow .16s ease; }
+.select-menu-trigger::after { position: absolute; right: 10px; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; content: ""; pointer-events: none; transform: translateY(-2px) rotate(45deg); transition: transform .16s ease; }
+.select-menu-trigger:hover:not(:disabled), .select-menu-trigger:focus-visible { border-color: #c9dfff; color: #1668c6; background: #f2f7ff; }
+.select-menu-trigger:focus-visible { box-shadow: 0 0 0 3px rgba(22, 119, 255, .13); }
+.select-menu-trigger[aria-expanded="true"] { border-color: #91caff; color: #1668c6; background: #f2f7ff; }
+.select-menu-trigger[aria-expanded="true"]::after { transform: translateY(1px) rotate(225deg); }
+.select-menu-trigger:disabled { cursor: not-allowed; opacity: .58; }
+.select-menu-options { position: absolute; z-index: 12; top: calc(100% + 5px); right: 0; display: grid; min-width: 100%; padding: 4px; overflow-y: auto; border: 1px solid #d9e4f0; border-radius: 12px; background: rgba(255, 255, 255, .98); box-shadow: 0 10px 24px rgba(31, 35, 41, .15); overscroll-behavior: contain; transform-origin: top right; }
+.select-menu-options.is-open-upward { top: auto; bottom: calc(100% + 5px); transform-origin: bottom right; }
+.select-menu-options[hidden] { display: none; }
+.select-menu-option { min-width: max-content; padding: 7px 9px; border: 0; border-radius: 8px; color: #526173; background: transparent; cursor: pointer; font: inherit; font-size: .66rem; font-weight: 620; line-height: 1.2; text-align: left; white-space: nowrap; }
+.select-menu-option:hover:not(:disabled), .select-menu-option:focus-visible { outline: 0; color: #1668c6; background: #edf5ff; }
+.select-menu-option[aria-selected="true"] { color: #1668c6; background: #e6f1ff; font-weight: 720; }
+.select-menu-option:disabled { cursor: not-allowed; opacity: .5; }
+
+:root[data-theme="dark"] .select-menu-trigger:hover:not(:disabled),
+:root[data-theme="dark"] .select-menu-trigger:focus-visible,
+:root[data-theme="dark"] .select-menu-trigger[aria-expanded="true"] { border-color: #367dc6; color: #8dc5ff; background: #152b43; }
+:root[data-theme="dark"] .select-menu-options { border-color: #344456; background: rgba(24, 33, 44, .98); box-shadow: 0 10px 24px rgba(0, 0, 0, .35); }
+:root[data-theme="dark"] .select-menu-option { color: #b7c4d4; }
+:root[data-theme="dark"] .select-menu-option:hover:not(:disabled),
+:root[data-theme="dark"] .select-menu-option:focus-visible { color: #9ecbff; background: #1d3855; }
+:root[data-theme="dark"] .select-menu-option[aria-selected="true"] { color: #9ecbff; background: #173553; }

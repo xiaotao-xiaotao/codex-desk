@@ -137,9 +137,8 @@
             <div class="section-title-row">
               <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
               <div class="trend-range-summary">
-                <div class="trend-range-picker">
+                <div class="trend-range-picker select-menu">
                   <select id="trend-range" class="trend-range" aria-label="趋势范围"></select>
-                  <svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
                 </div>
                 <span id="trend-total" class="trend-total"></span>
               </div>
@@ -156,9 +155,8 @@
             <div class="section-title-row">
               <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token 洞察</p>
               <div class="trend-range-summary">
-                <div class="trend-range-picker">
+                <div class="trend-range-picker select-menu">
                   <select id="token-usage-range" class="trend-range" aria-label="Token 趋势范围"></select>
-                  <svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
                 </div>
                 <span id="token-usage-total" class="trend-total"></span>
               </div>
@@ -303,12 +301,14 @@
         <section class="settings-group">
           <label id="settings-refresh-label" for="settings-refresh-interval">自动刷新间隔</label>
           <p id="settings-refresh-hint" class="settings-hint">影响额度、趋势和已展开的会话列表。</p>
-          <select id="settings-refresh-interval">
-            <option value="30">30 秒</option>
-            <option value="60">1 分钟</option>
-            <option value="120">2 分钟</option>
-            <option value="300">5 分钟</option>
-          </select>
+          <div class="settings-select-menu select-menu" data-select-menu-position="down">
+            <select id="settings-refresh-interval">
+              <option value="30">30 秒</option>
+              <option value="60">1 分钟</option>
+              <option value="120">2 分钟</option>
+              <option value="300">5 分钟</option>
+            </select>
+          </div>
         </section>
         <p id="settings-status" class="settings-status" aria-live="polite" hidden></p>
         <footer class="settings-actions">

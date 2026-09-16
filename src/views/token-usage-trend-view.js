@@ -1,3 +1,5 @@
+import { createSelectMenu } from "../utils/select-menu.js";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 const TOKEN_COLOR = "#1677ff";
 
@@ -38,6 +40,7 @@ function shouldRenderDayLabel(index, totalDays) {
  */
 export function createTokenUsageTrendView({ t }) {
   const range = document.querySelector("#token-usage-range");
+  const rangeMenu = createSelectMenu(range);
   const chart = document.querySelector("#token-usage-chart");
   const total = document.querySelector("#token-usage-total");
   const trendSection = chart.closest(".trend-section");
@@ -93,6 +96,7 @@ export function createTokenUsageTrendView({ t }) {
       range.append(option);
     }
     range.setAttribute("aria-label", t("tokenUsageRangeLabel"));
+    rangeMenu.sync();
   }
 
   function pointsForRange() {
