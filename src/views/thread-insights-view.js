@@ -267,7 +267,8 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
     const icon = document.createElement("span");
     icon.className = "activity-summary-icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML = `<svg viewBox="0 0 20 20"><rect x="4.5" y="3.5" width="11" height="13" rx="2"></rect><path d="M7.5 7.5h5M7.5 11h5M10 8.5v5"></path></svg>`;
+    // 折叠态以加号提示可展开；展开后仅收起竖线，平滑过渡为减号。
+    icon.innerHTML = `<svg viewBox="0 0 20 20"><rect x="4.5" y="3.5" width="11" height="13" rx="2"></rect><path d="M7.5 10h5"></path><path class="activity-summary-icon-expand-line" d="M10 7.5v5"></path></svg>`;
     return icon;
   }
 

@@ -196,6 +196,7 @@
 :root[data-theme="dark"] .message-activity-disclosure summary strong { color: #d5dfeb; }
 :root[data-theme="dark"] .message-activity-list { border-top-color: #2c3948; }
 :root[data-theme="dark"] .activity-summary-icon { border-color: #3a4758; color: #c8cdd3; background: #191a1c; }
+:root[data-theme="dark"] .message-activity-disclosure[open] .activity-summary-icon { border-color: #367dc6; color: #8dc5ff; background: #173553; box-shadow: 0 3px 8px rgba(22, 119, 255, .2); }
 :root[data-theme="dark"] .activity-file-item { border-bottom-color: #2c3948; }
 :root[data-theme="dark"] .activity-file-row { color: #d5dfeb; }
 :root[data-theme="dark"] .activity-file-row:hover,

@@ -105,7 +105,7 @@
 .copy-icon-button.is-failed { color: #cf1322; background: transparent; }
 .message-user { justify-self: end; border-color: #cfe3ff; background: #eff6ff; text-align: right; }
 .message-assistant { justify-self: start; text-align: left; }
-.message-activity-disclosure { width: 100%; overflow: visible; border: 1px solid #e2e7ed; border-radius: 11px; background: #fff; box-shadow: 0 1px 2px rgba(31, 41, 55, .04); }
+.message-activity-disclosure { width: 100%; overflow: visible; border: 1px solid #e2e7ed; border-radius: 11px; background: #fff; box-shadow: 0 1px 2px rgba(31, 41, 55, .04); interpolate-size: allow-keywords; }
 .message-activity-disclosure summary { display: grid; min-height: 52px; grid-template-columns: 34px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; padding: 7px 10px; color: #526173; cursor: pointer; list-style: none; user-select: none; }
 .message-activity-disclosure summary::-webkit-details-marker { display: none; }
 .message-activity-disclosure summary:hover { background: #f8fafc; }
@@ -114,8 +114,19 @@
 .activity-summary-stats { display: flex; align-items: center; gap: 5px; font-family: "Cascadia Code", Consolas, monospace; font-size: .62rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .activity-summary-stats .is-added { color: #169c68; }
 .activity-summary-stats .is-removed { color: #cf4b44; }
-.activity-summary-icon { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #dce3eb; border-radius: 8px; color: #647386; background: #f3f5f8; }
+.activity-summary-icon { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #dce3eb; border-radius: 8px; color: #647386; background: #f3f5f8; transition: border-color .2s ease, color .2s ease, background-color .2s ease, box-shadow .2s ease, transform .2s ease; }
 .activity-summary-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.45; }
+.activity-summary-icon-expand-line { transform-box: fill-box; transform-origin: center; transition: opacity .18s ease, transform .18s ease; }
+.message-activity-disclosure[open] .activity-summary-icon { border-color: #a9cef8; color: #1677ff; background: #eaf3ff; box-shadow: 0 3px 8px rgba(22, 119, 255, .12); transform: scale(1.04); }
+.message-activity-disclosure[open] .activity-summary-icon-expand-line { opacity: 0; transform: scaleY(0); }
+/* Chromium/WebView2 支持时，让 details 内容区随状态平滑展开与收缩；旧内核仍保持原生可用行为。 */
+@supports selector(details::details-content) {
+  .message-activity-disclosure::details-content { block-size: 0; overflow: clip; transition: block-size .22s ease, content-visibility .22s allow-discrete; }
+  .message-activity-disclosure[open]::details-content { block-size: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity-summary-icon, .activity-summary-icon-expand-line, .message-activity-disclosure::details-content { transition: none; }
+}
 .message-activity-list { height: auto; max-height: none; overflow: visible; padding: 0; border: 0; border-top: 1px solid #edf1f5; border-radius: 0; scrollbar-gutter: auto; }
 .activity-file-item { position: relative; border-bottom: 1px solid #edf1f5; }
 .activity-file-item:last-child { border-bottom: 0; }
