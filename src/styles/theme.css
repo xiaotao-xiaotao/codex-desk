@@ -1,5 +1,5 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
-:root[data-theme="dark"] { --token-distribution-color: #54c99a; color: #e6edf3; color-scheme: dark; }
+:root[data-theme="dark"] { --token-distribution-color: #69b1ff; --token-distribution-hover-color: #8dc5ff; color: #e6edf3; color-scheme: dark; }
 /* 收起态窗口本身透明，悬浮球不投射阴影，避免桌面上出现误认为底色的灰色区域。 */
 :root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: none; }
 :root[data-theme="dark"] .orb-ring { background: #151b23; }
@@ -75,8 +75,9 @@
 :root[data-theme="dark"] .status-refresh-countdown { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .status[data-kind="warning"] { color: #ffd666; }
 :root[data-theme="dark"] .trend-section.is-chart-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
-:root[data-theme="dark"] .module-expand-hint { border-color: #315f90; color: #8dc5ff; background: rgba(21, 43, 67, .98); box-shadow: 0 3px 10px rgba(0, 0, 0, .24); }
-:root[data-theme="dark"] .module-expand-trigger.is-module-expanded .module-expand-hint { border-color: #4c85b8; color: #c7e2ff; background: #152f4f; }
+:root[data-theme="dark"] .module-expand-button { color: #7f91a6; }
+:root[data-theme="dark"] .module-expand-button:hover,
+:root[data-theme="dark"] .module-expand-button:focus-visible { border-color: #315f90; color: #9ecbff; background: #152b43; }
 :root[data-theme="dark"] .panel > .dashboard-section.is-module-expanded { border-color: #2a3544; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
 :root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(120deg, #17253a, #151b23 68%); box-shadow: inset 3px 0 0 #4096ff; }
 :root[data-theme="dark"] .quota-card h3 { color: #c0cddd; }

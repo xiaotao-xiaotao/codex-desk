@@ -148,7 +148,6 @@ let sessionsExpandedBeforeMaximize = null;
 let expandedModule = null;
 let sessionsExpandedBeforeModule = null;
 let moduleExpandFocusOrigin = null;
-let moduleExpandHintTimer = null;
 let searchTimer = null;
 let searchRequestVersion = 0;
 let expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
@@ -327,27 +326,26 @@ function updateModuleExpandTriggers() {
   moduleExpandTriggers.forEach((trigger) => {
     const isExpanded = trigger.dataset.moduleExpand === expandedModule;
     trigger.classList.toggle("is-module-expanded", isExpanded);
-    trigger.ariaLabel = t(isExpanded ? "moduleRestoreLabel" : "moduleExpandLabel");
-    trigger.querySelector(".module-expand-hint-text").textContent = t(isExpanded ? "moduleRestore" : "moduleExpand");
+    const expandButton = trigger.querySelector(".module-expand-button");
+    const label = t(isExpanded ? "moduleRestoreLabel" : "moduleExpandLabel");
+    expandButton.ariaLabel = label;
+    expandButton.title = label;
+    expandButton.ariaPressed = String(isExpanded);
   });
-}
-
-function showModuleExpandHints() {
-  if (moduleExpandHintTimer !== null) window.clearTimeout(moduleExpandHintTimer);
-  moduleExpandTriggers.forEach((trigger) => trigger.classList.add("is-module-expand-hint-visible"));
-  moduleExpandHintTimer = window.setTimeout(() => {
-    moduleExpandHintTimer = null;
-    moduleExpandTriggers.forEach((trigger) => trigger.classList.remove("is-module-expand-hint-visible"));
-  }, AUTO_DISMISS_DURATION_MS);
 }
 
 function setupModuleExpansion() {
   moduleExpandTriggers.forEach((trigger) => {
+    const expandButton = trigger.querySelector(".module-expand-button");
+    expandButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setModuleExpanded(trigger.dataset.moduleExpand, expandButton);
+    });
     trigger.addEventListener("dblclick", (event) => {
       // 标题文字仍可双击选中复制；仅标题栏空白区用于切换模块放大。
       if (event.target !== trigger) return;
       event.preventDefault();
-      setModuleExpanded(trigger.dataset.moduleExpand, trigger);
+      setModuleExpanded(trigger.dataset.moduleExpand, expandButton);
     });
   });
   document.addEventListener("keydown", (event) => {
@@ -746,7 +744,6 @@ async function setExpanded(nextExpanded) {
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
   app.classList.remove("is-collapsing");
-  if (expanded) showModuleExpandHints();
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 }
 
