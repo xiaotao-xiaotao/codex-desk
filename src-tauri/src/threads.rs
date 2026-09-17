@@ -21,8 +21,8 @@ const TRANSFER_VERSION: u32 = 1;
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
-// 词云只保留最具代表性的少量主题，避免紧凑看板因单词过多失去阅读重点。
-const MAX_WORD_CLOUD_ITEMS: usize = 48;
+// 接口保留足够的高频词，前端再按常规/放大视图分别展示，避免放大词云仍受紧凑卡片数量限制。
+const MAX_WORD_CLOUD_ITEMS: usize = 150;
 const MIN_WORD_CLOUD_COUNT: usize = 2;
 // 搜索输入会连续触发多次；短暂缓存完整摘要可避免每次都重新遍历所有会话分页。
 const THREAD_LIST_CACHE_TTL: Duration = Duration::from_secs(20);

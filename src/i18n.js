@@ -245,11 +245,11 @@ const TOKEN_USAGE_TRANSLATIONS = {
 
 // 三张洞察图共用同一时间范围；词云文案独立维护以保持卡片足够紧凑。
 const WORD_CLOUD_TRANSLATIONS = {
-  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudWordCount: "{word}：出现 {count} 次", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
-  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudWordCount: "{word}：出現 {count} 次", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
-  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudWordCount: "{word}: {count} occurrences", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
-  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudWordCount: "{word}：{count} 回", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
-  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudWordCount: "{word}: {count}회", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
+  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudWordCount: "{word}：出现 {count} 次", wordCloudExpand: "双击放大词云", wordCloudCollapse: "双击词云或按 Esc 退出放大视图", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
+  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudWordCount: "{word}：出現 {count} 次", wordCloudExpand: "按兩下放大詞雲", wordCloudCollapse: "按兩下詞雲或按 Esc 離開放大檢視", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
+  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudWordCount: "{word}: {count} occurrences", wordCloudExpand: "Double-click to expand the keyword cloud", wordCloudCollapse: "Double-click the keyword cloud or press Esc to exit the expanded view", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
+  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudWordCount: "{word}：{count} 回", wordCloudExpand: "ダブルクリックでキーワードクラウドを拡大", wordCloudCollapse: "キーワードクラウドをダブルクリックするか Esc キーで拡大表示を終了", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
+  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudWordCount: "{word}: {count}회", wordCloudExpand: "두 번 클릭하여 워드클라우드 확대", wordCloudCollapse: "워드클라우드를 두 번 클릭하거나 Esc를 눌러 확대 보기 종료", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
 };
 
 const SESSION_ANALYTICS_TRANSLATIONS = {

@@ -1,5 +1,23 @@
 // 以水平词为主，穿插不同倾角，形成自然发散的词云而非规则标签矩阵。
 const ROTATIONS = [0, 0, 0, 0, -16, 16, -28, 28, -42, 42, -56, 56];
+const COMPACT_WORD_CLOUD_ITEM_LIMIT = 100;
+const EXPANDED_WORD_CLOUD_ITEM_LIMIT = 150;
+// 以前 60 个高频词决定中心字号，额外词只补充外圈，避免为了展示更多词而压小主体。
+const WORD_CLOUD_CORE_ITEM_COUNT = 60;
+// 词与词之间仅保留极窄安全间隙，视觉上连续聚合，悬停时也不会误触相邻词。
+const WORD_CLEARANCE = 1.5;
+// 适度提高画布占用率；外围小词用于延展到宽卡两侧，不退化成满屏文字墙。
+const WORD_CLOUD_FILL_RATIO = .95;
+const MIN_WORD_FONT_SIZE = 8.5;
+const MAX_WORD_FONT_SCALE = 1.9;
+const MIN_WORD_FONT_SCALE = .72;
+const FONT_REDUCTION_PER_ATTEMPT = 1.25;
+const MAX_FONT_REDUCTION_ATTEMPTS = 5;
+const WORD_GRID_SIZE = 3;
+const WORD_MASK_PADDING = WORD_GRID_SIZE;
+const WORD_FONT_FAMILY = 'Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif';
+const LIGHT_WORD_COLORS = ["#1d4ed8", "#2563eb", "#0f79a8", "#1f70b8", "#4269bf", "#5b52b8"];
+const DARK_WORD_COLORS = ["#7cb9ff", "#8eb8ff", "#6ed0ee", "#91a9ff", "#aa9aff", "#76c5ff"];
 
 function wordHash(word) {
   let hash = 0;
@@ -9,11 +27,15 @@ function wordHash(word) {
   return Math.abs(hash);
 }
 
-function fontSizeFor(value, minimum, maximum, scale = 1) {
-  if (maximum <= minimum) return 17 * scale;
-  // 开平方让最高频词突出，但不会把其余主题压缩得难以辨识。
-  const ratio = Math.sqrt((value - minimum) / (maximum - minimum));
-  return (11 + ratio * 14) * scale;
+function fontSizeFor(value, minimum, maximum, rank, scale = 1) {
+  // 频次决定主字号，环形排名再逐层收缩：最高频词始终是视觉中心，外圈词更轻。
+  const frequencyRatio = maximum <= minimum
+    ? .5
+    : Math.sqrt((value - minimum) / (maximum - minimum));
+  const coreSize = 11 + frequencyRatio * 18;
+  // 外圈词额外收缩，使横向扩散后仍保持“中间大、两边小”的阅读层级。
+  const ringDamping = 1 - rank * .24;
+  return Math.max(MIN_WORD_FONT_SIZE, coreSize * ringDamping * scale);
 }
 
 function estimatedTextWidth(name, fontSize) {
@@ -23,84 +45,210 @@ function estimatedTextWidth(name, fontSize) {
   ), 0);
 }
 
-function measureWord(word) {
+function estimatedWordArea(word) {
   const textWidth = estimatedTextWidth(word.name, word.fontSize);
   const textHeight = word.fontSize * 1.16;
   const radians = (word.rotation * Math.PI) / 180;
+  const width = Math.abs(textWidth * Math.cos(radians)) + Math.abs(textHeight * Math.sin(radians)) + WORD_CLEARANCE;
+  const height = Math.abs(textWidth * Math.sin(radians)) + Math.abs(textHeight * Math.cos(radians)) + WORD_CLEARANCE;
+  return width * height;
+}
+
+function fontScaleForCanvas(items, minimum, maximum, width, height) {
+  let estimatedArea = 0;
+  const coreItems = items.slice(0, WORD_CLOUD_CORE_ITEM_COUNT);
+  for (const [index, item] of coreItems.entries()) {
+    // 排名仍按全部词条计算，使补充到外圈的长尾词自然更小。
+    const rank = items.length <= 1 ? 0 : index / (items.length - 1);
+    const fontSize = fontSizeFor(item.value, minimum, maximum, rank);
+    const rotation = ROTATIONS[wordHash(item.name) % ROTATIONS.length];
+    estimatedArea += estimatedWordArea({ name: item.name, fontSize, rotation });
+  }
+  // 根据实际词数和画布面积放大字号，尽量利用画布，同时保留自然词云所需的呼吸感。
+  return Math.min(
+    MAX_WORD_FONT_SCALE,
+    Math.max(MIN_WORD_FONT_SCALE, Math.sqrt((width * height * WORD_CLOUD_FILL_RATIO) / Math.max(1, estimatedArea))),
+  );
+}
+
+function fontDeclaration(fontSize) {
+  return `700 ${fontSize}px ${WORD_FONT_FAMILY}`;
+}
+
+function createWordMask(word) {
+  const metricsCanvas = document.createElement("canvas");
+  const metricsContext = metricsCanvas.getContext("2d", { willReadFrequently: true });
+  if (!metricsContext) return null;
+
+  metricsContext.font = fontDeclaration(word.fontSize);
+  const textMetrics = metricsContext.measureText(word.name);
+  const textWidth = Math.max(1, Math.ceil(textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight || textMetrics.width));
+  const textHeight = Math.max(1, Math.ceil(textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent || word.fontSize * 1.2));
+  const radians = (word.rotation * Math.PI) / 180;
+  const width = Math.ceil(
+    Math.abs(textWidth * Math.cos(radians)) + Math.abs(textHeight * Math.sin(radians)) + WORD_MASK_PADDING * 2,
+  );
+  const height = Math.ceil(
+    Math.abs(textWidth * Math.sin(radians)) + Math.abs(textHeight * Math.cos(radians)) + WORD_MASK_PADDING * 2,
+  );
+  metricsCanvas.width = width;
+  metricsCanvas.height = height;
+
+  metricsContext.font = fontDeclaration(word.fontSize);
+  metricsContext.textAlign = "center";
+  metricsContext.textBaseline = "middle";
+  metricsContext.fillStyle = "#000";
+  metricsContext.translate(width / 2, height / 2);
+  metricsContext.rotate(radians);
+  metricsContext.fillText(word.name, 0, 0);
+
+  const imageData = metricsContext.getImageData(0, 0, width, height).data;
+  const columns = Math.ceil(width / WORD_GRID_SIZE);
+  const rows = Math.ceil(height / WORD_GRID_SIZE);
+  const cells = [];
+  const cellMap = new Set();
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const maxY = Math.min(height, (row + 1) * WORD_GRID_SIZE);
+      const maxX = Math.min(width, (column + 1) * WORD_GRID_SIZE);
+      let painted = false;
+      for (let y = row * WORD_GRID_SIZE; y < maxY && !painted; y += 1) {
+        for (let x = column * WORD_GRID_SIZE; x < maxX; x += 1) {
+          if (imageData[(y * width + x) * 4 + 3] > 0) {
+            painted = true;
+            break;
+          }
+        }
+      }
+      if (painted) {
+        cells.push([column, row]);
+        cellMap.add(row * columns + column);
+      }
+    }
+  }
+  return { width, height, columns, rows, cells, cellMap };
+}
+
+function createCenterFirstCandidates(columns, rows) {
+  const centerX = (columns - 1) / 2;
+  const centerY = (rows - 1) / 2;
+  const candidates = [];
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const horizontalDistance = (column - centerX) / Math.max(1, centerX);
+      const verticalDistance = (row - centerY) / Math.max(1, centerY);
+      candidates.push({
+        column,
+        row,
+        distance: horizontalDistance ** 2 + verticalDistance ** 2,
+      });
+    }
+  }
+  // 横向椭圆从中心连续生长，保持自然聚合，同时适配卡片宽高比例。
+  candidates.sort((left, right) => left.distance - right.distance || left.row - right.row || left.column - right.column);
+  return candidates;
+}
+
+function tryPlaceMask(mask, occupied, columns, rows, owner, candidate) {
+  const offsetX = candidate.column - Math.floor(mask.columns / 2);
+  const offsetY = candidate.row - Math.floor(mask.rows / 2);
+
+  let fits = true;
+  for (const [cellX, cellY] of mask.cells) {
+    const targetX = offsetX + cellX;
+    const targetY = offsetY + cellY;
+    if (targetX < 0 || targetY < 0 || targetX >= columns || targetY >= rows || occupied[targetY * columns + targetX] !== 0) {
+      fits = false;
+      break;
+    }
+  }
+  if (!fits) return null;
+
+  for (const [cellX, cellY] of mask.cells) {
+    occupied[(offsetY + cellY) * columns + offsetX + cellX] = owner;
+  }
   return {
-    width: Math.abs(textWidth * Math.cos(radians)) + Math.abs(textHeight * Math.sin(radians)) + 4,
-    height: Math.abs(textWidth * Math.sin(radians)) + Math.abs(textHeight * Math.cos(radians)) + 4,
+    x: offsetX * WORD_GRID_SIZE + mask.width / 2,
+    y: offsetY * WORD_GRID_SIZE + mask.height / 2,
   };
 }
 
-function intersects(left, right) {
-  return !(
-    left.x + left.width / 2 <= right.x - right.width / 2
-    || left.x - left.width / 2 >= right.x + right.width / 2
-    || left.y + left.height / 2 <= right.y - right.height / 2
-    || left.y - left.height / 2 >= right.y + right.height / 2
-  );
-}
-
-function staysInsideBounds(box, width, height, padding = 5) {
-  return (
-    box.x - box.width / 2 >= padding
-    && box.x + box.width / 2 <= width - padding
-    && box.y - box.height / 2 >= padding
-    && box.y + box.height / 2 <= height - padding
-  );
-}
-
-function placeWord(word, occupied, width, height, index, total) {
-  // 螺旋半径以短边为基准；长边额外展开，最大化后的宽词云不会只聚成中央圆团。
-  const shortestSide = Math.max(1, Math.min(width, height));
-  const horizontalSpread = width / shortestSide;
-  const verticalSpread = height / shortestSide;
-  // 高频词靠近中心，低频词按排名逐步向边缘分散；大尺寸卡片不再只复用中心区域。
-  const rank = total <= 1 ? 0 : index / (total - 1);
-  const preferredDistance = Math.sqrt(rank) * shortestSide * 0.43;
-  const radialStep = Math.max(0.65, shortestSide / 1_100);
-  // 发生碰撞时逐步缩字后重试；词云中的词保持单行，不能退化成竖排标签。
-  for (let sizeAttempt = 0; sizeAttempt < 4; sizeAttempt += 1) {
-    const metrics = measureWord(word);
-    const phase = (wordHash(word.name) % 360) * (Math.PI / 180) + index * 0.21;
-    for (let step = 0; step < 1_800; step += 1) {
-      const angle = phase + step * 0.31;
-      // 围绕目标半径向内、向外交替探测，既能填满边缘，也能在碰撞后寻找邻近空位。
-      const distance = step === 0
-        ? preferredDistance
-        : Math.max(0, preferredDistance + (step % 2 === 0 ? 1 : -1) * Math.ceil(step / 2) * radialStep);
-      const box = {
-        x: width / 2 + Math.cos(angle) * distance * horizontalSpread,
-        y: height / 2 + Math.sin(angle) * distance * verticalSpread,
-        ...metrics,
-      };
-      if (!staysInsideBounds(box, width, height)) continue;
-      if (occupied.some((placed) => intersects(box, placed))) continue;
-      return box;
-    }
-    word.fontSize -= 1.5;
-    if (word.fontSize < 9) break;
+function placeMask(mask, occupied, columns, rows, owner, candidates) {
+  for (const candidate of candidates) {
+    const position = tryPlaceMask(mask, occupied, columns, rows, owner, candidate);
+    if (position) return position;
   }
   return null;
 }
 
+function placeWord(word, occupied, columns, rows, owner, candidates) {
+  // 使用文字实际像素占用的网格，而非整块外接矩形；这样小词会进入大词笔画周边的空位。
+  for (let sizeAttempt = 0; sizeAttempt < MAX_FONT_REDUCTION_ATTEMPTS; sizeAttempt += 1) {
+    const mask = createWordMask(word);
+    if (mask) {
+      const position = placeMask(mask, occupied, columns, rows, owner, candidates);
+      if (position) return { ...position, mask };
+    }
+    word.fontSize = Math.max(MIN_WORD_FONT_SIZE, word.fontSize - FONT_REDUCTION_PER_ATTEMPT);
+    if (word.fontSize === MIN_WORD_FONT_SIZE) break;
+  }
+  return null;
+}
+
+function wordAtCanvasPoint(words, x, y) {
+  for (let index = words.length - 1; index >= 0; index -= 1) {
+    const word = words[index];
+    const localX = x - word.x + word.mask.width / 2;
+    const localY = y - word.y + word.mask.height / 2;
+    if (localX < 0 || localY < 0 || localX >= word.mask.width || localY >= word.mask.height) continue;
+    const column = Math.floor(localX / WORD_GRID_SIZE);
+    const row = Math.floor(localY / WORD_GRID_SIZE);
+    if (word.mask.cellMap.has(row * word.mask.columns + column)) return word;
+  }
+  return null;
+}
+
+function wordColor(word, isDark) {
+  const palette = isDark ? DARK_WORD_COLORS : LIGHT_WORD_COLORS;
+  return palette[wordHash(word.name) % palette.length];
+}
+
 /**
- * 词云使用普通 HTML 文字和 CSS 定位，而非 Canvas/SVG。
- * Windows WebView 在首次显示无边框窗口时可能会延后 SVG 绘制，普通文字能稳定呈现。
- * 螺旋寻位在整张卡片内散开，并保留碰撞检测和逐词悬停提示。
+ * 词云先将真实文字像素转为小网格再排布，而不是拿整块文本外接矩形碰撞。
+ * 这与专业词云组件的核心做法一致：小词可填入大词笔画周边，避免中心出现空洞。
  */
 export function createWordCloudView({ t }) {
   const cloud = document.querySelector("#word-cloud");
   const summary = document.querySelector("#word-cloud-summary");
+  const cloudSection = cloud.closest(".word-cloud-section");
   const tooltip = document.createElement("div");
   let response = null;
   let selectedDays = 7;
+  let cloudExpanded = false;
   let renderFrame = null;
 
   tooltip.className = "word-cloud-tooltip";
   tooltip.hidden = true;
   cloud.setAttribute("aria-live", "polite");
+
+  function updateCloudAccessibility() {
+    const actionKey = cloudExpanded ? "wordCloudCollapse" : "wordCloudExpand";
+    cloud.tabIndex = 0;
+    cloud.setAttribute("role", "button");
+    cloud.setAttribute("aria-expanded", String(cloudExpanded));
+    cloud.setAttribute("aria-label", `${t("wordCloudKicker")}：${t(actionKey)}`);
+    // 词条自身已有悬停次数提示，不再额外叠加浏览器原生 title。
+    cloud.removeAttribute("title");
+  }
+
+  function toggleCloudExpanded() {
+    cloudExpanded = !cloudExpanded;
+    cloudSection.classList.toggle("is-word-cloud-expanded", cloudExpanded);
+    updateCloudAccessibility();
+    window.requestAnimationFrame(() => {
+      if (response) render();
+    });
+  }
 
   function renderSummary() {
     if (!response) {
@@ -138,7 +286,16 @@ export function createWordCloudView({ t }) {
     renderFrame = null;
     if (!response) return;
 
-    const items = Array.isArray(response.items) ? response.items : [];
+    const availableItems = Array.isArray(response.items) ? response.items : [];
+    // 紧凑卡优先保留可读性；放大后利用完整空间展示更多长尾高频词。
+    const itemLimit = cloudExpanded ? EXPANDED_WORD_CLOUD_ITEM_LIMIT : COMPACT_WORD_CLOUD_ITEM_LIMIT;
+    const items = availableItems
+      .slice(0, itemLimit)
+      .map((item) => ({
+        name: String(item?.name ?? "").trim(),
+        value: Number(item?.value) || 0,
+      }))
+      .filter((item) => item.name && item.value > 0);
     if (items.length === 0) {
       renderMessage("wordCloudNoData");
       return;
@@ -147,34 +304,47 @@ export function createWordCloudView({ t }) {
     // 首帧若父层尚未完成 Grid 布局，使用与右栏比例一致的默认尺寸，而不是中断渲染留下空白。
     const width = Math.max(180, Math.floor(cloud.clientWidth) || 284);
     const height = Math.max(200, Math.floor(cloud.clientHeight) || 280);
-    const values = items.map((item) => Number(item.value) || 0);
+    const values = items.map((item) => item.value);
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
-    // 卡片变大时同步放大文字，但设置上限，避免宽屏下高频词占据整个画布。
-    const fontScale = Math.min(1.65, Math.max(1, Math.sqrt((width * height) / (340 * 260))));
+    // 以当前画布和词量求字号比例，常规卡和放大态都能得到紧凑而不拥挤的密度。
+    const fontScale = fontScaleForCanvas(items, minimum, maximum, width, height);
     const isDark = document.documentElement.dataset.theme === "dark";
-    const occupied = [];
+    const gridColumns = Math.ceil(width / WORD_GRID_SIZE);
+    const gridRows = Math.ceil(height / WORD_GRID_SIZE);
+    const occupied = new Uint16Array(gridColumns * gridRows);
+    const candidates = createCenterFirstCandidates(gridColumns, gridRows);
     const placedWords = [];
 
     for (const [index, item] of items.entries()) {
-      const name = String(item.name ?? "").trim();
-      const value = Number(item.value) || 0;
-      if (!name || value <= 0) continue;
+      const { name, value } = item;
+      const rank = items.length <= 1 ? 0 : index / (items.length - 1);
       const word = {
         name,
         value,
-        fontSize: fontSizeFor(value, minimum, maximum, fontScale),
+        fontSize: fontSizeFor(value, minimum, maximum, rank, fontScale),
         rotation: ROTATIONS[wordHash(name) % ROTATIONS.length],
-        hue: 188 + (wordHash(name) % 138),
       };
-      const position = placeWord(word, occupied, width, height, index, items.length);
+      const position = placeWord(
+        word,
+        occupied,
+        gridColumns,
+        gridRows,
+        placedWords.length + 1,
+        candidates,
+      );
       if (!position) continue;
-      occupied.push(position);
       placedWords.push({ ...word, ...position });
     }
-
-    const stage = document.createElement("div");
+    if (placedWords.length === 0) {
+      renderMessage("wordCloudNoData");
+      return;
+    }
+    const stage = document.createElement("canvas");
     stage.className = "word-cloud-stage";
+    const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
+    stage.width = Math.round(width * pixelRatio);
+    stage.height = Math.round(height * pixelRatio);
     stage.style.width = `${width}px`;
     stage.style.height = `${height}px`;
     stage.setAttribute("role", "img");
@@ -183,29 +353,28 @@ export function createWordCloudView({ t }) {
       `${t("wordCloudKicker")}：${placedWords.map((word) => word.name).join("、") || t("wordCloudNoData", { days: selectedDays })}`,
     );
 
-    for (const word of placedWords) {
-      const label = document.createElement("span");
-      label.className = "word-cloud-word";
-      label.textContent = word.name;
-      label.style.left = `${word.x}px`;
-      label.style.top = `${word.y}px`;
-      label.style.color = `hsl(${word.hue} 68% ${isDark ? 72 : 43}%)`;
-      label.style.fontSize = `${word.fontSize}px`;
-      label.style.transform = `translate(-50%, -50%) rotate(${word.rotation}deg)`;
-      label.addEventListener("mouseenter", (event) => showTooltip(word, event));
-      label.addEventListener("mousemove", (event) => showTooltip(word, event));
-      label.addEventListener("mouseleave", hideTooltip);
-      stage.append(label);
+    const context = stage.getContext("2d");
+    if (context) {
+      context.scale(pixelRatio, pixelRatio);
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      for (const word of placedWords) {
+        context.save();
+        context.font = fontDeclaration(word.fontSize);
+        context.fillStyle = wordColor(word, isDark);
+        context.translate(word.x, word.y);
+        context.rotate((word.rotation * Math.PI) / 180);
+        context.fillText(word.name, 0, 0);
+        context.restore();
+      }
     }
+    stage.addEventListener("mousemove", (event) => {
+      const bounds = stage.getBoundingClientRect();
+      const word = wordAtCanvasPoint(placedWords, event.clientX - bounds.left, event.clientY - bounds.top);
+      if (word) showTooltip(word, event);
+      else hideTooltip();
+    });
     stage.addEventListener("mouseleave", hideTooltip);
-
-    // 算法无法容纳所有词时至少展示一个明确的空态，杜绝无内容白块。
-    if (placedWords.length === 0) {
-      const empty = document.createElement("p");
-      empty.className = "word-cloud-empty";
-      empty.textContent = t("wordCloudNoData", { days: selectedDays });
-      stage.append(empty);
-    }
     cloud.replaceChildren(stage, tooltip);
   }
 
@@ -215,6 +384,7 @@ export function createWordCloudView({ t }) {
   }
 
   function render() {
+    updateCloudAccessibility();
     renderSummary();
     if (response) scheduleDraw();
   }
@@ -253,12 +423,25 @@ export function createWordCloudView({ t }) {
   const scheduleResizeDraw = () => {
     if (response) scheduleDraw();
   };
+  cloud.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    toggleCloudExpanded();
+  });
+  cloud.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    toggleCloudExpanded();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && cloudExpanded) toggleCloudExpanded();
+  });
   if (typeof ResizeObserver === "function") {
     const resizeObserver = new ResizeObserver(scheduleResizeDraw);
     resizeObserver.observe(cloud);
   } else {
     window.addEventListener("resize", scheduleResizeDraw);
   }
+  updateCloudAccessibility();
   showLoading();
   return { render, setRange, setData, showLoading, showError };
 }

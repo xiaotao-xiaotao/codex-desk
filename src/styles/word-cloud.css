@@ -26,10 +26,13 @@
 .word-cloud-section .section-title-row:has(> .word-cloud-summary:not(:empty)) .section-kicker::after { margin-left: 5px; content: "｜"; }
 .word-cloud-heading { min-width: 0; margin-bottom: 2px; }
 .word-cloud-summary { min-width: 0; overflow: hidden; color: #9aa5b2; font-size: .54rem; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
-.word-cloud { position: relative; display: grid; min-height: 212px; place-items: center; overflow: hidden; padding: 2px 0 0; }
-/* 词云铺满可用区域，自由向四周发散；普通文字始终单行，避免字符纵排。 */
-.word-cloud-stage { position: relative; flex: 0 0 auto; overflow: hidden; }
-.word-cloud-word { position: absolute; display: block; max-width: none; font-family: Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif; font-weight: 700; line-height: 1; pointer-events: auto; white-space: nowrap; will-change: transform; }
+.word-cloud { position: relative; display: grid; min-height: 212px; place-items: center; overflow: hidden; padding: 2px 0 0; cursor: zoom-in; }
+.word-cloud:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; border-radius: 5px; }
+/* 词云使用与两张趋势图相同的窗口内覆盖放大态，双击或 Esc 可切换。 */
+.word-cloud-section.is-word-cloud-expanded { position: absolute; z-index: 20; inset: 0; display: flex; min-height: 0; flex-direction: column; margin: 0; padding: 15px 16px 18px; border-radius: 17px; background: #fff; box-shadow: 0 18px 44px rgba(15, 23, 42, .16); }
+.word-cloud-section.is-word-cloud-expanded .word-cloud { flex: 1 1 auto; min-height: 0; margin-top: 9px; cursor: zoom-out; }
+/* Canvas 按文字实际像素紧凑排布，避免 HTML 外接矩形碰撞留下大块空白。 */
+.word-cloud-stage { position: relative; display: block; flex: 0 0 auto; overflow: hidden; }
 .word-cloud-tooltip { position: absolute; z-index: 2; max-width: calc(100% - 12px); padding: 5px 7px; border: 1px solid #d8e1eb; border-radius: 6px; color: #455468; background: rgba(255, 255, 255, .97); box-shadow: 0 6px 16px rgba(31, 35, 41, .14); font-size: .62rem; line-height: 1.35; pointer-events: none; white-space: nowrap; }
 .word-cloud-tooltip[hidden] { display: none; }
 .word-cloud-empty { margin: 0; color: #8a94a0; font-size: .7rem; text-align: center; }
@@ -50,3 +53,4 @@
 :root[data-theme="dark"] .insights-range-picker { color: #c4d0dd; }
 :root[data-theme="dark"] .insights-range-picker .select-menu-trigger { border-color: #344456; background: #18212c; box-shadow: none; }
 :root[data-theme="dark"] .word-cloud-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
+:root[data-theme="dark"] .word-cloud-section.is-word-cloud-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
