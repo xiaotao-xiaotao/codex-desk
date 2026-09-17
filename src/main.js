@@ -163,6 +163,7 @@ let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
 let dashboardUnavailable = false;
+let dashboardRetryStatus = null;
 let currentAppVersion = "";
 
 function setStatus(text, kind = "normal") {
@@ -190,7 +191,14 @@ function renderDashboardAvailability() {
   panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
   dashboardError.hidden = !dashboardUnavailable;
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
-  dashboardErrorDescription.textContent = t("dashboardUnavailableDescription");
+  const details = [t("dashboardUnavailableDescription")];
+  if (dashboardRetryStatus?.error) {
+    details.push(t("dashboardUnavailableReason", { error: dashboardRetryStatus.error }));
+  }
+  if (dashboardRetryStatus) {
+    details.push(t("dashboardUnavailableRetry", dashboardRetryStatus));
+  }
+  dashboardErrorDescription.textContent = details.join("\n");
   dashboardRetry.textContent = t("dashboardRetry");
 }
 
@@ -228,6 +236,10 @@ refreshController = createRefreshController({
   t,
   getAutoRefreshIntervalMs: settingsController.getRefreshIntervalMs,
   onAutoRefreshScheduleChange: scheduleNextAutoRefresh,
+  onRetryStatusChange: (retryStatus) => {
+    dashboardRetryStatus = retryStatus;
+    if (dashboardUnavailable) renderDashboardAvailability();
+  },
 });
 
 function renderQuotaAlertStatus() {

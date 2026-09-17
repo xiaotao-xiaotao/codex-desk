@@ -13,6 +13,8 @@ use tokio::{
 
 /// 大多数 RPC 保持较短超时，避免会话等非核心读取长期占用单路连接。
 const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
+// 关闭标准输入后，给 npm/cmd 包装链留出退出时间；超时才强制结束最外层进程。
+const GRACEFUL_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 // 趋势等后台读取检测到交互请求后，短暂让出调度机会，避免循环让出 CPU。
 const BACKGROUND_REQUEST_YIELD_DELAY: Duration = Duration::from_millis(25);
 
@@ -282,6 +284,12 @@ impl CodexAppServer {
     async fn connect(cli_path: Option<&Path>) -> Result<Self, String> {
         // npm 安装的 Windows CLI 通常是 .cmd，命令构造器会自动经 cmd.exe 解析。
         let mut command = cli_command(cli_path, &["app-server", "--stdio"]);
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            // 独立进程组让 macOS/Linux 的超时兜底可以回收自定义脚本派生的所有后代。
+            command.as_std_mut().process_group(0);
+        }
 
         let mut child = command
             .stdin(Stdio::piped())
@@ -297,20 +305,27 @@ impl CodexAppServer {
             stdin,
             reader: BufReader::new(stdout).lines(),
         };
-        server
+        if let Err(error) = server
             .request(
                 1,
                 "initialize",
                 json!({ "clientInfo": { "name": "codex-desk", "version": env!("CODEX_DESK_VERSION") } }),
                 DEFAULT_REQUEST_TIMEOUT,
             )
-            .await?;
+            .await
+        {
+            server.close().await;
+            return Err(error);
+        }
         // initialized 是通知，不会返回 JSON-RPC 响应。
-        server
+        if let Err(error) = server
             .stdin
             .write_all(b"{\"method\":\"initialized\"}\n")
             .await
-            .map_err(|error| format!("发送初始化通知失败：{error}"))?;
+        {
+            server.close().await;
+            return Err(format!("发送初始化通知失败：{error}"));
+        }
         Ok(server)
     }
 
@@ -330,7 +345,40 @@ impl CodexAppServer {
     }
 
     async fn close(mut self) {
-        let _ = self.child.kill().await;
+        // codex.cmd 会形成 cmd -> node -> codex 的包装链。先关闭协议输入，让整条链路
+        // 从内向外正常退出；只杀 cmd 可能在快速重启时短暂留下旧 app-server。
+        let process_id = self.child.id();
+        let _ = self.stdin.shutdown().await;
+        drop(self.stdin);
+        if timeout(GRACEFUL_SHUTDOWN_TIMEOUT, self.child.wait())
+            .await
+            .is_err()
+        {
+            #[cfg(target_os = "windows")]
+            if let Some(process_id) = process_id {
+                // taskkill /T 只用于正常退出超时的兜底，确保 npm CLI 的所有包装子进程一并回收。
+                let mut command = Command::new("taskkill.exe");
+                command
+                    .args(["/PID", &process_id.to_string(), "/T", "/F"])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .creation_flags(CREATE_NO_WINDOW);
+                let _ = command.status().await;
+            }
+            #[cfg(unix)]
+            if let Some(process_id) = process_id {
+                // 子进程启动时已成为进程组组长；向负 PID 发送信号可同时清理脚本及其后代。
+                let _ = Command::new("/bin/kill")
+                    .arg("-KILL")
+                    .arg(format!("-{process_id}"))
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status()
+                    .await;
+            }
+            let _ = self.child.start_kill();
+            let _ = self.child.wait().await;
+        }
     }
 }
 

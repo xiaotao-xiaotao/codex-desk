@@ -44,7 +44,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .dashboard-error[hidden] { display: none; }
 .dashboard-error-icon { width: 46px; height: 46px; margin-bottom: 12px; fill: none; stroke: #cf1322; stroke-width: 1.8; stroke-linecap: round; }
 .dashboard-error h2 { margin: 0; color: #1f2937; font-size: 1rem; }
-.dashboard-error p { max-width: 420px; margin: 7px 0 16px; color: #637286; font-size: .76rem; line-height: 1.6; }
+.dashboard-error p { max-width: 520px; margin: 7px 0 16px; color: #637286; font-size: .76rem; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-line; }
 .dashboard-retry-button { min-width: 88px; padding: 7px 16px; border: 1px solid #1677ff; border-radius: 7px; color: #fff; background: #1677ff; font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
 .dashboard-retry-button:hover { border-color: #4096ff; background: #4096ff; }
 .dashboard-retry-button:focus-visible { outline: 2px solid rgba(22, 119, 255, .3); outline-offset: 2px; }

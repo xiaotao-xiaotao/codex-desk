@@ -114,7 +114,10 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
   }
 
   function showReadFailure(showOrbWarning) {
-    if (showOrbWarning) orbValue.textContent = "!";
+    if (showOrbWarning) {
+      orbValue.textContent = "!";
+      orbLabel.textContent = t("unknown");
+    }
   }
 
   return { render, showReadFailure };
