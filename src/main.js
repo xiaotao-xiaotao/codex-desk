@@ -44,6 +44,7 @@ const languageMenu = document.querySelector("#language-menu");
 const languageOptions = document.querySelectorAll("[data-language]");
 const themeButton = document.querySelector("#theme-button");
 const themeIcon = document.querySelector("#theme-icon");
+const alwaysOnTopButton = document.querySelector("#always-on-top-button");
 const minimizeButton = document.querySelector("#minimize-button");
 const collapseButton = document.querySelector("#collapse-button");
 const updateCheckButton = document.querySelector("#update-check-button");
@@ -142,6 +143,7 @@ const threadListView = createThreadListView({
 
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
 let expanded = true;
+let alwaysOnTop = false;
 let sessionsExpanded = false;
 let windowMaximized = false;
 let sessionsExpandedBeforeMaximize = null;
@@ -581,6 +583,7 @@ function applyLanguage() {
   });
 
   minimizeButton.title = minimizeButton.ariaLabel = t("minimize");
+  alwaysOnTopButton.title = alwaysOnTopButton.ariaLabel = t(alwaysOnTop ? "unpinWindow" : "pinWindow");
   collapseButton.title = collapseButton.ariaLabel = t("collapse");
   renderRefreshIconButton(refreshButton, { label: t("refresh") });
   renderCloseIconButton(quitButton, { label: t("quit") });
@@ -734,6 +737,7 @@ async function setExpanded(nextExpanded) {
   expanded = nextExpanded;
   if (!expanded && windowMaximized) {
     windowMaximized = false;
+    wordCloudView.setWindowMaximized(false);
     if (sessionsExpandedBeforeMaximize !== null) {
       sessionsExpanded = sessionsExpandedBeforeMaximize;
       sessionsExpandedBeforeMaximize = null;
@@ -815,12 +819,20 @@ function setupWindowDragging() {
 
 async function toggleWindowMaximized() {
   if (!expanded) return;
+  const previousMaximized = windowMaximized;
+  const expectedMaximized = !previousMaximized;
+  wordCloudView.setWindowResizeTransitioning(true);
+  // 原生窗口变形会先触发 ResizeObserver；提前同步状态，避免还原时按 300 词错误重绘一帧。
+  windowMaximized = expectedMaximized;
+  wordCloudView.setWindowMaximized(expectedMaximized, { redraw: false });
   try {
     const maximized = await invoke("toggle_window_maximized");
     windowMaximized = maximized;
+    wordCloudView.setWindowMaximized(maximized, { redraw: false });
     if (maximized) {
       sessionsExpandedBeforeMaximize = sessionsExpanded;
       if (!sessionsExpanded) await setSessionsExpanded(true, { resizeWindow: false });
+      wordCloudView.setWindowResizeTransitioning(false);
       return;
     }
 
@@ -829,7 +841,11 @@ async function toggleWindowMaximized() {
     if (restoreExpanded !== null && sessionsExpanded !== restoreExpanded) {
       await setSessionsExpanded(restoreExpanded, { resizeWindow: false });
     }
+    wordCloudView.setWindowResizeTransitioning(false);
   } catch (error) {
+    windowMaximized = previousMaximized;
+    wordCloudView.setWindowMaximized(previousMaximized, { redraw: false });
+    wordCloudView.setWindowResizeTransitioning(false);
     console.error("切换窗口最大化失败", error);
     setStatus(t("windowMaximizeFailed", { error: String(error) }), "error");
   }
@@ -843,6 +859,21 @@ function scheduleNextAutoRefresh() {
     autoRefreshTimer = null;
     void refreshController.refreshQuota();
   }, delayMs);
+}
+
+async function toggleAlwaysOnTop() {
+  const nextAlwaysOnTop = !alwaysOnTop;
+  try {
+    // 面板和悬浮球共用同一个原生窗口，因此设置一次即可在两种形态间保持置顶状态。
+    await invoke("set_window_always_on_top", { alwaysOnTop: nextAlwaysOnTop });
+    alwaysOnTop = nextAlwaysOnTop;
+    alwaysOnTopButton.classList.toggle("is-active", alwaysOnTop);
+    alwaysOnTopButton.setAttribute("aria-pressed", String(alwaysOnTop));
+    alwaysOnTopButton.title = alwaysOnTopButton.ariaLabel = t(alwaysOnTop ? "unpinWindow" : "pinWindow");
+  } catch (error) {
+    console.error("切换窗口置顶失败", error);
+    setStatus(t("windowAlwaysOnTopFailed", { error: String(error) }), "error");
+  }
 }
 
 function restartAutoRefreshTimer() {
@@ -869,6 +900,7 @@ async function bootstrap() {
     void toggleWindowMaximized();
   });
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
+  alwaysOnTopButton.addEventListener("click", () => void toggleAlwaysOnTop());
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshController.refreshQuota(true));
   dashboardRetry.addEventListener("click", () => void retryDashboard());

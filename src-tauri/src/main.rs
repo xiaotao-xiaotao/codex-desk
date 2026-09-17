@@ -234,6 +234,13 @@ fn toggle_window_maximized(window: WebviewWindow) -> Result<bool, String> {
 }
 
 #[tauri::command]
+fn set_window_always_on_top(always_on_top: bool, window: WebviewWindow) -> Result<(), String> {
+    window
+        .set_always_on_top(always_on_top)
+        .map_err(|error| format!("无法切换窗口置顶状态：{error}"))
+}
+
+#[tauri::command]
 fn resize_float_window(
     expanded: bool,
     sessions_expanded: bool,
@@ -299,10 +306,8 @@ fn resize_float_window(
     // 窗口保持不可手动缩放，避免 Windows 在拖至屏幕边缘时显示 Snap 贴靠预览；
     // 程序仍可通过原生 API 切换展开和收起尺寸。
     window
-        // 展开看板不抢占其他应用；仅收起为悬浮球时保持在最前，便于随时恢复。
-        .set_always_on_top(!expanded)
         // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
-        .and_then(|_| window.unmaximize())
+        .unmaximize()
         .and_then(|_| window.set_size(Size::Logical(LogicalSize::new(width, height))))
         .and_then(|_| window.set_position(Position::Physical(target_position)))
         .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
@@ -363,6 +368,7 @@ fn main() {
             start_dragging,
             hide_window,
             toggle_window_maximized,
+            set_window_always_on_top,
             resize_float_window,
             quit_app,
             tray::set_tray_language

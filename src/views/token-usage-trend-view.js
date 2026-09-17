@@ -330,7 +330,11 @@ export function createTokenUsageTrendView({ t }) {
       : undefined);
     const { width, height, left, right, top, plotWidth, plotHeight, valueToY } = dimensions;
     const columnWidth = plotWidth / buckets.length;
-    const barWidth = Math.max(compact ? 5 : 14, Math.min(compact ? 20 : 46, columnWidth - (compact ? 2 : 8)));
+    // 柱宽保持在分组宽度的约六成，并设置上限；宽屏放大后也不会变成笨重的色块。
+    const barWidth = Math.max(
+      compact ? 4 : 12,
+      Math.min(compact ? 16 : 30, columnWidth * (compact ? .55 : .62)),
+    );
     const tooltip = createTooltip(target);
     const svg = createSvgElement("svg", {
       viewBox: `0 0 ${width} ${height}`,
@@ -369,7 +373,7 @@ export function createTokenUsageTrendView({ t }) {
         x: centerX,
         y: height - (compact ? 4 : 9),
         "text-anchor": "middle",
-        "font-size": compact ? 7 : width < 500 ? 8 : 8.5,
+        "font-size": compact ? 6.25 : width < 500 ? 7 : 7.5,
       });
       label.textContent = bucket.label;
       labels.append(label);

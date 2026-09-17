@@ -36,6 +36,8 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 .icon-button { display: grid; width: 27px; height: 27px; padding: 0; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: #fff; cursor: pointer; transition: background .15s, color .15s; }
 .icon-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .icon-button:hover { border-color: #b7d4ff; color: #1677ff; background: #f5f9ff; }
+.always-on-top-button.is-active { color: #1677ff; background: #e6f4ff; }
+.always-on-top-button.is-active:hover { color: #0958d9; background: #d6eaff; }
 
 .dashboard-section { flex: 0 0 auto; padding: 7px 8px; border: 1px solid #e7e9ee; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); }
 .dashboard-error { display: flex; flex: 1 1 auto; min-height: 0; align-items: center; justify-content: center; flex-direction: column; padding: 28px; text-align: center; }

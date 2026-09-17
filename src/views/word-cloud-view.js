@@ -2,6 +2,7 @@
 const ROTATIONS = [0, 0, 0, 0, -16, 16, -28, 28, -42, 42, -56, 56];
 const COMPACT_WORD_CLOUD_ITEM_LIMIT = 100;
 const EXPANDED_WORD_CLOUD_ITEM_LIMIT = 150;
+const MAXIMIZED_WINDOW_WORD_CLOUD_ITEM_LIMIT = 300;
 // 以前 60 个高频词决定中心字号，额外词只补充外圈，避免为了展示更多词而压小主体。
 const WORD_CLOUD_CORE_ITEM_COUNT = 60;
 // 词与词之间仅保留极窄安全间隙，视觉上连续聚合，悬停时也不会误触相邻词。
@@ -225,6 +226,8 @@ export function createWordCloudView({ t }) {
   let response = null;
   let selectedDays = 7;
   let cloudExpanded = false;
+  let windowMaximized = false;
+  let windowResizeTransitioning = false;
   let renderFrame = null;
 
   tooltip.className = "word-cloud-tooltip";
@@ -287,8 +290,12 @@ export function createWordCloudView({ t }) {
     if (!response) return;
 
     const availableItems = Array.isArray(response.items) ? response.items : [];
-    // 紧凑卡优先保留可读性；放大后利用完整空间展示更多长尾高频词。
-    const itemLimit = cloudExpanded ? EXPANDED_WORD_CLOUD_ITEM_LIMIT : COMPACT_WORD_CLOUD_ITEM_LIMIT;
+    // 普通分栏卡片始终使用 100 词；词云独占内容区后，再按窗口是否最大化切换 150/300。
+    const itemLimit = windowMaximized && cloudExpanded
+      ? MAXIMIZED_WINDOW_WORD_CLOUD_ITEM_LIMIT
+      : cloudExpanded
+        ? EXPANDED_WORD_CLOUD_ITEM_LIMIT
+        : COMPACT_WORD_CLOUD_ITEM_LIMIT;
     const items = availableItems
       .slice(0, itemLimit)
       .map((item) => ({
@@ -379,6 +386,8 @@ export function createWordCloudView({ t }) {
   }
 
   function scheduleDraw() {
+    // 窗口最大化/还原期间，任何来源（ResizeObserver、模块更新、主题重绘）都不能提前排版。
+    if (windowResizeTransitioning) return;
     if (renderFrame !== null) window.cancelAnimationFrame(renderFrame);
     renderFrame = window.requestAnimationFrame(drawCloud);
   }
@@ -420,8 +429,27 @@ export function createWordCloudView({ t }) {
     renderMessage("wordCloudUnavailable", "word-cloud-empty word-cloud-empty-error");
   }
 
+  function setWindowMaximized(nextMaximized, { forceRedraw = false, redraw = true } = {}) {
+    const normalized = Boolean(nextMaximized);
+    const changed = windowMaximized !== normalized;
+    windowMaximized = normalized;
+    if (redraw && response && (changed || forceRedraw)) scheduleDraw();
+  }
+
+  function setWindowResizeTransitioning(nextTransitioning) {
+    const normalized = Boolean(nextTransitioning);
+    if (windowResizeTransitioning === normalized) return;
+    windowResizeTransitioning = normalized;
+    if (windowResizeTransitioning && renderFrame !== null) {
+      window.cancelAnimationFrame(renderFrame);
+      renderFrame = null;
+    }
+    // 原生窗口动画结束后只绘制一次最终尺寸，避免 Canvas 在每个中间尺寸重复排版。
+    if (!windowResizeTransitioning && response) scheduleDraw();
+  }
+
   const scheduleResizeDraw = () => {
-    if (response) scheduleDraw();
+    if (response && !windowResizeTransitioning) scheduleDraw();
   };
   cloud.addEventListener("dblclick", (event) => {
     event.preventDefault();
@@ -443,5 +471,13 @@ export function createWordCloudView({ t }) {
   }
   updateCloudAccessibility();
   showLoading();
-  return { render, setRange, setData, showLoading, showError };
+  return {
+    render,
+    setRange,
+    setData,
+    setWindowMaximized,
+    setWindowResizeTransitioning,
+    showLoading,
+    showError,
+  };
 }

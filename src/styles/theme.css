@@ -46,6 +46,8 @@
 :root[data-theme="dark"] .thread-search input { color: #e6edf3; background: #111820; }
 :root[data-theme="dark"] .thread-search input::placeholder { color: #718096; }
 :root[data-theme="dark"] .icon-button { color: #aab7c7; }
+:root[data-theme="dark"] .always-on-top-button.is-active { color: #69b1ff; background: #17375e; }
+:root[data-theme="dark"] .always-on-top-button.is-active:hover { color: #91caff; background: #1d4778; }
 :root[data-theme="dark"] .language-menu { border-color: #2a3544; background: #151b23; box-shadow: 0 10px 28px rgba(0, 0, 0, .42); }
 :root[data-theme="dark"] .language-menu button { color: #b9c6d5; }
 :root[data-theme="dark"] .language-menu button:hover,
