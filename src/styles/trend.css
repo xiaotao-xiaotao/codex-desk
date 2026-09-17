@@ -3,6 +3,11 @@
 .trend-heading .section-title-row,
 .trend-heading-actions { min-height: 24px; align-items: center; }
 .trend-heading-actions { display: flex; min-width: 0; justify-content: flex-end; gap: 8px; }
+.token-usage-controls { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 2px; padding: 2px; border: 1px solid #dbe5ef; border-radius: 6px; background: #f8fafc; }
+.token-usage-tab { min-height: 20px; padding: 2px 6px; border: 0; border-radius: 4px; color: #7b8795; background: transparent; cursor: pointer; font: inherit; font-size: .58rem; font-weight: 650; line-height: 1; white-space: nowrap; }
+.token-usage-tab:hover { color: #3979c9; }
+.token-usage-tab.is-active { color: #1668c6; background: #e6f4ff; box-shadow: 0 1px 2px rgba(22, 104, 198, .12); }
+.token-usage-tab:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 /* 标题栏统一使用 24px 对齐盒，避免原生下拉框与相邻文字出现视觉基线偏移。 */
 .trend-heading .section-kicker { display: inline-flex; min-height: 24px; align-items: center; line-height: 1; }
 .trend-range-summary { display: flex; min-width: 0; align-items: center; gap: 4px; }
@@ -29,6 +34,8 @@
 .trend-grid line { stroke: #eaf0f6; stroke-width: 1; }
 .trend-grid text, .trend-labels text { fill: #98a4b2; font-size: 10px; font-family: Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif; }
 .trend-point { cursor: crosshair; }
+.token-distribution-bar { cursor: crosshair; transition: opacity .15s; }
+.token-distribution-bar:hover { opacity: .78; }
 /* Tooltip 只在悬停数据点时显示，覆盖层不接收鼠标事件，避免触发离开数据点后闪烁。 */
 .trend-tooltip { position: absolute; z-index: 2; width: max-content; max-width: min(180px, calc(100% - 16px)); padding: 7px 9px; border: 1px solid #d8e1eb; border-radius: 7px; color: #455468; background: rgba(255, 255, 255, .97); box-shadow: 0 7px 18px rgba(31, 35, 41, .14); font-size: .63rem; line-height: 1.48; pointer-events: none; transform: translateY(-100%); }
 .trend-tooltip[hidden] { display: none; }

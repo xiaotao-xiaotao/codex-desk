@@ -1,5 +1,7 @@
 use crate::app_server::AppServerState;
-use crate::local_usage::{read_local_daily_usage, LocalTokenUsageBucket};
+use crate::local_usage::{
+    read_local_daily_usage, read_local_session_usage, LocalSessionTokenUsage, LocalTokenUsageBucket,
+};
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
@@ -24,6 +26,8 @@ pub struct TokenUsageSnapshot {
     current_streak_days: Option<u64>,
     longest_streak_days: Option<u64>,
     daily_usage_buckets: Vec<TokenUsageBucket>,
+    /// 仅由本机 JSONL 会话快照生成，供按会话 Token 区间统计。
+    local_session_usage: Vec<LocalSessionTokenUsage>,
 }
 
 /// 优先读取账号 Token 汇总，并使用本机会话补齐服务端缺失的每日桶。
@@ -56,6 +60,11 @@ pub async fn read_token_usage(state: &AppServerState) -> Result<TokenUsageSnapsh
     if snapshot.daily_usage_buckets.is_empty() {
         server_result?;
     }
+
+    // 会话粒度数据没有服务端等价字段，读取失败不应影响已有的按日 Token 趋势。
+    if let Ok(session_usage) = read_local_session_usage(LOCAL_FALLBACK_DAY_LIMIT).await {
+        snapshot.local_session_usage = session_usage;
+    }
     Ok(snapshot)
 }
 
@@ -81,6 +90,7 @@ fn snapshot_from_server(result: &Value) -> TokenUsageSnapshot {
         current_streak_days: summary.get("currentStreakDays").and_then(Value::as_u64),
         longest_streak_days: summary.get("longestStreakDays").and_then(Value::as_u64),
         daily_usage_buckets,
+        local_session_usage: Vec::new(),
     }
 }
 

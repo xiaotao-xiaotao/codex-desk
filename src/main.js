@@ -21,8 +21,6 @@ import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
 import { createUpdateBannerView } from "./views/update-banner-view.js";
 import { createWordCloudView } from "./views/word-cloud-view.js";
 
-// 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
-const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
 const DRAG_THRESHOLD_PX = 4;
 const AUTO_DISMISS_DURATION_MS = 4_000;
 const THREAD_PAGE_SIZE = { normal: 10 };
@@ -228,7 +226,7 @@ refreshController = createRefreshController({
   statusElement: status,
   t,
   getAutoRefreshIntervalMs: settingsController.getRefreshIntervalMs,
-  maxConsecutiveFailures: MAX_CONSECUTIVE_REFRESH_FAILURES,
+  onAutoRefreshScheduleChange: scheduleNextAutoRefresh,
 });
 
 function renderQuotaAlertStatus() {
@@ -618,13 +616,9 @@ function applyLanguage() {
   updateTransferControls();
   if (refreshController.getLatestQuota() && !refreshController.isRefreshing()) {
     quotaView.render(refreshController.getLatestQuota());
-    // 连续失败后的感叹号优先于旧额度，避免切换语言时恢复显示已过期的百分比。
-    if (refreshController.isAutoRefreshPaused()) quotaView.showReadFailure(true);
-  } else if (!refreshController.isRefreshing() && !refreshController.isAutoRefreshPaused()) {
+    refreshController.renderSyncedStatus();
+  } else if (!refreshController.isRefreshing()) {
     setStatus(t("readingLocalData"));
-  }
-  if (refreshController.isAutoRefreshPaused() && !refreshController.isRefreshing()) {
-    setStatus(t("autoRefreshPaused", { count: MAX_CONSECUTIVE_REFRESH_FAILURES }), "error");
   }
   renderSessionsVisibility();
   if (expanded && sessionsExpanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
@@ -844,13 +838,21 @@ async function toggleWindowMaximized() {
   }
 }
 
+function scheduleNextAutoRefresh() {
+  if (!refreshController) return;
+  if (autoRefreshTimer !== null) window.clearTimeout(autoRefreshTimer);
+  const delayMs = refreshController.getNextAutoRefreshDelayMs();
+  autoRefreshTimer = window.setTimeout(() => {
+    autoRefreshTimer = null;
+    void refreshController.refreshQuota();
+  }, delayMs);
+}
+
 function restartAutoRefreshTimer() {
-  if (autoRefreshTimer !== null) window.clearInterval(autoRefreshTimer);
+  if (autoRefreshTimer !== null) window.clearTimeout(autoRefreshTimer);
+  autoRefreshTimer = null;
   refreshController?.resetAutoRefreshSchedule();
-  autoRefreshTimer = window.setInterval(
-    () => void refreshController.refreshQuota(false, true),
-    settingsController.getRefreshIntervalMs(),
-  );
+  scheduleNextAutoRefresh();
 }
 
 async function bootstrap() {

@@ -2,7 +2,7 @@ import { readStoredJson, writeStoredValue } from "../utils/browser-storage.js";
 
 const SETTINGS_STORAGE_KEY = "codex-desk-settings";
 const DEFAULT_REFRESH_INTERVAL_SECONDS = 60;
-const REFRESH_INTERVAL_OPTIONS = new Set([30, 60, 120, 300]);
+const REFRESH_INTERVAL_OPTIONS = new Set([30, 60, 120, 300, 600]);
 
 function normalizeSettings(value) {
   const refreshIntervalSeconds = Number(value?.refreshIntervalSeconds);

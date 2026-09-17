@@ -16,6 +16,15 @@ pub struct LocalTokenUsageBucket {
     pub tokens: u64,
 }
 
+/// 单个本机会话最终保存的 Token 总量。日期来自会话文件所在目录，
+/// 用于按会话统计分布，不能与按日总量重复相加。
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalSessionTokenUsage {
+    pub start_date: String,
+    pub tokens: u64,
+}
+
 /// 单个会话最后一条 Token 快照。缓存输入与推理输出分别是输入、输出的子集，
 /// 仅用于明细展示，不能再次累加到总量。
 #[derive(Clone, Serialize)]
@@ -39,6 +48,17 @@ pub async fn read_local_daily_usage(
     read_local_daily_usage_from(&sessions_root, excluded_days, day_limit).await
 }
 
+/// 读取近期本机会话的最终 Token 快照，供前端按会话总量分桶。
+/// 会话 Token 目前只能从本机 JSONL 获得，不能以服务端按日汇总替代。
+pub async fn read_local_session_usage(
+    day_limit: usize,
+) -> Result<Vec<LocalSessionTokenUsage>, String> {
+    let sessions_root = codex_home()
+        .ok_or("无法定位 Codex 本地目录")?
+        .join("sessions");
+    read_local_session_usage_from(&sessions_root, day_limit).await
+}
+
 async fn read_local_daily_usage_from(
     sessions_root: &Path,
     excluded_days: &HashSet<String>,
@@ -57,6 +77,32 @@ async fn read_local_daily_usage_from(
         }
     }
     Ok(buckets)
+}
+
+async fn read_local_session_usage_from(
+    sessions_root: &Path,
+    day_limit: usize,
+) -> Result<Vec<LocalSessionTokenUsage>, String> {
+    let mut day_directories = discover_session_day_directories(sessions_root).await?;
+    day_directories.sort_unstable_by(|left, right| right.0.cmp(&left.0));
+    day_directories.truncate(day_limit);
+
+    let mut sessions = Vec::new();
+    for (start_date, directory) in day_directories {
+        for tokens in read_day_session_totals(&directory).await {
+            sessions.push(LocalSessionTokenUsage {
+                start_date: start_date.clone(),
+                tokens,
+            });
+        }
+    }
+    // 文件系统目录遍历顺序不稳定；固定顺序便于调用方缓存和测试。
+    sessions.sort_unstable_by(|left, right| {
+        left.start_date
+            .cmp(&right.start_date)
+            .then(left.tokens.cmp(&right.tokens))
+    });
+    Ok(sessions)
 }
 
 fn codex_home() -> Option<PathBuf> {
@@ -133,11 +179,19 @@ async fn numeric_directory_name(
 }
 
 async fn read_day_total(directory: &Path) -> u64 {
+    read_day_session_totals(directory)
+        .await
+        .into_iter()
+        .fold(0_u64, u64::saturating_add)
+}
+
+/// 每个 JSONL 文件对应一个会话；只保留其中最后一个累计快照。
+async fn read_day_session_totals(directory: &Path) -> Vec<u64> {
     let mut entries = match fs::read_dir(directory).await {
         Ok(entries) => entries,
-        Err(_) => return 0,
+        Err(_) => return Vec::new(),
     };
-    let mut total = 0_u64;
+    let mut totals = Vec::new();
     while let Ok(Some(entry)) = entries.next_entry().await {
         let path = entry.path();
         if !path
@@ -148,10 +202,12 @@ async fn read_day_total(directory: &Path) -> u64 {
             continue;
         }
         if let Some(tokens) = read_rollout_total(&path).await {
-            total = total.saturating_add(tokens);
+            if tokens > 0 {
+                totals.push(tokens);
+            }
         }
     }
-    total
+    totals
 }
 
 /// 每条 token_count 都是会话累计快照，因此每个 rollout 只采用最后一条，避免重复累加。
@@ -320,6 +376,51 @@ mod tests {
                 start_date: "2026-08-31".to_owned(),
                 tokens: 150,
             }]
+        );
+    }
+
+    #[test]
+    fn keeps_one_final_total_for_each_local_session() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("测试时间应晚于 Unix epoch")
+            .as_nanos();
+        let root = env::temp_dir().join(format!(
+            "codex-desk-session-usage-{}-{unique}",
+            std::process::id()
+        ));
+        let day = root.join("2026/08/31");
+        std_fs::create_dir_all(&day).expect("应创建测试目录");
+        std_fs::write(
+            day.join("rollout-small.jsonl"),
+            concat!(
+                "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":100}}}}\n",
+                "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":8000}}}}\n"
+            ),
+        )
+        .expect("应写入小会话快照");
+        std_fs::write(
+            day.join("rollout-large.jsonl"),
+            "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":60000}}}}\n",
+        )
+        .expect("应写入大会话快照");
+
+        let sessions = tauri::async_runtime::block_on(read_local_session_usage_from(&root, 35))
+            .expect("会话 Token 用量应可读取");
+        std_fs::remove_dir_all(&root).expect("应清理测试目录");
+
+        assert_eq!(
+            sessions,
+            vec![
+                LocalSessionTokenUsage {
+                    start_date: "2026-08-31".to_owned(),
+                    tokens: 8000,
+                },
+                LocalSessionTokenUsage {
+                    start_date: "2026-08-31".to_owned(),
+                    tokens: 60000,
+                },
+            ]
         );
     }
 }

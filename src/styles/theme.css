@@ -1,5 +1,5 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
-:root[data-theme="dark"] { color: #e6edf3; color-scheme: dark; }
+:root[data-theme="dark"] { --token-distribution-color: #54c99a; color: #e6edf3; color-scheme: dark; }
 /* 收起态窗口本身透明，悬浮球不投射阴影，避免桌面上出现误认为底色的灰色区域。 */
 :root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: none; }
 :root[data-theme="dark"] .orb-ring { background: #151b23; }
@@ -64,11 +64,16 @@
 :root[data-theme="dark"] .trend-filter { color: #7f91a6; }
 :root[data-theme="dark"] .trend-filter:hover,
 :root[data-theme="dark"] .trend-filter.is-active { color: #8dc5ff; }
+:root[data-theme="dark"] .token-usage-controls { border-color: #344456; background: #18212c; }
+:root[data-theme="dark"] .token-usage-tab { color: #8d9bad; }
+:root[data-theme="dark"] .token-usage-tab:hover { color: #9ecbff; }
+:root[data-theme="dark"] .token-usage-tab.is-active { color: #9ecbff; background: #173553; box-shadow: none; }
 :root[data-theme="dark"] .trend-grid line { stroke: #293647; }
 :root[data-theme="dark"] .trend-grid text,
 :root[data-theme="dark"] .trend-labels text { fill: #71829a; }
 :root[data-theme="dark"] .trend-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 7px 18px rgba(0, 0, 0, .35); }
 :root[data-theme="dark"] .status-refresh-countdown { color: #8dc5ff; background: #152f4f; }
+:root[data-theme="dark"] .status[data-kind="warning"] { color: #ffd666; }
 :root[data-theme="dark"] .trend-section.is-chart-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
 :root[data-theme="dark"] .module-expand-hint { border-color: #315f90; color: #8dc5ff; background: rgba(21, 43, 67, .98); box-shadow: 0 3px 10px rgba(0, 0, 0, .24); }
 :root[data-theme="dark"] .module-expand-trigger.is-module-expanded .module-expand-hint { border-color: #4c85b8; color: #c7e2ff; background: #152f4f; }

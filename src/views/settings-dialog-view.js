@@ -23,6 +23,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
       [60, "settingsRefresh60Seconds"],
       [120, "settingsRefresh2Minutes"],
       [300, "settingsRefresh5Minutes"],
+      [600, "settingsRefresh10Minutes"],
     ];
     refreshInterval.replaceChildren(...options.map(([value, labelKey]) => {
       const option = document.createElement("option");
