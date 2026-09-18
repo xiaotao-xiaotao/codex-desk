@@ -13,6 +13,9 @@
 .activity-trend-section { grid-area: activity; }
 .token-usage-section { grid-area: tokens; }
 .word-cloud-section { display: grid; grid-area: topics; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+/* 词云没有可解析输入时，移除整张无效卡片，两个趋势图改为占满同一内容宽度。 */
+.insights-layout.is-word-cloud-hidden { grid-template-columns: minmax(0, 1fr); grid-template-areas: "activity" "tokens"; }
+.word-cloud-section[hidden] { display: none; }
 /* 三张内部卡片使用较低一级的标题，避免压过总览模块标题。 */
 .activity-trend-section .section-title-row .section-kicker,
 .token-usage-section .section-title-row .section-kicker,

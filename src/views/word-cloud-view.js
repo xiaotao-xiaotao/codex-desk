@@ -222,6 +222,7 @@ export function createWordCloudView({ t }) {
   const cloud = document.querySelector("#word-cloud");
   const summary = document.querySelector("#word-cloud-summary");
   const cloudSection = cloud.closest(".word-cloud-section");
+  const insightsLayout = cloudSection.closest(".insights-layout");
   const tooltip = document.createElement("div");
   let response = null;
   let selectedDays = 7;
@@ -234,6 +235,28 @@ export function createWordCloudView({ t }) {
   tooltip.hidden = true;
   cloud.setAttribute("aria-live", "polite");
 
+  /**
+   * 没有任何可解析的用户文本时，词云卡片不提供有效信息。
+   * 此时收起整张卡片并让趋势图铺满，避免右侧留下与内容无关的大块空白。
+   * 注意：有输入但词频不足时仍显示提示，不能把“无主题”误判为“没有输入”。
+   */
+  function setCloudHidden(hidden) {
+    const shouldHide = Boolean(hidden);
+    if (shouldHide && cloudExpanded) {
+      cloudExpanded = false;
+      cloudSection.classList.remove("is-word-cloud-expanded");
+    }
+    cloudSection.hidden = shouldHide;
+    cloudSection.setAttribute("aria-hidden", String(shouldHide));
+    insightsLayout?.classList.toggle("is-word-cloud-hidden", shouldHide);
+  }
+
+  function hasNoInputMessages(nextResponse) {
+    const inputCount = Number(nextResponse?.totalMessages);
+    // 仅对后端明确返回的 0 生效；缺少字段时保留卡片展示异常/空态，便于定位兼容问题。
+    return Number.isFinite(inputCount) && inputCount === 0;
+  }
+
   function updateCloudAccessibility() {
     const actionKey = cloudExpanded ? "wordCloudCollapse" : "wordCloudExpand";
     cloud.tabIndex = 0;
@@ -245,6 +268,7 @@ export function createWordCloudView({ t }) {
   }
 
   function toggleCloudExpanded() {
+    if (cloudSection.hidden) return;
     cloudExpanded = !cloudExpanded;
     cloudSection.classList.toggle("is-word-cloud-expanded", cloudExpanded);
     updateCloudAccessibility();
@@ -395,13 +419,14 @@ export function createWordCloudView({ t }) {
   function render() {
     updateCloudAccessibility();
     renderSummary();
-    if (response) scheduleDraw();
+    if (response && !cloudSection.hidden) scheduleDraw();
   }
 
   function setRange(days) {
     if (![3, 7, 30].includes(days)) return;
     selectedDays = days;
     response = null;
+    setCloudHidden(false);
     renderSummary();
     renderMessage("wordCloudLoading");
   }
@@ -410,21 +435,25 @@ export function createWordCloudView({ t }) {
     response = nextResponse && typeof nextResponse === "object" ? nextResponse : null;
     if ([3, 7, 30].includes(days)) selectedDays = days;
     if (!response) {
+      setCloudHidden(false);
       renderSummary();
       renderMessage("wordCloudUnavailable", "word-cloud-empty word-cloud-empty-error");
       return;
     }
+    setCloudHidden(hasNoInputMessages(response));
     render();
   }
 
   function showLoading() {
     if (response) return;
+    setCloudHidden(false);
     renderSummary();
     renderMessage("wordCloudLoading");
   }
 
   function showError() {
     response = null;
+    setCloudHidden(false);
     renderSummary();
     renderMessage("wordCloudUnavailable", "word-cloud-empty word-cloud-empty-error");
   }
@@ -433,7 +462,7 @@ export function createWordCloudView({ t }) {
     const normalized = Boolean(nextMaximized);
     const changed = windowMaximized !== normalized;
     windowMaximized = normalized;
-    if (redraw && response && (changed || forceRedraw)) scheduleDraw();
+    if (redraw && response && !cloudSection.hidden && (changed || forceRedraw)) scheduleDraw();
   }
 
   function setWindowResizeTransitioning(nextTransitioning) {
@@ -445,11 +474,11 @@ export function createWordCloudView({ t }) {
       renderFrame = null;
     }
     // 原生窗口动画结束后只绘制一次最终尺寸，避免 Canvas 在每个中间尺寸重复排版。
-    if (!windowResizeTransitioning && response) scheduleDraw();
+    if (!windowResizeTransitioning && response && !cloudSection.hidden) scheduleDraw();
   }
 
   const scheduleResizeDraw = () => {
-    if (response && !windowResizeTransitioning) scheduleDraw();
+    if (response && !cloudSection.hidden && !windowResizeTransitioning) scheduleDraw();
   };
   cloud.addEventListener("dblclick", (event) => {
     event.preventDefault();
