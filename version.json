@@ -1,31 +1,31 @@
 {
-  "version": "1.1.2",
-  "publishedAt": "2026-09-11",
+  "version": "1.2.0",
+  "publishedAt": "2026-09-18",
   "releaseNotes": {
     "zh-CN": [
-      "新增主面板手动检查版本更新，并展示发布说明",
-      "优化会话详情页面和刷新交互体验",
-      "统一应用版本配置，简化后续发布流程"
+      "新增数据洞察词云、会话 Token 趋势与分布统计",
+      "支持模块放大、本地历史自适应分页和窗口置顶",
+      "优化语言选择、托盘重启及 app-server 生命周期稳定性"
     ],
     "zh-TW": [
-      "新增主面板手動檢查版本更新，並顯示發佈說明",
-      "改善工作階段詳情頁面和重新整理互動體驗",
-      "統一應用程式版本設定，簡化後續發佈流程"
+      "新增資料洞察詞雲、工作階段 Token 趨勢與分佈統計",
+      "支援模組放大、本機歷程自適應分頁和視窗置頂",
+      "改善語言選擇、系統匣重新啟動及 app-server 生命週期穩定性"
     ],
     "en": [
-      "Added manual update checks and release notes to the dashboard",
-      "Improved session details and refresh interactions",
-      "Centralized app version configuration for simpler releases"
+      "Added an insights word cloud plus session Token trends and distribution",
+      "Added expanded modules, adaptive local-history pagination, and always-on-top mode",
+      "Improved language selection, tray restart, and app-server lifecycle stability"
     ],
     "ja": [
-      "メインパネルに手動更新確認とリリースノート表示を追加",
-      "セッション詳細画面と更新操作を改善",
-      "アプリのバージョン設定を一元化し、リリース手順を簡素化"
+      "データ分析ワードクラウド、セッション Token 推移と分布統計を追加",
+      "モジュール拡大、ローカル履歴の自動ページ調整、常に最前面表示に対応",
+      "言語選択、トレイからの再起動、app-server のライフサイクル安定性を改善"
     ],
     "ko": [
-      "메인 패널에 수동 업데이트 확인 및 릴리스 노트 표시 추가",
-      "세션 상세 화면과 새로 고침 상호작용 개선",
-      "앱 버전 설정을 통합하여 릴리스 절차 간소화"
+      "데이터 인사이트 워드클라우드와 세션 Token 추세 및 분포 통계 추가",
+      "모듈 확대, 로컬 기록 적응형 페이지 나누기 및 창 항상 위 기능 지원",
+      "언어 선택, 트레이 재시작 및 app-server 수명 주기 안정성 개선"
     ]
   }
 }
