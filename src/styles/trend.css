@@ -11,12 +11,8 @@
 /* 标题栏统一使用 24px 对齐盒，避免原生下拉框与相邻文字出现视觉基线偏移。 */
 .trend-heading .section-kicker { display: inline-flex; min-height: 24px; align-items: center; line-height: 1; }
 .trend-range-summary { display: flex; min-width: 0; align-items: center; gap: 4px; }
-.trend-range-picker { width: max-content; min-width: 0; color: #718096; font-size: .62rem; font-weight: 650; }
-.trend-range-picker .select-menu-trigger { width: auto; padding: 0 21px 0 5px; border: 0; border-radius: 7px; }
-.trend-range-picker .select-menu-trigger::after { right: 6px; }
 /* 合计与选择器使用相同的 27px 行盒，保证小字数字与下拉文案处于同一视觉基线。 */
 .trend-total { display: inline-flex; height: 27px; align-items: center; color: #9aa5b2; font-size: .54rem; font-variant-numeric: tabular-nums; line-height: 27px; white-space: nowrap; }
-.trend-range { font-size: .62rem; font-weight: 650; }
 .trend-controls { display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; }
 /* 筛选项使用文字标签而非按钮，让曲线开关更接近图例的阅读方式。 */
 .trend-filter { display: inline-flex; min-height: 24px; align-items: center; gap: 4px; padding: 3px 2px; color: #9aa5b2; cursor: pointer; font-size: .62rem; line-height: 1; user-select: none; transition: color .15s, opacity .15s; }

@@ -1,4 +1,10 @@
-const SVG_NS = "http://www.w3.org/2000/svg";
+import {
+  compactDayLabel,
+  createChartTooltip,
+  createExpandableChart,
+  createSvgElement,
+} from "../utils/trend-chart.js";
+
 const TOKEN_COLOR = "#1677ff";
 
 // 使用连续的固定区间，既保留 M 级会话差异，也便于不同时间范围横向比较。
@@ -17,12 +23,6 @@ const SESSION_TOKEN_BUCKETS = [
   { label: "50M+", maximum: Number.POSITIVE_INFINITY },
 ];
 
-function createSvgElement(name, attributes = {}) {
-  const element = document.createElementNS(SVG_NS, name);
-  for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
-  return element;
-}
-
 function localDayKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -38,10 +38,6 @@ function recentDayKeys(days) {
     date.setDate(today.getDate() - days + index + 1);
     return localDayKey(date);
   });
-}
-
-function compactDayLabel(day) {
-  return typeof day === "string" && day.length >= 10 ? day.slice(5) : day;
 }
 
 function shouldRenderDayLabel(index, totalDays, compact) {
@@ -69,20 +65,17 @@ export function createTokenUsageTrendView({ t }) {
   let response = null;
   let selectedDays = 7;
   let activeView = "trend";
-  let chartExpanded = false;
-  let resizeFrame = null;
+  const chartInteraction = createExpandableChart({
+    chart,
+    section: trendSection,
+    getTitle: activeViewTitle,
+    getActionLabel: (expanded) => t(expanded ? "trendCollapse" : "trendExpand"),
+    canRender: () => Boolean(response),
+    render: renderChart,
+  });
 
   function activeViewTitle() {
     return t(activeView === "trend" ? "tokenUsageTitle" : "tokenUsageDistributionTitle");
-  }
-
-  function updateChartAccessibility() {
-    const actionKey = chartExpanded ? "trendCollapse" : "trendExpand";
-    chart.tabIndex = 0;
-    chart.setAttribute("role", "button");
-    chart.setAttribute("aria-expanded", String(chartExpanded));
-    chart.setAttribute("aria-label", `${activeViewTitle()}：${t(actionKey)}`);
-    chart.removeAttribute("title");
   }
 
   function renderControls() {
@@ -108,15 +101,6 @@ export function createTokenUsageTrendView({ t }) {
     if (!["trend", "distribution"].includes(view) || view === activeView) return;
     activeView = view;
     render();
-  }
-
-  function toggleChartExpanded() {
-    chartExpanded = !chartExpanded;
-    trendSection.classList.toggle("is-chart-expanded", chartExpanded);
-    updateChartAccessibility();
-    window.requestAnimationFrame(() => {
-      if (response) renderChart();
-    });
   }
 
   function formatTokens(value) {
@@ -168,28 +152,6 @@ export function createTokenUsageTrendView({ t }) {
       minimum = bucket.maximum;
       return { label: bucket.label, count };
     });
-  }
-
-  function createTooltip(target) {
-    const tooltip = document.createElement("div");
-    tooltip.className = "trend-tooltip";
-    tooltip.hidden = true;
-    const move = (event) => {
-      const bounds = target.getBoundingClientRect();
-      const maximumLeft = Math.max(8, bounds.width - tooltip.offsetWidth - 8);
-      tooltip.style.left = `${Math.min(Math.max(8, event.clientX - bounds.left + 12), maximumLeft)}px`;
-      tooltip.style.top = `${Math.max(tooltip.offsetHeight + 4, event.clientY - bounds.top - 10)}px`;
-    };
-    return {
-      tooltip,
-      show: (content, event) => {
-        tooltip.replaceChildren(...content);
-        tooltip.hidden = false;
-        move(event);
-      },
-      move,
-      hide: () => { tooltip.hidden = true; },
-    };
   }
 
   function appendValueGrid(svg, { width, left, right, axisMax, valueToY, valueFormatter = String }) {
@@ -267,7 +229,7 @@ export function createTokenUsageTrendView({ t }) {
       : undefined);
     const { width, height, left, right, plotWidth, valueToY } = dimensions;
     const indexToX = (index) => left + (points.length === 1 ? plotWidth / 2 : (index * plotWidth) / (points.length - 1));
-    const tooltip = createTooltip(target);
+    const tooltip = createChartTooltip(target);
     const svg = createSvgElement("svg", {
       viewBox: `0 0 ${width} ${height}`,
       preserveAspectRatio: "none",
@@ -335,7 +297,7 @@ export function createTokenUsageTrendView({ t }) {
       compact ? 4 : 12,
       Math.min(compact ? 16 : 30, columnWidth * (compact ? .55 : .62)),
     );
-    const tooltip = createTooltip(target);
+    const tooltip = createChartTooltip(target);
     const svg = createSvgElement("svg", {
       viewBox: `0 0 ${width} ${height}`,
       preserveAspectRatio: "none",
@@ -391,24 +353,15 @@ export function createTokenUsageTrendView({ t }) {
     }
   }
 
-  function scheduleResizeRender() {
-    if (!response) return;
-    if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
-    resizeFrame = window.requestAnimationFrame(() => {
-      resizeFrame = null;
-      renderChart();
-    });
-  }
-
   function render() {
     renderControls();
-    updateChartAccessibility();
+    chartInteraction.updateAccessibility();
     if (response) renderChart();
   }
 
   function showLoading() {
     renderControls();
-    updateChartAccessibility();
+    chartInteraction.updateAccessibility();
     if (response) return;
     chart.replaceChildren();
     const loading = document.createElement("p");
@@ -419,7 +372,7 @@ export function createTokenUsageTrendView({ t }) {
 
   function showError() {
     renderControls();
-    updateChartAccessibility();
+    chartInteraction.updateAccessibility();
     chart.replaceChildren();
     const error = document.createElement("p");
     error.className = "trend-empty trend-empty-error";
@@ -434,26 +387,7 @@ export function createTokenUsageTrendView({ t }) {
     if (response) renderChart();
   }
 
-  chart.addEventListener("dblclick", (event) => {
-    event.preventDefault();
-    toggleChartExpanded();
-  });
-  chart.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    toggleChartExpanded();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && chartExpanded) toggleChartExpanded();
-  });
-  if (typeof ResizeObserver === "function") {
-    const chartResizeObserver = new ResizeObserver(scheduleResizeRender);
-    chartResizeObserver.observe(chart);
-  } else {
-    window.addEventListener("resize", scheduleResizeRender);
-  }
   renderControls();
-  updateChartAccessibility();
   return {
     render,
     setData: (data) => {

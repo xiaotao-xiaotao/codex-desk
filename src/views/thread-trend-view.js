@@ -1,6 +1,9 @@
-import { createSelectMenu } from "../utils/select-menu.js";
-
-const SVG_NS = "http://www.w3.org/2000/svg";
+import {
+  compactDayLabel,
+  createChartTooltip,
+  createExpandableChart,
+  createSvgElement,
+} from "../utils/trend-chart.js";
 
 const TREND_SERIES = {
   messages: { labelKey: "trendMessages", color: "#1677ff" },
@@ -8,19 +11,6 @@ const TREND_SERIES = {
   fileChanges: { labelKey: "trendFileChanges", color: "#19956a" },
   issues: { labelKey: "trendIssues", color: "#c77900" },
 };
-
-function createSvgElement(name, attributes = {}) {
-  const element = document.createElementNS(SVG_NS, name);
-  for (const [key, value] of Object.entries(attributes)) {
-    element.setAttribute(key, String(value));
-  }
-  return element;
-}
-
-function compactDayLabel(day) {
-  // 日期轴固定使用 MM-DD，既保留月份语义，也避免完整日期挤压相邻刻度。
-  return typeof day === "string" && day.length >= 10 ? day.slice(5) : day;
-}
 
 function shouldRenderDayLabel(index, totalDays) {
   // 30 天视图仅每 5 天显示一个刻度，并始终保留最后一天，避免日期文字相互挤压。
@@ -34,36 +24,20 @@ function shouldRenderDayLabel(index, totalDays) {
 export function createThreadTrendView({ t, onRangeChange }) {
   const controls = document.querySelector("#trend-controls");
   const range = document.querySelector("#insights-range");
-  const rangeMenu = createSelectMenu(range);
   const chart = document.querySelector("#thread-trend-chart");
   const total = document.querySelector("#trend-total");
   const trendSection = chart.closest(".trend-section");
   let response = null;
   let selectedDays = 7;
   const visibleMetrics = new Set(Object.keys(TREND_SERIES));
-  let chartExpanded = false;
-  let resizeFrame = null;
-
-  function updateChartAccessibility() {
-    const actionKey = chartExpanded ? "trendCollapse" : "trendExpand";
-    chart.tabIndex = 0;
-    chart.setAttribute("role", "button");
-    chart.setAttribute("aria-expanded", String(chartExpanded));
-    chart.setAttribute("aria-label", `${t("trendTitle")}：${t(actionKey)}`);
-    // 原生 title 会与数据点 Tooltip 叠加，交互说明仅保留给辅助技术读取。
-    chart.removeAttribute("title");
-  }
-
-  function toggleChartExpanded() {
-    chartExpanded = !chartExpanded;
-    trendSection.classList.toggle("is-chart-expanded", chartExpanded);
-    updateChartAccessibility();
-
-    // 覆盖层完成布局后再按实际可用尺寸重绘，保证放大后的文字与坐标轴清晰。
-    window.requestAnimationFrame(() => {
-      if (response) renderChart();
-    });
-  }
+  const chartInteraction = createExpandableChart({
+    chart,
+    section: trendSection,
+    getTitle: () => t("trendTitle"),
+    getActionLabel: (expanded) => t(expanded ? "trendCollapse" : "trendExpand"),
+    canRender: () => Boolean(response),
+    render: renderChart,
+  });
 
   function renderControls() {
     controls.replaceChildren();
@@ -100,43 +74,17 @@ export function createThreadTrendView({ t, onRangeChange }) {
       range.append(option);
     }
     range.setAttribute("aria-label", t("trendRangeLabel"));
-    rangeMenu.sync();
   }
 
-  function createTooltip() {
-    const tooltip = document.createElement("div");
-    tooltip.className = "trend-tooltip";
-    tooltip.hidden = true;
-
-    function show(point, event) {
-      tooltip.replaceChildren();
-      const date = document.createElement("p");
-      date.className = "trend-tooltip-date";
-      date.textContent = `${t("trendTooltipDate")}：${point.day}`;
-      tooltip.append(date);
-      for (const [metric, config] of Object.entries(TREND_SERIES)) {
-        const row = document.createElement("p");
-        row.textContent = `${t(config.labelKey)}：${Number(point[metric] ?? 0)}`;
-        tooltip.append(row);
-      }
-      tooltip.hidden = false;
-      move(event);
-    }
-
-    function move(event) {
-      const bounds = chart.getBoundingClientRect();
-      const maximumLeft = Math.max(8, bounds.width - tooltip.offsetWidth - 8);
-      const left = Math.min(Math.max(8, event.clientX - bounds.left + 12), maximumLeft);
-      const top = Math.max(tooltip.offsetHeight + 4, event.clientY - bounds.top - 10);
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    }
-
-    function hide() {
-      tooltip.hidden = true;
-    }
-
-    return { tooltip, show, move, hide };
+  function createTooltipContent(point) {
+    const date = document.createElement("p");
+    date.className = "trend-tooltip-date";
+    date.textContent = `${t("trendTooltipDate")}：${point.day}`;
+    return [date, ...Object.entries(TREND_SERIES).map(([metric, config]) => {
+      const row = document.createElement("p");
+      row.textContent = `${t(config.labelKey)}：${Number(point[metric] ?? 0)}`;
+      return row;
+    })];
   }
 
   function renderChart() {
@@ -171,7 +119,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
     const valueToY = (value) => top + plotHeight - (value / axisMax) * plotHeight;
     const indexToX = (index) => left + (points.length === 1 ? plotWidth / 2 : (index * plotWidth) / (points.length - 1));
 
-    const tooltip = createTooltip();
+    const tooltip = createChartTooltip(chart);
     const svg = createSvgElement("svg", {
       viewBox: `0 0 ${width} ${height}`,
       // 容器会随展开窗口变宽；强制按容器铺满，避免默认等比缩放把底部日期轴挤出可视区。
@@ -212,8 +160,8 @@ export function createThreadTrendView({ t, onRangeChange }) {
           stroke: config.color,
           "stroke-width": 2,
         });
-        dot.addEventListener("mouseenter", (event) => tooltip.show(point, event));
-        dot.addEventListener("mousemove", (event) => tooltip.move(event));
+        dot.addEventListener("mouseenter", (event) => tooltip.show(createTooltipContent(point), event));
+        dot.addEventListener("mousemove", tooltip.move);
         dot.addEventListener("mouseleave", tooltip.hide);
         labels.append(dot);
       });
@@ -237,25 +185,15 @@ export function createThreadTrendView({ t, onRangeChange }) {
     total.textContent = t("trendTotal", { total: sum, days: response.days ?? points.length });
   }
 
-  function scheduleResizeRender() {
-    if (!response) return;
-    if (resizeFrame !== null) window.cancelAnimationFrame(resizeFrame);
-    // 等 Grid 和原生窗口的尺寸变更完成后，再用实际容器宽度创建 SVG viewBox，避免放大后被拉伸发虚。
-    resizeFrame = window.requestAnimationFrame(() => {
-      resizeFrame = null;
-      renderChart();
-    });
-  }
-
   function render() {
     renderRange();
     renderControls();
-    updateChartAccessibility();
+    chartInteraction.updateAccessibility();
     renderChart();
   }
 
   function showLoading() {
-    updateChartAccessibility();
+    chartInteraction.updateAccessibility();
     if (response) return;
     chart.replaceChildren();
     const loading = document.createElement("p");
@@ -265,7 +203,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
   }
 
   function showError() {
-    updateChartAccessibility();
+    chartInteraction.updateAccessibility();
     chart.replaceChildren();
     const error = document.createElement("p");
     error.className = "trend-empty trend-empty-error";
@@ -287,24 +225,6 @@ export function createThreadTrendView({ t, onRangeChange }) {
     renderRange();
   }
 
-  chart.addEventListener("dblclick", (event) => {
-    event.preventDefault();
-    toggleChartExpanded();
-  });
-  chart.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    toggleChartExpanded();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && chartExpanded) toggleChartExpanded();
-  });
-  if (typeof ResizeObserver === "function") {
-    const chartResizeObserver = new ResizeObserver(scheduleResizeRender);
-    chartResizeObserver.observe(chart);
-  } else {
-    window.addEventListener("resize", scheduleResizeRender);
-  }
   range.addEventListener("change", () => {
     const days = Number(range.value);
     if (![3, 7, 30].includes(days) || days === selectedDays) return;
@@ -312,7 +232,6 @@ export function createThreadTrendView({ t, onRangeChange }) {
     onRangeChange?.(days);
   });
 
-  updateChartAccessibility();
   renderRange();
   return { render, setData, setRange, showLoading, showError };
 }

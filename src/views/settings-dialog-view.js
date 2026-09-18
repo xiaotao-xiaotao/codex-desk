@@ -1,5 +1,4 @@
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
-import { createSelectMenu } from "../utils/select-menu.js";
 
 export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }) {
   const openButton = document.querySelector("#settings-button");
@@ -10,7 +9,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   const browseButton = document.querySelector("#settings-cli-browse");
   const resetButton = document.querySelector("#settings-cli-reset");
   const refreshInterval = document.querySelector("#settings-refresh-interval");
-  const refreshIntervalMenu = createSelectMenu(refreshInterval);
   const cancelButton = document.querySelector("#settings-cancel");
   const saveButton = document.querySelector("#settings-save");
   const status = document.querySelector("#settings-status");
@@ -32,7 +30,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
       return option;
     }));
     refreshInterval.value = selected || "60";
-    refreshIntervalMenu.sync();
   }
 
   function setBusy(busy) {
@@ -55,7 +52,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     const settings = getSettings();
     cliPathInput.value = settings.cliPath;
     refreshInterval.value = String(settings.refreshIntervalSeconds);
-    refreshIntervalMenu.sync();
     showStatus();
   }
 

@@ -212,18 +212,24 @@ async fn read_day_session_totals(directory: &Path) -> Vec<u64> {
 
 /// 每条 token_count 都是会话累计快照，因此每个 rollout 只采用最后一条，避免重复累加。
 async fn read_rollout_total(path: &Path) -> Option<u64> {
+    read_latest_thread_usage(path)
+        .await
+        .map(|usage| usage.total_tokens)
+}
+
+async fn read_latest_thread_usage(path: &Path) -> Option<ThreadTokenUsage> {
     let file = File::open(path).await.ok()?;
     let mut lines = BufReader::new(file).lines();
-    let mut latest_total = None;
+    let mut latest_usage = None;
     while let Ok(Some(line)) = lines.next_line().await {
         if !line.contains("token_count") {
             continue;
         }
-        if let Some(total) = total_tokens_from_line(&line) {
-            latest_total = Some(total);
+        if let Some(usage) = thread_token_usage_from_line(&line) {
+            latest_usage = Some(usage);
         }
     }
-    latest_total
+    latest_usage
 }
 
 /// 读取 App Server 返回的会话文件路径，并限制在本机 Codex sessions 目录内。
@@ -247,21 +253,10 @@ pub async fn read_thread_token_usage(thread_path: &str) -> Option<ThreadTokenUsa
     if !candidate.starts_with(&sessions_root) {
         return None;
     }
-
-    let file = File::open(candidate).await.ok()?;
-    let mut lines = BufReader::new(file).lines();
-    let mut latest_usage = None;
-    while let Ok(Some(line)) = lines.next_line().await {
-        if !line.contains("token_count") {
-            continue;
-        }
-        if let Some(usage) = thread_token_usage_from_line(&line) {
-            latest_usage = Some(usage);
-        }
-    }
-    latest_usage
+    read_latest_thread_usage(&candidate).await
 }
 
+#[cfg(test)]
 fn total_tokens_from_line(line: &str) -> Option<u64> {
     thread_token_usage_from_line(line).map(|usage| usage.total_tokens)
 }

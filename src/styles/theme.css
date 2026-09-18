@@ -1,4 +1,5 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
+:root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { --token-distribution-color: #69b1ff; --token-distribution-hover-color: #8dc5ff; color: #e6edf3; color-scheme: dark; }
 /* 收起态窗口本身透明，悬浮球不投射阴影，避免桌面上出现误认为底色的灰色区域。 */
 :root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: none; }
@@ -48,10 +49,11 @@
 :root[data-theme="dark"] .icon-button { color: #aab7c7; }
 :root[data-theme="dark"] .always-on-top-button.is-active { color: #69b1ff; background: #17375e; }
 :root[data-theme="dark"] .always-on-top-button.is-active:hover { color: #91caff; background: #1d4778; }
-:root[data-theme="dark"] .language-menu { border-color: #2a3544; background: #151b23; box-shadow: 0 10px 28px rgba(0, 0, 0, .42); }
-:root[data-theme="dark"] .language-menu button { color: #b9c6d5; }
-:root[data-theme="dark"] .language-menu button:hover,
-:root[data-theme="dark"] .language-menu button.is-active { color: #8dc5ff; background: #182b42; }
+:root[data-theme="dark"] .language-picker { color: #aab7c7; background: #151b23; }
+:root[data-theme="dark"] .language-picker:hover,
+:root[data-theme="dark"] .language-picker:focus-within { color: #8dc5ff; background: #182b42; }
+:root[data-theme="dark"] .language-picker select { color-scheme: dark; }
+:root[data-theme="dark"] .language-picker option { color: #e6edf3; background: #151b23; }
 :root[data-theme="dark"] .icon-button:hover,
 :root[data-theme="dark"] .pagination-button:hover,
 :root[data-theme="dark"] .close-icon-button { color: #aab7c7; }
@@ -267,5 +269,6 @@
 :root[data-theme="dark"] .settings-intro, :root[data-theme="dark"] .settings-hint { color: #9aa9ba; }
 :root[data-theme="dark"] .settings-group { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .settings-group > label { color: #d5dfeb; }
-:root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-secondary-button, :root[data-theme="dark"] .settings-select-menu .select-menu-trigger { border-color: #344456; color: #d5dfeb; background: #111820; }
+:root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-secondary-button, :root[data-theme="dark"] .settings-refresh-select { border-color: #344456; color: #d5dfeb; background: #111820; }
+:root[data-theme="dark"] .settings-refresh-select { color-scheme: dark; }
 :root[data-theme="dark"] .settings-secondary-button:hover:not(:disabled) { border-color: #4096ff; color: #9ecbff; background: #182b42; }

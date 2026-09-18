@@ -39,9 +39,7 @@ const status = document.querySelector("#status");
 const panel = document.querySelector(".panel");
 const appVersionElement = document.querySelector("#app-version");
 const windowDragRegion = document.querySelector("#window-drag-region");
-const languageButton = document.querySelector("#language-button");
-const languageMenu = document.querySelector("#language-menu");
-const languageOptions = document.querySelectorAll("[data-language]");
+const languageSelect = document.querySelector("#language-select");
 const themeButton = document.querySelector("#theme-button");
 const themeIcon = document.querySelector("#theme-icon");
 const alwaysOnTopButton = document.querySelector("#always-on-top-button");
@@ -426,7 +424,7 @@ function createExportFileName() {
   return `${t("exportFileName")}-${date}.codex-desk.json`;
 }
 
-async function exportThreadFromDialog(threadId) {
+async function exportThreadsToFile(threadIds) {
   setStatus(t("selectingExportLocation"));
   const outputPath = await invoke("choose_export_path", {
     defaultFileName: createExportFileName(),
@@ -434,17 +432,22 @@ async function exportThreadFromDialog(threadId) {
   });
   if (!outputPath) {
     refreshController.renderSyncedStatus();
-    return;
+    return null;
   }
-  setStatus(t("preparingExport", { count: 1 }));
+  setStatus(t("preparingExport", { count: threadIds.length }));
   const result = await invoke("export_threads", {
-    threadIds: [threadId],
+    threadIds,
     outputPath,
   });
   setStatus(t("exportCompleted", {
     count: result.exported,
     failed: transferFailureSuffix(result.failures),
   }));
+  return result;
+}
+
+async function exportThreadFromDialog(threadId) {
+  await exportThreadsToFile([threadId]);
 }
 
 async function exportSelectedThreads() {
@@ -455,24 +458,8 @@ async function exportSelectedThreads() {
   transferInProgress = true;
   updateTransferControls();
   try {
-    setStatus(t("selectingExportLocation"));
-    const outputPath = await invoke("choose_export_path", {
-      defaultFileName: createExportFileName(),
-      filterName: t("exportFileDialogFilter"),
-    });
-    if (!outputPath) {
-      refreshController.renderSyncedStatus();
-      return;
-    }
-    setStatus(t("preparingExport", { count: selectedThreadIds.size }));
-    const result = await invoke("export_threads", {
-      threadIds: [...selectedThreadIds],
-      outputPath,
-    });
-    setStatus(t("exportCompleted", {
-      count: result.exported,
-      failed: transferFailureSuffix(result.failures),
-    }));
+    const result = await exportThreadsToFile([...selectedThreadIds]);
+    if (!result) return;
     clearThreadSelection();
   } catch (error) {
     console.error(error);
@@ -576,12 +563,6 @@ function syncNativeTrayLanguage() {
     .catch((error) => console.error("同步托盘语言失败", error));
 }
 
-function setLanguageMenuOpen(open) {
-  languageMenu.hidden = !open;
-  languageButton.setAttribute("aria-expanded", String(open));
-  if (!open) languageButton.blur();
-}
-
 /** 将语言控制器的当前状态投射到静态页面文案及相关辅助信息。 */
 function applyLanguage() {
   document.documentElement.lang = i18n.getLocale();
@@ -612,18 +593,17 @@ function applyLanguage() {
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
   const languageMode = i18n.getMode();
-  languageButton.title = languageButton.ariaLabel = `${t("language")}：${t(i18n.getLabelKey())}`;
-  languageOptions.forEach((option) => {
-    const configuredOption = LANGUAGE_OPTIONS.find((item) => item.value === option.dataset.language);
+  languageSelect.value = languageMode;
+  languageSelect.title = languageSelect.ariaLabel = `${t("language")}：${t(i18n.getLabelKey())}`;
+  for (const option of languageSelect.options) {
+    const configuredOption = LANGUAGE_OPTIONS.find((item) => item.value === option.value);
     option.textContent = t(configuredOption?.labelKey ?? "languageSystem");
-    option.classList.toggle("is-active", option.dataset.language === languageMode);
-  });
+  }
 
   dialogView.updateLanguage();
   renderDashboardAvailability();
   trendView.render();
   tokenUsageView.render();
-  wordCloudView.render();
   renderTheme();
   renderCurrentThreadPage();
   updateTransferControls();
@@ -639,7 +619,6 @@ function applyLanguage() {
 
 function selectLanguage(nextLanguage) {
   i18n.setMode(nextLanguage);
-  setLanguageMenuOpen(false);
   applyLanguage();
 }
 
@@ -723,7 +702,6 @@ async function setExpanded(nextExpanded) {
   // 否则 Windows 会先裁切旧面板的一帧，产生“Codex”标题残影。
   if (!nextExpanded) {
     setModuleExpanded(null);
-    setLanguageMenuOpen(false);
     app.classList.add("is-collapsing");
     app.classList.remove("is-expanded");
     // 将隐藏状态提交给渲染队列后再发起原生缩窗，避免尺寸变化抢在样式更新之前。
@@ -756,7 +734,6 @@ async function setExpanded(nextExpanded) {
       renderSessionsVisibility();
     }
   }
-  if (!expanded) setLanguageMenuOpen(false);
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
   app.classList.remove("is-collapsing");
@@ -764,27 +741,7 @@ async function setExpanded(nextExpanded) {
 }
 
 function setupLanguageControls() {
-  languageButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setLanguageMenuOpen(languageMenu.hidden);
-  });
-  languageOptions.forEach((option) => {
-    option.addEventListener("click", (event) => {
-      event.stopPropagation();
-      selectLanguage(option.dataset.language);
-    });
-  });
-  // 不依赖 composedPath：Windows/macOS 的不同 WebView 都可稳定处理菜单外点击。
-  window.addEventListener("pointerdown", (event) => {
-    const target = event.target;
-    if (!languageMenu.hidden && !languageButton.contains(target) && !languageMenu.contains(target)) {
-      setLanguageMenuOpen(false);
-    }
-  });
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !languageMenu.hidden) setLanguageMenuOpen(false);
-  });
-  window.addEventListener("blur", () => setLanguageMenuOpen(false));
+  languageSelect.addEventListener("change", () => selectLanguage(languageSelect.value));
   // 浏览器语言变化时，只在“跟随系统”模式下重新翻译页面。
   window.addEventListener("languagechange", () => {
     if (i18n.isSystemMode()) applyLanguage();

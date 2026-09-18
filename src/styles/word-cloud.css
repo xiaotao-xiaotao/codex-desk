@@ -2,8 +2,8 @@
 .insights-overview { flex: 0 0 auto; margin-bottom: 3px; padding-top: 2px; }
 .insights-overview-heading { min-height: 26px; margin-bottom: 6px; padding: 0 2px; }
 .insights-range-picker { width: 114px; flex: 0 0 114px; color: #526173; font-size: .61rem; font-weight: 650; }
-.insights-range-picker .select-menu-trigger { height: 27px; padding: 0 22px 0 9px; border: 1px solid #dbe5ef; border-radius: 7px; background: #f8fafc; box-shadow: none; }
-.insights-range-picker .select-menu-trigger::after { right: 9px; }
+.insights-range-picker select { width: 100%; height: 27px; box-sizing: border-box; padding: 0 7px; border: 1px solid #dbe5ef; border-radius: 7px; outline: 0; color: inherit; background: #f8fafc; font: inherit; }
+.insights-range-picker select:focus-visible { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
 /* 右侧关键词词云跨越两行；左侧两张趋势卡固定等高。 */
 .insights-layout { --insight-card-height: 150px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 1fr); grid-template-rows: repeat(2, var(--insight-card-height)); grid-template-areas: "activity topics" "tokens topics"; flex: 0 0 auto; gap: 6px; }
 .insights-layout .trend-section { min-width: 0; margin-bottom: 0; }
@@ -54,6 +54,6 @@
 :root[data-theme="dark"] .word-cloud-summary,
 :root[data-theme="dark"] .word-cloud-empty { color: #9aa9ba; }
 :root[data-theme="dark"] .insights-range-picker { color: #c4d0dd; }
-:root[data-theme="dark"] .insights-range-picker .select-menu-trigger { border-color: #344456; background: #18212c; box-shadow: none; }
+:root[data-theme="dark"] .insights-range-picker select { border-color: #344456; background: #18212c; color-scheme: dark; }
 :root[data-theme="dark"] .word-cloud-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
 :root[data-theme="dark"] .word-cloud-section.is-word-cloud-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }

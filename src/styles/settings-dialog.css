@@ -10,13 +10,11 @@
 .settings-path-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
 .settings-group input { min-width: 0; height: 31px; box-sizing: border-box; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 7px; outline: 0; color: #334155; background: #fff; font-size: .7rem; }
 .settings-group input:focus { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
-.settings-select-menu { width: 100%; color: #334155; font-size: .7rem; }
-.settings-select-menu .select-menu-trigger { height: 31px; padding-left: 11px; border-color: #dbe2ea; border-radius: 7px; background: #fff; }
-.settings-select-menu .select-menu-options { left: 0; right: auto; transform-origin: top left; }
-.settings-select-menu .select-menu-option { padding: 6px 10px; font-size: .7rem; }
+.settings-refresh-select { width: 100%; min-width: 0; height: 31px; box-sizing: border-box; padding: 0 8px; border: 1px solid #dbe2ea; border-radius: 7px; outline: 0; color: #334155; background: #fff; font-size: .7rem; }
+.settings-refresh-select:focus-visible { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
 .settings-secondary-button { min-height: 29px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 7px; color: #526173; background: #fff; cursor: pointer; font-size: .66rem; font-weight: 680; }
 .settings-secondary-button:hover:not(:disabled) { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
 .settings-status { margin: 0; color: #13795b; font-size: .68rem; line-height: 1.45; }
 .settings-status[data-kind="error"] { color: #cf1322; }
 .settings-actions { display: flex; justify-content: flex-end; gap: 6px; }
-.settings-actions button:disabled, .settings-path-row button:disabled { cursor: wait; opacity: .65; }
+.settings-actions button:disabled, .settings-path-row button:disabled, .settings-refresh-select:disabled { cursor: wait; opacity: .65; }
