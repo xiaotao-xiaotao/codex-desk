@@ -1,22 +1,33 @@
-# Codex Desk — Codex CLI Quota Monitor & Session Manager
+# Codex Desk
 
-[中文](README.zh-CN.md)
+<p align="center">
+  <strong>See your Codex CLI quota at a glance. Resume local sessions in seconds.</strong><br />
+  A privacy-first desktop companion for Codex CLI on Windows, macOS, and Linux.
+</p>
 
-[![Latest Release](https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver)](https://github.com/xiaotao-xiaotao/codex-desk/releases)
-[![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
+<p align="center">
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases"><strong>Download the latest release</strong></a>
+  · <a href="README.zh-CN.md">中文</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases"><img src="https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk" alt="MIT License" /></a>
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/stargazers"><img src="https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat" alt="GitHub stars" /></a>
+</p>
 
 <p align="center">
   <img src="docs/screenshots/social-preview-1280x640.jpg" alt="Codex Desk quota monitoring and local session dashboard" width="100%" />
 </p>
 
-**Keep track of Codex CLI quota and quickly resume local sessions.**
+## Why Codex Desk?
 
-Codex Desk is a privacy-first desktop control center for Codex CLI. It keeps a floating quota indicator on your desktop and provides quota alerts, local session browsing, activity trends, a keyword cloud, daily and per-session Token insights, session details, and cross-device session migration.
+- **Never lose track of your quota** — keep a floating desktop indicator visible, with optional alerts at 80%, 90%, and 100% usage.
+- **Return to useful work faster** — search local Codex sessions, inspect messages and file changes, then copy the exact `codex resume <session ID>` command.
+- **Understand how you use Codex** — explore activity trends, recurring topics, and Token usage by day or session.
+- **Keep your data on your machine** — data is read locally through `codex app-server --stdio` and local session files. Codex Desk never uploads your data or reads or stores `auth.json`.
 
-Account, quota, and session data are obtained through the local `codex app-server --stdio` process. Token usage is aggregated from cumulative snapshots in local Codex session files. Codex Desk does not upload your data to a third-party service or read or save `auth.json`.
-
-If Codex Desk helps you manage your sessions, please consider giving the project a **Star**. Feedback and bug reports are welcome through [Issues](https://github.com/xiaotao-xiaotao/codex-desk/issues).
+Works with an already installed and signed-in [Codex CLI](https://github.com/openai/codex). If Codex Desk saves you time, a **Star** or an [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) helps the project reach more Codex users.
 
 ## Download
 

@@ -1,16 +1,29 @@
-# Codex Desk — Codex CLI 额度监控与会话管理工具
+# Codex Desk
 
-[English](README.md)
+<p align="center">
+  <strong>一眼掌握 Codex CLI 额度，几秒钟恢复本地会话。</strong><br />
+  面向 Windows、macOS 和 Linux 的隐私优先 Codex CLI 桌面助手。
+</p>
 
-[![Latest Release](https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver)](https://github.com/xiaotao-xiaotao/codex-desk/releases)
-[![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
+<p align="center">
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases"><strong>下载最新版本</strong></a>
+  · <a href="README.md">English</a>
+</p>
 
-**实时掌控 Codex CLI 额度，快速找回本地会话。**
+<p align="center">
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases"><img src="https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver" alt="最新版本" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk" alt="MIT License" /></a>
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/stargazers"><img src="https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat" alt="GitHub Stars" /></a>
+</p>
 
-Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮显示额度状态，提供账户与额度概览、额度提醒、本地会话浏览、活动趋势、关键词词云、按日与按会话 Token 洞察、会话详情和跨设备迁移。账户、额度与会话数据通过本机 `codex app-server --stdio` 获取；Token 用量读取本机 Codex 会话文件中的累计快照。不上传到第三方服务，也不读取或保存 `auth.json`。
+## 为什么用 Codex Desk？
 
-如果它帮你更方便地管理 Codex 会话，欢迎点一个 **Star**，也欢迎通过 Issue 提交建议。
+- **不再错过额度状态**：在桌面悬浮显示用量；可选开启 80%、90% 和 100% 的额度提醒。
+- **更快回到正在做的事**：搜索本地 Codex 会话，查看消息与文件变更，一键复制准确的 `codex resume <session ID>` 命令。
+- **看懂自己的使用情况**：按天或按会话查看活动趋势、常见主题和 Token 用量。
+- **数据始终留在本机**：仅通过本机 `codex app-server --stdio` 和本地会话文件读取数据；不上传数据，也不读取或保存 `auth.json`。
+
+使用前只需已安装并登录 [Codex CLI](https://github.com/openai/codex)。如果它帮你节省了时间，欢迎点一个 **Star**，或通过 [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) 提建议，帮助项目触达更多 Codex 用户。
 
 ## 下载
 
