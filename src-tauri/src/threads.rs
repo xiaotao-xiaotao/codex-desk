@@ -21,6 +21,8 @@ const TRANSFER_VERSION: u32 = 1;
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
+// App Server 可同时准备同一批只读详情；控制批量大小，避免趋势统计长时间占住交互连接。
+const TREND_READ_BATCH_SIZE: usize = 4;
 // 接口保留足够的高频词，前端再按常规/放大视图分别展示，避免放大词云仍受紧凑卡片数量限制。
 const MAX_WORD_CLOUD_ITEMS: usize = 300;
 const MIN_WORD_CLOUD_COUNT: usize = 2;
@@ -236,6 +238,7 @@ struct ThreadTrendCacheKey {
 
 /// 趋势数据的短期缓存与 App Server 连接状态分离，避免领域缓存污染传输层。
 pub struct ThreadTrendState {
+    build_lock: Mutex<()>,
     cached: Mutex<HashMap<usize, CachedThreadTrend>>,
     contributions: Mutex<HashMap<ThreadTrendCacheKey, ThreadTrendContribution>>,
 }
@@ -243,6 +246,7 @@ pub struct ThreadTrendState {
 impl Default for ThreadTrendState {
     fn default() -> Self {
         Self {
+            build_lock: Mutex::new(()),
             cached: Mutex::new(HashMap::new()),
             contributions: Mutex::new(HashMap::new()),
         }
@@ -463,6 +467,8 @@ pub async fn read_thread_trends(
     if !matches!(days, 3 | 7 | 30) {
         return Err("趋势时间范围仅支持 3、7 或 30 天".to_owned());
     }
+    // 不同范围切换或自动刷新可能同时到达；串行构建后，后一个请求可直接复用会话贡献缓存。
+    let _build_guard = trend_state.build_lock.lock().await;
     if !force_refresh {
         let cached = trend_state.cached.lock().await;
         if let Some(cached) = cached.get(&days) {
@@ -1061,12 +1067,14 @@ async fn build_thread_trends(
         .iter()
         .filter_map(thread_trend_cache_key)
         .collect::<HashSet<_>>();
-    trend_state
-        .contributions
-        .lock()
-        .await
-        .retain(|key, _| active_keys.contains(key));
+    let cached_contributions = {
+        let mut cache = trend_state.contributions.lock().await;
+        cache.retain(|key, _| active_keys.contains(key));
+        cache.clone()
+    };
 
+    let mut contributions = Vec::new();
+    let mut pending_threads = Vec::new();
     for summary in threads {
         let fallback_day = summary.updated_at.as_ref().and_then(day_key_from_value);
         if fallback_day
@@ -1077,38 +1085,52 @@ async fn build_thread_trends(
         }
 
         let cache_key = thread_trend_cache_key(&summary);
-        let cached_contribution = match cache_key.as_ref() {
-            Some(key) => trend_state.contributions.lock().await.get(key).cloned(),
-            None => None,
-        };
-        let contribution = if let Some(cached) = cached_contribution {
-            cached
+        if let Some(cached) = cache_key
+            .as_ref()
+            .and_then(|key| cached_contributions.get(key))
+            .cloned()
+        {
+            contributions.push(cached);
         } else {
-            let result = match state
-                .request_background(
-                    "thread/read",
-                    json!({ "threadId": summary.id, "includeTurns": true }),
+            pending_threads.push((summary.id, fallback_day, cache_key));
+        }
+    }
+
+    let mut cache_updates = Vec::new();
+    for batch in pending_threads.chunks(TREND_READ_BATCH_SIZE) {
+        let requests = batch
+            .iter()
+            .map(|(thread_id, _, _)| {
+                (
+                    "thread/read".to_owned(),
+                    json!({ "threadId": thread_id, "includeTurns": true }),
                 )
-                .await
-            {
-                Ok(result) => result,
-                // 单条历史线程不可读不应让整个趋势图空白；下一次刷新会再次尝试。
-                Err(_) => continue,
+            })
+            .collect();
+        let results = match state.request_background_batch(requests).await {
+            Ok(results) => results,
+            // 单批读取失败不应让整个趋势图空白；下一批会重连，失败项下次刷新重试。
+            Err(_) => continue,
+        };
+        for ((_, fallback_day, cache_key), result) in batch.iter().zip(results) {
+            let Ok(result) = result else {
+                continue;
             };
             let Some(thread) = result.get("thread") else {
                 continue;
             };
             let contribution = thread_trend_contribution(thread, fallback_day.as_deref());
             if let Some(key) = cache_key {
-                trend_state
-                    .contributions
-                    .lock()
-                    .await
-                    .insert(key, contribution.clone());
+                cache_updates.push((key.clone(), contribution.clone()));
             }
-            contribution
-        };
+            contributions.push(contribution);
+        }
+    }
+    if !cache_updates.is_empty() {
+        trend_state.contributions.lock().await.extend(cache_updates);
+    }
 
+    for contribution in contributions {
         for day in contribution.message_days {
             if let Some(point) = points.iter_mut().find(|point| point.day == day) {
                 point.messages += 1;

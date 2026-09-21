@@ -1,11 +1,11 @@
 /* 总览使用唯一范围筛选器，避免三张关联图表出现彼此不一致的时间口径。 */
-.insights-overview { flex: 0 0 auto; margin-bottom: 3px; padding-top: 2px; }
-.insights-overview-heading { min-height: 26px; margin-bottom: 6px; padding: 0 2px; }
+.insights-overview { flex: 0 0 auto; margin-bottom: 3px; padding-top: 2px; padding-bottom: 5px; }
+.insights-overview-heading { min-height: 26px; margin-bottom: 4px; padding: 0 2px; }
 .insights-range-picker { width: 114px; flex: 0 0 114px; color: #526173; font-size: .61rem; font-weight: 650; }
 .insights-range-picker select { width: 100%; height: 27px; box-sizing: border-box; padding: 0 7px; border: 1px solid #dbe5ef; border-radius: 7px; outline: 0; color: inherit; background: #f8fafc; font: inherit; }
 .insights-range-picker select:focus-visible { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
 /* 右侧关键词词云跨越两行；左侧两张趋势卡固定等高。 */
-.insights-layout { --insight-card-height: 150px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 1fr); grid-template-rows: repeat(2, var(--insight-card-height)); grid-template-areas: "activity topics" "tokens topics"; flex: 0 0 auto; gap: 6px; }
+.insights-layout { --insight-card-height: 140px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 1fr); grid-template-rows: repeat(2, var(--insight-card-height)); grid-template-areas: "activity topics" "tokens topics"; flex: 0 0 auto; gap: 6px; }
 .insights-layout .trend-section { min-width: 0; margin-bottom: 0; }
 /* 常规卡片以标题栏和图表两段组成；图表占满各自剩余高度，避免 Token 卡底部留白。 */
 .insights-layout .trend-section:not(.is-chart-expanded) { display: grid; grid-template-rows: auto minmax(0, 1fr); }

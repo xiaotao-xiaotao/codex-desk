@@ -27,7 +27,7 @@ tauri = { version = "2", default-features = false, features = [
 ] }
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.3"
-tokio = { version = "1", features = ["fs", "io-util", "process", "sync", "time"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "process", "sync", "time"] }
 
 [profile.release]
 # 桌面安装包更重视体积；LTO 与单代码生成单元可移除跨 crate 的冗余代码。

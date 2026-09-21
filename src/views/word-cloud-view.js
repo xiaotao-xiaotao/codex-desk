@@ -1,10 +1,12 @@
 // 以水平词为主，穿插不同倾角，形成自然发散的词云而非规则标签矩阵。
 const ROTATIONS = [0, 0, 0, 0, -16, 16, -28, 28, -42, 42, -56, 56];
-const COMPACT_WORD_CLOUD_ITEM_LIMIT = 100;
-const EXPANDED_WORD_CLOUD_ITEM_LIMIT = 150;
+const COMPACT_WORD_CLOUD_ITEM_LIMIT = 120;
+const EXPANDED_WORD_CLOUD_ITEM_LIMIT = 200;
 const MAXIMIZED_WINDOW_WORD_CLOUD_ITEM_LIMIT = 300;
 // 以前 60 个高频词决定中心字号，额外词只补充外圈，避免为了展示更多词而压小主体。
 const WORD_CLOUD_CORE_ITEM_COUNT = 60;
+// 维持原 100 词布局的排名衰减；新增词固定使用长尾字号，只负责填充外围空位。
+const WORD_CLOUD_RANK_REFERENCE_COUNT = 100;
 // 词与词之间仅保留极窄安全间隙，视觉上连续聚合，悬停时也不会误触相邻词。
 const WORD_CLEARANCE = 1.5;
 // 适度提高画布占用率；外围小词用于延展到宽卡两侧，不退化成满屏文字墙。
@@ -39,6 +41,10 @@ function fontSizeFor(value, minimum, maximum, rank, scale = 1) {
   return Math.max(MIN_WORD_FONT_SIZE, coreSize * ringDamping * scale);
 }
 
+function rankForIndex(index) {
+  return Math.min(1, index / Math.max(1, WORD_CLOUD_RANK_REFERENCE_COUNT - 1));
+}
+
 function estimatedTextWidth(name, fontSize) {
   // 不调用 Canvas 测量，避免 WebView 首帧字体尚未就绪时得到错误尺寸。
   return Array.from(name).reduce((width, character) => (
@@ -60,7 +66,7 @@ function fontScaleForCanvas(items, minimum, maximum, width, height) {
   const coreItems = items.slice(0, WORD_CLOUD_CORE_ITEM_COUNT);
   for (const [index, item] of coreItems.entries()) {
     // 排名仍按全部词条计算，使补充到外圈的长尾词自然更小。
-    const rank = items.length <= 1 ? 0 : index / (items.length - 1);
+    const rank = rankForIndex(index);
     const fontSize = fontSizeFor(item.value, minimum, maximum, rank);
     const rotation = ROTATIONS[wordHash(item.name) % ROTATIONS.length];
     estimatedArea += estimatedWordArea({ name: item.name, fontSize, rotation });
@@ -141,11 +147,12 @@ function createCenterFirstCandidates(columns, rows) {
       candidates.push({
         column,
         row,
-        distance: horizontalDistance ** 2 + verticalDistance ** 2,
+        // 六次方超椭圆进一步减小四角留白，同时仍保持连续的圆角矩形轮廓。
+        distance: horizontalDistance ** 6 + verticalDistance ** 6,
       });
     }
   }
-  // 横向椭圆从中心连续生长，保持自然聚合，同时适配卡片宽高比例。
+  // 圆角矩形轮廓从中心连续生长，兼顾中心聚合感与卡片边角利用率。
   candidates.sort((left, right) => left.distance - right.distance || left.row - right.row || left.column - right.column);
   return candidates;
 }
@@ -314,7 +321,7 @@ export function createWordCloudView({ t }) {
     if (!response) return;
 
     const availableItems = Array.isArray(response.items) ? response.items : [];
-    // 普通分栏卡片始终使用 100 词；词云独占内容区后，再按窗口是否最大化切换 150/300。
+    // 按普通卡片、模块放大、窗口最大化后的模块放大分为 120/200/300 三档密度。
     const itemLimit = windowMaximized && cloudExpanded
       ? MAXIMIZED_WINDOW_WORD_CLOUD_ITEM_LIMIT
       : cloudExpanded
@@ -349,7 +356,7 @@ export function createWordCloudView({ t }) {
 
     for (const [index, item] of items.entries()) {
       const { name, value } = item;
-      const rank = items.length <= 1 ? 0 : index / (items.length - 1);
+      const rank = rankForIndex(index);
       const word = {
         name,
         value,

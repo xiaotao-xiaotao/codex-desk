@@ -154,13 +154,21 @@ export function createTokenUsageTrendView({ t }) {
     });
   }
 
-  function appendValueGrid(svg, { width, left, right, axisMax, valueToY, valueFormatter = String }) {
+  function appendValueGrid(svg, {
+    width,
+    left,
+    right,
+    axisMax,
+    valueToY,
+    valueFormatter = String,
+    labelGap = 5,
+  }) {
     const grid = createSvgElement("g", { class: "trend-grid" });
     for (let index = 0; index <= 2; index += 1) {
       const value = (axisMax * index) / 2;
       const y = valueToY(value);
       grid.append(createSvgElement("line", { x1: left, x2: width - right, y1: y, y2: y }));
-      const label = createSvgElement("text", { x: left - 5, y: y + 3, "text-anchor": "end" });
+      const label = createSvgElement("text", { x: left - labelGap, y: y + 3, "text-anchor": "end" });
       label.textContent = valueFormatter(value);
       grid.append(label);
     }
@@ -225,7 +233,7 @@ export function createTokenUsageTrendView({ t }) {
     const valueMax = Math.max(...points.map((point) => point.tokens), 1);
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
     const dimensions = chartDimensions(target, compact
-      ? { bottom: 17, minWidth: 156, minHeight: 72, left: 25, right: 4, top: 5 }
+      ? { bottom: 17, minWidth: 156, minHeight: 72, left: 33, right: 7, top: 5 }
       : undefined);
     const { width, height, left, right, plotWidth, valueToY } = dimensions;
     const indexToX = (index) => left + (points.length === 1 ? plotWidth / 2 : (index * plotWidth) / (points.length - 1));
@@ -243,6 +251,7 @@ export function createTokenUsageTrendView({ t }) {
       axisMax,
       valueToY: (value) => valueToY(value, axisMax),
       valueFormatter: compact ? formatCompactTokens : formatCompactTokens,
+      labelGap: compact ? 13 : 5,
     });
     const labels = createSvgElement("g", { class: "trend-labels" });
     svg.append(createSvgElement("polyline", {
@@ -288,7 +297,7 @@ export function createTokenUsageTrendView({ t }) {
     const valueMax = Math.max(...buckets.map((bucket) => bucket.count), 1);
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
     const dimensions = chartDimensions(target, compact
-      ? { bottom: 17, minWidth: 156, minHeight: 72, left: 20, right: 3, top: 5 }
+      ? { bottom: 17, minWidth: 156, minHeight: 72, left: 28, right: 6, top: 5 }
       : undefined);
     const { width, height, left, right, top, plotWidth, plotHeight, valueToY } = dimensions;
     const columnWidth = plotWidth / buckets.length;
@@ -310,6 +319,7 @@ export function createTokenUsageTrendView({ t }) {
       right,
       axisMax,
       valueToY: (value) => valueToY(value, axisMax),
+      labelGap: compact ? 13 : 5,
     });
 
     const labels = createSvgElement("g", { class: "trend-labels" });
@@ -347,10 +357,11 @@ export function createTokenUsageTrendView({ t }) {
   function renderChart() {
     chart.setAttribute("aria-busy", "false");
     chart.replaceChildren();
+    const compact = !trendSection.classList.contains("is-chart-expanded") && chart.clientHeight < 100;
     if (activeView === "distribution") {
-      renderDistributionChart(chart, total);
+      renderDistributionChart(chart, total, compact);
     } else {
-      renderTrendChart(chart, total);
+      renderTrendChart(chart, total, compact);
     }
   }
 

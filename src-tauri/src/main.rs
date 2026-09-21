@@ -24,8 +24,10 @@ use tokio::io::AsyncReadExt;
 const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
 // 展开会话保持正常阅读密度；内容超出固定高度时由列表自身滚动承接。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
-// 本地历史收起后刚好容纳完整洞察区与刷新状态，避免底部留下大块无效空白。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 600.0;
+// 洞察卡压缩后同步收紧收起态窗口，仅保留刷新状态下方的安全留白。
+const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 590.0;
+// 动态测量异常时限制窗口高度，避免空内容或错误布局把窗口压缩到不可操作。
+const MIN_DASHBOARD_WINDOW_HEIGHT: f64 = 420.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
@@ -216,8 +218,9 @@ async fn read_thread_trends(
 #[tauri::command]
 async fn read_token_usage(
     state: State<'_, app_server::AppServerState>,
+    local_usage_state: State<'_, local_usage::LocalUsageState>,
 ) -> Result<usage::TokenUsageSnapshot, String> {
-    usage::read_token_usage(&state).await
+    usage::read_token_usage(&state, &local_usage_state).await
 }
 
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
@@ -303,6 +306,7 @@ fn set_window_always_on_top(always_on_top: bool, window: WebviewWindow) -> Resul
 fn resize_float_window(
     expanded: bool,
     sessions_expanded: bool,
+    collapsed_height: Option<f64>,
     window: WebviewWindow,
 ) -> Result<(), String> {
     // 展开且显示会话列表时保留完整阅读空间；本地历史收起时窗口同步缩短。
@@ -312,7 +316,11 @@ fn resize_float_window(
             if sessions_expanded {
                 EXPANDED_WINDOW_HEIGHT
             } else {
-                COLLAPSED_SESSIONS_WINDOW_HEIGHT
+                collapsed_height
+                    .filter(|height| height.is_finite())
+                    .map_or(COLLAPSED_SESSIONS_WINDOW_HEIGHT, |height| {
+                        height.clamp(MIN_DASHBOARD_WINDOW_HEIGHT, EXPANDED_WINDOW_HEIGHT)
+                    })
             },
         )
     } else {
@@ -380,6 +388,7 @@ fn quit_app(app: AppHandle) {
 fn main() {
     tauri::Builder::default()
         .manage(app_server::AppServerState::default())
+        .manage(local_usage::LocalUsageState::default())
         .manage(threads::ThreadTrendState::default())
         .manage(threads::ThreadListState::default())
         .plugin(tauri_plugin_notification::init())
@@ -392,7 +401,7 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
                 // 否则前端加载异常或 Windows 恢复出错误窗口尺寸时，只能看到托盘图标。
-                if let Err(error) = resize_float_window(true, false, window) {
+                if let Err(error) = resize_float_window(true, false, None, window) {
                     eprintln!("初始化主面板尺寸失败：{error}");
                 }
             }

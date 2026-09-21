@@ -108,12 +108,14 @@ export function createThreadTrendView({ t, onRangeChange }) {
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
     // 放大时使用容器的真实尺寸，避免固定 viewBox 被拉伸后导致文字和坐标轴失真。
     // 双列布局下图表会收窄到左栏，按真实宽度生成 viewBox 才不会把文字缩得过小。
+    const compact = !trendSection.classList.contains("is-chart-expanded") && chart.clientHeight < 100;
     const width = Math.max(320, Math.round(chart.clientWidth) || 320);
-    const height = Math.max(108, Math.round(chart.clientHeight) || 108);
-    const left = 35;
-    const right = 12;
-    const top = 8;
-    const bottom = 24;
+    const height = Math.max(compact ? 72 : 108, Math.round(chart.clientHeight) || 108);
+    // 紧凑卡片仍为 Y 轴数字和首个数据点保留呼吸空间，避免视觉上贴近左边框。
+    const left = compact ? 38 : 35;
+    const right = compact ? 8 : 12;
+    const top = compact ? 5 : 8;
+    const bottom = compact ? 17 : 24;
     const plotWidth = width - left - right;
     const plotHeight = height - top - bottom;
     const valueToY = (value) => top + plotHeight - (value / axisMax) * plotHeight;
@@ -132,7 +134,13 @@ export function createThreadTrendView({ t, onRangeChange }) {
       const value = (axisMax * index) / 2;
       const y = valueToY(value);
       grid.append(createSvgElement("line", { x1: left, x2: width - right, y1: y, y2: y }));
-      const label = createSvgElement("text", { x: left - 7, y: y + 3, "text-anchor": "end" });
+      const label = createSvgElement("text", {
+        // 紧凑模式只右移绘图区，Y 轴数字仍保持原位置，形成清晰的轴前间距。
+        x: left - (compact ? 13 : 7),
+        y: y + 3,
+        "text-anchor": "end",
+        "font-size": compact ? 8 : 10,
+      });
       label.textContent = String(value);
       grid.append(label);
     }
@@ -146,7 +154,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
         points: linePoints,
         fill: "none",
         stroke: config.color,
-        "stroke-width": 2.4,
+        "stroke-width": compact ? 2 : 2.4,
         "stroke-linecap": "round",
         "stroke-linejoin": "round",
       }));
@@ -155,10 +163,10 @@ export function createThreadTrendView({ t, onRangeChange }) {
           class: "trend-point",
           cx: indexToX(index),
           cy: valueToY(values[index]),
-          r: 3.6,
+          r: compact ? 2.8 : 3.6,
           fill: "#fff",
           stroke: config.color,
-          "stroke-width": 2,
+          "stroke-width": compact ? 1.6 : 2,
         });
         dot.addEventListener("mouseenter", (event) => tooltip.show(createTooltipContent(point), event));
         dot.addEventListener("mousemove", tooltip.move);
@@ -171,7 +179,12 @@ export function createThreadTrendView({ t, onRangeChange }) {
       const x = indexToX(index);
       // 首尾日期向图内收齐，避免文本中心点落在边界时被 SVG 裁切。
       const textAnchor = index === 0 ? "start" : index === points.length - 1 ? "end" : "middle";
-      const label = createSvgElement("text", { x, y: height - 9, "text-anchor": textAnchor });
+      const label = createSvgElement("text", {
+        x,
+        y: height - (compact ? 4 : 9),
+        "text-anchor": textAnchor,
+        "font-size": compact ? 8 : 10,
+      });
       label.textContent = compactDayLabel(point.day);
       labels.append(label);
     });

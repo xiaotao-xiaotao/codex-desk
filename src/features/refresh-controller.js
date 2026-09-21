@@ -1,3 +1,5 @@
+import { readStoredJson, writeStoredValue } from "../utils/browser-storage.js";
+
 /**
  * 集中管理额度、趋势与 Token 用量的刷新状态。
  *
@@ -24,8 +26,12 @@ export function createRefreshController({
   onAutoRefreshScheduleChange,
   onRetryStatusChange,
 }) {
+  const INSIGHTS_CACHE_KEY = "codex-desk-insights-cache-v1";
+  const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v1";
   // 退避持续进行但设置上限，避免长期离线时把下一次重试推到不合理的未来。
   const MAX_AUTO_REFRESH_BACKOFF_MS = 24 * 60 * 60 * 1_000;
+  // Token 账号汇总优先占用 App Server；趋势缓存已可即时展示，后台更新下一任务再启动。
+  const BACKGROUND_INSIGHTS_START_DELAY_MS = 0;
   // 启动时 CLI 的认证与 app-server 可能仍在初始化，先快速重连，避免瞬时失败直接占满页面。
   const INITIAL_QUOTA_RETRY_DELAYS_MS = [500, 1_500];
   let latestQuota = null;
@@ -36,6 +42,52 @@ export function createRefreshController({
   let latestRefreshError = "";
   let trendRequestVersion = 0;
   let tokenUsageRequestVersion = 0;
+  let insightsCache = readStoredJson(INSIGHTS_CACHE_KEY, {});
+  let tokenUsageCache = readStoredJson(TOKEN_USAGE_CACHE_KEY, null);
+
+  function currentUtcDay() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function restoreCachedThreadTrends(days) {
+    const cached = insightsCache?.[days];
+    const data = cached?.data;
+    if (cached?.day !== currentUtcDay()
+      || Number(data?.days) !== days
+      || !Array.isArray(data?.points)
+      || !data?.wordCloud) {
+      return false;
+    }
+    trendView.setData(data);
+    wordCloudView.setData(data.wordCloud, data.days);
+    return true;
+  }
+
+  function cacheThreadTrends(data) {
+    const days = Number(data?.days);
+    if (![3, 7, 30].includes(days)) return;
+    insightsCache = {
+      ...insightsCache,
+      [days]: { day: currentUtcDay(), data },
+    };
+    writeStoredValue(INSIGHTS_CACHE_KEY, JSON.stringify(insightsCache));
+  }
+
+  function restoreCachedTokenUsage() {
+    const data = tokenUsageCache?.data;
+    if (tokenUsageCache?.day !== currentUtcDay()
+      || !Array.isArray(data?.dailyUsageBuckets)
+      || !Array.isArray(data?.localSessionUsage)) {
+      return false;
+    }
+    tokenUsageView.setData(data);
+    return true;
+  }
+
+  function cacheTokenUsage(data) {
+    tokenUsageCache = { day: currentUtcDay(), data };
+    writeStoredValue(TOKEN_USAGE_CACHE_KEY, JSON.stringify(tokenUsageCache));
+  }
 
   function scheduleNextAutoRefresh(delayMs) {
     nextAutoRefreshAt = Date.now() + delayMs;
@@ -101,35 +153,43 @@ export function createRefreshController({
 
   async function refreshThreadTrends(forceRefresh = false) {
     const requestVersion = ++trendRequestVersion;
+    const days = getTrendDays();
+    // 同一天的上次结果先立即展示，后台完成后再无闪烁替换为最新统计。
+    const restoredFromCache = restoreCachedThreadTrends(days);
     trendView.showLoading();
     wordCloudView.showLoading();
     try {
       const data = await invoke("read_thread_trends", {
         forceRefresh,
-        days: getTrendDays(),
+        days,
       });
       if (requestVersion !== trendRequestVersion) return;
+      cacheThreadTrends(data);
       trendView.setData(data);
       wordCloudView.setData(data.wordCloud, data.days);
     } catch (error) {
       if (requestVersion !== trendRequestVersion) return;
       console.error(error);
-      trendView.showError();
-      wordCloudView.showError();
+      if (!restoredFromCache) {
+        trendView.showError();
+        wordCloudView.showError();
+      }
     }
   }
 
   async function refreshTokenUsage() {
     const requestVersion = ++tokenUsageRequestVersion;
+    const restoredFromCache = restoreCachedTokenUsage();
     tokenUsageView.showLoading();
     try {
       const data = await invoke("read_token_usage");
       if (requestVersion !== tokenUsageRequestVersion) return;
+      cacheTokenUsage(data);
       tokenUsageView.setData(data);
     } catch (error) {
       if (requestVersion !== tokenUsageRequestVersion) return;
       console.error(error);
-      tokenUsageView.showError();
+      if (!restoredFromCache) tokenUsageView.showError();
     }
   }
 
@@ -148,9 +208,12 @@ export function createRefreshController({
       await quotaAlerts.notify(latestQuota);
       if (getExpanded()) {
         if (getSessionsExpanded()) await refreshThreadList(forceTrendRefresh);
-        // 趋势和本地 Token 读取属于低优先级任务，不能阻塞额度主卡的可用状态。
-        void refreshThreadTrends(forceTrendRefresh);
+        // 先提交 Token 请求，使 App Server 的交互优先级在趋势批量读取前生效。
         void refreshTokenUsage();
+        window.setTimeout(
+          () => void refreshThreadTrends(forceTrendRefresh),
+          BACKGROUND_INSIGHTS_START_DELAY_MS,
+        );
       }
     } catch (error) {
       console.error(error);
@@ -167,6 +230,9 @@ export function createRefreshController({
       renderSyncedStatus();
     }
   }
+
+  restoreCachedThreadTrends(getTrendDays());
+  restoreCachedTokenUsage();
 
   return {
     getLatestQuota: () => latestQuota,

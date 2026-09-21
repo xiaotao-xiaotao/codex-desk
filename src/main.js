@@ -32,6 +32,8 @@ const EXPANDED_THREAD_LAYOUT = {
   rowGapPx: 8,
 };
 const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;
+const COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS = 80;
+const COLLAPSED_WINDOW_BOTTOM_GAP_PX = 7;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -164,10 +166,51 @@ let suppressOrbClick = false;
 let dashboardUnavailable = false;
 let dashboardRetryStatus = null;
 let currentAppVersion = "";
+let collapsedWindowResizeTimer = null;
+let lastCollapsedWindowHeight = null;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
+}
+
+function measuredCollapsedWindowHeight() {
+  // 首次额度尚未渲染时沿用原生兜底高度，避免根据占位内容把窗口过早压小。
+  if (!refreshController?.getLatestQuota()) return null;
+  const statusBottom = status.getBoundingClientRect().bottom;
+  if (!Number.isFinite(statusBottom) || statusBottom <= 0) return null;
+  return Math.ceil(statusBottom + COLLAPSED_WINDOW_BOTTOM_GAP_PX);
+}
+
+async function syncCollapsedWindowHeight() {
+  if (!expanded || sessionsExpanded || windowMaximized || expandedModule || dashboardUnavailable) return;
+  const collapsedHeight = measuredCollapsedWindowHeight();
+  if (collapsedHeight === null || collapsedHeight === lastCollapsedWindowHeight) return;
+  lastCollapsedWindowHeight = collapsedHeight;
+  try {
+    await invoke("resize_float_window", {
+      expanded: true,
+      sessionsExpanded: false,
+      collapsedHeight,
+    });
+  } catch (error) {
+    lastCollapsedWindowHeight = null;
+    console.error("同步收起态窗口高度失败", error);
+  }
+}
+
+function scheduleCollapsedWindowResize() {
+  window.clearTimeout(collapsedWindowResizeTimer);
+  collapsedWindowResizeTimer = window.setTimeout(
+    () => void syncCollapsedWindowHeight(),
+    COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS,
+  );
+}
+
+function setupCollapsedWindowAutoResize() {
+  if (typeof ResizeObserver !== "function") return;
+  const resizeObserver = new ResizeObserver(scheduleCollapsedWindowResize);
+  [...panel.children].forEach((element) => resizeObserver.observe(element));
 }
 
 function renderAppVersion() {
@@ -226,7 +269,12 @@ refreshController = createRefreshController({
   ),
   getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
-  onRefreshingChange: (isRefreshing) => setRefreshIconButtonLoading(refreshButton, isRefreshing),
+  onRefreshingChange: (isRefreshing) => {
+    setRefreshIconButtonLoading(refreshButton, isRefreshing);
+    // 首轮额度可能没有可展示的卡片，区块高度不变时 ResizeObserver 不会再次触发；
+    // 请求结束后主动按真实内容收紧窗口，避免状态栏下方保留兜底高度产生的空白。
+    if (!isRefreshing) scheduleCollapsedWindowResize();
+  },
   onAvailabilityChange: (available) => {
     dashboardUnavailable = !available;
     renderDashboardAvailability();
@@ -371,18 +419,41 @@ function setupModuleExpansion() {
 
 async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
   if (sessionsExpanded === nextExpanded) return;
+  const previousExpanded = sessionsExpanded;
+  let collapsedHeight = null;
+  if (!nextExpanded) {
+    // 先完成折叠布局再测量状态栏底部，避免用展开列表的高度计算收起态窗口。
+    sessionsExpanded = false;
+    renderSessionsVisibility();
+    if (resizeWindow) {
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      collapsedHeight = measuredCollapsedWindowHeight();
+    }
+  }
   if (resizeWindow) {
     try {
       // 普通窗口中收起会话区时同步压缩高度；最大化时仅切换内容可见性。
-      await invoke("resize_float_window", { expanded: true, sessionsExpanded: nextExpanded });
+      await invoke("resize_float_window", {
+        expanded: true,
+        sessionsExpanded: nextExpanded,
+        collapsedHeight,
+      });
+      lastCollapsedWindowHeight = nextExpanded ? null : collapsedHeight;
     } catch (error) {
+      if (!nextExpanded) {
+        sessionsExpanded = previousExpanded;
+        renderSessionsVisibility();
+      }
       console.error("调整会话区窗口尺寸失败", error);
       setStatus(t("windowResizeFailed", { error: String(error) }), "error");
       return;
     }
   }
-  sessionsExpanded = nextExpanded;
-  renderSessionsVisibility();
+  if (nextExpanded) {
+    sessionsExpanded = true;
+    lastCollapsedWindowHeight = null;
+    renderSessionsVisibility();
+  }
   if (!sessionsExpanded) return;
 
   // 会话列表仅在用户主动展开后读取，避免首屏加载大量本地历史。
@@ -714,6 +785,7 @@ async function setExpanded(nextExpanded) {
     await invoke("resize_float_window", {
       expanded: nextExpanded,
       sessionsExpanded,
+      collapsedHeight: nextExpanded && !sessionsExpanded ? measuredCollapsedWindowHeight() : null,
     });
   } catch (error) {
     if (!nextExpanded) {
@@ -895,6 +967,7 @@ async function bootstrap() {
     await importTransferFile(file);
   });
   setupWindowDragging();
+  setupCollapsedWindowAutoResize();
   const threadListResizeObserver = new ResizeObserver(scheduleExpandedThreadLayoutSync);
   threadListResizeObserver.observe(threadListElement);
   window.addEventListener("resize", scheduleExpandedThreadLayoutSync);
