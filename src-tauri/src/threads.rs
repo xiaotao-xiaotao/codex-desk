@@ -866,11 +866,8 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
                     images: message.images,
                     // 回合标识展示在最终 Codex 回复的摘要行，避免为用户气泡重复增加元信息。
                     turn_id: is_assistant.then(|| turn_id.clone()).flatten(),
-                    started_at: if is_assistant {
-                        started_at.clone()
-                    } else {
-                        None
-                    },
+                    // 用户提问显示回合开始时间；Codex 回复继续用开始/完成时间计算用时。
+                    started_at: started_at.clone(),
                     completed_at: if is_assistant {
                         completed_at.clone()
                     } else {
@@ -1959,6 +1956,10 @@ mod tests {
         assert_eq!(detail.file_changes.len(), detail.insights.file_changes);
         assert_eq!(detail.issues.len(), detail.insights.issues);
         assert_eq!(detail.messages.len(), 2);
+        assert_eq!(
+            detail.messages[0].started_at,
+            Some(json!("2026-09-01T09:00:00+08:00"))
+        );
         assert_eq!(detail.messages[1].turn_id.as_deref(), Some("turn-12345678"));
         assert_eq!(
             detail.messages[1].started_at,

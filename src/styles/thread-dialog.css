@@ -111,6 +111,7 @@
 .message-time { white-space: nowrap; }
 .message-actions .copy-icon-button { width: 22px; height: 22px; }
 .message-actions .copy-icon-button svg { width: 13px; height: 13px; }
+.message-entry-assistant .message-actions .copy-icon-button { order: -1; }
 .copy-icon-button { display: grid; width: 20px; height: 20px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 5px; color: #7f8a97; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
 .copy-icon-button svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .copy-icon-button:hover:not(:disabled) { color: #4f5d6d; background: #eef0f2; }

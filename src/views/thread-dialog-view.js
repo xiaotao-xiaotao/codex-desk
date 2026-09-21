@@ -26,9 +26,11 @@ function timestampToMilliseconds(value) {
 }
 
 function formatMessageTime(message) {
-  const completedAt = timestampToMilliseconds(message.completedAt);
-  if (completedAt === null) return null;
-  const date = new Date(completedAt);
+  // 回复优先显示完成时间；提问没有完成时间时显示所属回合的开始时间。
+  const timestamp = timestampToMilliseconds(message.completedAt)
+    ?? timestampToMilliseconds(message.startedAt);
+  if (timestamp === null) return null;
+  const date = new Date(timestamp);
   return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
@@ -344,7 +346,7 @@ export function createThreadDialogView({
       if (fileSummary) entry.append(fileSummary);
       const actions = document.createElement("div");
       actions.className = "message-actions";
-      const time = message.role === "assistant" ? formatMessageTime(message) : null;
+      const time = formatMessageTime(message);
       if (time) {
         const timeLabel = document.createElement("time");
         timeLabel.className = "message-time";
