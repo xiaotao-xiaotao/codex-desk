@@ -121,6 +121,8 @@ pub fn setup(app: &mut App) -> tauri::Result<()> {
         .icon(tray_icon)
         .tooltip("Codex 桌面控制台")
         .menu(&tray_menu)
+        // 左键只负责显示主窗口，托盘菜单仅由右键打开，避免菜单与窗口争抢焦点而闪现。
+        .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
             "refresh" => {
