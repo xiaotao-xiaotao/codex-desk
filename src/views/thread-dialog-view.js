@@ -42,13 +42,100 @@ function formatMessageDuration(message) {
   return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
 }
 
-function createCollapsedMessagesDisclosure({ t, message, duration }) {
+function createTurnIdBadge({ t, turnId, onCopyTurnId }) {
+  const normalizedTurnId = typeof turnId === "string" ? turnId.trim() : "";
+  if (!normalizedTurnId) return null;
+  const badge = document.createElement("button");
+  badge.type = "button";
+  badge.className = "turn-id-badge";
+  const label = document.createElement("span");
+  label.textContent = t("threadTurnId");
+  const value = document.createElement("code");
+  value.textContent = normalizedTurnId;
+  badge.append(label, value);
+  const renderDefault = () => {
+    badge.classList.remove("is-copied", "is-failed");
+    badge.title = badge.ariaLabel = `${t("copyId")}：${normalizedTurnId}`;
+  };
+  renderDefault();
+  badge.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    badge.disabled = true;
+    try {
+      await onCopyTurnId(normalizedTurnId);
+      badge.classList.add("is-copied");
+      badge.title = badge.ariaLabel = t("copied");
+    } catch {
+      badge.classList.add("is-failed");
+      badge.title = badge.ariaLabel = t("copyFailedLong");
+    }
+    window.setTimeout(() => {
+      badge.disabled = false;
+      renderDefault();
+    }, 1_500);
+  });
+  return badge;
+}
+
+function createMessageTurnMeta({ t, message, duration, onCopyTurnId }) {
+  const turnIdBadge = createTurnIdBadge({ t, turnId: message.turnId, onCopyTurnId });
+  if (!duration && !turnIdBadge) return null;
+  const meta = document.createElement("span");
+  meta.className = "message-turn-meta";
+  if (duration) {
+    const durationLabel = document.createElement("span");
+    durationLabel.className = "message-turn-duration";
+    durationLabel.textContent = t("threadMessageDuration", { value: duration });
+    meta.append(durationLabel);
+  }
+  if (turnIdBadge) meta.append(turnIdBadge);
+  return meta;
+}
+
+function createCollapsedMessagesDisclosure({
+  t,
+  message,
+  duration,
+  onCopyTurnId,
+  activityDisclosure,
+}) {
   const collapsedMessages = Array.isArray(message.collapsedMessages) ? message.collapsedMessages : [];
-  if (collapsedMessages.length === 0) return null;
+  if (collapsedMessages.length === 0 && !activityDisclosure) return null;
   const disclosure = document.createElement("details");
   disclosure.className = "message-duration-disclosure";
   const summary = document.createElement("summary");
-  summary.textContent = t("threadMessageDuration", { value: duration ?? "—" });
+  // 原生 summary 会让整行都可点击；改由独立箭头控制，避免点击回合 ID 时误展开。
+  summary.tabIndex = -1;
+  summary.addEventListener("click", (event) => event.preventDefault());
+  const turnMeta = createMessageTurnMeta({
+    t,
+    message,
+    duration: duration ?? "—",
+    onCopyTurnId,
+  });
+  if (turnMeta) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "message-turn-toggle";
+    toggle.textContent = "›";
+    const renderToggle = () => {
+      toggle.setAttribute("aria-expanded", String(disclosure.open));
+      toggle.title = toggle.ariaLabel = t(
+        disclosure.open ? "threadCollapseRecords" : "threadViewAllRecords",
+      );
+    };
+    toggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      disclosure.open = !disclosure.open;
+      renderToggle();
+    });
+    const durationLabel = turnMeta.querySelector(".message-turn-duration");
+    durationLabel?.append(toggle);
+    renderToggle();
+    summary.append(turnMeta);
+  }
   const content = document.createElement("div");
   content.className = "message-collapsed-content";
   for (const text of collapsedMessages) {
@@ -56,6 +143,7 @@ function createCollapsedMessagesDisclosure({ t, message, duration }) {
     paragraph.textContent = text;
     content.append(paragraph);
   }
+  if (activityDisclosure) content.append(activityDisclosure);
   disclosure.append(summary, content);
   return disclosure;
 }
@@ -195,14 +283,29 @@ export function createThreadDialogView({
         item.append(text);
       }
       const duration = message.role === "assistant" ? formatMessageDuration(message) : null;
-      const collapsedMessages = createCollapsedMessagesDisclosure({ t, message, duration });
+      const activityDisclosure = activityView.createDisclosure(message.activities);
+      const collapsedMessages = createCollapsedMessagesDisclosure({
+        t,
+        message,
+        duration,
+        onCopyTurnId: copyText,
+        activityDisclosure,
+      });
       if (collapsedMessages) {
         entry.append(collapsedMessages);
-      } else if (duration) {
-        const durationLabel = document.createElement("span");
-        durationLabel.className = "message-duration";
-        durationLabel.textContent = t("threadMessageDuration", { value: duration });
-        entry.append(durationLabel);
+      } else {
+        const turnMeta = createMessageTurnMeta({
+          t,
+          message,
+          duration,
+          onCopyTurnId: copyText,
+        });
+        if (turnMeta) {
+          const durationLabel = document.createElement("span");
+          durationLabel.className = "message-duration";
+          durationLabel.append(turnMeta);
+          entry.append(durationLabel);
+        }
       }
       let imageStrip = null;
       if ((message.images ?? []).length > 0) {
@@ -236,8 +339,18 @@ export function createThreadDialogView({
       if (imageStrip) entry.append(imageStrip);
       // 仅含图片的消息不再生成空白文字气泡，保持与 ChatGPT 附件布局一致。
       if (message.text || !imageStrip) entry.append(item);
+      // 与 ChatGPT 的结果区一致：最终回复之后再次汇总本回合涉及的全部文件修改。
+      const fileSummary = activityView.createFileSummary(message.activities);
+      if (fileSummary) entry.append(fileSummary);
       const actions = document.createElement("div");
       actions.className = "message-actions";
+      const time = message.role === "assistant" ? formatMessageTime(message) : null;
+      if (time) {
+        const timeLabel = document.createElement("time");
+        timeLabel.className = "message-time";
+        timeLabel.textContent = time;
+        actions.append(timeLabel);
+      }
       if (message.text) {
         const copy = document.createElement("button");
         copy.type = "button";
@@ -257,16 +370,7 @@ export function createThreadDialogView({
         });
         actions.append(copy);
       }
-      const time = message.role === "assistant" ? formatMessageTime(message) : null;
-      if (time) {
-        const timeLabel = document.createElement("time");
-        timeLabel.className = "message-time";
-        timeLabel.textContent = time;
-        actions.append(timeLabel);
-      }
-      const activityDisclosure = activityView.createDisclosure(message.activities);
-      if (activityDisclosure) entry.append(activityDisclosure);
-      // 操作栏属于整条回复，需排在本回合的工具与文件记录之后。
+      // 过程消息与工具记录已收进“用时”区域，最终回复的操作栏保持在正文之后。
       if (actions.childElementCount > 0) entry.append(actions);
       messageList.append(entry);
     }

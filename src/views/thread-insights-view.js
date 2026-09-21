@@ -153,7 +153,7 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
       return result;
     }, { added: 0, removed: 0 });
     const container = document.createElement("span");
-    container.className = "activity-summary-stats";
+    container.className = "message-file-summary-stats";
     const added = document.createElement("span");
     added.className = "is-added";
     added.textContent = `+${total.added}`;
@@ -207,9 +207,20 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
       row.className = "activity-file-row";
       row.type = "button";
       row.setAttribute("aria-label", t("openFileDiff", { count: 1 }));
+      const content = document.createElement("span");
+      content.className = "activity-file-content";
+      const action = document.createElement("span");
+      const actionKeys = {
+        add: "activityCreatedFile",
+        delete: "activityDeletedFile",
+        update: "activityEditedFile",
+      };
+      action.textContent = t(actionKeys[change.changeType] ?? "activityEditedFile");
       const path = document.createElement("code");
-      path.textContent = change.path;
-      row.append(path, createDiffStats(change));
+      path.textContent = change.path.split(/[\\/]/).pop() || change.path;
+      path.title = change.path;
+      content.append(action, path);
+      row.append(content, createDiffStats(change));
       row.addEventListener("click", () => onViewFileChanges({ ...activity, changes: [change] }));
       // 预览改由点击后进入完整差异面板，避免悬停时把长代码直接铺进聊天区。
       wrapper.append(row);
@@ -234,10 +245,12 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
       const content = document.createElement("div");
       content.className = "activity-content";
       const title = document.createElement("strong");
-      title.textContent = activity.title;
+      title.textContent = activity.kind === "command"
+        ? `${t("activityRanCommand")} ${activity.title}`
+        : activity.title;
       bindFullTextTooltip(title, activity.title);
       content.append(title);
-      if (activity.detail) {
+      if (activity.detail && activity.kind !== "command") {
         const detail = document.createElement("span");
         detail.textContent = activity.detail;
         bindFullTextTooltip(detail, activity.detail);
@@ -252,7 +265,7 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
         repeat.textContent = `×${activity.count}`;
         meta.append(repeat);
       }
-      if (activity.status) {
+      if (activity.status && !(activity.kind === "command" && activity.status === "completed")) {
         const status = document.createElement("span");
         status.className = `activity-status activity-status-${activity.status}`;
         status.textContent = statusLabel(activity.status);
@@ -267,8 +280,7 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
     const icon = document.createElement("span");
     icon.className = "activity-summary-icon";
     icon.setAttribute("aria-hidden", "true");
-    // 折叠态以加号提示可展开；展开后仅收起竖线，平滑过渡为减号。
-    icon.innerHTML = `<svg viewBox="0 0 20 20"><rect x="4.5" y="3.5" width="11" height="13" rx="2"></rect><path d="M7.5 10h5"></path><path class="activity-summary-icon-expand-line" d="M10 7.5v5"></path></svg>`;
+    icon.innerHTML = `<svg viewBox="0 0 20 20"><path d="m7 10.5 4.8-4.8a2.3 2.3 0 0 1 3.2 3.2l-6.4 6.4a3.3 3.3 0 0 1-4.7-4.7l6-6"></path></svg>`;
     return icon;
   }
 
@@ -276,30 +288,23 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
     if (!activities?.length) return null;
     const disclosure = document.createElement("details");
     disclosure.className = "message-activity-disclosure";
+    disclosure.open = true;
     const summary = document.createElement("summary");
     const fileChanges = activities
       .filter((activity) => activity.kind === "file")
       .flatMap((activity) => activity.changes ?? []);
     const fileCount = fileChanges.length;
+    const commandCount = activities.filter((activity) => activity.kind === "command").length;
+    const toolCount = activities.filter((activity) => activity.kind === "tool").length;
     const title = document.createElement("strong");
-    if (fileCount === 1) {
-      const path = fileChanges[0].path;
-      const fileName = path.split(/[\\/]/).pop() || path;
-      // 折叠态优先呈现单个文件名，快速传达本回合的核心改动。
-      title.textContent = `${t("messageFileActivitySummary", { count: fileCount })} · ${fileName}`;
-      title.title = path;
-    } else {
-      title.textContent = fileCount > 0
-        ? t("messageFileActivitySummary", { count: fileCount })
-        : t("messageActivitySummary", { count: activities.length });
-    }
-    const stats = fileCount > 0 ? createSummaryDiffStats(fileChanges) : null;
-    const hint = document.createElement("span");
-    hint.className = "activity-summary-hint";
-    hint.textContent = t("activitySummaryHint");
+    const labels = [];
+    if (fileCount > 0) labels.push(t("activityEditedFiles"));
+    if (commandCount > 0) labels.push(t("activityRanCommands"));
+    if (toolCount > 0) labels.push(t("activityUsedTools"));
+    title.textContent = labels.length > 0
+      ? labels.join(" · ")
+      : t("messageActivitySummary", { count: activities.length });
     summary.append(createActivitySummaryIcon(), title);
-    if (stats) summary.append(stats);
-    summary.append(hint);
 
     const list = document.createElement("div");
     list.className = "activity-list message-activity-list";
@@ -308,5 +313,109 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
     return disclosure;
   }
 
-  return { createDisclosure };
+  function createFileSummary(activities) {
+    const fileActivities = (activities ?? [])
+      .filter((activity) => activity.kind === "file" && activity.changes?.length > 0);
+    if (fileActivities.length === 0) return null;
+
+    const changes = fileActivities.flatMap((activity) => activity.changes);
+    const groupedFiles = new Map();
+    for (const activity of fileActivities) {
+      for (const change of activity.changes) {
+        // 同一回合可能多次修改同一文件；结果卡片按路径合并，避免文件数量重复。
+        const key = String(change.path ?? "").replaceAll("\\", "/");
+        const existing = groupedFiles.get(key);
+        if (existing) {
+          existing.diffs.push(change.diff);
+          existing.change = {
+            ...existing.change,
+            ...change,
+            path: existing.change.path,
+            diff: existing.diffs.filter(Boolean).join("\n"),
+          };
+        } else {
+          groupedFiles.set(key, {
+            activity,
+            change: { ...change },
+            diffs: [change.diff],
+          });
+        }
+      }
+    }
+    const files = [...groupedFiles.values()];
+
+    const summary = document.createElement("section");
+    summary.className = "message-file-summary";
+    const header = document.createElement("header");
+    header.className = "message-file-summary-header";
+    const icon = document.createElement("span");
+    icon.className = "message-file-summary-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = `<svg viewBox="0 0 20 20"><rect x="4.5" y="3.5" width="11" height="13" rx="2"></rect><path d="M7.5 8h5M7.5 11h5M7.5 14h3"></path></svg>`;
+    const heading = document.createElement("span");
+    heading.className = "message-file-summary-heading";
+    const title = document.createElement("strong");
+    title.textContent = t("messageFileActivitySummary", { count: files.length });
+    heading.append(title, createSummaryDiffStats(changes));
+    header.append(icon, heading);
+    summary.append(header);
+
+    const rows = [];
+    for (const [index, file] of files.entries()) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "message-file-summary-row";
+      row.title = row.ariaLabel = t("openFileDiff", { count: 1 });
+      row.hidden = index >= 3;
+
+      const content = document.createElement("span");
+      content.className = "message-file-summary-content";
+      const path = document.createElement("code");
+      path.textContent = String(file.change.path ?? "").replaceAll("\\", "/");
+      path.title = file.change.path;
+      content.append(path);
+
+      const meta = document.createElement("span");
+      meta.className = "message-file-summary-meta";
+      meta.append(createDiffStats(file.change));
+
+      row.append(content, meta);
+      row.addEventListener("click", () => {
+        onViewFileChanges({ ...file.activity, changes: [file.change] });
+      });
+      rows.push(row);
+      summary.append(row);
+    }
+
+    if (files.length > 3) {
+      const hiddenCount = files.length - 3;
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "message-file-summary-toggle";
+      const label = document.createElement("span");
+      const arrow = document.createElement("span");
+      arrow.className = "message-file-summary-toggle-arrow";
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.innerHTML = `<svg viewBox="0 0 12 12"><path d="m3 4.5 3 3 3-3"></path></svg>`;
+      toggle.append(label, arrow);
+      let expanded = false;
+      const renderToggle = () => {
+        rows.slice(3).forEach((row) => { row.hidden = !expanded; });
+        label.textContent = t(expanded ? "messageCollapseFiles" : "messageShowMoreFiles", {
+          count: hiddenCount,
+        });
+        toggle.setAttribute("aria-expanded", String(expanded));
+        arrow.classList.toggle("is-expanded", expanded);
+      };
+      toggle.addEventListener("click", () => {
+        expanded = !expanded;
+        renderToggle();
+      });
+      renderToggle();
+      summary.append(toggle);
+    }
+    return summary;
+  }
+
+  return { createDisclosure, createFileSummary };
 }

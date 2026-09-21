@@ -345,6 +345,7 @@ export function createTokenUsageTrendView({ t }) {
   }
 
   function renderChart() {
+    chart.setAttribute("aria-busy", "false");
     chart.replaceChildren();
     if (activeView === "distribution") {
       renderDistributionChart(chart, total);
@@ -357,12 +358,12 @@ export function createTokenUsageTrendView({ t }) {
     renderControls();
     chartInteraction.updateAccessibility();
     if (response) renderChart();
+    else renderLoading();
   }
 
-  function showLoading() {
-    renderControls();
-    chartInteraction.updateAccessibility();
-    if (response) return;
+  // Token 聚合需要等额度读取完成后才会发起请求；首屏保留加载状态，避免图表区域空白。
+  function renderLoading() {
+    chart.setAttribute("aria-busy", "true");
     chart.replaceChildren();
     const loading = document.createElement("p");
     loading.className = "trend-empty";
@@ -370,9 +371,17 @@ export function createTokenUsageTrendView({ t }) {
     chart.append(loading);
   }
 
+  function showLoading() {
+    renderControls();
+    chartInteraction.updateAccessibility();
+    if (response) return;
+    renderLoading();
+  }
+
   function showError() {
     renderControls();
     chartInteraction.updateAccessibility();
+    chart.setAttribute("aria-busy", "false");
     chart.replaceChildren();
     const error = document.createElement("p");
     error.className = "trend-empty trend-empty-error";
@@ -387,7 +396,7 @@ export function createTokenUsageTrendView({ t }) {
     if (response) renderChart();
   }
 
-  renderControls();
+  render();
   return {
     render,
     setData: (data) => {

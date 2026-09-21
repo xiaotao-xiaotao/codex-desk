@@ -1,4 +1,5 @@
-const COPY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="4" width="10" height="10" rx="2" /><rect x="5" y="10" width="10" height="10" rx="2" /></svg>`;
+// 完整前层位于左下，后层轮廓从右上露出，与 ChatGPT 的复制图标方向一致。
+const COPY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="13" height="13" rx="2.5" /><path d="M8 8V5.5A2.5 2.5 0 0 1 10.5 3h8A2.5 2.5 0 0 1 21 5.5v8a2.5 2.5 0 0 1-2.5 2.5H16" /></svg>`;
 const COPIED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.1L19 7.5" /></svg>`;
 
 /**

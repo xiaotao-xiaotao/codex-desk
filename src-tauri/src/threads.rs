@@ -66,6 +66,9 @@ struct ThreadDetailMessage {
     role: String,
     text: String,
     images: Vec<ThreadImage>,
+    /// 同一轮用户请求及其回复共用的原始回合标识，供界面定位和复制；旧版 App Server 缺失时不展示。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    turn_id: Option<String>,
     /// 仅助手回复携带所属回合的起止时间，用于展示执行用时和回复时刻；缺失时前端不显示。
     started_at: Option<Value>,
     completed_at: Option<Value>,
@@ -834,6 +837,8 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         .flatten()
     {
         // App Server 以回合为粒度记录起止时间；消息本身没有独立时间戳。
+        // 当前协议使用 `id`，同时兼容历史记录可能保留的 turnId / turn_id 命名。
+        let turn_id = thread_string(turn, &["id", "turnId", "turn_id"]);
         let started_at = ["startedAt", "createdAt"]
             .iter()
             .find_map(|key| turn.get(*key).cloned());
@@ -859,6 +864,8 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
                     role: message.role,
                     text: message.text,
                     images: message.images,
+                    // 回合标识展示在最终 Codex 回复的摘要行，避免为用户气泡重复增加元信息。
+                    turn_id: is_assistant.then(|| turn_id.clone()).flatten(),
                     started_at: if is_assistant {
                         started_at.clone()
                     } else {
@@ -1709,18 +1716,48 @@ fn thread_file_change_from_value(change: &Value) -> Option<ThreadFileChange> {
         .and_then(|kind| kind.get("move_path").or_else(|| kind.get("movePath")))
         .and_then(Value::as_str)
         .map(str::to_owned);
-    // 部分历史记录只保留文件名。此处保留空字符串，前端会明确提示不能展示差异。
-    let diff = change
+    // App Server 对新增/删除文件返回的是完整文件内容，而更新文件返回统一 diff。
+    // 在传给前端前统一格式，确保行数统计和差异查看使用同一套规则。
+    let raw_diff = change
         .get("diff")
         .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_owned();
+        .unwrap_or_default();
+    let diff = normalize_file_change_diff(raw_diff, &change_type);
     Some(ThreadFileChange {
         path,
         change_type,
         move_path,
         diff,
     })
+}
+
+/// 新增和删除文件的 `diff` 实际是无前缀的完整内容。补成最小统一 diff 后，
+/// 前端既能按 +/- 准确计数，也能继续复用现有的并排与统一差异视图。
+fn normalize_file_change_diff(diff: &str, change_type: &str) -> String {
+    if diff.is_empty()
+        || !matches!(change_type, "add" | "delete")
+        || diff.lines().any(|line| line.starts_with("@@ "))
+    {
+        return diff.to_owned();
+    }
+
+    let line_count = diff.lines().count();
+    if line_count == 0 {
+        return String::new();
+    }
+    let (header, prefix) = if change_type == "add" {
+        (format!("@@ -0,0 +1,{line_count} @@\n"), '+')
+    } else {
+        (format!("@@ -1,{line_count} +0,0 @@\n"), '-')
+    };
+    let mut normalized = String::with_capacity(diff.len() + line_count + header.len());
+    normalized.push_str(&header);
+    for line in diff.lines() {
+        normalized.push(prefix);
+        normalized.push_str(line);
+        normalized.push('\n');
+    }
+    normalized
 }
 
 fn tool_activity(item: &Value, kind: &str) -> ThreadActivity {
@@ -1758,7 +1795,13 @@ fn tool_activity(item: &Value, kind: &str) -> ThreadActivity {
         _ => None,
     };
     ThreadActivity {
-        kind: "tool".to_owned(),
+        // 命令单独标记，前端才能像 Codex/ChatGPT 一样生成“运行了命令”的回合摘要。
+        kind: if kind == "commandExecution" {
+            "command"
+        } else {
+            "tool"
+        }
+        .to_owned(),
         title,
         detail,
         status: item
@@ -1884,6 +1927,7 @@ mod tests {
                 "name": "测试会话",
                 "turns": [
                     {
+                        "id": "turn-12345678",
                         "status": "completed",
                         "startedAt": "2026-09-01T09:00:00+08:00",
                         "completedAt": "2026-09-01T09:01:34+08:00",
@@ -1915,6 +1959,7 @@ mod tests {
         assert_eq!(detail.file_changes.len(), detail.insights.file_changes);
         assert_eq!(detail.issues.len(), detail.insights.issues);
         assert_eq!(detail.messages.len(), 2);
+        assert_eq!(detail.messages[1].turn_id.as_deref(), Some("turn-12345678"));
         assert_eq!(
             detail.messages[1].started_at,
             Some(json!("2026-09-01T09:00:00+08:00"))
@@ -1939,6 +1984,10 @@ mod tests {
             .activities
             .iter()
             .any(|activity| activity.kind == "issue"));
+        assert!(detail.messages[1]
+            .activities
+            .iter()
+            .any(|activity| activity.kind == "command"));
     }
 
     #[test]
@@ -1978,6 +2027,18 @@ mod tests {
 
         assert_eq!(change.change_type, "update");
         assert_eq!(change.diff, "@@ -1 +1 @@\n-old\n+new\n");
+    }
+
+    #[test]
+    fn normalizes_added_file_content_for_diff_stats() {
+        let change = thread_file_change_from_value(&json!({
+            "path": "scripts/transcribe.py",
+            "kind": { "type": "add" },
+            "diff": "first line\nsecond line\n"
+        }))
+        .expect("新增文件内容应可读取");
+
+        assert_eq!(change.diff, "@@ -0,0 +1,2 @@\n+first line\n+second line\n");
     }
 
     #[test]

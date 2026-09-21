@@ -38,7 +38,8 @@
 .word-cloud-stage { position: relative; display: block; flex: 0 0 auto; overflow: hidden; }
 .word-cloud-tooltip { position: absolute; z-index: 2; max-width: calc(100% - 12px); padding: 5px 7px; border: 1px solid #d8e1eb; border-radius: 6px; color: #455468; background: rgba(255, 255, 255, .97); box-shadow: 0 6px 16px rgba(31, 35, 41, .14); font-size: .62rem; line-height: 1.35; pointer-events: none; white-space: nowrap; }
 .word-cloud-tooltip[hidden] { display: none; }
-.word-cloud-empty { margin: 0; color: #8a94a0; font-size: .7rem; text-align: center; }
+/* 与两张趋势卡的加载提示统一字号，保证三张洞察卡首屏状态的视觉层级一致。 */
+.word-cloud-empty { margin: 0; color: #8a94a0; font-size: .74rem; text-align: center; }
 .word-cloud-stage .word-cloud-empty { position: absolute; inset: 0; display: grid; place-items: center; }
 .word-cloud-empty-error { color: #cf1322; }
 
