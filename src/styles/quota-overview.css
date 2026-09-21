@@ -1,10 +1,21 @@
 .quota-orb { --quota-progress: 0%; position: absolute; z-index: 3; inset: 0; width: 56px; height: 56px; margin: auto; padding: 0; border: 0; border-radius: 50%; color: #fff; background: conic-gradient(var(--orb-progress-color, #1677ff) var(--quota-progress), #e5eaf2 0); box-shadow: none; cursor: pointer; transition: transform .2s ease, opacity .18s ease; }
+.quota-orb::before { position: absolute; z-index: 0; inset: 0; border-radius: inherit; background: conic-gradient(from 0deg, transparent 0 72%, rgba(255, 255, 255, .08) 78%, rgba(255, 255, 255, .92) 86%, rgba(255, 255, 255, .18) 92%, transparent 100%); content: ""; pointer-events: none; will-change: transform; animation: quota-orb-flow 3.2s linear infinite; }
 .quota-orb:hover { transform: scale(1.045); }
 .quota-orb:active { transform: scale(.98); }
-.orb-ring { position: absolute; inset: 4px; border-radius: 50%; background: #fff; }
-.orb-value, .orb-label { position: absolute; z-index: 1; right: 0; left: 0; }
+.orb-ring { position: absolute; z-index: 1; inset: 4px; border-radius: 50%; background: #fff; }
+.orb-value, .orb-label { position: absolute; z-index: 2; right: 0; left: 0; }
 .orb-value { top: 15px; color: #1677ff; font-size: 14px; font-weight: 750; letter-spacing: -.45px; }
 .orb-label { top: 33px; overflow: hidden; color: #7d8792; font-size: 7px; font-weight: 650; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; }
+
+@keyframes quota-orb-flow {
+  to { transform: rotate(1turn); }
+}
+
+.is-expanded .quota-orb::before { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quota-orb::before { animation: none; }
+}
 
 .quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 3px; padding: 2px 8px 4px; }
 /* 概览信息收进卡片上方的紧凑标题行，横向空间优先留给两个额度窗口。 */
