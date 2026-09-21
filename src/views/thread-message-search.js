@@ -92,6 +92,21 @@ export function createThreadMessageSearch({
     target.append(document.createTextNode(text.slice(start)));
   }
 
+  function highlightRenderedText(target) {
+    const { keyword } = getState();
+    if (!keyword) return;
+    const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    for (const node of textNodes) {
+      const text = node.nodeValue ?? "";
+      if (!normalize(text).includes(keyword)) continue;
+      const fragment = document.createDocumentFragment();
+      appendHighlightedText(fragment, text);
+      node.replaceWith(fragment);
+    }
+  }
+
   input.addEventListener("input", () => {
     updateMatches(true);
     renderControls();
@@ -102,5 +117,12 @@ export function createThreadMessageSearch({
     event.preventDefault();
     moveToMatch(event.shiftKey ? -1 : 1);
   });
-  return { reset, setMessages, getState, appendHighlightedText, updateLanguage: renderControls };
+  return {
+    reset,
+    setMessages,
+    getState,
+    appendHighlightedText,
+    highlightRenderedText,
+    updateLanguage: renderControls,
+  };
 }

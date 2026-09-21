@@ -246,23 +246,20 @@
               <path class="thread-sidebar-toggle-collapse" d="m14 9-3 3 3 3"></path>
             </svg>
           </button>
-          <h2 id="thread-dialog-heading">
-            <span data-i18n="threadDetail">会话详情</span>
-            <span class="thread-dialog-title-separator" aria-hidden="true">·</span>
-            <span id="dialog-title"></span>
-          </h2>
+          <div class="thread-dialog-heading">
+            <h2 id="thread-dialog-heading">
+              <span data-i18n="threadDetail">会话详情</span>
+              <span class="thread-dialog-title-separator" aria-hidden="true">·</span>
+              <span id="dialog-title"></span>
+            </h2>
+            <button id="thread-copy-id" class="thread-copy-id-button" type="button"></button>
+          </div>
         </div>
         <div class="thread-dialog-actions">
           <button id="thread-refresh" class="icon-button refresh-icon-button" type="button"></button>
-          <details id="thread-actions-menu" class="thread-actions-menu">
-            <summary class="thread-toolbar-action" aria-label="更多操作">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>
-            </summary>
-            <div class="thread-actions-popover">
-              <button id="thread-export" type="button"></button>
-              <button id="thread-copy-id" type="button"></button>
-            </div>
-          </details>
+          <button id="thread-export" class="thread-toolbar-action thread-export-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"></path></svg>
+          </button>
           <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
         </div>
       </header>

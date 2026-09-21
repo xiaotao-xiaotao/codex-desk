@@ -109,6 +109,7 @@ const dialogView = createThreadDialogView({
   copyText: copyToClipboard,
   copyMessage: copyMessageToClipboard,
   onRefreshThread: (threadId) => invoke("read_thread", { threadId }),
+  onReadLocalFile: (path) => invoke("read_local_text_preview", { path }),
   onExportThread: exportThreadFromDialog,
 });
 const settingsView = createSettingsDialogView({

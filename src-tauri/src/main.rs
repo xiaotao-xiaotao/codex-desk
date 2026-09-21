@@ -11,10 +11,14 @@ mod threads;
 mod tray;
 mod usage;
 
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
+use tokio::io::AsyncReadExt;
 
 // 900px 为右侧词云留出更舒展的排版空间，同时仍保持为紧凑悬浮看板。
 const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
@@ -28,6 +32,18 @@ const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/#settings/Billing";
 const GITHUB_RELEASES_URL: &str = "https://github.com/xiaotao-xiaotao/codex-desk/releases";
+// 文件链接只预览开头 512 KiB，避免大型日志或 JSONL 一次性占满 WebView 内存。
+const LOCAL_TEXT_PREVIEW_MAX_BYTES: usize = 512 * 1024;
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalTextPreview {
+    path: String,
+    name: String,
+    content: String,
+    size: u64,
+    truncated: bool,
+}
 
 #[tauri::command]
 async fn read_quota(
@@ -61,6 +77,49 @@ fn choose_cli_path(window: WebviewWindow) -> Option<String> {
         .set_parent(&window)
         .pick_file()
         .map(|path| path.to_string_lossy().into_owned())
+}
+
+/// 用户点击历史消息中的本地文件链接后，按需读取一小段文本用于只读预览。
+#[tauri::command]
+async fn read_local_text_preview(path: String) -> Result<LocalTextPreview, String> {
+    let requested_path = PathBuf::from(path.trim());
+    if !requested_path.is_absolute() {
+        return Err("仅支持预览绝对路径文件".to_owned());
+    }
+    let canonical_path = tokio::fs::canonicalize(&requested_path)
+        .await
+        .map_err(|error| format!("无法找到文件：{error}"))?;
+    let metadata = tokio::fs::metadata(&canonical_path)
+        .await
+        .map_err(|error| format!("无法读取文件信息：{error}"))?;
+    if !metadata.is_file() {
+        return Err("该路径不是文件".to_owned());
+    }
+
+    let file = tokio::fs::File::open(&canonical_path)
+        .await
+        .map_err(|error| format!("无法打开文件：{error}"))?;
+    let mut bytes = Vec::with_capacity(LOCAL_TEXT_PREVIEW_MAX_BYTES + 1);
+    file.take((LOCAL_TEXT_PREVIEW_MAX_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(|error| format!("无法读取文件：{error}"))?;
+    let truncated = bytes.len() > LOCAL_TEXT_PREVIEW_MAX_BYTES
+        || metadata.len() > LOCAL_TEXT_PREVIEW_MAX_BYTES as u64;
+    bytes.truncate(LOCAL_TEXT_PREVIEW_MAX_BYTES);
+    if bytes.contains(&0) {
+        return Err("该文件不是可预览的文本文件".to_owned());
+    }
+
+    Ok(LocalTextPreview {
+        name: canonical_path
+            .file_name()
+            .map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
+        path: canonical_path.to_string_lossy().into_owned(),
+        content: String::from_utf8_lossy(&bytes).into_owned(),
+        size: metadata.len(),
+        truncated,
+    })
 }
 
 #[tauri::command]
@@ -356,6 +415,7 @@ fn main() {
             open_update_page,
             configure_cli_path,
             choose_cli_path,
+            read_local_text_preview,
             search_threads,
             list_threads_for_selection,
             export_threads,

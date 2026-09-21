@@ -6,6 +6,7 @@ import { createThreadOverviewView } from "./thread-overview-view.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
 import { createLoadingOverlay } from "../utils/loading-overlay.js";
+import { renderMessageMarkdown } from "../utils/markdown-renderer.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "../utils/refresh-icon-button.js";
 
 const DIALOG_TITLE_MAX_LENGTH = 52;
@@ -159,6 +160,7 @@ export function createThreadDialogView({
   copyText,
   copyMessage,
   onRefreshThread,
+  onReadLocalFile,
   onExportThread,
 }) {
   const threadDialog = document.querySelector("#thread-dialog");
@@ -171,7 +173,6 @@ export function createThreadDialogView({
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
   const searchResult = document.querySelector("#dialog-search-result");
-  const actionsMenu = document.querySelector("#thread-actions-menu");
   const exportButton = document.querySelector("#thread-export");
   const copyIdButton = document.querySelector("#thread-copy-id");
   const refreshButton = document.querySelector("#thread-refresh");
@@ -208,11 +209,20 @@ export function createThreadDialogView({
     else statusOverlay.show(message);
   }
 
+  function renderCopyIdButton(state = "idle") {
+    const threadId = currentDetail?.id ?? "";
+    copyIdButton.classList.toggle("is-copied", state === "copied");
+    copyIdButton.classList.toggle("is-failed", state === "failed");
+    const value = document.createElement("code");
+    value.textContent = threadId;
+    copyIdButton.replaceChildren(value);
+    copyIdButton.title = threadId ? `${t("threadCopyId")}：${threadId}` : t("threadCopyId");
+    copyIdButton.ariaLabel = copyIdButton.title;
+  }
+
   function renderActions() {
-    exportButton.textContent = t("threadExport");
-    copyIdButton.textContent = t("threadCopyId");
-    const menuSummary = actionsMenu.querySelector("summary");
-    menuSummary.title = menuSummary.ariaLabel = t("threadMoreActions");
+    exportButton.title = exportButton.ariaLabel = t("threadExport");
+    renderCopyIdButton();
     renderRefreshIconButton(refreshButton, { label: t("threadRefresh") });
     const disabled = !currentDetail;
     exportButton.disabled = disabled;
@@ -223,7 +233,6 @@ export function createThreadDialogView({
   function renderSidebarVisibility() {
     dialogContent.classList.toggle("is-sidebar-collapsed", !sidebarExpanded);
     dialogSidebar.hidden = !sidebarExpanded;
-    if (!sidebarExpanded) actionsMenu.open = false;
     sidebarToggle.setAttribute("aria-expanded", String(sidebarExpanded));
     const labelKey = sidebarExpanded ? "threadCollapseSidebar" : "threadExpandSidebar";
     sidebarToggle.title = sidebarToggle.ariaLabel = t(labelKey);
@@ -280,8 +289,10 @@ export function createThreadDialogView({
       if (matchingIndexes.has(index)) item.classList.add("is-search-match");
       if (index === activeMessageIndex) item.classList.add("is-active-search-match");
       if (message.text) {
-        const text = document.createElement("p");
-        messageSearch.appendHighlightedText(text, message.text);
+        const text = document.createElement("div");
+        renderMessageMarkdown(text, message.text, { t, copyText, onReadLocalFile });
+        messageSearch.highlightRenderedText(text);
+        if (text.querySelector(".markdown-code-block")) item.classList.add("has-code-block");
         item.append(text);
       }
       const duration = message.role === "assistant" ? formatMessageDuration(message) : null;
@@ -328,7 +339,7 @@ export function createThreadDialogView({
           image.tabIndex = 0;
           image.setAttribute("role", "button");
           image.title = t("openImagePreview");
-          image.addEventListener("dblclick", () => imagePreviewView.show(image));
+          image.addEventListener("click", () => imagePreviewView.show(image));
           image.addEventListener("keydown", (event) => {
             if (event.key !== "Enter" && event.key !== " ") return;
             event.preventDefault();
@@ -459,8 +470,7 @@ export function createThreadDialogView({
     copyIdButton.disabled = true;
     try {
       await copyText(currentDetail.id);
-      copyIdButton.textContent = t("copied");
-      actionsMenu.open = false;
+      renderCopyIdButton("copied");
       window.setTimeout(renderActions, 1_200);
     } catch (error) {
       showStatus(t("readFailed", { error: String(error) }), true);
@@ -487,7 +497,6 @@ export function createThreadDialogView({
     exportButton.disabled = true;
     try {
       await onExportThread(currentDetail.id);
-      actionsMenu.open = false;
       renderActions();
     } catch (error) {
       showStatus(t("readFailed", { error: String(error) }), true);
@@ -503,9 +512,7 @@ export function createThreadDialogView({
       fileDiffView.close();
     }
   });
-  threadDialog.addEventListener("close", () => { actionsMenu.open = false; });
   threadDialog.addEventListener("click", (event) => {
-    if (actionsMenu.open && !actionsMenu.contains(event.target)) actionsMenu.open = false;
     if (event.target === threadDialog) threadDialog.close();
   });
   renderActions();
