@@ -302,7 +302,8 @@
 :root[data-theme="dark"] .settings-dialog::backdrop { background: rgba(0, 0, 0, .58); }
 :root[data-theme="dark"] .settings-intro, :root[data-theme="dark"] .settings-hint { color: #9aa9ba; }
 :root[data-theme="dark"] .settings-group { border-color: #2c3948; background: #18212c; }
-:root[data-theme="dark"] .settings-group > label { color: #d5dfeb; }
+:root[data-theme="dark"] .settings-group > label, :root[data-theme="dark"] .settings-group-label { color: #d5dfeb; }
 :root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-secondary-button, :root[data-theme="dark"] .settings-refresh-select { border-color: #344456; color: #d5dfeb; background: #111820; }
+:root[data-theme="dark"] .settings-threshold-item { border-color: #344456; color: #9aa9ba; background: #111820; }
 :root[data-theme="dark"] .settings-refresh-select { color-scheme: dark; }
 :root[data-theme="dark"] .settings-secondary-button:hover:not(:disabled) { border-color: #4096ff; color: #9ecbff; background: #182b42; }

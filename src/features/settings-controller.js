@@ -3,6 +3,18 @@ import { readStoredJson, writeStoredValue } from "../utils/browser-storage.js";
 const SETTINGS_STORAGE_KEY = "codex-desk-settings";
 const DEFAULT_REFRESH_INTERVAL_SECONDS = 60;
 const REFRESH_INTERVAL_OPTIONS = new Set([30, 60, 120, 300, 600]);
+export const DEFAULT_QUOTA_ALERT_THRESHOLDS = Object.freeze([80, 90, 100]);
+
+export function normalizeQuotaAlertThresholds(value) {
+  if (!Array.isArray(value) || value.length !== DEFAULT_QUOTA_ALERT_THRESHOLDS.length) {
+    return [...DEFAULT_QUOTA_ALERT_THRESHOLDS];
+  }
+
+  const thresholds = value.map(Number);
+  const isValid = thresholds.every((threshold) => Number.isInteger(threshold) && threshold >= 1 && threshold <= 100)
+    && thresholds.every((threshold, index) => index === 0 || thresholds[index - 1] < threshold);
+  return isValid ? thresholds : [...DEFAULT_QUOTA_ALERT_THRESHOLDS];
+}
 
 function normalizeSettings(value) {
   const refreshIntervalSeconds = Number(value?.refreshIntervalSeconds);
@@ -11,6 +23,14 @@ function normalizeSettings(value) {
     refreshIntervalSeconds: REFRESH_INTERVAL_OPTIONS.has(refreshIntervalSeconds)
       ? refreshIntervalSeconds
       : DEFAULT_REFRESH_INTERVAL_SECONDS,
+    quotaAlertThresholds: normalizeQuotaAlertThresholds(value?.quotaAlertThresholds),
+  };
+}
+
+function cloneSettings(settings) {
+  return {
+    ...settings,
+    quotaAlertThresholds: [...settings.quotaAlertThresholds],
   };
 }
 
@@ -31,14 +51,14 @@ export function createSettingsController({ invoke, onSettingsChanged }) {
     const cliVersion = await invoke("configure_cli_path", { cliPath: normalized.cliPath });
     settings = normalized;
     writeStoredValue(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    onSettingsChanged?.({ ...settings });
+    onSettingsChanged?.(cloneSettings(settings));
     return cliVersion;
   }
 
   return {
     initialize,
     save,
-    getSettings: () => ({ ...settings }),
+    getSettings: () => cloneSettings(settings),
     getRefreshIntervalMs: () => settings.refreshIntervalSeconds * 1_000,
   };
 }

@@ -1,9 +1,9 @@
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { readStoredEnum, readStoredJson, writeStoredValue } from "../utils/browser-storage.js";
+import { normalizeQuotaAlertThresholds } from "./settings-controller.js";
 
 const ALERT_SETTING_KEY = "codex-desk-quota-alerts";
 const ALERT_HISTORY_KEY = "codex-desk-quota-alert-history";
-const ALERT_THRESHOLDS = [100, 90, 80];
 const MAX_HISTORY_ENTRIES = 18;
 
 /**
@@ -12,7 +12,7 @@ const MAX_HISTORY_ENTRIES = 18;
  * 提醒记录按「重置时间 + 阈值」存储，而不是只记录当前使用率：同一轮额度中用户
  * 可能依次跨过 80%、90%、100%，每个阈值都应最多提醒一次；重置后则允许重新提醒。
  */
-export function createQuotaAlertController({ t, formatResetTime, setStatus }) {
+export function createQuotaAlertController({ t, formatResetTime, setStatus, getThresholds }) {
   let enabled = readStoredEnum(ALERT_SETTING_KEY, ["enabled", "disabled"], "disabled") === "enabled";
   const storedHistory = readStoredJson(ALERT_HISTORY_KEY, []);
   let history = new Set(
@@ -32,7 +32,9 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus }) {
     if (!primaryWindow) return;
 
     const used = Math.round(Number(primaryWindow.usedPercent));
-    const threshold = ALERT_THRESHOLDS.find((value) => used >= value);
+    // 设置页按从低到高展示，判断时倒序查找，优先提醒本次已达到的最高档次。
+    const thresholds = normalizeQuotaAlertThresholds(getThresholds?.()).sort((a, b) => b - a);
+    const threshold = thresholds.find((value) => used >= value);
     if (!threshold) return;
 
     const historyKey = `${primaryWindow.resetsAt ?? "unknown"}:${threshold}`;
@@ -80,6 +82,7 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus }) {
   }
 
   return {
+    getThresholds: () => normalizeQuotaAlertThresholds(getThresholds?.()),
     isEnabled: () => enabled,
     notify,
     toggle,

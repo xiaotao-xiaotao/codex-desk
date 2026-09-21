@@ -5,16 +5,20 @@
 .settings-header h2 { margin: 2px 0 0; }
 .settings-intro { margin: -2px 0 0; color: #6f7b88; font-size: .74rem; line-height: 1.45; }
 .settings-group { display: grid; gap: 5px; padding: 11px 12px; border: 1px solid #e7edf3; border-radius: 9px; background: #fbfcfe; }
-.settings-group > label { color: #344154; font-size: .74rem; font-weight: 720; }
+.settings-group > label, .settings-group-label { color: #344154; font-size: .74rem; font-weight: 720; }
 .settings-hint { margin: 0; color: #7d8792; font-size: .66rem; line-height: 1.4; }
 .settings-path-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
 .settings-group input { min-width: 0; height: 31px; box-sizing: border-box; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 7px; outline: 0; color: #334155; background: #fff; font-size: .7rem; }
 .settings-group input:focus { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
 .settings-refresh-select { width: 100%; min-width: 0; height: 31px; box-sizing: border-box; padding: 0 8px; border: 1px solid #dbe2ea; border-radius: 7px; outline: 0; color: #334155; background: #fff; font-size: .7rem; }
 .settings-refresh-select:focus-visible { border-color: #91caff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .1); }
+.settings-threshold-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.settings-threshold-item { display: grid; gap: 5px; min-width: 0; padding: 7px 8px; border: 1px solid #e3e9f0; border-radius: 8px; color: #778292; background: #fff; font-size: .64rem; font-weight: 650; }
+.settings-threshold-input { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; color: #8793a1; font-size: .68rem; }
+.settings-threshold-input input { width: 100%; height: 27px; padding: 0 6px; text-align: center; font-variant-numeric: tabular-nums; }
 .settings-secondary-button { min-height: 29px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 7px; color: #526173; background: #fff; cursor: pointer; font-size: .66rem; font-weight: 680; }
 .settings-secondary-button:hover:not(:disabled) { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
 .settings-status { margin: 0; color: #13795b; font-size: .68rem; line-height: 1.45; }
 .settings-status[data-kind="error"] { color: #cf1322; }
 .settings-actions { display: flex; justify-content: flex-end; gap: 6px; }
-.settings-actions button:disabled, .settings-path-row button:disabled, .settings-refresh-select:disabled { cursor: wait; opacity: .65; }
+.settings-actions button:disabled, .settings-path-row button:disabled, .settings-refresh-select:disabled, .settings-threshold-input input:disabled { cursor: wait; opacity: .65; }

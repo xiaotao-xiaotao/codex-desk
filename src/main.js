@@ -89,12 +89,20 @@ const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime,
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const copyMessageToClipboard = (message) => copyMessageContent(message, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
-const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
 let refreshController;
 let autoRefreshTimer = null;
 const settingsController = createSettingsController({
   invoke,
-  onSettingsChanged: restartAutoRefreshTimer,
+  onSettingsChanged: () => {
+    restartAutoRefreshTimer();
+    renderQuotaAlertStatus();
+  },
+});
+const quotaAlerts = createQuotaAlertController({
+  t,
+  formatResetTime,
+  setStatus,
+  getThresholds: () => settingsController.getSettings().quotaAlertThresholds,
 });
 const accountView = createAccountOverviewView({ t, invoke });
 const updateView = createUpdateBannerView({
@@ -291,7 +299,8 @@ refreshController = createRefreshController({
 
 function renderQuotaAlertStatus() {
   const enabled = quotaAlerts.isEnabled();
-  quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled");
+  const thresholds = quotaAlerts.getThresholds().map((threshold) => `${threshold}%`).join("/");
+  quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled", { thresholds });
   quotaAlertStatus.classList.toggle("is-enabled", enabled);
   quotaAlertStatus.title = t("quotaAlerts");
   quotaAlertToggle.textContent = t(enabled ? "quotaAlertToggleDisable" : "quotaAlertToggleEnable");
