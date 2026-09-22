@@ -470,6 +470,18 @@ async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
   await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
 
+async function toggleSessionsExpanded() {
+  const nextExpanded = !sessionsExpanded;
+  if (!nextExpanded && windowMaximized) {
+    // 最大化窗口使用完整高度；直接隐藏列表会把剩余高度留成空白。
+    // 先还原窗口，再由普通收起流程按实际内容高度压缩窗口。
+    await toggleWindowMaximized();
+    if (windowMaximized) return;
+  }
+  if (sessionsExpanded === nextExpanded) return;
+  await setSessionsExpanded(nextExpanded);
+}
+
 function updateTransferControls() {
   const selectedCount = selectedThreadIds.size;
   const hasVisibleThreads = currentPageThreads.length > 0;
@@ -959,10 +971,7 @@ async function bootstrap() {
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);
-  sessionsToggle.addEventListener("click", () => void setSessionsExpanded(
-    !sessionsExpanded,
-    { resizeWindow: !windowMaximized },
-  ));
+  sessionsToggle.addEventListener("click", () => void toggleSessionsExpanded());
   selectPageThreadsButton.addEventListener("click", () => {
     currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
     renderCurrentThreadPage();
@@ -979,7 +988,11 @@ async function bootstrap() {
   setupCollapsedWindowAutoResize();
   const threadListResizeObserver = new ResizeObserver(scheduleExpandedThreadLayoutSync);
   threadListResizeObserver.observe(threadListElement);
-  window.addEventListener("resize", scheduleExpandedThreadLayoutSync);
+  window.addEventListener("resize", () => {
+    scheduleExpandedThreadLayoutSync();
+    // 窗口尺寸可能由最大化还原或系统恢复改变，普通收起态需要重新贴合内容高度。
+    scheduleCollapsedWindowResize();
+  });
   threadListView.onSearchInput(() => {
     window.clearTimeout(searchTimer);
     currentThreadPage = 1;

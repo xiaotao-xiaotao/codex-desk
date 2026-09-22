@@ -86,6 +86,7 @@
 :root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(120deg, #17253a, #151b23 68%); box-shadow: inset 3px 0 0 #4096ff; }
 :root[data-theme="dark"] .quota-card h3 { color: #c0cddd; }
 :root[data-theme="dark"] .quota-value strong { color: #69b1ff; }
+:root[data-theme="dark"] .quota-card-placeholder .quota-value strong { color: #718096; }
 :root[data-theme="dark"] .quota-used { color: #9aa9ba; }
 :root[data-theme="dark"] .progress-track { background: #2a3544; }
 :root[data-theme="dark"] .progress-track span { background: #4096ff; }

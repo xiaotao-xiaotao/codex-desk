@@ -64,6 +64,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
       }
     }
     quotaList.replaceChildren();
+    quotaList.setAttribute("aria-busy", "false");
     for (const window of (quota.windows || [])) {
       const remainingPercent = Math.round(window.remainingPercent);
       const progress = Math.max(0, Math.min(100, window.remainingPercent));

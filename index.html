@@ -130,7 +130,24 @@
           </div>
           <p id="account-message" class="account-message" hidden></p>
           <div class="account-quota-divider" aria-hidden="true"></div>
-          <div id="quota-list" class="quota-list" aria-live="polite"></div>
+          <div id="quota-list" class="quota-list" aria-live="polite" aria-busy="true">
+            <article class="quota-card quota-card-placeholder" aria-hidden="true">
+              <h3 data-i18n="quotaWindow">额度窗口</h3>
+              <div class="quota-value">
+                <strong>--</strong>
+                <span data-i18n="remaining">剩余</span>
+              </div>
+              <div class="progress-track"><span></span></div>
+            </article>
+            <article class="quota-card quota-card-placeholder" aria-hidden="true">
+              <h3 data-i18n="quotaWindow">额度窗口</h3>
+              <div class="quota-value">
+                <strong>--</strong>
+                <span data-i18n="remaining">剩余</span>
+              </div>
+              <div class="progress-track"><span></span></div>
+            </article>
+          </div>
         </section>
 
         <section id="insights-section" class="dashboard-section insights-overview" aria-labelledby="insights-overview-heading">

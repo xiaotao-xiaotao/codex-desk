@@ -45,6 +45,9 @@
 .quota-value { grid-area: value; display: flex; align-items: baseline; gap: 4px; margin-top: 1px; }
 .quota-value strong { color: #1677ff; font-size: 1.24rem; line-height: 1; letter-spacing: -.055em; }
 .quota-value span { color: #6f7b88; font-size: .61rem; }
+.quota-card-placeholder .quota-value strong { color: #a8b2bf; letter-spacing: 0; }
+/* 首次读取只隐藏进度显示，仍占用最终布局空间，避免数据返回时卡片高度跳动。 */
+.quota-card-placeholder .progress-track { visibility: hidden; }
 .quota-used { margin-left: 5px; color: #7c8896; }
 .progress-track { grid-area: progress; height: 5px; margin-top: 3px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
 /* 重置时间固定在右上角，不参与卡片布局，保持额度卡原有高度。 */
