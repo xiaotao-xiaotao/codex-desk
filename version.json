@@ -1,31 +1,31 @@
 {
-  "version": "1.2.0",
-  "publishedAt": "2026-09-18",
+  "version": "1.2.1",
+  "publishedAt": "2026-09-23",
   "releaseNotes": {
     "zh-CN": [
-      "新增数据洞察词云、会话 Token 趋势与分布统计",
-      "支持模块放大、本地历史自适应分页和窗口置顶",
-      "优化语言选择、托盘重启及 app-server 生命周期稳定性"
+      "新增可自定义的额度提醒阈值，并改进会话消息 Markdown 与图片预览",
+      "优化 Token 用量缓存和增量扫描，提升趋势与会话详情加载体验",
+      "修复托盘唤起焦点闪烁、会话 ID 显示和消息时间处理等问题"
     ],
     "zh-TW": [
-      "新增資料洞察詞雲、工作階段 Token 趨勢與分佈統計",
-      "支援模組放大、本機歷程自適應分頁和視窗置頂",
-      "改善語言選擇、系統匣重新啟動及 app-server 生命週期穩定性"
+      "新增可自訂的額度提醒門檻，並改進工作階段訊息 Markdown 與圖片預覽",
+      "最佳化 Token 用量快取與增量掃描，提升趨勢和工作階段詳情載入體驗",
+      "修正系統匣喚起焦點閃爍、工作階段 ID 顯示及訊息時間處理等問題"
     ],
     "en": [
-      "Added an insights word cloud plus session Token trends and distribution",
-      "Added expanded modules, adaptive local-history pagination, and always-on-top mode",
-      "Improved language selection, tray restart, and app-server lifecycle stability"
+      "Added configurable quota alert thresholds and improved Markdown and image previews in sessions",
+      "Improved Token usage caching and incremental scanning for faster trends and session details",
+      "Fixed tray focus flicker, session ID display, and message timestamp handling"
     ],
     "ja": [
-      "データ分析ワードクラウド、セッション Token 推移と分布統計を追加",
-      "モジュール拡大、ローカル履歴の自動ページ調整、常に最前面表示に対応",
-      "言語選択、トレイからの再起動、app-server のライフサイクル安定性を改善"
+      "クォータ通知のしきい値設定に対応し、セッションの Markdown 表示と画像プレビューを改善",
+      "Token 使用量のキャッシュと増分スキャンを改善し、推移とセッション詳細の読み込みを高速化",
+      "トレイ操作時のフォーカスちらつき、セッション ID 表示、メッセージ時刻処理を修正"
     ],
     "ko": [
-      "데이터 인사이트 워드클라우드와 세션 Token 추세 및 분포 통계 추가",
-      "모듈 확대, 로컬 기록 적응형 페이지 나누기 및 창 항상 위 기능 지원",
-      "언어 선택, 트레이 재시작 및 app-server 수명 주기 안정성 개선"
+      "할당량 알림 임계값 설정을 추가하고 세션 Markdown 표시 및 이미지 미리보기를 개선",
+      "Token 사용량 캐시와 증분 스캔을 개선해 추세 및 세션 상세 로딩을 빠르게 개선",
+      "트레이 포커스 깜박임, 세션 ID 표시 및 메시지 시간 처리를 수정"
     ]
   }
 }
