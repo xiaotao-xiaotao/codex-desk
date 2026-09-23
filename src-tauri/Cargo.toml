@@ -11,6 +11,8 @@ serde_json = "1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+# 中文词云使用词典分词替换字符 n-gram；默认词典随二进制打包，读取时不依赖网络或本机外部文件。
+jieba-rs = "0.10.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rfd = "0.15"
@@ -25,7 +27,7 @@ tauri = { version = "2", default-features = false, features = [
 ] }
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.3"
-tokio = { version = "1", features = ["fs", "io-util", "process", "sync", "time"] }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "process", "sync", "time"] }
 
 [profile.release]
 # 桌面安装包更重视体积；LTO 与单代码生成单元可移除跨 crate 的冗余代码。

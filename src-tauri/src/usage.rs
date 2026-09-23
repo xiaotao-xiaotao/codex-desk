@@ -1,8 +1,10 @@
 use crate::app_server::AppServerState;
-use crate::local_usage::{read_local_daily_usage, LocalTokenUsageBucket};
+use crate::local_usage::{
+    read_local_usage, LocalSessionTokenUsage, LocalTokenUsageBucket, LocalUsageState,
+};
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 // 图表展示近 30 天，多保留几个有会话的日期以覆盖没有会话的自然日。
 const LOCAL_FALLBACK_DAY_LIMIT: usize = 35;
@@ -24,30 +26,35 @@ pub struct TokenUsageSnapshot {
     current_streak_days: Option<u64>,
     longest_streak_days: Option<u64>,
     daily_usage_buckets: Vec<TokenUsageBucket>,
+    /// 仅由本机 JSONL 会话快照生成，供按会话 Token 区间统计。
+    local_session_usage: Vec<LocalSessionTokenUsage>,
 }
 
 /// 优先读取账号 Token 汇总，并使用本机会话补齐服务端缺失的每日桶。
-pub async fn read_token_usage(state: &AppServerState) -> Result<TokenUsageSnapshot, String> {
-    let server_result = state.request("account/usage/read", Value::Null).await;
+pub async fn read_token_usage(
+    state: &AppServerState,
+    local_usage_state: &LocalUsageState,
+) -> Result<TokenUsageSnapshot, String> {
+    // 服务端汇总与本地 rollout 扫描互不依赖，并发执行可把等待时间压缩到较慢的一侧。
+    let (server_result, local_result) = tokio::join!(
+        state.request("account/usage/read", Value::Null),
+        read_local_usage(local_usage_state, LOCAL_FALLBACK_DAY_LIMIT),
+    );
     let mut snapshot = server_result
         .as_ref()
         .map(snapshot_from_server)
         .unwrap_or_default();
-    let server_days = snapshot
-        .daily_usage_buckets
-        .iter()
-        .map(|bucket| bucket.start_date.clone())
-        .collect::<HashSet<_>>();
 
-    match read_local_daily_usage(&server_days, LOCAL_FALLBACK_DAY_LIMIT).await {
-        Ok(local_buckets) => {
+    match local_result {
+        Ok(local_usage) => {
             snapshot.daily_usage_buckets =
-                merge_daily_buckets(snapshot.daily_usage_buckets, local_buckets);
+                merge_daily_buckets(snapshot.daily_usage_buckets, local_usage.daily_usage);
+            snapshot.local_session_usage = local_usage.session_usage;
         }
         Err(local_error) if server_result.is_err() => {
             return Err(format!(
                 "{}；本地 Token 用量读取也失败：{local_error}",
-                server_result.expect_err("已确认服务端请求失败")
+                server_result.as_ref().expect_err("已确认服务端请求失败")
             ));
         }
         Err(_) => {}
@@ -56,6 +63,7 @@ pub async fn read_token_usage(state: &AppServerState) -> Result<TokenUsageSnapsh
     if snapshot.daily_usage_buckets.is_empty() {
         server_result?;
     }
+
     Ok(snapshot)
 }
 
@@ -81,6 +89,7 @@ fn snapshot_from_server(result: &Value) -> TokenUsageSnapshot {
         current_streak_days: summary.get("currentStreakDays").and_then(Value::as_u64),
         longest_streak_days: summary.get("longestStreakDays").and_then(Value::as_u64),
         daily_usage_buckets,
+        local_session_usage: Vec::new(),
     }
 }
 

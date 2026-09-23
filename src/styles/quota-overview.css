@@ -1,0 +1,71 @@
+.quota-orb { --quota-progress: 0%; position: absolute; z-index: 3; inset: 0; width: 56px; height: 56px; margin: auto; padding: 0; border: 0; border-radius: 50%; color: #fff; background: conic-gradient(var(--orb-progress-color, #1677ff) var(--quota-progress), #e5eaf2 0); box-shadow: none; cursor: pointer; transition: transform .2s ease, opacity .18s ease; }
+.quota-orb::before { position: absolute; z-index: 0; inset: 0; border-radius: inherit; background: conic-gradient(from 0deg, transparent 0 72%, rgba(255, 255, 255, .08) 78%, rgba(255, 255, 255, .92) 86%, rgba(255, 255, 255, .18) 92%, transparent 100%); content: ""; pointer-events: none; will-change: transform; animation: quota-orb-flow 3.2s linear infinite; }
+.quota-orb:hover { transform: scale(1.045); }
+.quota-orb:active { transform: scale(.98); }
+.orb-ring { position: absolute; z-index: 1; inset: 4px; border-radius: 50%; background: #fff; }
+.orb-value, .orb-label { position: absolute; z-index: 2; right: 0; left: 0; }
+.orb-value { top: 15px; color: #1677ff; font-size: 14px; font-weight: 750; letter-spacing: -.45px; }
+.orb-label { top: 33px; overflow: hidden; color: #7d8792; font-size: 7px; font-weight: 650; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; }
+
+@keyframes quota-orb-flow {
+  to { transform: rotate(1turn); }
+}
+
+.is-expanded .quota-orb::before { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quota-orb::before { animation: none; }
+}
+
+.quota-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; margin-bottom: 3px; padding: 2px 8px 4px; }
+/* 概览信息收进卡片上方的紧凑标题行，横向空间优先留给两个额度窗口。 */
+/* 三个一级模块统一使用 28px 标题栏，标题相对卡片顶边的距离保持一致。 */
+.quota-section .section-heading { min-height: 26px; align-items: center; margin: 0; }
+.quota-section .account-details { margin: 2px 0; }
+/* 账户资料与用量概览共用一张卡，通过细分隔线保留信息层次。 */
+.account-quota-divider { margin: 1px 0 2px; border-top: 1px solid #edf1f5; }
+.quota-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 3px; }
+/* 账户用量以“主标题｜概览”保留信息层级，不承载额外的 Tab 交互。 */
+.quota-heading-title { margin: 0; color: #1f2937; font-size: .87rem; font-weight: 700; letter-spacing: 0; }
+.quota-heading-title::after { margin-left: 6px; color: #d4dce5; content: "｜"; }
+.quota-heading-subtitle { color: #8b95a1; font-size: .58rem; font-weight: 700; letter-spacing: .04em; }
+.quota-alert-control { display: flex; align-items: center; gap: 4px; }
+.quota-alert-status { padding: 2px 5px; border-radius: 999px; color: #8793a2; background: #f2f4f7; font-size: .58rem; font-weight: 700; line-height: 1.2; }
+.quota-alert-status.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
+.quota-alert-toggle { padding: 2px 6px; border: 1px solid #b7d4ff; border-radius: 4px; color: #1668c6; background: #f5f9ff; cursor: pointer; font-size: .58rem; font-weight: 700; line-height: 1.2; }
+.quota-alert-toggle:hover { border-color: #69a5ef; color: #0958d9; background: #eaf3ff; }
+.quota-alert-toggle.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
+.quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: .62rem; font-weight: 650; white-space: nowrap; }
+.badge { padding: 4px 7px; border: 1px solid #d7e8ff; border-radius: 999px; color: #1677ff; background: #eef6ff; font-size: .68rem; white-space: nowrap; }
+.quota-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+/* 仅返回一个额度窗口时，让它占满右侧区域，避免进度条后留下无效空白。 */
+.quota-list > .quota-card:only-child { grid-column: 1 / -1; }
+.quota-card { position: relative; display: grid; min-height: 65px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "value" "progress"; row-gap: 2px; padding: 5px 9px; border: 1px solid #dfe8fb; border-radius: 9px; background: linear-gradient(120deg, #f4f8ff, #fff 68%); box-shadow: inset 3px 0 0 #1677ff; }
+.quota-card h3 { grid-area: title; margin: 0; color: #4c5b70; font-size: .66rem; font-weight: 700; line-height: 1.15; }
+.quota-value { grid-area: value; display: flex; align-items: baseline; gap: 4px; margin-top: 1px; }
+.quota-value strong { color: #1677ff; font-size: 1.24rem; line-height: 1; letter-spacing: -.055em; }
+.quota-value span { color: #6f7b88; font-size: .61rem; }
+.quota-card-placeholder .quota-value strong { color: #a8b2bf; letter-spacing: 0; }
+/* 首次读取只隐藏进度显示，仍占用最终布局空间，避免数据返回时卡片高度跳动。 */
+.quota-card-placeholder .progress-track { visibility: hidden; }
+.quota-used { margin-left: 5px; color: #7c8896; }
+.progress-track { grid-area: progress; height: 5px; margin-top: 3px; overflow: hidden; border-radius: 999px; background: #e7edf7; }
+/* 重置时间固定在右上角，不参与卡片布局，保持额度卡原有高度。 */
+.quota-reset-time { position: absolute; top: 5px; right: 9px; display: flex; max-width: calc(100% - 70px); align-items: center; gap: 4px; margin: 0; padding: 2px 5px; overflow: hidden; border-radius: 4px; color: #24578f; background: #eaf3ff; font-size: .63rem; line-height: 1.35; white-space: nowrap; }
+.quota-reset-countdown { flex: 0 0 auto; color: #1677ff; font-size: .68rem; font-weight: 750; }
+.quota-reset-at { min-width: 0; overflow: hidden; color: #53708f; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+/* 预警只在接近耗尽时出现，避免普通用量状态被不必要的颜色干扰。 */
+.quota-alert { margin-left: 3px; padding: 1px 4px; border-radius: 3px; font-size: .58rem; font-weight: 750; line-height: 1.25; }
+.quota-orb.is-warning { --orb-progress-color: #fa8c16; }
+.quota-card.is-warning { border-color: #ffd591; box-shadow: inset 3px 0 0 #fa8c16; }
+.quota-card.is-warning .quota-value strong,
+.quota-orb.is-warning .orb-value { color: #d46b08; }
+.quota-card.is-warning .progress-track span { background: #fa8c16; }
+.quota-card.is-warning .quota-alert { color: #ad6800; background: #fff7e6; }
+.quota-orb.is-critical { --orb-progress-color: #f5222d; }
+.quota-card.is-critical { border-color: #ffb3b3; box-shadow: inset 3px 0 0 #f5222d; }
+.quota-card.is-critical .quota-value strong,
+.quota-orb.is-critical .orb-value { color: #cf1322; }
+.quota-card.is-critical .progress-track span { background: #f5222d; }
+.quota-card.is-critical .quota-alert { color: #cf1322; background: #fff1f0; }
+.progress-track span { display: block; height: 100%; border-radius: inherit; background: #1677ff; transition: width .35s ease; }

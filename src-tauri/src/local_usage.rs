@@ -1,19 +1,55 @@
 use serde::Serialize;
 use serde_json::Value;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     env,
+    io::SeekFrom,
     path::{Path, PathBuf},
+    time::SystemTime,
 };
 use tokio::{
     fs::{self, File},
-    io::{AsyncBufReadExt, BufReader},
+    io::{AsyncReadExt, AsyncSeekExt},
+    sync::Mutex,
 };
+
+// Token 快照通常位于 rollout 尾部；先读取尾部可避免首次洞察为每个会话通读大文件。
+const TOKEN_USAGE_TAIL_WINDOW_BYTES: u64 = 64 * 1024;
+
+#[derive(Default)]
+pub struct LocalUsageState {
+    /// 同一时刻只执行一轮目录扫描，避免自动刷新和手动刷新并发争用磁盘。
+    scan_lock: Mutex<()>,
+    cached_rollouts: Mutex<HashMap<PathBuf, CachedRolloutUsage>>,
+    #[cfg(test)]
+    parsed_file_count: std::sync::atomic::AtomicUsize,
+}
+
+#[derive(Clone)]
+struct CachedRolloutUsage {
+    file_len: u64,
+    modified_at: Option<SystemTime>,
+    usage: Option<ThreadTokenUsage>,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LocalTokenUsageBucket {
     pub start_date: String,
     pub tokens: u64,
+}
+
+/// 单个本机会话最终保存的 Token 总量。日期来自会话文件所在目录，
+/// 用于按会话统计分布，不能与按日总量重复相加。
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalSessionTokenUsage {
+    pub start_date: String,
+    pub tokens: u64,
+}
+
+pub struct LocalTokenUsageSnapshot {
+    pub daily_usage: Vec<LocalTokenUsageBucket>,
+    pub session_usage: Vec<LocalSessionTokenUsage>,
 }
 
 /// 单个会话最后一条 Token 快照。缓存输入与推理输出分别是输入、输出的子集，
@@ -28,35 +64,95 @@ pub struct ThreadTokenUsage {
     total_tokens: u64,
 }
 
-/// 汇总本机会话目录中的 Token 用量；排除日期和读取上限由调用方按业务场景决定。
-pub async fn read_local_daily_usage(
-    excluded_days: &HashSet<String>,
+/// 一次目录扫描同时生成按日、按会话两组 Token 数据，避免洞察刷新重复读取 rollout。
+pub async fn read_local_usage(
+    state: &LocalUsageState,
     day_limit: usize,
-) -> Result<Vec<LocalTokenUsageBucket>, String> {
+) -> Result<LocalTokenUsageSnapshot, String> {
     let sessions_root = codex_home()
         .ok_or("无法定位 Codex 本地目录")?
         .join("sessions");
-    read_local_daily_usage_from(&sessions_root, excluded_days, day_limit).await
+    read_local_usage_from(state, &sessions_root, day_limit).await
 }
 
-async fn read_local_daily_usage_from(
+async fn read_local_usage_from(
+    state: &LocalUsageState,
     sessions_root: &Path,
-    excluded_days: &HashSet<String>,
     day_limit: usize,
-) -> Result<Vec<LocalTokenUsageBucket>, String> {
+) -> Result<LocalTokenUsageSnapshot, String> {
+    let _scan_guard = state.scan_lock.lock().await;
     let mut day_directories = discover_session_day_directories(sessions_root).await?;
-    day_directories.retain(|(day, _)| !excluded_days.contains(day));
     day_directories.sort_unstable_by(|left, right| right.0.cmp(&left.0));
     day_directories.truncate(day_limit);
 
-    let mut buckets = Vec::new();
+    let mut daily_usage = Vec::new();
+    let mut session_usage = Vec::new();
+    let mut discovered_rollouts = HashSet::new();
     for (start_date, directory) in day_directories {
-        let tokens = read_day_total(&directory).await;
-        if tokens > 0 {
-            buckets.push(LocalTokenUsageBucket { start_date, tokens });
+        let usages = read_day_session_usages(state, &directory, &mut discovered_rollouts).await;
+        let day_total = usages
+            .iter()
+            .map(|usage| usage.total_tokens)
+            .fold(0_u64, u64::saturating_add);
+        if day_total > 0 {
+            daily_usage.push(LocalTokenUsageBucket {
+                start_date: start_date.clone(),
+                tokens: day_total,
+            });
+        }
+        for usage in usages {
+            if usage.total_tokens > 0 {
+                session_usage.push(LocalSessionTokenUsage {
+                    start_date: start_date.clone(),
+                    tokens: usage.total_tokens,
+                });
+            }
         }
     }
-    Ok(buckets)
+
+    // 目录中的文件被删除后同步清理缓存；范围外的旧缓存也不长期占用内存。
+    state
+        .cached_rollouts
+        .lock()
+        .await
+        .retain(|path, _| !path.starts_with(sessions_root) || discovered_rollouts.contains(path));
+    daily_usage.sort_unstable_by(|left, right| left.start_date.cmp(&right.start_date));
+    session_usage.sort_unstable_by(|left, right| {
+        left.start_date
+            .cmp(&right.start_date)
+            .then(left.tokens.cmp(&right.tokens))
+    });
+    Ok(LocalTokenUsageSnapshot {
+        daily_usage,
+        session_usage,
+    })
+}
+
+async fn read_day_session_usages(
+    state: &LocalUsageState,
+    directory: &Path,
+    discovered_rollouts: &mut HashSet<PathBuf>,
+) -> Vec<ThreadTokenUsage> {
+    let mut entries = match fs::read_dir(directory).await {
+        Ok(entries) => entries,
+        Err(_) => return Vec::new(),
+    };
+    let mut usages = Vec::new();
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let path = entry.path();
+        if !path
+            .extension()
+            .and_then(|value| value.to_str())
+            .is_some_and(|value| value.eq_ignore_ascii_case("jsonl"))
+        {
+            continue;
+        }
+        discovered_rollouts.insert(path.clone());
+        if let Some(usage) = read_cached_rollout_usage(state, &path).await {
+            usages.push(usage);
+        }
+    }
+    usages
 }
 
 fn codex_home() -> Option<PathBuf> {
@@ -132,42 +228,75 @@ async fn numeric_directory_name(
     (minimum..=maximum).contains(&value).then_some(name)
 }
 
-async fn read_day_total(directory: &Path) -> u64 {
-    let mut entries = match fs::read_dir(directory).await {
-        Ok(entries) => entries,
-        Err(_) => return 0,
-    };
-    let mut total = 0_u64;
-    while let Ok(Some(entry)) = entries.next_entry().await {
-        let path = entry.path();
-        if !path
-            .extension()
-            .and_then(|value| value.to_str())
-            .is_some_and(|value| value.eq_ignore_ascii_case("jsonl"))
-        {
-            continue;
-        }
-        if let Some(tokens) = read_rollout_total(&path).await {
-            total = total.saturating_add(tokens);
+async fn read_cached_rollout_usage(
+    state: &LocalUsageState,
+    path: &Path,
+) -> Option<ThreadTokenUsage> {
+    let metadata = fs::metadata(path).await.ok()?;
+    if !metadata.is_file() {
+        return None;
+    }
+    let file_len = metadata.len();
+    let modified_at = metadata.modified().ok();
+    {
+        let cache = state.cached_rollouts.lock().await;
+        if let Some(cached) = cache.get(path) {
+            if cached.file_len == file_len && cached.modified_at == modified_at {
+                return cached.usage.clone();
+            }
         }
     }
-    total
+
+    #[cfg(test)]
+    state
+        .parsed_file_count
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let usage = read_latest_thread_usage(path).await;
+    state.cached_rollouts.lock().await.insert(
+        path.to_path_buf(),
+        CachedRolloutUsage {
+            file_len,
+            modified_at,
+            usage: usage.clone(),
+        },
+    );
+    usage
 }
 
-/// 每条 token_count 都是会话累计快照，因此每个 rollout 只采用最后一条，避免重复累加。
-async fn read_rollout_total(path: &Path) -> Option<u64> {
-    let file = File::open(path).await.ok()?;
-    let mut lines = BufReader::new(file).lines();
-    let mut latest_total = None;
-    while let Ok(Some(line)) = lines.next_line().await {
-        if !line.contains("token_count") {
-            continue;
-        }
-        if let Some(total) = total_tokens_from_line(&line) {
-            latest_total = Some(total);
-        }
+async fn read_latest_thread_usage(path: &Path) -> Option<ThreadTokenUsage> {
+    let mut file = File::open(path).await.ok()?;
+    let file_len = file.metadata().await.ok()?.len();
+    if file_len == 0 {
+        return None;
     }
-    latest_total
+
+    let mut window_len = TOKEN_USAGE_TAIL_WINDOW_BYTES.min(file_len);
+    loop {
+        let start = file_len.saturating_sub(window_len);
+        file.seek(SeekFrom::Start(start)).await.ok()?;
+        let mut buffer = Vec::with_capacity(window_len as usize);
+        file.read_to_end(&mut buffer).await.ok()?;
+        let content = String::from_utf8_lossy(&buffer);
+        // 非文件开头处的第一行可能被截断，扩大窗口后再解析它，避免把残缺 JSON 当快照。
+        let searchable = if start == 0 {
+            content.as_ref()
+        } else {
+            content
+                .split_once('\n')
+                .map_or("", |(_, complete_lines)| complete_lines)
+        };
+        for line in searchable.lines().rev() {
+            if line.contains("token_count") {
+                if let Some(usage) = thread_token_usage_from_line(line) {
+                    return Some(usage);
+                }
+            }
+        }
+        if start == 0 {
+            return None;
+        }
+        window_len = window_len.saturating_mul(2).min(file_len);
+    }
 }
 
 /// 读取 App Server 返回的会话文件路径，并限制在本机 Codex sessions 目录内。
@@ -191,21 +320,10 @@ pub async fn read_thread_token_usage(thread_path: &str) -> Option<ThreadTokenUsa
     if !candidate.starts_with(&sessions_root) {
         return None;
     }
-
-    let file = File::open(candidate).await.ok()?;
-    let mut lines = BufReader::new(file).lines();
-    let mut latest_usage = None;
-    while let Ok(Some(line)) = lines.next_line().await {
-        if !line.contains("token_count") {
-            continue;
-        }
-        if let Some(usage) = thread_token_usage_from_line(&line) {
-            latest_usage = Some(usage);
-        }
-    }
-    latest_usage
+    read_latest_thread_usage(&candidate).await
 }
 
+#[cfg(test)]
 fn total_tokens_from_line(line: &str) -> Option<u64> {
     thread_token_usage_from_line(line).map(|usage| usage.total_tokens)
 }
@@ -243,6 +361,8 @@ mod tests {
     use super::*;
     use std::{
         fs as std_fs,
+        io::Write,
+        sync::atomic::Ordering,
         time::{SystemTime, UNIX_EPOCH},
     };
 
@@ -282,7 +402,7 @@ mod tests {
     }
 
     #[test]
-    fn aggregates_latest_rollout_snapshot_and_skips_excluded_days() {
+    fn one_scan_builds_daily_and_session_usage() {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("测试时间应晚于 Unix epoch")
@@ -290,9 +410,9 @@ mod tests {
         let root =
             env::temp_dir().join(format!("codex-desk-usage-{}-{unique}", std::process::id()));
         let current_day = root.join("2026/08/31");
-        let excluded_day = root.join("2026/08/28");
+        let previous_day = root.join("2026/08/28");
         std_fs::create_dir_all(&current_day).expect("应创建当天测试目录");
-        std_fs::create_dir_all(&excluded_day).expect("应创建排除日期测试目录");
+        std_fs::create_dir_all(&previous_day).expect("应创建前一天测试目录");
         std_fs::write(
             current_day.join("rollout-current.jsonl"),
             concat!(
@@ -303,23 +423,147 @@ mod tests {
         )
         .expect("应写入当天测试会话");
         std_fs::write(
-            excluded_day.join("rollout-excluded.jsonl"),
+            previous_day.join("rollout-previous.jsonl"),
             "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":900}}}}\n",
         )
-        .expect("应写入排除日期测试会话");
+        .expect("应写入前一天测试会话");
 
-        let excluded = HashSet::from(["2026-08-28".to_owned()]);
-        let buckets =
-            tauri::async_runtime::block_on(read_local_daily_usage_from(&root, &excluded, 35))
-                .expect("本地用量应可汇总");
+        let state = LocalUsageState::default();
+        let usage = tauri::async_runtime::block_on(read_local_usage_from(&state, &root, 35))
+            .expect("本地用量应可汇总");
         std_fs::remove_dir_all(&root).expect("应清理测试目录");
 
         assert_eq!(
-            buckets,
-            vec![LocalTokenUsageBucket {
-                start_date: "2026-08-31".to_owned(),
-                tokens: 150,
-            }]
+            usage.daily_usage,
+            vec![
+                LocalTokenUsageBucket {
+                    start_date: "2026-08-28".to_owned(),
+                    tokens: 900,
+                },
+                LocalTokenUsageBucket {
+                    start_date: "2026-08-31".to_owned(),
+                    tokens: 150,
+                },
+            ]
         );
+        assert_eq!(
+            usage.session_usage,
+            vec![
+                LocalSessionTokenUsage {
+                    start_date: "2026-08-28".to_owned(),
+                    tokens: 900,
+                },
+                LocalSessionTokenUsage {
+                    start_date: "2026-08-31".to_owned(),
+                    tokens: 150,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn keeps_one_final_total_for_each_local_session() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("测试时间应晚于 Unix epoch")
+            .as_nanos();
+        let root = env::temp_dir().join(format!(
+            "codex-desk-session-usage-{}-{unique}",
+            std::process::id()
+        ));
+        let day = root.join("2026/08/31");
+        std_fs::create_dir_all(&day).expect("应创建测试目录");
+        std_fs::write(
+            day.join("rollout-small.jsonl"),
+            concat!(
+                "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":100}}}}\n",
+                "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":8000}}}}\n"
+            ),
+        )
+        .expect("应写入小会话快照");
+        std_fs::write(
+            day.join("rollout-large.jsonl"),
+            "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":60000}}}}\n",
+        )
+        .expect("应写入大会话快照");
+
+        let state = LocalUsageState::default();
+        let usage = tauri::async_runtime::block_on(read_local_usage_from(&state, &root, 35))
+            .expect("会话 Token 用量应可读取");
+        std_fs::remove_dir_all(&root).expect("应清理测试目录");
+
+        assert_eq!(
+            usage.session_usage,
+            vec![
+                LocalSessionTokenUsage {
+                    start_date: "2026-08-31".to_owned(),
+                    tokens: 8000,
+                },
+                LocalSessionTokenUsage {
+                    start_date: "2026-08-31".to_owned(),
+                    tokens: 60000,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn reuses_unchanged_cache_and_refreshes_changed_or_deleted_files() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("测试时间应晚于 Unix epoch")
+            .as_nanos();
+        let root = env::temp_dir().join(format!(
+            "codex-desk-usage-cache-{}-{unique}",
+            std::process::id()
+        ));
+        let day = root.join("2026/08/31");
+        let rollout = day.join("rollout-cache.jsonl");
+        std_fs::create_dir_all(&day).expect("应创建缓存测试目录");
+        std_fs::write(
+            &rollout,
+            "{\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"total_tokens\":100}}}}\n",
+        )
+        .expect("应写入缓存测试会话");
+
+        let state = LocalUsageState::default();
+        tauri::async_runtime::block_on(async {
+            let first = read_local_usage_from(&state, &root, 35)
+                .await
+                .expect("首次扫描应成功");
+            assert_eq!(first.daily_usage[0].tokens, 100);
+            assert_eq!(state.parsed_file_count.load(Ordering::Relaxed), 1);
+
+            let second = read_local_usage_from(&state, &root, 35)
+                .await
+                .expect("缓存扫描应成功");
+            assert_eq!(second.daily_usage[0].tokens, 100);
+            assert_eq!(state.parsed_file_count.load(Ordering::Relaxed), 1);
+
+            let mut file = std_fs::OpenOptions::new()
+                .append(true)
+                .open(&rollout)
+                .expect("应打开缓存测试会话");
+            writeln!(
+                file,
+                "{{\"payload\":{{\"type\":\"token_count\",\"info\":{{\"total_token_usage\":{{\"total_tokens\":250}}}}}}}}"
+            )
+            .expect("应追加 Token 快照");
+            drop(file);
+
+            let changed = read_local_usage_from(&state, &root, 35)
+                .await
+                .expect("变更后扫描应成功");
+            assert_eq!(changed.daily_usage[0].tokens, 250);
+            assert_eq!(state.parsed_file_count.load(Ordering::Relaxed), 2);
+
+            std_fs::remove_file(&rollout).expect("应删除缓存测试会话");
+            let deleted = read_local_usage_from(&state, &root, 35)
+                .await
+                .expect("删除后扫描应成功");
+            assert!(deleted.daily_usage.is_empty());
+            assert!(state.cached_rollouts.lock().await.is_empty());
+        });
+        std_fs::remove_dir_all(&root).expect("应清理缓存测试目录");
     }
 }

@@ -1,11 +1,27 @@
-const SVG_NS = "http://www.w3.org/2000/svg";
+import {
+  compactDayLabel,
+  createChartTooltip,
+  createExpandableChart,
+  createSvgElement,
+} from "../utils/trend-chart.js";
+
 const TOKEN_COLOR = "#1677ff";
 
-function createSvgElement(name, attributes = {}) {
-  const element = document.createElementNS(SVG_NS, name);
-  for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
-  return element;
-}
+// 使用连续的固定区间，既保留 M 级会话差异，也便于不同时间范围横向比较。
+const SESSION_TOKEN_BUCKETS = [
+  { label: "0–10K", maximum: 10_000 },
+  { label: "10K–50K", maximum: 50_000 },
+  { label: "50K–100K", maximum: 100_000 },
+  { label: "100K–250K", maximum: 250_000 },
+  { label: "250K–500K", maximum: 500_000 },
+  { label: "500K–1M", maximum: 1_000_000 },
+  { label: "1M–2M", maximum: 2_000_000 },
+  { label: "2M–5M", maximum: 5_000_000 },
+  { label: "5M–10M", maximum: 10_000_000 },
+  { label: "10M–20M", maximum: 20_000_000 },
+  { label: "20M–50M", maximum: 50_000_000 },
+  { label: "50M+", maximum: Number.POSITIVE_INFINITY },
+];
 
 function localDayKey(date) {
   const year = date.getFullYear();
@@ -24,51 +40,73 @@ function recentDayKeys(days) {
   });
 }
 
-function compactDayLabel(day) {
-  return typeof day === "string" && day.length >= 10 ? day.slice(5) : day;
-}
-
-function shouldRenderDayLabel(index, totalDays) {
+function shouldRenderDayLabel(index, totalDays, compact) {
+  if (compact) return index === 0 || index === totalDays - 1 || index % 3 === 0;
   return totalDays !== 30 || index % 5 === 0 || index === totalDays - 1;
 }
 
+function shouldRenderDistributionLabel(index, totalBuckets, chartWidth, compact) {
+  // 总览的迷你图保留代表性刻度，完整细分区间仍可通过柱子悬停查看。
+  if (compact) return index === 0 || index === totalBuckets - 1 || index % 4 === 0;
+  if (chartWidth >= 500) return true;
+  // 最后一档必须保留；若倒数第二档也按偶数刻度显示，会与最后标签发生重叠。
+  return index === 0 || index === totalBuckets - 1 || (index % 2 === 0 && index < totalBuckets - 2);
+}
+
 /**
- * 账户 Token 使用量由 app-server 按日聚合；该视图仅负责筛选日期与绘制，
- * 让范围切换无需额外发起网络请求。
+ * Token 洞察默认同时呈现按日趋势与按会话分布；用户仍可切换为单图，
+ * 以在较大空间内观察具体日期或更细的 Token 分桶。
  */
 export function createTokenUsageTrendView({ t }) {
-  const range = document.querySelector("#token-usage-range");
   const chart = document.querySelector("#token-usage-chart");
+  const controls = document.querySelector("#token-usage-controls");
   const total = document.querySelector("#token-usage-total");
   const trendSection = chart.closest(".trend-section");
   let response = null;
   let selectedDays = 7;
-  let chartExpanded = false;
+  let activeView = "trend";
+  const chartInteraction = createExpandableChart({
+    chart,
+    section: trendSection,
+    getTitle: activeViewTitle,
+    getActionLabel: (expanded) => t(expanded ? "trendCollapse" : "trendExpand"),
+    canRender: () => Boolean(response),
+    render: renderChart,
+  });
 
-  function updateChartAccessibility() {
-    const actionKey = chartExpanded ? "trendCollapse" : "trendExpand";
-    chart.tabIndex = 0;
-    chart.setAttribute("role", "button");
-    chart.setAttribute("aria-expanded", String(chartExpanded));
-    chart.setAttribute("aria-label", `${t("tokenUsageTitle")}：${t(actionKey)}`);
-    chart.removeAttribute("title");
+  function activeViewTitle() {
+    return t(activeView === "trend" ? "tokenUsageTitle" : "tokenUsageDistributionTitle");
   }
 
-  function toggleChartExpanded() {
-    chartExpanded = !chartExpanded;
-    trendSection.classList.toggle("is-chart-expanded", chartExpanded);
-    updateChartAccessibility();
-    // 覆盖层完成布局后使用真实尺寸重绘，保证放大后的坐标轴与数据点清晰。
-    window.requestAnimationFrame(() => {
-      if (response) renderChart();
-    });
+  function renderControls() {
+    controls.replaceChildren();
+    controls.setAttribute("role", "group");
+    controls.setAttribute("aria-label", t("tokenUsageKicker"));
+    for (const [view, labelKey] of [
+      ["trend", "tokenUsageTrendTab"],
+      ["distribution", "tokenUsageDistributionTab"],
+    ]) {
+      const tab = document.createElement("button");
+      const selected = activeView === view;
+      tab.type = "button";
+      tab.className = `token-usage-tab ${selected ? "is-active" : ""}`;
+      tab.setAttribute("aria-pressed", String(selected));
+      tab.textContent = t(labelKey);
+      tab.addEventListener("click", () => setActiveView(view));
+      controls.append(tab);
+    }
+  }
+
+  function setActiveView(view) {
+    if (!["trend", "distribution"].includes(view) || view === activeView) return;
+    activeView = view;
+    render();
   }
 
   function formatTokens(value) {
     return String(Math.round(Number(value) || 0));
   }
 
-  // 标题摘要保持紧凑，悬停明细仍使用完整数值，避免大用量挤占图表头部空间。
   function formatCompactTokens(value) {
     const numeric = Number(value) || 0;
     const unit = [
@@ -83,18 +121,6 @@ export function createTokenUsageTrendView({ t }) {
     return `${compact}${suffix}`;
   }
 
-  function renderRange() {
-    range.replaceChildren();
-    for (const days of [3, 7, 30]) {
-      const option = document.createElement("option");
-      option.value = String(days);
-      option.selected = days === selectedDays;
-      option.textContent = t(`tokenUsageRange${days}`);
-      range.append(option);
-    }
-    range.setAttribute("aria-label", t("tokenUsageRangeLabel"));
-  }
-
   function pointsForRange() {
     const buckets = new Map(
       (response?.dailyUsageBuckets ?? []).map((bucket) => [bucket.startDate, Number(bucket.tokens) || 0]),
@@ -102,114 +128,253 @@ export function createTokenUsageTrendView({ t }) {
     return recentDayKeys(selectedDays).map((day) => ({ day, tokens: buckets.get(day) ?? 0 }));
   }
 
-  function createTooltip() {
-    const tooltip = document.createElement("div");
-    tooltip.className = "trend-tooltip";
-    tooltip.hidden = true;
-    const show = (point, event) => {
-      tooltip.replaceChildren();
-      const date = document.createElement("p");
-      date.className = "trend-tooltip-date";
-      date.textContent = `${t("tokenUsageTooltipDate")}：${point.day}`;
-      const tokens = document.createElement("p");
-      tokens.textContent = `${t("tokenUsageTooltipTokens")}：${formatTokens(point.tokens)}`;
-      tooltip.append(date, tokens);
-      tooltip.hidden = false;
-      move(event);
-    };
-    const move = (event) => {
-      const bounds = chart.getBoundingClientRect();
-      const maximumLeft = Math.max(8, bounds.width - tooltip.offsetWidth - 8);
-      tooltip.style.left = `${Math.min(Math.max(8, event.clientX - bounds.left + 12), maximumLeft)}px`;
-      tooltip.style.top = `${Math.max(tooltip.offsetHeight + 4, event.clientY - bounds.top - 10)}px`;
-    };
-    return { tooltip, show, move, hide: () => { tooltip.hidden = true; } };
+  function sessionUsageForRange() {
+    const days = recentDayKeys(selectedDays);
+    const firstDay = days[0];
+    const lastDay = days.at(-1);
+    return (response?.localSessionUsage ?? []).filter((session) => {
+      const tokens = Number(session.tokens) || 0;
+      return tokens > 0
+        && typeof session.startDate === "string"
+        && session.startDate >= firstDay
+        && session.startDate <= lastDay;
+    });
   }
 
-  function renderChart() {
-    chart.replaceChildren();
+  function distributionForRange() {
+    const sessions = sessionUsageForRange();
+    let minimum = 0;
+    return SESSION_TOKEN_BUCKETS.map((bucket) => {
+      const count = sessions.filter((session) => {
+        const tokens = Number(session.tokens) || 0;
+        return tokens >= minimum && tokens < bucket.maximum;
+      }).length;
+      minimum = bucket.maximum;
+      return { label: bucket.label, count };
+    });
+  }
+
+  function appendValueGrid(svg, {
+    width,
+    left,
+    right,
+    axisMax,
+    valueToY,
+    valueFormatter = String,
+    labelGap = 5,
+  }) {
+    const grid = createSvgElement("g", { class: "trend-grid" });
+    for (let index = 0; index <= 2; index += 1) {
+      const value = (axisMax * index) / 2;
+      const y = valueToY(value);
+      grid.append(createSvgElement("line", { x1: left, x2: width - right, y1: y, y2: y }));
+      const label = createSvgElement("text", { x: left - labelGap, y: y + 3, "text-anchor": "end" });
+      label.textContent = valueFormatter(value);
+      grid.append(label);
+    }
+    svg.append(grid);
+  }
+
+  function chartDimensions(target, { bottom = 24, minWidth = 320, minHeight = 108, left = 40, right = 12, top = 8 } = {}) {
+    const width = Math.max(minWidth, Math.round(target.clientWidth) || minWidth);
+    const height = Math.max(minHeight, Math.round(target.clientHeight) || minHeight);
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    return {
+      width,
+      height,
+      left,
+      right,
+      top,
+      plotWidth,
+      plotHeight,
+      valueToY: (value, axisMax) => top + plotHeight - (value / axisMax) * plotHeight,
+    };
+  }
+
+  function createTrendTooltipContent(point) {
+    const date = document.createElement("p");
+    date.className = "trend-tooltip-date";
+    date.textContent = `${t("tokenUsageTooltipDate")}：${point.day}`;
+    const tokens = document.createElement("p");
+    tokens.textContent = `${t("tokenUsageTooltipTokens")}：${formatTokens(point.tokens)}`;
+    return [date, tokens];
+  }
+
+  function createDistributionTooltipContent(bucket) {
+    const range = document.createElement("p");
+    range.className = "trend-tooltip-date";
+    range.textContent = `${bucket.label} Token`;
+    const sessions = document.createElement("p");
+    sessions.textContent = `${t("tokenUsageTooltipSessions")}：${bucket.count}`;
+    return [range, sessions];
+  }
+
+  function appendEmpty(target, summary, message) {
+    target.replaceChildren();
+    const empty = document.createElement("p");
+    empty.className = "trend-empty";
+    empty.textContent = message;
+    target.append(empty);
+    if (summary) summary.textContent = "";
+  }
+
+  function renderTrendChart(target, summary, compact = false) {
+    target.replaceChildren();
     const points = pointsForRange();
     const hasUsageData = (response?.dailyUsageBuckets ?? []).length > 0;
     if (!hasUsageData) {
-      const empty = document.createElement("p");
-      empty.className = "trend-empty";
-      empty.textContent = t("tokenUsageNoData", { days: selectedDays });
-      chart.append(empty);
-      total.textContent = "";
+      appendEmpty(target, summary, t("tokenUsageNoData", { days: selectedDays }));
       return;
     }
 
     const totalTokens = points.reduce((sum, point) => sum + point.tokens, 0);
-    total.textContent = t("tokenUsageTotal", { total: formatCompactTokens(totalTokens) });
+    if (summary) summary.textContent = t("tokenUsageTotal", { total: formatCompactTokens(totalTokens) });
     const valueMax = Math.max(...points.map((point) => point.tokens), 1);
     const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
-    const width = Math.max(760, Math.round(chart.clientWidth) || 760);
-    const height = Math.max(108, Math.round(chart.clientHeight) || 108);
-    const left = 40;
-    const right = 12;
-    const top = 8;
-    const bottom = 24;
-    const plotWidth = width - left - right;
-    const plotHeight = height - top - bottom;
-    const valueToY = (value) => top + plotHeight - (value / axisMax) * plotHeight;
+    const dimensions = chartDimensions(target, compact
+      ? { bottom: 17, minWidth: 156, minHeight: 72, left: 33, right: 7, top: 5 }
+      : undefined);
+    const { width, height, left, right, plotWidth, valueToY } = dimensions;
     const indexToX = (index) => left + (points.length === 1 ? plotWidth / 2 : (index * plotWidth) / (points.length - 1));
-    const tooltip = createTooltip();
+    const tooltip = createChartTooltip(target);
     const svg = createSvgElement("svg", {
       viewBox: `0 0 ${width} ${height}`,
       preserveAspectRatio: "none",
       role: "img",
       "aria-label": t("tokenUsageTitle"),
     });
-    const grid = createSvgElement("g", { class: "trend-grid" });
-    for (let index = 0; index <= 2; index += 1) {
-      const value = (axisMax * index) / 2;
-      const y = valueToY(value);
-      grid.append(createSvgElement("line", { x1: left, x2: width - right, y1: y, y2: y }));
-      const label = createSvgElement("text", { x: left - 7, y: y + 3, "text-anchor": "end" });
-      // 纵轴空间有限，使用紧凑单位避免大数值超出图表左边界；悬停仍展示完整 Token 数。
-      label.textContent = formatCompactTokens(value);
-      grid.append(label);
-    }
-    svg.append(grid);
+    appendValueGrid(svg, {
+      width,
+      left,
+      right,
+      axisMax,
+      valueToY: (value) => valueToY(value, axisMax),
+      valueFormatter: compact ? formatCompactTokens : formatCompactTokens,
+      labelGap: compact ? 13 : 5,
+    });
     const labels = createSvgElement("g", { class: "trend-labels" });
     svg.append(createSvgElement("polyline", {
-      points: points.map((point, index) => `${indexToX(index)},${valueToY(point.tokens)}`).join(" "),
+      points: points.map((point, index) => `${indexToX(index)},${valueToY(point.tokens, axisMax)}`).join(" "),
       fill: "none",
       stroke: TOKEN_COLOR,
-      "stroke-width": 2.4,
+      "stroke-width": compact ? 2 : 2.4,
       "stroke-linecap": "round",
       "stroke-linejoin": "round",
     }));
     points.forEach((point, index) => {
       const dot = createSvgElement("circle", {
-        class: "trend-point", cx: indexToX(index), cy: valueToY(point.tokens), r: 3.6,
-        fill: "#fff", stroke: TOKEN_COLOR, "stroke-width": 2,
+        class: "trend-point", cx: indexToX(index), cy: valueToY(point.tokens, axisMax), r: compact ? 2.6 : 3.6,
+        fill: "#fff", stroke: TOKEN_COLOR, "stroke-width": compact ? 1.5 : 2,
       });
-      dot.addEventListener("mouseenter", (event) => tooltip.show(point, event));
-      dot.addEventListener("mousemove", (event) => tooltip.move(event));
+      dot.addEventListener("mouseenter", (event) => tooltip.show(createTrendTooltipContent(point), event));
+      dot.addEventListener("mousemove", tooltip.move);
       dot.addEventListener("mouseleave", tooltip.hide);
       labels.append(dot);
-      if (!shouldRenderDayLabel(index, selectedDays)) return;
+      if (!shouldRenderDayLabel(index, selectedDays, compact)) return;
       const text = createSvgElement("text", {
-        x: indexToX(index), y: height - 9,
+        x: indexToX(index), y: height - (compact ? 4 : 9),
         "text-anchor": index === 0 ? "start" : index === points.length - 1 ? "end" : "middle",
+        "font-size": compact ? 8 : 10,
       });
       text.textContent = compactDayLabel(point.day);
       labels.append(text);
     });
     svg.append(labels);
-    chart.append(svg, tooltip.tooltip);
+    target.append(svg, tooltip.tooltip);
+  }
+
+  function renderDistributionChart(target, summary, compact = false) {
+    target.replaceChildren();
+    const sessions = sessionUsageForRange();
+    if (sessions.length === 0) {
+      appendEmpty(target, summary, t("tokenUsageDistributionNoData", { days: selectedDays }));
+      return;
+    }
+
+    const buckets = distributionForRange();
+    if (summary) summary.textContent = t("tokenUsageDistributionSummary", { count: sessions.length });
+    const valueMax = Math.max(...buckets.map((bucket) => bucket.count), 1);
+    const axisMax = Math.max(2, Math.ceil(valueMax / 2) * 2);
+    const dimensions = chartDimensions(target, compact
+      ? { bottom: 17, minWidth: 156, minHeight: 72, left: 28, right: 6, top: 5 }
+      : undefined);
+    const { width, height, left, right, top, plotWidth, plotHeight, valueToY } = dimensions;
+    const columnWidth = plotWidth / buckets.length;
+    // 柱宽保持在分组宽度的约六成，并设置上限；宽屏放大后也不会变成笨重的色块。
+    const barWidth = Math.max(
+      compact ? 4 : 12,
+      Math.min(compact ? 16 : 30, columnWidth * (compact ? .55 : .62)),
+    );
+    const tooltip = createChartTooltip(target);
+    const svg = createSvgElement("svg", {
+      viewBox: `0 0 ${width} ${height}`,
+      preserveAspectRatio: "none",
+      role: "img",
+      "aria-label": t("tokenUsageDistributionTitle"),
+    });
+    appendValueGrid(svg, {
+      width,
+      left,
+      right,
+      axisMax,
+      valueToY: (value) => valueToY(value, axisMax),
+      labelGap: compact ? 13 : 5,
+    });
+
+    const labels = createSvgElement("g", { class: "trend-labels" });
+    buckets.forEach((bucket, index) => {
+      const centerX = left + columnWidth * index + columnWidth / 2;
+      const barY = valueToY(bucket.count, axisMax);
+      const barHeight = top + plotHeight - barY;
+      const bar = createSvgElement("rect", {
+        class: "token-distribution-bar",
+        x: centerX - barWidth / 2,
+        y: barY,
+        width: barWidth,
+        height: barHeight,
+        rx: compact ? 1.5 : 3,
+        fill: "var(--token-distribution-color)",
+      });
+      bar.addEventListener("mouseenter", (event) => tooltip.show(createDistributionTooltipContent(bucket), event));
+      bar.addEventListener("mousemove", tooltip.move);
+      bar.addEventListener("mouseleave", tooltip.hide);
+      labels.append(bar);
+      if (!shouldRenderDistributionLabel(index, buckets.length, width, compact)) return;
+      const label = createSvgElement("text", {
+        x: centerX,
+        y: height - (compact ? 4 : 9),
+        "text-anchor": "middle",
+        "font-size": compact ? 6.25 : width < 500 ? 7 : 7.5,
+      });
+      label.textContent = bucket.label;
+      labels.append(label);
+    });
+    svg.append(labels);
+    target.append(svg, tooltip.tooltip);
+  }
+
+  function renderChart() {
+    chart.setAttribute("aria-busy", "false");
+    chart.replaceChildren();
+    const compact = !trendSection.classList.contains("is-chart-expanded") && chart.clientHeight < 100;
+    if (activeView === "distribution") {
+      renderDistributionChart(chart, total, compact);
+    } else {
+      renderTrendChart(chart, total, compact);
+    }
   }
 
   function render() {
-    renderRange();
-    updateChartAccessibility();
+    renderControls();
+    chartInteraction.updateAccessibility();
     if (response) renderChart();
+    else renderLoading();
   }
 
-  function showLoading() {
-    updateChartAccessibility();
-    if (response) return;
+  // Token 聚合需要等额度读取完成后才会发起请求；首屏保留加载状态，避免图表区域空白。
+  function renderLoading() {
+    chart.setAttribute("aria-busy", "true");
     chart.replaceChildren();
     const loading = document.createElement("p");
     loading.className = "trend-empty";
@@ -217,8 +382,17 @@ export function createTokenUsageTrendView({ t }) {
     chart.append(loading);
   }
 
+  function showLoading() {
+    renderControls();
+    chartInteraction.updateAccessibility();
+    if (response) return;
+    renderLoading();
+  }
+
   function showError() {
-    updateChartAccessibility();
+    renderControls();
+    chartInteraction.updateAccessibility();
+    chart.setAttribute("aria-busy", "false");
     chart.replaceChildren();
     const error = document.createElement("p");
     error.className = "trend-empty trend-empty-error";
@@ -227,28 +401,21 @@ export function createTokenUsageTrendView({ t }) {
     total.textContent = "";
   }
 
-  range.addEventListener("change", () => {
-    const days = Number(range.value);
+  function setRange(days) {
     if (![3, 7, 30].includes(days) || days === selectedDays) return;
     selectedDays = days;
-    renderChart();
-  });
-  chart.addEventListener("dblclick", (event) => {
-    event.preventDefault();
-    toggleChartExpanded();
-  });
-  chart.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    toggleChartExpanded();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && chartExpanded) toggleChartExpanded();
-  });
-  window.addEventListener("resize", () => {
-    if (chartExpanded && response) renderChart();
-  });
-  updateChartAccessibility();
-  renderRange();
-  return { render, setData: (data) => { response = data; renderChart(); }, showLoading, showError };
+    if (response) renderChart();
+  }
+
+  render();
+  return {
+    render,
+    setData: (data) => {
+      response = data;
+      render();
+    },
+    setRange,
+    showLoading,
+    showError,
+  };
 }

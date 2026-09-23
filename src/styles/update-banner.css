@@ -9,6 +9,7 @@
 .update-banner-notes p { position: relative; margin: 0; padding-left: 11px; }
 .update-banner-notes p::before { position: absolute; left: 0; color: #1677ff; content: "•"; }
 .update-banner-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.update-banner-actions[hidden] { display: none; }
 .update-banner-actions button { min-height: 27px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 6px; color: #607084; background: #fff; cursor: pointer; font-size: .64rem; font-weight: 700; }
 .update-banner-actions button:hover { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
 .update-banner-actions .update-banner-primary { border-color: #1677ff; color: #fff; background: #1677ff; }

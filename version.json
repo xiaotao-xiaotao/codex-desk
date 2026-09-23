@@ -1,31 +1,31 @@
 {
-  "version": "1.1.2",
-  "publishedAt": "2026-09-11",
+  "version": "1.2.1",
+  "publishedAt": "2026-09-23",
   "releaseNotes": {
     "zh-CN": [
-      "新增主面板手动检查版本更新，并展示发布说明",
-      "优化会话详情页面和刷新交互体验",
-      "统一应用版本配置，简化后续发布流程"
+      "新增可自定义的额度提醒阈值，并改进会话消息 Markdown 与图片预览",
+      "优化 Token 用量缓存和增量扫描，提升趋势与会话详情加载体验",
+      "修复托盘唤起焦点闪烁、会话 ID 显示和消息时间处理等问题"
     ],
     "zh-TW": [
-      "新增主面板手動檢查版本更新，並顯示發佈說明",
-      "改善工作階段詳情頁面和重新整理互動體驗",
-      "統一應用程式版本設定，簡化後續發佈流程"
+      "新增可自訂的額度提醒門檻，並改進工作階段訊息 Markdown 與圖片預覽",
+      "最佳化 Token 用量快取與增量掃描，提升趨勢和工作階段詳情載入體驗",
+      "修正系統匣喚起焦點閃爍、工作階段 ID 顯示及訊息時間處理等問題"
     ],
     "en": [
-      "Added manual update checks and release notes to the dashboard",
-      "Improved session details and refresh interactions",
-      "Centralized app version configuration for simpler releases"
+      "Added configurable quota alert thresholds and improved Markdown and image previews in sessions",
+      "Improved Token usage caching and incremental scanning for faster trends and session details",
+      "Fixed tray focus flicker, session ID display, and message timestamp handling"
     ],
     "ja": [
-      "メインパネルに手動更新確認とリリースノート表示を追加",
-      "セッション詳細画面と更新操作を改善",
-      "アプリのバージョン設定を一元化し、リリース手順を簡素化"
+      "クォータ通知のしきい値設定に対応し、セッションの Markdown 表示と画像プレビューを改善",
+      "Token 使用量のキャッシュと増分スキャンを改善し、推移とセッション詳細の読み込みを高速化",
+      "トレイ操作時のフォーカスちらつき、セッション ID 表示、メッセージ時刻処理を修正"
     ],
     "ko": [
-      "메인 패널에 수동 업데이트 확인 및 릴리스 노트 표시 추가",
-      "세션 상세 화면과 새로 고침 상호작용 개선",
-      "앱 버전 설정을 통합하여 릴리스 절차 간소화"
+      "할당량 알림 임계값 설정을 추가하고 세션 Markdown 표시 및 이미지 미리보기를 개선",
+      "Token 사용량 캐시와 증분 스캔을 개선해 추세 및 세션 상세 로딩을 빠르게 개선",
+      "트레이 포커스 깜박임, 세션 ID 표시 및 메시지 시간 처리를 수정"
     ]
   }
 }

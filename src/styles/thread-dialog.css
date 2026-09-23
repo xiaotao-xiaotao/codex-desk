@@ -2,21 +2,24 @@
 .thread-dialog::backdrop { background: rgba(15, 23, 42, .38); }
 .thread-dialog-toolbar { display: flex; height: 42px; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #e7ebef; background: #fff; }
 .thread-dialog-title { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 6px; }
+.thread-dialog-heading { display: grid; min-width: 0; flex: 1 1 auto; gap: 1px; }
 .thread-dialog-toolbar h2 { display: flex; min-width: 0; margin: 0; align-items: baseline; gap: 5px; color: #263445; font-size: .95rem; font-weight: 760; letter-spacing: .01em; }
 #dialog-title { overflow: hidden; color: #536273; font-size: .76rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .thread-dialog-title-separator { color: #a3adb8; font-weight: 500; }
 .thread-dialog-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; }
+.thread-copy-id-button { display: inline-flex; width: fit-content; min-width: 0; max-width: 100%; align-items: center; gap: 4px; justify-self: start; padding: 0 3px; overflow: hidden; border: 0; border-radius: 4px; color: #8a96a4; background: transparent; cursor: pointer; font: inherit; line-height: 1.15; text-align: left; transition: color .15s, background-color .15s; }
+.thread-copy-id-button code { min-width: 0; overflow: hidden; font-family: "Cascadia Code", Consolas, monospace; font-size: .69rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.thread-copy-id-button:hover:not(:disabled) { color: #216da9; background: #edf6ff; }
+.thread-copy-id-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
+.thread-copy-id-button:disabled { cursor: default; }
+.thread-copy-id-button::after { width: 0; flex: 0 0 auto; overflow: hidden; color: #718197; content: "✓"; font-size: .62rem; opacity: 0; transition: width .15s, opacity .15s; }
+.thread-copy-id-button.is-copied::after { width: 10px; opacity: 1; }
+.thread-copy-id-button.is-failed { color: #bf3340; background: #fff5f5; }
 .thread-toolbar-action { display: grid; width: 28px; height: 28px; padding: 0; place-items: center; border: 0; border-radius: 6px; color: #6f7d8d; background: transparent; cursor: pointer; list-style: none; }
-.thread-toolbar-action::-webkit-details-marker { display: none; }
 .thread-toolbar-action svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
-.thread-toolbar-action:hover:not(:disabled), .thread-actions-menu[open] > summary { color: #1668c6; background: #edf5ff; }
+.thread-toolbar-action:hover:not(:disabled) { color: #1668c6; background: #edf5ff; }
 .thread-toolbar-action:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .thread-toolbar-action:disabled { cursor: default; opacity: .45; }
-.thread-actions-menu { position: relative; }
-.thread-actions-popover { position: absolute; z-index: 8; top: calc(100% + 6px); right: 0; display: grid; width: 142px; padding: 5px; border: 1px solid #dfe5ec; border-radius: 8px; background: #fff; box-shadow: 0 10px 30px rgba(31, 41, 55, .16); }
-.thread-actions-popover button { min-height: 30px; padding: 6px 9px; border: 0; border-radius: 5px; color: #526173; background: transparent; cursor: pointer; font-size: .67rem; font-weight: 650; text-align: left; }
-.thread-actions-popover button:hover:not(:disabled) { color: #1668c6; background: #edf5ff; }
-.thread-actions-popover button:disabled { cursor: default; opacity: .45; }
 /* 概览作为覆盖式抽屉出现，避免在桌面悬浮窗中长期挤压会话正文。 */
 .dialog-content { position: relative; display: flex; height: calc(100% - 42px); min-height: 0; flex-direction: row; }
 .dialog-sidebar { position: absolute; z-index: 2; inset: 0 auto 0 0; display: flex; width: min(240px, calc(100% - 56px)); min-width: 0; min-height: 0; flex-direction: column; border-right: 1px solid #dfe5ec; background: #fff; box-shadow: 12px 0 28px rgba(31, 41, 55, .12); }
@@ -76,26 +79,89 @@
 .message-entry-assistant { justify-self: start; justify-items: start; }
 /* 消息行保留全宽用于左右对齐，气泡本身按内容伸缩；长文本最多使用整行宽度。 */
 .message { position: relative; width: fit-content; max-width: 100%; padding: 8px 10px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
-.message p { margin: 0; white-space: pre-wrap; }
-.message-duration { box-sizing: border-box; width: 100%; padding-bottom: 10px; border-bottom: 1px solid #e6eaf0; color: #7f8a97; font-size: .68rem; font-weight: 650; line-height: 1.2; }
+.message.has-code-block { box-sizing: border-box; width: 100%; max-width: 680px; }
+.message p { margin: 0; }
+.message-markdown { min-width: 0; text-align: left; overflow-wrap: anywhere; }
+.message-markdown > :first-child { margin-top: 0; }
+.message-markdown > :last-child { margin-bottom: 0; }
+.message-markdown p { margin: .62em 0; }
+.message-markdown h1, .message-markdown h2, .message-markdown h3, .message-markdown h4 { margin: 1em 0 .45em; color: inherit; font-weight: 700; line-height: 1.3; }
+.message-markdown h1 { font-size: 1.18em; }
+.message-markdown h2 { font-size: 1.1em; }
+.message-markdown h3 { font-size: 1.04em; }
+.message-markdown h4 { font-size: 1em; }
+.message-markdown ul, .message-markdown ol { margin: .58em 0; padding-left: 1.45em; }
+.message-markdown li { padding-left: .1em; }
+.message-markdown li + li { margin-top: .28em; }
+.message-markdown li > p { margin: .25em 0; }
+.message-markdown blockquote { margin: .7em 0; padding: .1em .8em; border-left: 3px solid #c6cdd6; color: #596575; background: #f6f7f9; }
+.message-markdown a { color: #0969da; text-decoration: underline; text-decoration-color: rgba(9, 105, 218, .38); text-underline-offset: 2px; }
+.message-markdown a:hover { text-decoration-color: currentColor; }
+.message-local-file-link { cursor: pointer; }
+.message-local-file-link::after { display: inline-block; margin-left: 3px; content: "⌄"; font-size: .72em; text-decoration: none; transition: transform .15s; }
+.message-local-file-link[aria-expanded="true"]::after { transform: rotate(180deg); }
+.message-markdown strong { font-weight: 700; }
+.message-markdown code { padding: .12em .34em; border-radius: 4px; color: #2f3b49; background: #edf0f3; font-family: "Cascadia Code", Consolas, monospace; font-size: .88em; }
+.message-markdown hr { height: 1px; margin: .9em 0; border: 0; background: #dfe4ea; }
+.message-markdown img { display: block; max-width: 100%; height: auto; margin: .65em 0; border-radius: 7px; }
+.markdown-code-block { max-width: 100%; margin: .72em 0; overflow: hidden; border: 1px solid #30343a; border-radius: 8px; background: #17191c; }
+.markdown-code-toolbar { display: flex; min-height: 30px; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 7px 4px 11px; color: #aeb5bf; background: #25282d; font-family: "Cascadia Code", Consolas, monospace; font-size: .62rem; }
+.markdown-code-toolbar > span:empty { visibility: hidden; }
+.markdown-code-copy { color: #bdc4ce; }
+.markdown-code-copy:hover:not(:disabled) { color: #fff; background: #383c42; }
+.markdown-code-block pre { max-width: 100%; margin: 0; overflow: auto; padding: 11px 12px; color: #e3e7ed; background: #17191c; font-family: "Cascadia Code", Consolas, monospace; font-size: .7rem; line-height: 1.6; tab-size: 2; }
+.markdown-code-block pre code { padding: 0; border-radius: 0; color: inherit; background: transparent; font: inherit; white-space: pre; overflow-wrap: normal; }
+.markdown-local-file-preview { max-width: 100%; margin: .48em 0 .72em; overflow: hidden; border: 1px solid #d9e0e8; border-radius: 8px; background: #fff; }
+.markdown-local-file-preview[hidden] { display: none; }
+.markdown-local-file-preview header { display: flex; min-width: 0; min-height: 31px; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 7px 4px 10px; border-bottom: 1px solid #e3e8ee; background: #f3f5f7; }
+.markdown-local-file-preview header code { min-width: 0; overflow: hidden; padding: 0; color: #576577; background: transparent; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.markdown-local-file-copy { flex: 0 0 auto; }
+.markdown-local-file-status, .markdown-local-file-hint { margin: 0; padding: 9px 10px; color: #7a8797; font-size: .66rem; }
+.markdown-local-file-status.is-error { color: #bd3f48; }
+.markdown-local-file-preview pre { max-height: 320px; margin: 0; overflow: auto; padding: 10px 11px; color: #344154; background: #fff; font-family: "Cascadia Code", Consolas, monospace; font-size: .68rem; line-height: 1.55; tab-size: 2; }
+.markdown-local-file-preview pre code { padding: 0; color: inherit; background: transparent; font: inherit; white-space: pre; overflow-wrap: normal; }
+.markdown-local-file-hint { border-top: 1px solid #e3e8ee; background: #f8f9fa; }
+.markdown-table-wrap { max-width: 100%; margin: .72em 0; overflow-x: auto; border: 1px solid #dfe4ea; border-radius: 7px; }
+.message-markdown table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+.message-markdown th, .message-markdown td { padding: 6px 8px; border-right: 1px solid #e3e7ec; border-bottom: 1px solid #e3e7ec; text-align: left; white-space: nowrap; }
+.message-markdown th:last-child, .message-markdown td:last-child { border-right: 0; }
+.message-markdown tr:last-child td { border-bottom: 0; }
+.message-markdown th { color: #465365; background: #f2f4f6; font-weight: 700; }
+.message-duration { box-sizing: border-box; display: flex; width: 100%; padding-bottom: 10px; border-bottom: 1px solid #e6eaf0; color: #7f8a97; font-size: .68rem; font-weight: 650; line-height: 1.2; }
 .message-duration-disclosure { width: 100%; color: #7f8a97; font-size: .68rem; font-weight: 650; }
-.message-duration-disclosure summary { display: flex; min-height: 22px; align-items: center; gap: 5px; padding-bottom: 10px; border-bottom: 1px solid #e6eaf0; cursor: pointer; list-style: none; user-select: none; }
+.message-duration-disclosure summary { display: flex; min-height: 22px; align-items: center; gap: 5px; padding-bottom: 10px; border-bottom: 1px solid #e6eaf0; cursor: default; list-style: none; user-select: none; }
 .message-duration-disclosure summary::-webkit-details-marker { display: none; }
-.message-duration-disclosure summary::after { content: "›"; font-size: .9rem; transition: transform .15s; }
-.message-duration-disclosure[open] summary::after { transform: rotate(90deg); }
-.message-collapsed-content { display: grid; gap: 6px; margin-top: 8px; padding: 9px 10px; border: 1px solid #e7ebf0; border-radius: 8px; color: #627184; background: #fbfcfe; font-size: .7rem; font-weight: 500; line-height: 1.5; }
+.message-turn-meta { display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 7px; }
+.message-turn-duration { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; white-space: nowrap; }
+.message-turn-toggle { display: grid; width: 16px; height: 16px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 4px; color: inherit; background: transparent; cursor: pointer; font: inherit; font-size: .9rem; line-height: 1; transition: color .15s, background-color .15s, transform .15s; }
+.message-turn-toggle:hover { color: #216da9; background: #edf6ff; }
+.message-turn-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
+.message-turn-toggle[aria-expanded="true"] { transform: rotate(90deg); }
+/* 回合 ID 点击后仅复制完整标识，展开行为由左侧箭头独立承接。 */
+.turn-id-badge { display: inline-flex; min-width: 0; max-width: 100%; flex: 0 1 auto; align-items: center; gap: 5px; margin-left: auto; padding: 2px 4px; overflow: hidden; border: 0; border-radius: 4px; color: #8793a2; background: transparent; cursor: pointer; font: inherit; line-height: 1.2; text-align: left; transition: color .15s, background-color .15s; }
+.turn-id-badge:hover:not(:disabled) { color: #4e6f91; background: #edf2f7; }
+.turn-id-badge:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
+.turn-id-badge:disabled { cursor: default; }
+.turn-id-badge::after { width: 0; flex: 0 0 auto; overflow: hidden; color: #718197; content: "✓"; font-size: .62rem; opacity: 0; transition: width .15s, opacity .15s; }
+.turn-id-badge.is-copied::after { width: 10px; opacity: 1; }
+.turn-id-badge.is-failed { color: #bf3340; background: #fff5f5; }
+.turn-id-badge span { flex: 0 0 auto; color: #9aa4b0; font-size: .61rem; font-weight: 500; }
+.turn-id-badge code { min-width: 0; overflow: hidden; color: inherit; font-family: "Cascadia Code", Consolas, monospace; font-size: .61rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.message-collapsed-content { display: grid; gap: 10px; margin-top: 8px; padding: 0; color: #526173; background: transparent; font-size: .72rem; font-weight: 500; line-height: 1.55; }
 .message-collapsed-content p { margin: 0; white-space: pre-wrap; }
 .message-image-strip { display: grid; max-width: 100%; gap: 8px; overflow: hidden; }
 .message-image-frame { width: 100%; min-width: 0; overflow: hidden; aspect-ratio: 1; border: 1px solid #e1e6ec; border-radius: 8px; background: #f1f3f5; }
-.message-image { display: block; width: 100%; height: 100%; background: transparent; cursor: zoom-in; object-fit: contain; }
+.message-image { display: block; width: 100%; height: 100%; background: transparent; cursor: pointer; object-fit: contain; }
 .message-image:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
 .message mark { padding: 0 1px; border-radius: 2px; color: inherit; background: #ffe58f; }
 .message.is-search-match { border-color: #d6b868; }
 .message.is-active-search-match { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .16); }
-.message-actions { display: flex; min-height: 20px; align-items: center; gap: 5px; color: #8a96a4; font-size: .62rem; line-height: 1; opacity: 0; pointer-events: none; transform: translateY(-2px); transition: opacity .15s, transform .15s; }
+.message-actions { display: flex; min-height: 24px; align-items: center; gap: 6px; color: #8a96a4; font-size: .68rem; line-height: 1; opacity: 0; pointer-events: none; transform: translateY(-2px); transition: opacity .15s, transform .15s; }
 .message-entry:hover .message-actions, .message-entry:focus-within .message-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .message-time { white-space: nowrap; }
-.message-actions .copy-icon-button { width: 18px; height: 18px; }
+.message-actions .copy-icon-button { width: 22px; height: 22px; }
+.message-actions .copy-icon-button svg { width: 13px; height: 13px; }
+.message-entry-assistant .message-actions .copy-icon-button { order: -1; }
 .copy-icon-button { display: grid; width: 20px; height: 20px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 5px; color: #7f8a97; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
 .copy-icon-button svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .copy-icon-button:hover:not(:disabled) { color: #4f5d6d; background: #eef0f2; }
@@ -105,27 +171,64 @@
 .copy-icon-button.is-failed { color: #cf1322; background: transparent; }
 .message-user { justify-self: end; border-color: #cfe3ff; background: #eff6ff; text-align: right; }
 .message-assistant { justify-self: start; text-align: left; }
-.message-activity-disclosure { width: 100%; overflow: visible; border: 1px solid #e2e7ed; border-radius: 11px; background: #fff; box-shadow: 0 1px 2px rgba(31, 41, 55, .04); }
-.message-activity-disclosure summary { display: grid; min-height: 52px; grid-template-columns: 34px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; padding: 7px 10px; color: #526173; cursor: pointer; list-style: none; user-select: none; }
+.message-activity-disclosure { width: 100%; overflow: visible; border: 0; background: transparent; interpolate-size: allow-keywords; }
+.message-activity-disclosure summary { display: flex; min-height: 24px; align-items: center; gap: 6px; padding: 1px 0; color: #657386; cursor: pointer; list-style: none; user-select: none; }
 .message-activity-disclosure summary::-webkit-details-marker { display: none; }
-.message-activity-disclosure summary:hover { background: #f8fafc; }
+.message-activity-disclosure summary::after { flex: 0 0 auto; content: "›"; font-size: .8rem; transition: transform .15s; }
+.message-activity-disclosure[open] summary::after { transform: rotate(90deg); }
+.message-activity-disclosure summary:hover { color: #344154; }
 .message-activity-disclosure summary:focus-visible { outline: 2px solid #91caff; outline-offset: -2px; }
-.message-activity-disclosure summary strong { min-width: 0; overflow: hidden; color: #344154; font-size: .7rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.message-activity-disclosure summary strong { min-width: 0; overflow: hidden; color: inherit; font-size: .7rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .activity-summary-stats { display: flex; align-items: center; gap: 5px; font-family: "Cascadia Code", Consolas, monospace; font-size: .62rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .activity-summary-stats .is-added { color: #169c68; }
 .activity-summary-stats .is-removed { color: #cf4b44; }
-.activity-summary-icon { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #dce3eb; border-radius: 8px; color: #647386; background: #f3f5f8; }
-.activity-summary-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.45; }
-.message-activity-list { height: auto; max-height: none; overflow: visible; padding: 0; border: 0; border-top: 1px solid #edf1f5; border-radius: 0; scrollbar-gutter: auto; }
-.activity-file-item { position: relative; border-bottom: 1px solid #edf1f5; }
+.activity-summary-icon { display: grid; width: 15px; height: 15px; flex: 0 0 auto; place-items: center; color: #748296; }
+.activity-summary-icon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+/* Chromium/WebView2 支持时，让 details 内容区随状态平滑展开与收缩；旧内核仍保持原生可用行为。 */
+@supports selector(details::details-content) {
+  .message-activity-disclosure::details-content { block-size: 0; overflow: clip; transition: block-size .22s ease, content-visibility .22s allow-discrete; }
+  .message-activity-disclosure[open]::details-content { block-size: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity-summary-icon, .activity-summary-icon-expand-line, .message-activity-disclosure::details-content { transition: none; }
+}
+.message-activity-list { height: auto; max-height: none; overflow: visible; padding: 2px 0 0 21px; border: 0; background: transparent; scrollbar-gutter: auto; }
+.message-activity-list .activity-row { min-height: 26px; grid-template-columns: 15px minmax(0, 1fr) auto; gap: 5px; padding: 3px 0; border-bottom: 0; }
+.message-activity-list .activity-icon { width: 14px; height: 14px; border-radius: 3px; color: #748296; background: transparent; font-size: .68rem; }
+.message-activity-list .activity-content strong { color: #556274; font-family: inherit; font-size: .68rem; font-weight: 500; }
+.activity-file-item { position: relative; border-bottom: 0; }
 .activity-file-item:last-child { border-bottom: 0; }
-.activity-file-row { display: grid; width: 100%; min-height: 34px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 9px; border: 0; color: #344154; background: transparent; cursor: pointer; text-align: left; }
+.activity-file-row { display: grid; width: 100%; min-height: 26px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 3px 0; border: 0; color: #556274; background: transparent; cursor: pointer; text-align: left; }
 .activity-file-row:hover, .activity-file-row:focus-visible { background: #f2faf6; }
 .activity-file-row:focus-visible { position: relative; z-index: 2; outline: 2px solid #6dcaa3; outline-offset: -2px; }
-.activity-file-row code { min-width: 0; overflow: hidden; font-family: "Cascadia Code", Consolas, monospace; font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }
+.activity-file-content { display: flex; min-width: 0; align-items: center; gap: 4px; }
+.activity-file-content > span { flex: 0 0 auto; font-size: .68rem; }
+.activity-file-row code { min-width: 0; overflow: hidden; font-family: inherit; font-size: .68rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .activity-file-stats { display: flex; align-items: center; gap: 7px; font-family: "Cascadia Code", Consolas, monospace; font-size: .62rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .activity-file-stats .is-added { color: #169c68; }
 .activity-file-stats .is-removed { color: #cf4b44; }
+.message-file-summary { display: grid; width: min(100%, 680px); overflow: hidden; border: 1px solid #dfe3e7; border-radius: 10px; background: #f4f5f6; }
+.message-file-summary-header { display: flex; min-width: 0; min-height: 62px; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #dfe3e7; }
+.message-file-summary-icon { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: #5f6873; background: #e5e7e9; }
+.message-file-summary-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.45; }
+.message-file-summary-heading { display: grid; min-width: 0; gap: 2px; }
+.message-file-summary-heading strong { overflow: hidden; color: #30363d; font-size: .76rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.message-file-summary-stats { display: flex; align-items: center; gap: 4px; font-family: "Cascadia Code", Consolas, monospace; font-size: .65rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.message-file-summary-stats .is-added { color: #169c68; }
+.message-file-summary-stats .is-removed { color: #cf4b44; }
+.message-file-summary-row { display: grid; width: 100%; min-width: 0; min-height: 36px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 7px 12px; border: 0; color: #343a42; background: transparent; cursor: pointer; text-align: left; transition: background-color .15s; }
+.message-file-summary-row[hidden] { display: none; }
+.message-file-summary-row:hover { background: #e9ebed; }
+.message-file-summary-row:focus-visible { position: relative; z-index: 1; outline: 2px solid #91caff; outline-offset: -2px; }
+.message-file-summary-content { display: flex; min-width: 0; align-items: baseline; gap: 5px; }
+.message-file-summary-content code { min-width: 0; overflow: hidden; font-family: inherit; font-size: .72rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.message-file-summary-meta { display: flex; flex: 0 0 auto; align-items: center; }
+.message-file-summary-toggle { display: flex; min-height: 36px; align-items: center; gap: 7px; padding: 7px 12px; border: 0; border-top: 1px solid #dfe3e7; color: #343a42; background: transparent; cursor: pointer; font-size: .7rem; font-weight: 650; text-align: left; }
+.message-file-summary-toggle:hover { background: #e9ebed; }
+.message-file-summary-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: -2px; }
+.message-file-summary-toggle-arrow { display: grid; width: 12px; height: 12px; flex: 0 0 auto; place-items: center; color: #6f7883; transition: transform .15s; }
+.message-file-summary-toggle-arrow svg { display: block; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.message-file-summary-toggle-arrow.is-expanded { transform: rotate(180deg); }
 .activity-file-hover-preview { position: absolute; z-index: 12; top: 100%; left: 0; display: none; width: min(720px, calc(100vw - 48px)); max-height: 420px; overflow: hidden; border: 1px solid #d7dee7; border-radius: 9px; color: #344154; background: #fff; box-shadow: 0 18px 42px rgba(31, 35, 41, .2); pointer-events: auto; }
 .activity-file-item:hover .activity-file-hover-preview, .activity-file-item:focus-within .activity-file-hover-preview { display: block; }
 .activity-file-hover-preview header { display: grid; min-height: 40px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 7px 12px; border-bottom: 1px solid #e1e7ee; background: #f7f9fb; }

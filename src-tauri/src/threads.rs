@@ -1,15 +1,17 @@
 use crate::app_server::AppServerState;
 use crate::local_usage::{read_thread_token_usage, ThreadTokenUsage};
+use jieba_rs::Jieba;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 
 const RECENT_THREAD_LIMIT: usize = 100;
 const THREAD_LIST_BATCH_SIZE: usize = 100;
-const THREAD_PAGE_SIZE: usize = 10;
+const MAX_THREAD_PAGE_SIZE: usize = 30;
 const MAX_TRANSFER_THREADS: usize = 5_000;
 const MAX_TRANSFER_BUNDLE_BYTES: usize = 64 * 1_024 * 1_024;
 const MAX_THREAD_TITLE_LENGTH: usize = 160;
@@ -19,6 +21,11 @@ const TRANSFER_VERSION: u32 = 1;
 const MAX_MESSAGES: usize = 500;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
+// App Server 可同时准备同一批只读详情；控制批量大小，避免趋势统计长时间占住交互连接。
+const TREND_READ_BATCH_SIZE: usize = 4;
+// 接口保留足够的高频词，前端再按常规/放大视图分别展示，避免放大词云仍受紧凑卡片数量限制。
+const MAX_WORD_CLOUD_ITEMS: usize = 300;
+const MIN_WORD_CLOUD_COUNT: usize = 2;
 // 搜索输入会连续触发多次；短暂缓存完整摘要可避免每次都重新遍历所有会话分页。
 const THREAD_LIST_CACHE_TTL: Duration = Duration::from_secs(20);
 // 图片随会话详情返回前会转换为 data URL；限制单张图片大小，避免历史会话拖慢弹窗渲染。
@@ -61,6 +68,9 @@ struct ThreadDetailMessage {
     role: String,
     text: String,
     images: Vec<ThreadImage>,
+    /// 同一轮用户请求及其回复共用的原始回合标识，供界面定位和复制；旧版 App Server 缺失时不展示。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    turn_id: Option<String>,
     /// 仅助手回复携带所属回合的起止时间，用于展示执行用时和回复时刻；缺失时前端不显示。
     started_at: Option<Value>,
     completed_at: Option<Value>,
@@ -180,6 +190,23 @@ pub struct ThreadTrendPoint {
 pub struct ThreadTrendResponse {
     days: usize,
     points: Vec<ThreadTrendPoint>,
+    word_cloud: ThreadWordCloudResponse,
+}
+
+/// 词云只向 WebView 暴露聚合后的主题与词频，原始用户输入始终留在本机 Codex 数据中。
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadWordCloudResponse {
+    total_messages: usize,
+    total_unique: usize,
+    items: Vec<ThreadWordCloudItem>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadWordCloudItem {
+    name: String,
+    value: usize,
 }
 
 struct CachedThreadTrend {
@@ -192,6 +219,15 @@ struct CachedThreadTrend {
 struct ThreadTrendContribution {
     message_days: Vec<String>,
     turn_insights: Vec<(String, ThreadInsights)>,
+    // 词频按自然日压缩后进入缓存，避免长会话为每条输入都保留一张独立词表。
+    user_word_days: Vec<ThreadWordCloudDay>,
+}
+
+#[derive(Clone)]
+struct ThreadWordCloudDay {
+    day: String,
+    messages: usize,
+    tokens: HashMap<String, usize>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -202,6 +238,7 @@ struct ThreadTrendCacheKey {
 
 /// 趋势数据的短期缓存与 App Server 连接状态分离，避免领域缓存污染传输层。
 pub struct ThreadTrendState {
+    build_lock: Mutex<()>,
     cached: Mutex<HashMap<usize, CachedThreadTrend>>,
     contributions: Mutex<HashMap<ThreadTrendCacheKey, ThreadTrendContribution>>,
 }
@@ -209,6 +246,7 @@ pub struct ThreadTrendState {
 impl Default for ThreadTrendState {
     fn default() -> Self {
         Self {
+            build_lock: Mutex::new(()),
             cached: Mutex::new(HashMap::new()),
             contributions: Mutex::new(HashMap::new()),
         }
@@ -273,6 +311,7 @@ pub async fn search_threads(
     list_state: &ThreadListState,
     query: &str,
     page: u32,
+    page_size: u32,
     force_refresh: bool,
 ) -> Result<ThreadSearchResult, String> {
     let query = query.trim();
@@ -281,7 +320,11 @@ pub async fn search_threads(
     }
     let threads = list_all_threads(state, list_state, force_refresh).await?;
     let threads = filter_threads(threads, query);
-    Ok(paginate_threads(threads, page as usize))
+    Ok(paginate_threads(
+        threads,
+        page as usize,
+        normalize_thread_page_size(page_size),
+    ))
 }
 
 /// 返回当前筛选条件下的全部会话，供“全选筛选结果”直接取得稳定的会话标识。
@@ -424,6 +467,8 @@ pub async fn read_thread_trends(
     if !matches!(days, 3 | 7 | 30) {
         return Err("趋势时间范围仅支持 3、7 或 30 天".to_owned());
     }
+    // 不同范围切换或自动刷新可能同时到达；串行构建后，后一个请求可直接复用会话贡献缓存。
+    let _build_guard = trend_state.build_lock.lock().await;
     if !force_refresh {
         let cached = trend_state.cached.lock().await;
         if let Some(cached) = cached.get(&days) {
@@ -798,6 +843,8 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         .flatten()
     {
         // App Server 以回合为粒度记录起止时间；消息本身没有独立时间戳。
+        // 当前协议使用 `id`，同时兼容历史记录可能保留的 turnId / turn_id 命名。
+        let turn_id = thread_string(turn, &["id", "turnId", "turn_id"]);
         let started_at = ["startedAt", "createdAt"]
             .iter()
             .find_map(|key| turn.get(*key).cloned());
@@ -823,11 +870,10 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
                     role: message.role,
                     text: message.text,
                     images: message.images,
-                    started_at: if is_assistant {
-                        started_at.clone()
-                    } else {
-                        None
-                    },
+                    // 回合标识展示在最终 Codex 回复的摘要行，避免为用户气泡重复增加元信息。
+                    turn_id: is_assistant.then(|| turn_id.clone()).flatten(),
+                    // 用户提问显示回合开始时间；Codex 回复继续用开始/完成时间计算用时。
+                    started_at: started_at.clone(),
                     completed_at: if is_assistant {
                         completed_at.clone()
                     } else {
@@ -1008,6 +1054,12 @@ async fn build_thread_trends(
     days: usize,
 ) -> Result<ThreadTrendResponse, String> {
     let mut points = recent_day_points(days);
+    let visible_days = points
+        .iter()
+        .map(|point| point.day.clone())
+        .collect::<HashSet<_>>();
+    let mut word_counts = HashMap::<String, usize>::new();
+    let mut total_word_cloud_messages = 0_usize;
     let threads = list_recent_threads(state).await?;
 
     // 最近列表至多 100 条，清理已不在范围内的旧版本，防止缓存随会话更新无限增长。
@@ -1015,12 +1067,14 @@ async fn build_thread_trends(
         .iter()
         .filter_map(thread_trend_cache_key)
         .collect::<HashSet<_>>();
-    trend_state
-        .contributions
-        .lock()
-        .await
-        .retain(|key, _| active_keys.contains(key));
+    let cached_contributions = {
+        let mut cache = trend_state.contributions.lock().await;
+        cache.retain(|key, _| active_keys.contains(key));
+        cache.clone()
+    };
 
+    let mut contributions = Vec::new();
+    let mut pending_threads = Vec::new();
     for summary in threads {
         let fallback_day = summary.updated_at.as_ref().and_then(day_key_from_value);
         if fallback_day
@@ -1031,38 +1085,52 @@ async fn build_thread_trends(
         }
 
         let cache_key = thread_trend_cache_key(&summary);
-        let cached_contribution = match cache_key.as_ref() {
-            Some(key) => trend_state.contributions.lock().await.get(key).cloned(),
-            None => None,
-        };
-        let contribution = if let Some(cached) = cached_contribution {
-            cached
+        if let Some(cached) = cache_key
+            .as_ref()
+            .and_then(|key| cached_contributions.get(key))
+            .cloned()
+        {
+            contributions.push(cached);
         } else {
-            let result = match state
-                .request_background(
-                    "thread/read",
-                    json!({ "threadId": summary.id, "includeTurns": true }),
+            pending_threads.push((summary.id, fallback_day, cache_key));
+        }
+    }
+
+    let mut cache_updates = Vec::new();
+    for batch in pending_threads.chunks(TREND_READ_BATCH_SIZE) {
+        let requests = batch
+            .iter()
+            .map(|(thread_id, _, _)| {
+                (
+                    "thread/read".to_owned(),
+                    json!({ "threadId": thread_id, "includeTurns": true }),
                 )
-                .await
-            {
-                Ok(result) => result,
-                // 单条历史线程不可读不应让整个趋势图空白；下一次刷新会再次尝试。
-                Err(_) => continue,
+            })
+            .collect();
+        let results = match state.request_background_batch(requests).await {
+            Ok(results) => results,
+            // 单批读取失败不应让整个趋势图空白；下一批会重连，失败项下次刷新重试。
+            Err(_) => continue,
+        };
+        for ((_, fallback_day, cache_key), result) in batch.iter().zip(results) {
+            let Ok(result) = result else {
+                continue;
             };
             let Some(thread) = result.get("thread") else {
                 continue;
             };
             let contribution = thread_trend_contribution(thread, fallback_day.as_deref());
             if let Some(key) = cache_key {
-                trend_state
-                    .contributions
-                    .lock()
-                    .await
-                    .insert(key, contribution.clone());
+                cache_updates.push((key.clone(), contribution.clone()));
             }
-            contribution
-        };
+            contributions.push(contribution);
+        }
+    }
+    if !cache_updates.is_empty() {
+        trend_state.contributions.lock().await.extend(cache_updates);
+    }
 
+    for contribution in contributions {
         for day in contribution.message_days {
             if let Some(point) = points.iter_mut().find(|point| point.day == day) {
                 point.messages += 1;
@@ -1076,9 +1144,41 @@ async fn build_thread_trends(
             point.file_changes += insights.file_changes;
             point.issues += insights.issues;
         }
+        for word_day in contribution.user_word_days {
+            if !visible_days.contains(&word_day.day) {
+                continue;
+            }
+            total_word_cloud_messages += word_day.messages;
+            for (token, count) in word_day.tokens {
+                *word_counts.entry(token).or_default() += count;
+            }
+        }
     }
 
-    Ok(ThreadTrendResponse { days, points })
+    let mut word_items = word_counts
+        .into_iter()
+        .filter(|(_, count)| *count >= MIN_WORD_CLOUD_COUNT)
+        .map(|(name, value)| ThreadWordCloudItem { name, value })
+        .collect::<Vec<_>>();
+    // 相同词频按文字排序，避免 HashMap 遍历顺序造成每次刷新词云无意义跳动。
+    word_items.sort_unstable_by(|left, right| {
+        right
+            .value
+            .cmp(&left.value)
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    let total_unique = word_items.len();
+    word_items.truncate(MAX_WORD_CLOUD_ITEMS);
+
+    Ok(ThreadTrendResponse {
+        days,
+        points,
+        word_cloud: ThreadWordCloudResponse {
+            total_messages: total_word_cloud_messages,
+            total_unique,
+            items: word_items,
+        },
+    })
 }
 
 fn thread_trend_cache_key(summary: &ThreadSummary) -> Option<ThreadTrendCacheKey> {
@@ -1108,6 +1208,7 @@ fn thread_trend_contribution(
         // 消息本身没有独立时间戳，因此以所属回合的时间进行按天归档。
         message_days: recent_message_days(thread, fallback_day),
         turn_insights,
+        user_word_days: user_word_days(thread, fallback_day),
     }
 }
 
@@ -1204,6 +1305,192 @@ fn extract_user_message(item: &Value) -> String {
         .filter(|text| !text.is_empty())
         .collect::<Vec<_>>()
         .join("\n\n")
+}
+
+const WORD_CLOUD_STOPWORDS_ZH: &[&str] = &[
+    "的", "了", "是", "我", "你", "他", "她", "它", "我们", "你们", "他们", "这", "那", "一个",
+    "一下", "以及", "还有", "但是", "因为", "所以", "如果", "然后", "可以", "需要", "怎么", "什么",
+    "请", "帮我", "请问",
+];
+const WORD_CLOUD_STOPWORDS_EN: &[&str] = &[
+    "the", "a", "an", "and", "or", "to", "of", "in", "on", "for", "with", "is", "are", "was",
+    "were", "be", "been", "it", "this", "that", "these", "those", "i", "you", "we", "they", "he",
+    "she", "as", "at", "by", "from", "not",
+];
+// 这类词多数来自截图标注、样式示例或工具输出，出现频率高但无法表达用户真正的输入主题。
+const WORD_CLOUD_TECHNICAL_NOISE: &[&str] = &[
+    "px", "image", "img", "style", "margin", "padding", "docs", "doc",
+];
+// 默认词典不会覆盖全部产品术语；这组词只服务于 Desk 的输入主题，体积可忽略不计。
+const WORD_CLOUD_DOMAIN_TERMS: &[&str] = &[
+    "词云",
+    "分词",
+    "关键词",
+    "关键词提取",
+    "安装包",
+    "包体",
+    "本地历史",
+    "会话列表",
+    "活动洞察",
+    "输入主题",
+    "Token洞察",
+];
+// 词典加载与构建开销只在首次统计词云时发生；后续会话复用同一个只读实例。
+static WORD_CLOUD_JIEBA: OnceLock<Jieba> = OnceLock::new();
+
+/// 从 App Server 返回的用户输入提取主题；只纳入用户消息，词典分词器由进程全局复用。
+fn user_word_days(thread: &Value, fallback_day: Option<&str>) -> Vec<ThreadWordCloudDay> {
+    let mut messages = Vec::new();
+    for turn in thread
+        .get("turns")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some(day) = turn_day_key(turn).or_else(|| fallback_day.map(str::to_owned)) else {
+            continue;
+        };
+        for item in turn
+            .get("items")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if item.get("type").and_then(Value::as_str) != Some("userMessage") {
+                continue;
+            }
+            let text = extract_user_message(item);
+            if text.trim().is_empty() {
+                continue;
+            }
+            messages.push((day.clone(), tokenize_user_text(&text)));
+        }
+    }
+    // 与详情和活动趋势一致，只使用每个会话最近的可见消息窗口，避免超长会话占据全部主题。
+    let start = messages.len().saturating_sub(MAX_MESSAGES);
+    let mut word_days = HashMap::<String, ThreadWordCloudDay>::new();
+    for (day, tokens) in messages.into_iter().skip(start) {
+        let bucket = word_days
+            .entry(day.clone())
+            .or_insert_with(|| ThreadWordCloudDay {
+                day,
+                messages: 0,
+                tokens: HashMap::new(),
+            });
+        bucket.messages += 1;
+        for (token, count) in tokens {
+            *bucket.tokens.entry(token).or_default() += count;
+        }
+    }
+    word_days.into_values().collect()
+}
+
+fn tokenize_user_text(text: &str) -> HashMap<String, usize> {
+    let mut tokens = HashMap::new();
+    let cleaned = strip_code_segments(text);
+
+    // URL 中的域名和路径通常不是用户主题，整段跳过也避免把 https 等噪声传入分词器。
+    let readable_text = cleaned
+        .split_whitespace()
+        .filter(|segment| !segment.contains("://") && !segment.starts_with("www."))
+        .collect::<Vec<_>>()
+        .join(" ");
+    add_english_tokens(&readable_text, &mut tokens);
+
+    // 使用词典切分中文词，替换原先会产生“内空”“空间”等重叠碎片的 2/3-gram。
+    for piece in word_cloud_jieba().cut(&readable_text, false) {
+        let word = piece.word.trim();
+        if word.chars().count() < 2 || !word.chars().all(is_chinese_character) {
+            continue;
+        }
+        add_chinese_word(&mut tokens, word.to_owned());
+    }
+    tokens
+}
+
+fn word_cloud_jieba() -> &'static Jieba {
+    WORD_CLOUD_JIEBA.get_or_init(|| {
+        let mut jieba = Jieba::new();
+        for term in WORD_CLOUD_DOMAIN_TERMS {
+            // 较高词频让产品术语优先作为完整词输出，避免退化成“词 / 云”一类单字。
+            jieba.add_word(term, Some(100_000), None);
+        }
+        jieba
+    })
+}
+
+/// 去除 Markdown 代码围栏与行内代码，保留普通文本；这是为了不让依赖名和示例命令主导主题。
+fn strip_code_segments(text: &str) -> String {
+    let mut output = String::with_capacity(text.len());
+    let mut characters = text.chars().peekable();
+    let mut in_fenced_code = false;
+    let mut in_inline_code = false;
+
+    while let Some(character) = characters.next() {
+        if character == '`' {
+            let is_fence = characters.peek() == Some(&'`');
+            if is_fence {
+                characters.next();
+                if characters.peek() == Some(&'`') {
+                    characters.next();
+                    in_fenced_code = !in_fenced_code;
+                    output.push(' ');
+                    continue;
+                }
+                output.push(' ');
+                continue;
+            }
+            if !in_fenced_code {
+                in_inline_code = !in_inline_code;
+            }
+            output.push(' ');
+            continue;
+        }
+        if !in_fenced_code && !in_inline_code {
+            output.push(character);
+        }
+    }
+    output
+}
+
+fn add_english_tokens(segment: &str, tokens: &mut HashMap<String, usize>) {
+    let bytes = segment.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if !bytes[index].is_ascii_alphabetic() {
+            index += 1;
+            continue;
+        }
+        let start = index;
+        index += 1;
+        while index < bytes.len()
+            && (bytes[index].is_ascii_alphanumeric() || matches!(bytes[index], b'_' | b'-'))
+        {
+            index += 1;
+        }
+        let token = segment[start..index].to_ascii_lowercase();
+        if !(2..=30).contains(&token.len())
+            || WORD_CLOUD_STOPWORDS_EN.contains(&token.as_str())
+            || WORD_CLOUD_TECHNICAL_NOISE.contains(&token.as_str())
+        {
+            continue;
+        }
+        add_word_count(tokens, token);
+    }
+}
+
+fn is_chinese_character(character: char) -> bool {
+    ('\u{4e00}'..='\u{9fff}').contains(&character)
+}
+
+fn add_chinese_word(tokens: &mut HashMap<String, usize>, token: String) {
+    if !WORD_CLOUD_STOPWORDS_ZH.contains(&token.as_str()) {
+        add_word_count(tokens, token);
+    }
+}
+
+fn add_word_count(tokens: &mut HashMap<String, usize>, token: String) {
+    *tokens.entry(token).or_default() += 1;
 }
 
 /// App Server 的图片输入可能是内嵌 base64、HTTPS 地址或本机路径。
@@ -1448,18 +1735,48 @@ fn thread_file_change_from_value(change: &Value) -> Option<ThreadFileChange> {
         .and_then(|kind| kind.get("move_path").or_else(|| kind.get("movePath")))
         .and_then(Value::as_str)
         .map(str::to_owned);
-    // 部分历史记录只保留文件名。此处保留空字符串，前端会明确提示不能展示差异。
-    let diff = change
+    // App Server 对新增/删除文件返回的是完整文件内容，而更新文件返回统一 diff。
+    // 在传给前端前统一格式，确保行数统计和差异查看使用同一套规则。
+    let raw_diff = change
         .get("diff")
         .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_owned();
+        .unwrap_or_default();
+    let diff = normalize_file_change_diff(raw_diff, &change_type);
     Some(ThreadFileChange {
         path,
         change_type,
         move_path,
         diff,
     })
+}
+
+/// 新增和删除文件的 `diff` 实际是无前缀的完整内容。补成最小统一 diff 后，
+/// 前端既能按 +/- 准确计数，也能继续复用现有的并排与统一差异视图。
+fn normalize_file_change_diff(diff: &str, change_type: &str) -> String {
+    if diff.is_empty()
+        || !matches!(change_type, "add" | "delete")
+        || diff.lines().any(|line| line.starts_with("@@ "))
+    {
+        return diff.to_owned();
+    }
+
+    let line_count = diff.lines().count();
+    if line_count == 0 {
+        return String::new();
+    }
+    let (header, prefix) = if change_type == "add" {
+        (format!("@@ -0,0 +1,{line_count} @@\n"), '+')
+    } else {
+        (format!("@@ -1,{line_count} +0,0 @@\n"), '-')
+    };
+    let mut normalized = String::with_capacity(diff.len() + line_count + header.len());
+    normalized.push_str(&header);
+    for line in diff.lines() {
+        normalized.push(prefix);
+        normalized.push_str(line);
+        normalized.push('\n');
+    }
+    normalized
 }
 
 fn tool_activity(item: &Value, kind: &str) -> ThreadActivity {
@@ -1497,7 +1814,13 @@ fn tool_activity(item: &Value, kind: &str) -> ThreadActivity {
         _ => None,
     };
     ThreadActivity {
-        kind: "tool".to_owned(),
+        // 命令单独标记，前端才能像 Codex/ChatGPT 一样生成“运行了命令”的回合摘要。
+        kind: if kind == "commandExecution" {
+            "command"
+        } else {
+            "tool"
+        }
+        .to_owned(),
         title,
         detail,
         status: item
@@ -1575,25 +1898,30 @@ fn fuzzy_matches(value: &str, keyword: &str) -> bool {
         .all(|target| characters.by_ref().any(|value| value == target))
 }
 
-fn paginate_threads(threads: Vec<ThreadSummary>, requested_page: usize) -> ThreadSearchResult {
+/// 前端会根据容器形态请求不同页长；限制到 1–30 条，避免异常参数造成大批量渲染。
+fn normalize_thread_page_size(requested_page_size: u32) -> usize {
+    (requested_page_size as usize).clamp(1, MAX_THREAD_PAGE_SIZE)
+}
+
+fn paginate_threads(
+    threads: Vec<ThreadSummary>,
+    requested_page: usize,
+    page_size: usize,
+) -> ThreadSearchResult {
     let total = threads.len();
-    let total_pages = total.div_ceil(THREAD_PAGE_SIZE);
+    let total_pages = total.div_ceil(page_size);
     let page = if total_pages == 0 {
         1
     } else {
         requested_page.max(1).min(total_pages)
     };
-    let start = (page - 1) * THREAD_PAGE_SIZE;
+    let start = (page - 1) * page_size;
     ThreadSearchResult {
-        threads: threads
-            .into_iter()
-            .skip(start)
-            .take(THREAD_PAGE_SIZE)
-            .collect(),
+        threads: threads.into_iter().skip(start).take(page_size).collect(),
         total,
         limit: RECENT_THREAD_LIMIT,
         page,
-        page_size: THREAD_PAGE_SIZE,
+        page_size,
         total_pages,
     }
 }
@@ -1618,6 +1946,7 @@ mod tests {
                 "name": "测试会话",
                 "turns": [
                     {
+                        "id": "turn-12345678",
                         "status": "completed",
                         "startedAt": "2026-09-01T09:00:00+08:00",
                         "completedAt": "2026-09-01T09:01:34+08:00",
@@ -1650,6 +1979,11 @@ mod tests {
         assert_eq!(detail.issues.len(), detail.insights.issues);
         assert_eq!(detail.messages.len(), 2);
         assert_eq!(
+            detail.messages[0].started_at,
+            Some(json!("2026-09-01T09:00:00+08:00"))
+        );
+        assert_eq!(detail.messages[1].turn_id.as_deref(), Some("turn-12345678"));
+        assert_eq!(
             detail.messages[1].started_at,
             Some(json!("2026-09-01T09:00:00+08:00"))
         );
@@ -1673,6 +2007,10 @@ mod tests {
             .activities
             .iter()
             .any(|activity| activity.kind == "issue"));
+        assert!(detail.messages[1]
+            .activities
+            .iter()
+            .any(|activity| activity.kind == "command"));
     }
 
     #[test]
@@ -1712,6 +2050,18 @@ mod tests {
 
         assert_eq!(change.change_type, "update");
         assert_eq!(change.diff, "@@ -1 +1 @@\n-old\n+new\n");
+    }
+
+    #[test]
+    fn normalizes_added_file_content_for_diff_stats() {
+        let change = thread_file_change_from_value(&json!({
+            "path": "scripts/transcribe.py",
+            "kind": { "type": "add" },
+            "diff": "first line\nsecond line\n"
+        }))
+        .expect("新增文件内容应可读取");
+
+        assert_eq!(change.diff, "@@ -0,0 +1,2 @@\n+first line\n+second line\n");
     }
 
     #[test]
@@ -1914,5 +2264,50 @@ mod tests {
 
         assert_eq!(days.len(), MAX_MESSAGES);
         assert!(days.iter().all(|day| day == "2026-08-21"));
+    }
+
+    #[test]
+    fn word_cloud_tokenizer_keeps_topics_and_ignores_code_and_urls() {
+        let tokens = tokenize_user_text(
+            "请帮我给 Tauri 添加词云。参考 `npm install echarts` 和 https://example.com/desk。",
+        );
+
+        assert_eq!(tokens.get("tauri"), Some(&1));
+        assert_eq!(tokens.get("词云"), Some(&1));
+        assert!(!tokens.contains_key("npm"));
+        assert!(!tokens.contains_key("echarts"));
+        assert!(!tokens.contains_key("example"));
+    }
+
+    #[test]
+    fn word_cloud_tokenizer_uses_dictionary_words_instead_of_character_ngrams() {
+        let tokens = tokenize_user_text("请调整词云布局，图片尺寸为 16px。");
+
+        assert_eq!(tokens.get("词云"), Some(&1));
+        assert_eq!(tokens.get("布局"), Some(&1));
+        assert!(!tokens.contains_key("云布"));
+        assert!(!tokens.contains_key("px"));
+    }
+
+    #[test]
+    fn word_cloud_only_collects_user_messages_with_their_turn_day() {
+        let contribution = thread_trend_contribution(
+            &json!({
+                "turns": [{
+                    "startedAt": "2026-09-16T10:00:00+08:00",
+                    "items": [
+                        { "type": "userMessage", "content": [{ "type": "text", "text": "实现词云布局" }] },
+                        { "type": "agentMessage", "text": "这是回复，不应进入词云。" }
+                    ]
+                }]
+            }),
+            None,
+        );
+
+        assert_eq!(contribution.user_word_days.len(), 1);
+        assert_eq!(contribution.user_word_days[0].day, "2026-09-16");
+        assert_eq!(contribution.user_word_days[0].messages, 1);
+        assert_eq!(contribution.user_word_days[0].tokens.get("词云"), Some(&1));
+        assert!(!contribution.user_word_days[0].tokens.contains_key("回复"));
     }
 }

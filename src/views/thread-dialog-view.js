@@ -6,6 +6,7 @@ import { createThreadOverviewView } from "./thread-overview-view.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
 import { createLoadingOverlay } from "../utils/loading-overlay.js";
+import { renderMessageMarkdown } from "../utils/markdown-renderer.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "../utils/refresh-icon-button.js";
 
 const DIALOG_TITLE_MAX_LENGTH = 52;
@@ -26,9 +27,11 @@ function timestampToMilliseconds(value) {
 }
 
 function formatMessageTime(message) {
-  const completedAt = timestampToMilliseconds(message.completedAt);
-  if (completedAt === null) return null;
-  const date = new Date(completedAt);
+  // 回复优先显示完成时间；提问没有完成时间时显示所属回合的开始时间。
+  const timestamp = timestampToMilliseconds(message.completedAt)
+    ?? timestampToMilliseconds(message.startedAt);
+  if (timestamp === null) return null;
+  const date = new Date(timestamp);
   return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
@@ -42,13 +45,100 @@ function formatMessageDuration(message) {
   return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
 }
 
-function createCollapsedMessagesDisclosure({ t, message, duration }) {
+function createTurnIdBadge({ t, turnId, onCopyTurnId }) {
+  const normalizedTurnId = typeof turnId === "string" ? turnId.trim() : "";
+  if (!normalizedTurnId) return null;
+  const badge = document.createElement("button");
+  badge.type = "button";
+  badge.className = "turn-id-badge";
+  const label = document.createElement("span");
+  label.textContent = t("threadTurnId");
+  const value = document.createElement("code");
+  value.textContent = normalizedTurnId;
+  badge.append(label, value);
+  const renderDefault = () => {
+    badge.classList.remove("is-copied", "is-failed");
+    badge.title = badge.ariaLabel = `${t("copyId")}：${normalizedTurnId}`;
+  };
+  renderDefault();
+  badge.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    badge.disabled = true;
+    try {
+      await onCopyTurnId(normalizedTurnId);
+      badge.classList.add("is-copied");
+      badge.title = badge.ariaLabel = t("copied");
+    } catch {
+      badge.classList.add("is-failed");
+      badge.title = badge.ariaLabel = t("copyFailedLong");
+    }
+    window.setTimeout(() => {
+      badge.disabled = false;
+      renderDefault();
+    }, 1_500);
+  });
+  return badge;
+}
+
+function createMessageTurnMeta({ t, message, duration, onCopyTurnId }) {
+  const turnIdBadge = createTurnIdBadge({ t, turnId: message.turnId, onCopyTurnId });
+  if (!duration && !turnIdBadge) return null;
+  const meta = document.createElement("span");
+  meta.className = "message-turn-meta";
+  if (duration) {
+    const durationLabel = document.createElement("span");
+    durationLabel.className = "message-turn-duration";
+    durationLabel.textContent = t("threadMessageDuration", { value: duration });
+    meta.append(durationLabel);
+  }
+  if (turnIdBadge) meta.append(turnIdBadge);
+  return meta;
+}
+
+function createCollapsedMessagesDisclosure({
+  t,
+  message,
+  duration,
+  onCopyTurnId,
+  activityDisclosure,
+}) {
   const collapsedMessages = Array.isArray(message.collapsedMessages) ? message.collapsedMessages : [];
-  if (collapsedMessages.length === 0) return null;
+  if (collapsedMessages.length === 0 && !activityDisclosure) return null;
   const disclosure = document.createElement("details");
   disclosure.className = "message-duration-disclosure";
   const summary = document.createElement("summary");
-  summary.textContent = t("threadMessageDuration", { value: duration ?? "—" });
+  // 原生 summary 会让整行都可点击；改由独立箭头控制，避免点击回合 ID 时误展开。
+  summary.tabIndex = -1;
+  summary.addEventListener("click", (event) => event.preventDefault());
+  const turnMeta = createMessageTurnMeta({
+    t,
+    message,
+    duration: duration ?? "—",
+    onCopyTurnId,
+  });
+  if (turnMeta) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "message-turn-toggle";
+    toggle.textContent = "›";
+    const renderToggle = () => {
+      toggle.setAttribute("aria-expanded", String(disclosure.open));
+      toggle.title = toggle.ariaLabel = t(
+        disclosure.open ? "threadCollapseRecords" : "threadViewAllRecords",
+      );
+    };
+    toggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      disclosure.open = !disclosure.open;
+      renderToggle();
+    });
+    const durationLabel = turnMeta.querySelector(".message-turn-duration");
+    durationLabel?.append(toggle);
+    renderToggle();
+    summary.append(turnMeta);
+  }
   const content = document.createElement("div");
   content.className = "message-collapsed-content";
   for (const text of collapsedMessages) {
@@ -56,6 +146,7 @@ function createCollapsedMessagesDisclosure({ t, message, duration }) {
     paragraph.textContent = text;
     content.append(paragraph);
   }
+  if (activityDisclosure) content.append(activityDisclosure);
   disclosure.append(summary, content);
   return disclosure;
 }
@@ -69,6 +160,7 @@ export function createThreadDialogView({
   copyText,
   copyMessage,
   onRefreshThread,
+  onReadLocalFile,
   onExportThread,
 }) {
   const threadDialog = document.querySelector("#thread-dialog");
@@ -81,7 +173,6 @@ export function createThreadDialogView({
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
   const searchResult = document.querySelector("#dialog-search-result");
-  const actionsMenu = document.querySelector("#thread-actions-menu");
   const exportButton = document.querySelector("#thread-export");
   const copyIdButton = document.querySelector("#thread-copy-id");
   const refreshButton = document.querySelector("#thread-refresh");
@@ -118,11 +209,20 @@ export function createThreadDialogView({
     else statusOverlay.show(message);
   }
 
+  function renderCopyIdButton(state = "idle") {
+    const threadId = currentDetail?.id ?? "";
+    copyIdButton.classList.toggle("is-copied", state === "copied");
+    copyIdButton.classList.toggle("is-failed", state === "failed");
+    const value = document.createElement("code");
+    value.textContent = threadId;
+    copyIdButton.replaceChildren(value);
+    copyIdButton.title = threadId ? `${t("threadCopyId")}：${threadId}` : t("threadCopyId");
+    copyIdButton.ariaLabel = copyIdButton.title;
+  }
+
   function renderActions() {
-    exportButton.textContent = t("threadExport");
-    copyIdButton.textContent = t("threadCopyId");
-    const menuSummary = actionsMenu.querySelector("summary");
-    menuSummary.title = menuSummary.ariaLabel = t("threadMoreActions");
+    exportButton.title = exportButton.ariaLabel = t("threadExport");
+    renderCopyIdButton();
     renderRefreshIconButton(refreshButton, { label: t("threadRefresh") });
     const disabled = !currentDetail;
     exportButton.disabled = disabled;
@@ -133,7 +233,6 @@ export function createThreadDialogView({
   function renderSidebarVisibility() {
     dialogContent.classList.toggle("is-sidebar-collapsed", !sidebarExpanded);
     dialogSidebar.hidden = !sidebarExpanded;
-    if (!sidebarExpanded) actionsMenu.open = false;
     sidebarToggle.setAttribute("aria-expanded", String(sidebarExpanded));
     const labelKey = sidebarExpanded ? "threadCollapseSidebar" : "threadExpandSidebar";
     sidebarToggle.title = sidebarToggle.ariaLabel = t(labelKey);
@@ -190,19 +289,36 @@ export function createThreadDialogView({
       if (matchingIndexes.has(index)) item.classList.add("is-search-match");
       if (index === activeMessageIndex) item.classList.add("is-active-search-match");
       if (message.text) {
-        const text = document.createElement("p");
-        messageSearch.appendHighlightedText(text, message.text);
+        const text = document.createElement("div");
+        renderMessageMarkdown(text, message.text, { t, copyText, onReadLocalFile });
+        messageSearch.highlightRenderedText(text);
+        if (text.querySelector(".markdown-code-block")) item.classList.add("has-code-block");
         item.append(text);
       }
       const duration = message.role === "assistant" ? formatMessageDuration(message) : null;
-      const collapsedMessages = createCollapsedMessagesDisclosure({ t, message, duration });
+      const activityDisclosure = activityView.createDisclosure(message.activities);
+      const collapsedMessages = createCollapsedMessagesDisclosure({
+        t,
+        message,
+        duration,
+        onCopyTurnId: copyText,
+        activityDisclosure,
+      });
       if (collapsedMessages) {
         entry.append(collapsedMessages);
-      } else if (duration) {
-        const durationLabel = document.createElement("span");
-        durationLabel.className = "message-duration";
-        durationLabel.textContent = t("threadMessageDuration", { value: duration });
-        entry.append(durationLabel);
+      } else {
+        const turnMeta = createMessageTurnMeta({
+          t,
+          message,
+          duration,
+          onCopyTurnId: copyText,
+        });
+        if (turnMeta) {
+          const durationLabel = document.createElement("span");
+          durationLabel.className = "message-duration";
+          durationLabel.append(turnMeta);
+          entry.append(durationLabel);
+        }
       }
       let imageStrip = null;
       if ((message.images ?? []).length > 0) {
@@ -223,7 +339,7 @@ export function createThreadDialogView({
           image.tabIndex = 0;
           image.setAttribute("role", "button");
           image.title = t("openImagePreview");
-          image.addEventListener("dblclick", () => imagePreviewView.show(image));
+          image.addEventListener("click", () => imagePreviewView.show(image));
           image.addEventListener("keydown", (event) => {
             if (event.key !== "Enter" && event.key !== " ") return;
             event.preventDefault();
@@ -236,8 +352,18 @@ export function createThreadDialogView({
       if (imageStrip) entry.append(imageStrip);
       // 仅含图片的消息不再生成空白文字气泡，保持与 ChatGPT 附件布局一致。
       if (message.text || !imageStrip) entry.append(item);
+      // 与 ChatGPT 的结果区一致：最终回复之后再次汇总本回合涉及的全部文件修改。
+      const fileSummary = activityView.createFileSummary(message.activities);
+      if (fileSummary) entry.append(fileSummary);
       const actions = document.createElement("div");
       actions.className = "message-actions";
+      const time = formatMessageTime(message);
+      if (time) {
+        const timeLabel = document.createElement("time");
+        timeLabel.className = "message-time";
+        timeLabel.textContent = time;
+        actions.append(timeLabel);
+      }
       if (message.text) {
         const copy = document.createElement("button");
         copy.type = "button";
@@ -257,16 +383,7 @@ export function createThreadDialogView({
         });
         actions.append(copy);
       }
-      const time = message.role === "assistant" ? formatMessageTime(message) : null;
-      if (time) {
-        const timeLabel = document.createElement("time");
-        timeLabel.className = "message-time";
-        timeLabel.textContent = time;
-        actions.append(timeLabel);
-      }
-      const activityDisclosure = activityView.createDisclosure(message.activities);
-      if (activityDisclosure) entry.append(activityDisclosure);
-      // 操作栏属于整条回复，需排在本回合的工具与文件记录之后。
+      // 过程消息与工具记录已收进“用时”区域，最终回复的操作栏保持在正文之后。
       if (actions.childElementCount > 0) entry.append(actions);
       messageList.append(entry);
     }
@@ -353,8 +470,7 @@ export function createThreadDialogView({
     copyIdButton.disabled = true;
     try {
       await copyText(currentDetail.id);
-      copyIdButton.textContent = t("copied");
-      actionsMenu.open = false;
+      renderCopyIdButton("copied");
       window.setTimeout(renderActions, 1_200);
     } catch (error) {
       showStatus(t("readFailed", { error: String(error) }), true);
@@ -381,7 +497,6 @@ export function createThreadDialogView({
     exportButton.disabled = true;
     try {
       await onExportThread(currentDetail.id);
-      actionsMenu.open = false;
       renderActions();
     } catch (error) {
       showStatus(t("readFailed", { error: String(error) }), true);
@@ -397,9 +512,7 @@ export function createThreadDialogView({
       fileDiffView.close();
     }
   });
-  threadDialog.addEventListener("close", () => { actionsMenu.open = false; });
   threadDialog.addEventListener("click", (event) => {
-    if (actionsMenu.open && !actionsMenu.contains(event.target)) actionsMenu.open = false;
     if (event.target === threadDialog) threadDialog.close();
   });
   renderActions();

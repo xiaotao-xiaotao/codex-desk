@@ -19,10 +19,21 @@ import { createThreadListView } from "./views/thread-list-view.js";
 import { createThreadTrendView } from "./views/thread-trend-view.js";
 import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
 import { createUpdateBannerView } from "./views/update-banner-view.js";
+import { createWordCloudView } from "./views/word-cloud-view.js";
 
-// 网络不可用时避免每分钟反复拉起 CLI 并等待超时；手动刷新成功后会自动恢复。
-const MAX_CONSECUTIVE_REFRESH_FAILURES = 3;
 const DRAG_THRESHOLD_PX = 4;
+const AUTO_DISMISS_DURATION_MS = 4_000;
+const THREAD_PAGE_SIZE = { normal: 10 };
+const EXPANDED_THREAD_LAYOUT = {
+  columns: 2,
+  minRows: 10,
+  maxRows: 15,
+  targetRowHeightPx: 60,
+  rowGapPx: 8,
+};
+const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;
+const COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS = 80;
+const COLLAPSED_WINDOW_BOTTOM_GAP_PX = 7;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -30,11 +41,10 @@ const status = document.querySelector("#status");
 const panel = document.querySelector(".panel");
 const appVersionElement = document.querySelector("#app-version");
 const windowDragRegion = document.querySelector("#window-drag-region");
-const languageButton = document.querySelector("#language-button");
-const languageMenu = document.querySelector("#language-menu");
-const languageOptions = document.querySelectorAll("[data-language]");
+const languageSelect = document.querySelector("#language-select");
 const themeButton = document.querySelector("#theme-button");
 const themeIcon = document.querySelector("#theme-icon");
+const alwaysOnTopButton = document.querySelector("#always-on-top-button");
 const minimizeButton = document.querySelector("#minimize-button");
 const collapseButton = document.querySelector("#collapse-button");
 const updateCheckButton = document.querySelector("#update-check-button");
@@ -43,6 +53,7 @@ const quitButton = document.querySelector("#quit-button");
 const importThreadsButton = document.querySelector("#import-threads");
 const exportThreadsButton = document.querySelector("#export-threads");
 const importFileInput = document.querySelector("#import-file-input");
+const threadListElement = document.querySelector("#thread-list");
 const threadSelectionBar = document.querySelector("#thread-selection-bar");
 const selectPageThreadsButton = document.querySelector("#select-page-threads");
 const selectAllThreadsButton = document.querySelector("#select-all-threads");
@@ -52,6 +63,11 @@ const sessionsSection = document.querySelector(".sessions-section");
 const sessionsContent = document.querySelector("#sessions-content");
 const sessionsToggle = document.querySelector("#sessions-toggle");
 const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
+const moduleExpandTriggers = [...document.querySelectorAll("[data-module-expand]")];
+const moduleSections = {
+  insights: document.querySelector("#insights-section"),
+  sessions: document.querySelector("#sessions-section"),
+};
 const quotaAlertStatus = document.querySelector("#quota-alert-status");
 const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
 const dashboardError = document.querySelector("#dashboard-error");
@@ -73,12 +89,20 @@ const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime,
 const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
 const copyMessageToClipboard = (message) => copyMessageContent(message, t("clipboardDenied"));
 const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
-const quotaAlerts = createQuotaAlertController({ t, formatResetTime, setStatus });
 let refreshController;
 let autoRefreshTimer = null;
 const settingsController = createSettingsController({
   invoke,
-  onSettingsChanged: restartAutoRefreshTimer,
+  onSettingsChanged: () => {
+    restartAutoRefreshTimer();
+    renderQuotaAlertStatus();
+  },
+});
+const quotaAlerts = createQuotaAlertController({
+  t,
+  formatResetTime,
+  setStatus,
+  getThresholds: () => settingsController.getSettings().quotaAlertThresholds,
 });
 const accountView = createAccountOverviewView({ t, invoke });
 const updateView = createUpdateBannerView({
@@ -87,6 +111,7 @@ const updateView = createUpdateBannerView({
   triggerButton: updateCheckButton,
   getLanguage: i18n.getLanguage,
   getCurrentVersion: getVersion,
+  autoDismissDurationMs: AUTO_DISMISS_DURATION_MS,
 });
 const dialogView = createThreadDialogView({
   t,
@@ -94,6 +119,7 @@ const dialogView = createThreadDialogView({
   copyText: copyToClipboard,
   copyMessage: copyMessageToClipboard,
   onRefreshThread: (threadId) => invoke("read_thread", { threadId }),
+  onReadLocalFile: (path) => invoke("read_local_text_preview", { path }),
   onExportThread: exportThreadFromDialog,
 });
 const settingsView = createSettingsDialogView({
@@ -108,9 +134,14 @@ const settingsView = createSettingsDialogView({
 });
 const trendView = createThreadTrendView({
   t,
-  onRangeChange: () => void refreshController?.refreshThreadTrends(),
+  onRangeChange: (days) => {
+    tokenUsageView.setRange(days);
+    wordCloudView.setRange(days);
+    void refreshController?.refreshThreadTrends();
+  },
 });
 const tokenUsageView = createTokenUsageTrendView({ t });
+const wordCloudView = createWordCloudView({ t });
 const threadListView = createThreadListView({
   t,
   formatUpdated,
@@ -121,11 +152,17 @@ const threadListView = createThreadListView({
 
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
 let expanded = true;
+let alwaysOnTop = false;
 let sessionsExpanded = false;
 let windowMaximized = false;
 let sessionsExpandedBeforeMaximize = null;
+let expandedModule = null;
+let sessionsExpandedBeforeModule = null;
+let moduleExpandFocusOrigin = null;
 let searchTimer = null;
 let searchRequestVersion = 0;
+let expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
+let expandedThreadLayoutTimer = null;
 let currentThreadPage = 1;
 let currentPageThreads = [];
 let currentThreadEmptyMessage = "";
@@ -135,11 +172,53 @@ let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
 let dashboardUnavailable = false;
+let dashboardRetryStatus = null;
 let currentAppVersion = "";
+let collapsedWindowResizeTimer = null;
+let lastCollapsedWindowHeight = null;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
+}
+
+function measuredCollapsedWindowHeight() {
+  // 首次额度尚未渲染时沿用原生兜底高度，避免根据占位内容把窗口过早压小。
+  if (!refreshController?.getLatestQuota()) return null;
+  const statusBottom = status.getBoundingClientRect().bottom;
+  if (!Number.isFinite(statusBottom) || statusBottom <= 0) return null;
+  return Math.ceil(statusBottom + COLLAPSED_WINDOW_BOTTOM_GAP_PX);
+}
+
+async function syncCollapsedWindowHeight() {
+  if (!expanded || sessionsExpanded || windowMaximized || expandedModule || dashboardUnavailable) return;
+  const collapsedHeight = measuredCollapsedWindowHeight();
+  if (collapsedHeight === null || collapsedHeight === lastCollapsedWindowHeight) return;
+  lastCollapsedWindowHeight = collapsedHeight;
+  try {
+    await invoke("resize_float_window", {
+      expanded: true,
+      sessionsExpanded: false,
+      collapsedHeight,
+    });
+  } catch (error) {
+    lastCollapsedWindowHeight = null;
+    console.error("同步收起态窗口高度失败", error);
+  }
+}
+
+function scheduleCollapsedWindowResize() {
+  window.clearTimeout(collapsedWindowResizeTimer);
+  collapsedWindowResizeTimer = window.setTimeout(
+    () => void syncCollapsedWindowHeight(),
+    COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS,
+  );
+}
+
+function setupCollapsedWindowAutoResize() {
+  if (typeof ResizeObserver !== "function") return;
+  const resizeObserver = new ResizeObserver(scheduleCollapsedWindowResize);
+  [...panel.children].forEach((element) => resizeObserver.observe(element));
 }
 
 function renderAppVersion() {
@@ -162,7 +241,14 @@ function renderDashboardAvailability() {
   panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
   dashboardError.hidden = !dashboardUnavailable;
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
-  dashboardErrorDescription.textContent = t("dashboardUnavailableDescription");
+  const details = [t("dashboardUnavailableDescription")];
+  if (dashboardRetryStatus?.error) {
+    details.push(t("dashboardUnavailableReason", { error: dashboardRetryStatus.error }));
+  }
+  if (dashboardRetryStatus) {
+    details.push(t("dashboardUnavailableRetry", dashboardRetryStatus));
+  }
+  dashboardErrorDescription.textContent = details.join("\n");
   dashboardRetry.textContent = t("dashboardRetry");
 }
 
@@ -181,6 +267,7 @@ refreshController = createRefreshController({
   quotaAlerts,
   trendView,
   tokenUsageView,
+  wordCloudView,
   getExpanded: () => expanded,
   getSessionsExpanded: () => sessionsExpanded,
   refreshThreadList: (forceRefresh) => searchThreads(
@@ -188,9 +275,14 @@ refreshController = createRefreshController({
     currentThreadPage,
     forceRefresh,
   ),
-  getTrendDays: () => Number(document.querySelector("#trend-range").value),
+  getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
-  onRefreshingChange: (isRefreshing) => setRefreshIconButtonLoading(refreshButton, isRefreshing),
+  onRefreshingChange: (isRefreshing) => {
+    setRefreshIconButtonLoading(refreshButton, isRefreshing);
+    // 首轮额度可能没有可展示的卡片，区块高度不变时 ResizeObserver 不会再次触发；
+    // 请求结束后主动按真实内容收紧窗口，避免状态栏下方保留兜底高度产生的空白。
+    if (!isRefreshing) scheduleCollapsedWindowResize();
+  },
   onAvailabilityChange: (available) => {
     dashboardUnavailable = !available;
     renderDashboardAvailability();
@@ -198,12 +290,17 @@ refreshController = createRefreshController({
   statusElement: status,
   t,
   getAutoRefreshIntervalMs: settingsController.getRefreshIntervalMs,
-  maxConsecutiveFailures: MAX_CONSECUTIVE_REFRESH_FAILURES,
+  onAutoRefreshScheduleChange: scheduleNextAutoRefresh,
+  onRetryStatusChange: (retryStatus) => {
+    dashboardRetryStatus = retryStatus;
+    if (dashboardUnavailable) renderDashboardAvailability();
+  },
 });
 
 function renderQuotaAlertStatus() {
   const enabled = quotaAlerts.isEnabled();
-  quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled");
+  const thresholds = quotaAlerts.getThresholds().map((threshold) => `${threshold}%`).join("/");
+  quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled", { thresholds });
   quotaAlertStatus.classList.toggle("is-enabled", enabled);
   quotaAlertStatus.title = t("quotaAlerts");
   quotaAlertToggle.textContent = t(enabled ? "quotaAlertToggleDisable" : "quotaAlertToggleEnable");
@@ -231,25 +328,158 @@ function renderSessionsVisibility() {
   sessionsToggleLabel.textContent = t(labelKey);
 }
 
+/**
+ * 一级模块在当前面板内覆盖展开，不修改原生窗口尺寸；本地历史进入放大态时
+ * 临时展开列表，以便用户直接搜索和浏览更多会话，退出后恢复此前的折叠状态。
+ */
+function setModuleExpanded(nextModule, focusOrigin = null) {
+  const normalizedModule = Object.prototype.hasOwnProperty.call(moduleSections, nextModule)
+    ? nextModule
+    : null;
+  const previousModule = expandedModule;
+  const next = previousModule === normalizedModule ? null : normalizedModule;
+  const openingSessionsModule = next === "sessions" && previousModule !== "sessions";
+  const wasSessionsExpanded = sessionsExpanded;
+  const shouldRestoreNormalThreadPage = previousModule === "sessions"
+    && next !== "sessions"
+    && sessionsExpandedBeforeModule === true;
+
+  if (previousModule === "sessions" && next !== "sessions" && sessionsExpandedBeforeModule === false) {
+    void setSessionsExpanded(false, { resizeWindow: false });
+  }
+  if (previousModule === "sessions" && next !== "sessions") {
+    sessionsExpandedBeforeModule = null;
+  }
+
+  expandedModule = next;
+  moduleExpandFocusOrigin = next ? focusOrigin : moduleExpandFocusOrigin;
+  panel.classList.toggle("is-module-expanded", Boolean(next));
+  Object.entries(moduleSections).forEach(([name, section]) => {
+    section.classList.toggle("is-module-expanded", name === next);
+  });
+  updateModuleExpandTriggers();
+
+  if (openingSessionsModule) {
+    sessionsExpandedBeforeModule = wasSessionsExpanded;
+    currentThreadPage = 1;
+    if (wasSessionsExpanded) {
+      void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+    } else {
+      // 先写入放大状态，再加载数据，确保首个请求就按 20 条分页。
+      void setSessionsExpanded(true, { resizeWindow: false });
+    }
+  } else if (shouldRestoreNormalThreadPage) {
+    // 退出放大后回到常规 10 条分页，避免页码与可见条数不一致。
+    currentThreadPage = 1;
+    void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+  }
+  if (previousModule === "sessions" && next !== "sessions") {
+    expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
+    threadListElement.style.removeProperty("--expanded-thread-row-count");
+  }
+
+  // 覆盖层完成 Grid/Flex 布局后，使用实际尺寸重绘两张 SVG 与词云。
+  window.requestAnimationFrame(() => {
+    trendView.render();
+    tokenUsageView.render();
+    wordCloudView.render();
+    syncExpandedThreadLayout();
+  });
+
+  if (!next && moduleExpandFocusOrigin && expanded) {
+    moduleExpandFocusOrigin.focus();
+    moduleExpandFocusOrigin = null;
+  }
+}
+
+function updateModuleExpandTriggers() {
+  moduleExpandTriggers.forEach((trigger) => {
+    const isExpanded = trigger.dataset.moduleExpand === expandedModule;
+    trigger.classList.toggle("is-module-expanded", isExpanded);
+    const expandButton = trigger.querySelector(".module-expand-button");
+    const label = t(isExpanded ? "moduleRestoreLabel" : "moduleExpandLabel");
+    expandButton.ariaLabel = label;
+    expandButton.title = label;
+    expandButton.ariaPressed = String(isExpanded);
+  });
+}
+
+function setupModuleExpansion() {
+  moduleExpandTriggers.forEach((trigger) => {
+    const expandButton = trigger.querySelector(".module-expand-button");
+    expandButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setModuleExpanded(trigger.dataset.moduleExpand, expandButton);
+    });
+    trigger.addEventListener("dblclick", (event) => {
+      // 标题文字仍可双击选中复制；仅标题栏空白区用于切换模块放大。
+      if (event.target !== trigger) return;
+      event.preventDefault();
+      setModuleExpanded(trigger.dataset.moduleExpand, expandButton);
+    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !expandedModule) return;
+    event.preventDefault();
+    setModuleExpanded(null);
+  });
+  updateModuleExpandTriggers();
+}
+
 async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
   if (sessionsExpanded === nextExpanded) return;
+  const previousExpanded = sessionsExpanded;
+  let collapsedHeight = null;
+  if (!nextExpanded) {
+    // 先完成折叠布局再测量状态栏底部，避免用展开列表的高度计算收起态窗口。
+    sessionsExpanded = false;
+    renderSessionsVisibility();
+    if (resizeWindow) {
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      collapsedHeight = measuredCollapsedWindowHeight();
+    }
+  }
   if (resizeWindow) {
     try {
       // 普通窗口中收起会话区时同步压缩高度；最大化时仅切换内容可见性。
-      await invoke("resize_float_window", { expanded: true, sessionsExpanded: nextExpanded });
+      await invoke("resize_float_window", {
+        expanded: true,
+        sessionsExpanded: nextExpanded,
+        collapsedHeight,
+      });
+      lastCollapsedWindowHeight = nextExpanded ? null : collapsedHeight;
     } catch (error) {
+      if (!nextExpanded) {
+        sessionsExpanded = previousExpanded;
+        renderSessionsVisibility();
+      }
       console.error("调整会话区窗口尺寸失败", error);
       setStatus(t("windowResizeFailed", { error: String(error) }), "error");
       return;
     }
   }
-  sessionsExpanded = nextExpanded;
-  renderSessionsVisibility();
+  if (nextExpanded) {
+    sessionsExpanded = true;
+    lastCollapsedWindowHeight = null;
+    renderSessionsVisibility();
+  }
   if (!sessionsExpanded) return;
 
   // 会话列表仅在用户主动展开后读取，避免首屏加载大量本地历史。
   currentThreadPage = 1;
   await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+}
+
+async function toggleSessionsExpanded() {
+  const nextExpanded = !sessionsExpanded;
+  if (!nextExpanded && windowMaximized) {
+    // 最大化窗口使用完整高度；直接隐藏列表会把剩余高度留成空白。
+    // 先还原窗口，再由普通收起流程按实际内容高度压缩窗口。
+    await toggleWindowMaximized();
+    if (windowMaximized) return;
+  }
+  if (sessionsExpanded === nextExpanded) return;
+  await setSessionsExpanded(nextExpanded);
 }
 
 function updateTransferControls() {
@@ -287,7 +517,7 @@ function createExportFileName() {
   return `${t("exportFileName")}-${date}.codex-desk.json`;
 }
 
-async function exportThreadFromDialog(threadId) {
+async function exportThreadsToFile(threadIds) {
   setStatus(t("selectingExportLocation"));
   const outputPath = await invoke("choose_export_path", {
     defaultFileName: createExportFileName(),
@@ -295,17 +525,22 @@ async function exportThreadFromDialog(threadId) {
   });
   if (!outputPath) {
     refreshController.renderSyncedStatus();
-    return;
+    return null;
   }
-  setStatus(t("preparingExport", { count: 1 }));
+  setStatus(t("preparingExport", { count: threadIds.length }));
   const result = await invoke("export_threads", {
-    threadIds: [threadId],
+    threadIds,
     outputPath,
   });
   setStatus(t("exportCompleted", {
     count: result.exported,
     failed: transferFailureSuffix(result.failures),
   }));
+  return result;
+}
+
+async function exportThreadFromDialog(threadId) {
+  await exportThreadsToFile([threadId]);
 }
 
 async function exportSelectedThreads() {
@@ -316,24 +551,8 @@ async function exportSelectedThreads() {
   transferInProgress = true;
   updateTransferControls();
   try {
-    setStatus(t("selectingExportLocation"));
-    const outputPath = await invoke("choose_export_path", {
-      defaultFileName: createExportFileName(),
-      filterName: t("exportFileDialogFilter"),
-    });
-    if (!outputPath) {
-      refreshController.renderSyncedStatus();
-      return;
-    }
-    setStatus(t("preparingExport", { count: selectedThreadIds.size }));
-    const result = await invoke("export_threads", {
-      threadIds: [...selectedThreadIds],
-      outputPath,
-    });
-    setStatus(t("exportCompleted", {
-      count: result.exported,
-      failed: transferFailureSuffix(result.failures),
-    }));
+    const result = await exportThreadsToFile([...selectedThreadIds]);
+    if (!result) return;
     clearThreadSelection();
   } catch (error) {
     console.error(error);
@@ -424,6 +643,8 @@ function renderTheme() {
   themeButton.title = `${t("theme")}：${t(`theme${mode[0].toUpperCase()}${mode.slice(1)}`)}`;
   themeButton.ariaLabel = themeButton.title;
   themeIcon.innerHTML = THEME_ICONS[mode];
+  // 词云颜色由当前主题计算，主题切换后按已有数据重新排版并更新颜色。
+  wordCloudView.render();
 }
 
 /**
@@ -433,12 +654,6 @@ function renderTheme() {
 function syncNativeTrayLanguage() {
   invoke("set_tray_language", { language: i18n.getLanguage() })
     .catch((error) => console.error("同步托盘语言失败", error));
-}
-
-function setLanguageMenuOpen(open) {
-  languageMenu.hidden = !open;
-  languageButton.setAttribute("aria-expanded", String(open));
-  if (!open) languageButton.blur();
 }
 
 /** 将语言控制器的当前状态投射到静态页面文案及相关辅助信息。 */
@@ -454,6 +669,7 @@ function applyLanguage() {
   });
 
   minimizeButton.title = minimizeButton.ariaLabel = t("minimize");
+  alwaysOnTopButton.title = alwaysOnTopButton.ariaLabel = t(alwaysOnTop ? "unpinWindow" : "pinWindow");
   collapseButton.title = collapseButton.ariaLabel = t("collapse");
   renderRefreshIconButton(refreshButton, { label: t("refresh") });
   renderCloseIconButton(quitButton, { label: t("quit") });
@@ -465,16 +681,17 @@ function applyLanguage() {
     dashboardLoadingOverlay.setMessage(t("readingLocalData"));
   }
   renderQuotaAlertStatus();
+  updateModuleExpandTriggers();
   orb.title = t("orbTitle");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
   const languageMode = i18n.getMode();
-  languageButton.title = languageButton.ariaLabel = `${t("language")}：${t(i18n.getLabelKey())}`;
-  languageOptions.forEach((option) => {
-    const configuredOption = LANGUAGE_OPTIONS.find((item) => item.value === option.dataset.language);
+  languageSelect.value = languageMode;
+  languageSelect.title = languageSelect.ariaLabel = `${t("language")}：${t(i18n.getLabelKey())}`;
+  for (const option of languageSelect.options) {
+    const configuredOption = LANGUAGE_OPTIONS.find((item) => item.value === option.value);
     option.textContent = t(configuredOption?.labelKey ?? "languageSystem");
-    option.classList.toggle("is-active", option.dataset.language === languageMode);
-  });
+  }
 
   dialogView.updateLanguage();
   renderDashboardAvailability();
@@ -485,13 +702,9 @@ function applyLanguage() {
   updateTransferControls();
   if (refreshController.getLatestQuota() && !refreshController.isRefreshing()) {
     quotaView.render(refreshController.getLatestQuota());
-    // 连续失败后的感叹号优先于旧额度，避免切换语言时恢复显示已过期的百分比。
-    if (refreshController.isAutoRefreshPaused()) quotaView.showReadFailure(true);
-  } else if (!refreshController.isRefreshing() && !refreshController.isAutoRefreshPaused()) {
+    refreshController.renderSyncedStatus();
+  } else if (!refreshController.isRefreshing()) {
     setStatus(t("readingLocalData"));
-  }
-  if (refreshController.isAutoRefreshPaused() && !refreshController.isRefreshing()) {
-    setStatus(t("autoRefreshPaused", { count: MAX_CONSECUTIVE_REFRESH_FAILURES }), "error");
   }
   renderSessionsVisibility();
   if (expanded && sessionsExpanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
@@ -499,8 +712,41 @@ function applyLanguage() {
 
 function selectLanguage(nextLanguage) {
   i18n.setMode(nextLanguage);
-  setLanguageMenuOpen(false);
   applyLanguage();
+}
+
+function getExpandedThreadRowCount() {
+  const availableHeight = threadListElement.clientHeight;
+  if (availableHeight === 0) return EXPANDED_THREAD_LAYOUT.minRows;
+
+  // 以不超过常规 60px 卡高为目标计算行数，窗口变大时优先增加会话数而非拉大卡片。
+  const rows = Math.ceil(
+    (availableHeight + EXPANDED_THREAD_LAYOUT.rowGapPx)
+    / (EXPANDED_THREAD_LAYOUT.targetRowHeightPx + EXPANDED_THREAD_LAYOUT.rowGapPx),
+  );
+  return Math.min(
+    EXPANDED_THREAD_LAYOUT.maxRows,
+    Math.max(EXPANDED_THREAD_LAYOUT.minRows, rows),
+  );
+}
+
+function syncExpandedThreadLayout() {
+  if (expandedModule !== "sessions" || !sessionsExpanded) return;
+  const nextRowCount = getExpandedThreadRowCount();
+  if (nextRowCount === expandedThreadRowCount) return;
+
+  expandedThreadRowCount = nextRowCount;
+  threadListElement.style.setProperty("--expanded-thread-row-count", String(nextRowCount));
+  currentThreadPage = 1;
+  void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+}
+
+function scheduleExpandedThreadLayoutSync() {
+  if (expandedThreadLayoutTimer !== null) window.clearTimeout(expandedThreadLayoutTimer);
+  expandedThreadLayoutTimer = window.setTimeout(() => {
+    expandedThreadLayoutTimer = null;
+    syncExpandedThreadLayout();
+  }, THREAD_LAYOUT_RESIZE_DEBOUNCE_MS);
 }
 
 async function searchThreads(query, page = 1, forceRefresh = false) {
@@ -509,7 +755,10 @@ async function searchThreads(query, page = 1, forceRefresh = false) {
   const keyword = query.trim();
   threadListView.setSearchResult(t("readingSearch"));
   try {
-    const data = await invoke("search_threads", { query: keyword, page, forceRefresh });
+    const pageSize = expandedModule === "sessions"
+      ? expandedThreadRowCount * EXPANDED_THREAD_LAYOUT.columns
+      : THREAD_PAGE_SIZE.normal;
+    const data = await invoke("search_threads", { query: keyword, page, pageSize, forceRefresh });
     if (requestVersion !== searchRequestVersion) return;
     currentThreadPage = data.page;
     currentPageThreads = data.threads;
@@ -542,13 +791,29 @@ async function openThread(thread) {
 }
 
 async function setExpanded(nextExpanded) {
+  // 收起时必须先在 WebView 隐藏完整面板，再让原生窗口缩为 56px。
+  // 否则 Windows 会先裁切旧面板的一帧，产生“Codex”标题残影。
+  if (!nextExpanded) {
+    setModuleExpanded(null);
+    app.classList.add("is-collapsing");
+    app.classList.remove("is-expanded");
+    // 将隐藏状态提交给渲染队列后再发起原生缩窗，避免尺寸变化抢在样式更新之前。
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  }
+
   try {
-    // 由原生层统一控制窗口尺寸和锚点，前端仅在成功后更新自身状态。
+    // 原生层统一控制窗口尺寸和锚点；展开时保持先扩窗、后显示面板的原有顺序。
     await invoke("resize_float_window", {
       expanded: nextExpanded,
       sessionsExpanded,
+      collapsedHeight: nextExpanded && !sessionsExpanded ? measuredCollapsedWindowHeight() : null,
     });
   } catch (error) {
+    if (!nextExpanded) {
+      // 原生层调整失败时还原面板，不能让用户停留在一个透明的大窗口中。
+      app.classList.remove("is-collapsing", "is-compact");
+      app.classList.add("is-expanded");
+    }
     console.error("调整悬浮窗尺寸失败", error);
     setStatus(t("windowResizeFailed", { error: String(error) }), "error");
     return;
@@ -556,40 +821,21 @@ async function setExpanded(nextExpanded) {
   expanded = nextExpanded;
   if (!expanded && windowMaximized) {
     windowMaximized = false;
+    wordCloudView.setWindowMaximized(false);
     if (sessionsExpandedBeforeMaximize !== null) {
       sessionsExpanded = sessionsExpandedBeforeMaximize;
       sessionsExpandedBeforeMaximize = null;
       renderSessionsVisibility();
     }
   }
-  if (!expanded) setLanguageMenuOpen(false);
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
+  app.classList.remove("is-collapsing");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 }
 
 function setupLanguageControls() {
-  languageButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setLanguageMenuOpen(languageMenu.hidden);
-  });
-  languageOptions.forEach((option) => {
-    option.addEventListener("click", (event) => {
-      event.stopPropagation();
-      selectLanguage(option.dataset.language);
-    });
-  });
-  // 不依赖 composedPath：Windows/macOS 的不同 WebView 都可稳定处理菜单外点击。
-  window.addEventListener("pointerdown", (event) => {
-    const target = event.target;
-    if (!languageMenu.hidden && !languageButton.contains(target) && !languageMenu.contains(target)) {
-      setLanguageMenuOpen(false);
-    }
-  });
-  window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !languageMenu.hidden) setLanguageMenuOpen(false);
-  });
-  window.addEventListener("blur", () => setLanguageMenuOpen(false));
+  languageSelect.addEventListener("change", () => selectLanguage(languageSelect.value));
   // 浏览器语言变化时，只在“跟随系统”模式下重新翻译页面。
   window.addEventListener("languagechange", () => {
     if (i18n.isSystemMode()) applyLanguage();
@@ -636,12 +882,20 @@ function setupWindowDragging() {
 
 async function toggleWindowMaximized() {
   if (!expanded) return;
+  const previousMaximized = windowMaximized;
+  const expectedMaximized = !previousMaximized;
+  wordCloudView.setWindowResizeTransitioning(true);
+  // 原生窗口变形会先触发 ResizeObserver；提前同步状态，避免还原时按 300 词错误重绘一帧。
+  windowMaximized = expectedMaximized;
+  wordCloudView.setWindowMaximized(expectedMaximized, { redraw: false });
   try {
     const maximized = await invoke("toggle_window_maximized");
     windowMaximized = maximized;
+    wordCloudView.setWindowMaximized(maximized, { redraw: false });
     if (maximized) {
       sessionsExpandedBeforeMaximize = sessionsExpanded;
       if (!sessionsExpanded) await setSessionsExpanded(true, { resizeWindow: false });
+      wordCloudView.setWindowResizeTransitioning(false);
       return;
     }
 
@@ -650,25 +904,53 @@ async function toggleWindowMaximized() {
     if (restoreExpanded !== null && sessionsExpanded !== restoreExpanded) {
       await setSessionsExpanded(restoreExpanded, { resizeWindow: false });
     }
+    wordCloudView.setWindowResizeTransitioning(false);
   } catch (error) {
+    windowMaximized = previousMaximized;
+    wordCloudView.setWindowMaximized(previousMaximized, { redraw: false });
+    wordCloudView.setWindowResizeTransitioning(false);
     console.error("切换窗口最大化失败", error);
     setStatus(t("windowMaximizeFailed", { error: String(error) }), "error");
   }
 }
 
+function scheduleNextAutoRefresh() {
+  if (!refreshController) return;
+  if (autoRefreshTimer !== null) window.clearTimeout(autoRefreshTimer);
+  const delayMs = refreshController.getNextAutoRefreshDelayMs();
+  autoRefreshTimer = window.setTimeout(() => {
+    autoRefreshTimer = null;
+    void refreshController.refreshQuota();
+  }, delayMs);
+}
+
+async function toggleAlwaysOnTop() {
+  const nextAlwaysOnTop = !alwaysOnTop;
+  try {
+    // 面板和悬浮球共用同一个原生窗口，因此设置一次即可在两种形态间保持置顶状态。
+    await invoke("set_window_always_on_top", { alwaysOnTop: nextAlwaysOnTop });
+    alwaysOnTop = nextAlwaysOnTop;
+    alwaysOnTopButton.classList.toggle("is-active", alwaysOnTop);
+    alwaysOnTopButton.setAttribute("aria-pressed", String(alwaysOnTop));
+    alwaysOnTopButton.title = alwaysOnTopButton.ariaLabel = t(alwaysOnTop ? "unpinWindow" : "pinWindow");
+  } catch (error) {
+    console.error("切换窗口置顶失败", error);
+    setStatus(t("windowAlwaysOnTopFailed", { error: String(error) }), "error");
+  }
+}
+
 function restartAutoRefreshTimer() {
-  if (autoRefreshTimer !== null) window.clearInterval(autoRefreshTimer);
+  if (autoRefreshTimer !== null) window.clearTimeout(autoRefreshTimer);
+  autoRefreshTimer = null;
   refreshController?.resetAutoRefreshSchedule();
-  autoRefreshTimer = window.setInterval(
-    () => void refreshController.refreshQuota(false, true),
-    settingsController.getRefreshIntervalMs(),
-  );
+  scheduleNextAutoRefresh();
 }
 
 async function bootstrap() {
   applyLanguage();
   void loadAppVersion();
   setupLanguageControls();
+  setupModuleExpansion();
   themeButton.addEventListener("click", () => {
     theme.cycleMode();
     renderTheme();
@@ -681,6 +963,7 @@ async function bootstrap() {
     void toggleWindowMaximized();
   });
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
+  alwaysOnTopButton.addEventListener("click", () => void toggleAlwaysOnTop());
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshController.refreshQuota(true));
   dashboardRetry.addEventListener("click", () => void retryDashboard());
@@ -688,10 +971,7 @@ async function bootstrap() {
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);
-  sessionsToggle.addEventListener("click", () => void setSessionsExpanded(
-    !sessionsExpanded,
-    { resizeWindow: !windowMaximized },
-  ));
+  sessionsToggle.addEventListener("click", () => void toggleSessionsExpanded());
   selectPageThreadsButton.addEventListener("click", () => {
     currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
     renderCurrentThreadPage();
@@ -705,6 +985,14 @@ async function bootstrap() {
     await importTransferFile(file);
   });
   setupWindowDragging();
+  setupCollapsedWindowAutoResize();
+  const threadListResizeObserver = new ResizeObserver(scheduleExpandedThreadLayoutSync);
+  threadListResizeObserver.observe(threadListElement);
+  window.addEventListener("resize", () => {
+    scheduleExpandedThreadLayoutSync();
+    // 窗口尺寸可能由最大化还原或系统恢复改变，普通收起态需要重新贴合内容高度。
+    scheduleCollapsedWindowResize();
+  });
   threadListView.onSearchInput(() => {
     window.clearTimeout(searchTimer);
     currentThreadPage = 1;

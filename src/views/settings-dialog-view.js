@@ -9,6 +9,11 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   const browseButton = document.querySelector("#settings-cli-browse");
   const resetButton = document.querySelector("#settings-cli-reset");
   const refreshInterval = document.querySelector("#settings-refresh-interval");
+  const thresholdInputs = [
+    document.querySelector("#settings-quota-threshold-1"),
+    document.querySelector("#settings-quota-threshold-2"),
+    document.querySelector("#settings-quota-threshold-3"),
+  ];
   const cancelButton = document.querySelector("#settings-cancel");
   const saveButton = document.querySelector("#settings-save");
   const status = document.querySelector("#settings-status");
@@ -21,6 +26,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
       [60, "settingsRefresh60Seconds"],
       [120, "settingsRefresh2Minutes"],
       [300, "settingsRefresh5Minutes"],
+      [600, "settingsRefresh10Minutes"],
     ];
     refreshInterval.replaceChildren(...options.map(([value, labelKey]) => {
       const option = document.createElement("option");
@@ -37,6 +43,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     browseButton.disabled = busy;
     resetButton.disabled = busy;
     refreshInterval.disabled = busy;
+    thresholdInputs.forEach((input) => { input.disabled = busy; });
     cancelButton.disabled = busy;
     saveButton.disabled = busy;
   }
@@ -51,7 +58,17 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     const settings = getSettings();
     cliPathInput.value = settings.cliPath;
     refreshInterval.value = String(settings.refreshIntervalSeconds);
+    thresholdInputs.forEach((input, index) => {
+      input.value = String(settings.quotaAlertThresholds[index]);
+    });
     showStatus();
+  }
+
+  function readQuotaAlertThresholds() {
+    const thresholds = thresholdInputs.map((input) => Number(input.value));
+    const valid = thresholds.every((threshold) => Number.isInteger(threshold) && threshold >= 1 && threshold <= 100)
+      && thresholds.every((threshold, index) => index === 0 || thresholds[index - 1] < threshold);
+    return valid ? thresholds : null;
   }
 
   function open() {
@@ -73,6 +90,11 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     resetButton.textContent = t("settingsUsePath");
     document.querySelector("#settings-refresh-label").textContent = t("settingsRefreshInterval");
     document.querySelector("#settings-refresh-hint").textContent = t("settingsRefreshIntervalHint");
+    document.querySelector("#settings-quota-thresholds-label").textContent = t("settingsQuotaAlertThresholds");
+    document.querySelector("#settings-quota-thresholds-hint").textContent = t("settingsQuotaAlertThresholdsHint");
+    document.querySelector("#settings-quota-threshold-low").textContent = t("settingsQuotaAlertThresholdLow");
+    document.querySelector("#settings-quota-threshold-medium").textContent = t("settingsQuotaAlertThresholdMedium");
+    document.querySelector("#settings-quota-threshold-high").textContent = t("settingsQuotaAlertThresholdHigh");
     cancelButton.textContent = t("settingsCancel");
     saveButton.textContent = t("settingsSave");
     renderIntervalOptions();
@@ -96,12 +118,19 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (saving) return;
+    const quotaAlertThresholds = readQuotaAlertThresholds();
+    if (!quotaAlertThresholds) {
+      showStatus(t("settingsQuotaAlertThresholdInvalid"), true);
+      (thresholdInputs.find((input) => !input.checkValidity()) ?? thresholdInputs[0]).focus();
+      return;
+    }
     setBusy(true);
     showStatus(t("settingsSaving"));
     try {
       const version = await onSave({
         cliPath: cliPathInput.value,
         refreshIntervalSeconds: Number(refreshInterval.value),
+        quotaAlertThresholds,
       });
       showStatus(t("settingsSaved", { version }));
     } catch (error) {

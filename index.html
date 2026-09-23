@@ -32,28 +32,29 @@
             <button id="minimize-button" class="icon-button" type="button" title="最小化到系统托盘" aria-label="最小化到系统托盘">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" /></svg>
             </button>
+            <button id="refresh-button" class="icon-button refresh-icon-button" type="button" title="立即刷新" aria-label="立即刷新"></button>
+            <button id="always-on-top-button" class="icon-button always-on-top-button" type="button" title="置顶窗口" aria-label="置顶窗口" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6M10 4v5l-3 4h10l-3-4V4M12 13v7" /></svg>
+            </button>
             <button id="update-check-button" class="icon-button update-check-button" type="button" title="检查版本更新" aria-label="检查版本更新">
               <svg class="update-check-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M19 10a7 7 0 0 0-12.7-2.6M5 5v4h4M5 14a7 7 0 0 0 12.7 2.6M19 19v-4h-4" />
               </svg>
             </button>
-            <div class="language-picker">
-              <button id="language-button" class="icon-button" type="button" title="语言：跟随系统" aria-label="语言：跟随系统" aria-expanded="false" aria-controls="language-menu">
-                <svg class="language-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2M7 5c0 5-2 8-4 10M5 11c1.5 1.8 3.3 3.1 5.5 4M14 20l4-11 4 11M15.2 16h5.6" /></svg>
-              </button>
-              <div id="language-menu" class="language-menu" role="menu" hidden>
-                <button type="button" role="menuitem" data-language="system">跟随系统</button>
-                <button type="button" role="menuitem" data-language="zh-CN">简体中文</button>
-                <button type="button" role="menuitem" data-language="zh-TW">繁體中文</button>
-                <button type="button" role="menuitem" data-language="en">English</button>
-                <button type="button" role="menuitem" data-language="ja">日本語</button>
-                <button type="button" role="menuitem" data-language="ko">한국어</button>
-              </div>
-            </div>
+            <label class="language-picker">
+              <svg class="language-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2M7 5c0 5-2 8-4 10M5 11c1.5 1.8 3.3 3.1 5.5 4M14 20l4-11 4 11M15.2 16h5.6" /></svg>
+              <select id="language-select" title="语言：跟随系统" aria-label="语言：跟随系统">
+                <option value="system">跟随系统</option>
+                <option value="en">English</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="zh-TW">繁體中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+              </select>
+            </label>
             <button id="theme-button" class="icon-button" type="button" title="主题：跟随系统" aria-label="主题：跟随系统">
               <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
             </button>
-            <button id="refresh-button" class="icon-button refresh-icon-button" type="button" title="立即刷新" aria-label="立即刷新"></button>
             <button id="settings-button" class="icon-button" type="button" title="设置" aria-label="打开设置">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
             </button>
@@ -129,46 +130,82 @@
           </div>
           <p id="account-message" class="account-message" hidden></p>
           <div class="account-quota-divider" aria-hidden="true"></div>
-          <div id="quota-list" class="quota-list" aria-live="polite"></div>
+          <div id="quota-list" class="quota-list" aria-live="polite" aria-busy="true">
+            <article class="quota-card quota-card-placeholder" aria-hidden="true">
+              <h3 data-i18n="quotaWindow">额度窗口</h3>
+              <div class="quota-value">
+                <strong>--</strong>
+                <span data-i18n="remaining">剩余</span>
+              </div>
+              <div class="progress-track"><span></span></div>
+            </article>
+            <article class="quota-card quota-card-placeholder" aria-hidden="true">
+              <h3 data-i18n="quotaWindow">额度窗口</h3>
+              <div class="quota-value">
+                <strong>--</strong>
+                <span data-i18n="remaining">剩余</span>
+              </div>
+              <div class="progress-track"><span></span></div>
+            </article>
+          </div>
         </section>
 
-        <section class="dashboard-section trend-section" aria-labelledby="trend-heading">
-          <div class="section-heading trend-heading">
+        <section id="insights-section" class="dashboard-section insights-overview" aria-labelledby="insights-overview-heading">
+          <div class="section-heading insights-overview-heading module-expand-trigger" data-module-expand="insights" aria-controls="insights-section">
             <div class="section-title-row">
-              <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
-              <div class="trend-range-summary">
-                <div class="trend-range-picker">
-                  <select id="trend-range" class="trend-range" aria-label="趋势范围"></select>
-                  <svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
-                </div>
-                <span id="trend-total" class="trend-total"></span>
-              </div>
+              <p class="section-kicker" data-i18n="insightsOverview">数据洞察</p>
+              <h2 id="insights-overview-heading" data-i18n="insightsOverviewTitle">趋势总览</h2>
             </div>
-            <div class="trend-heading-actions">
-              <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
+            <div class="insights-heading-actions">
+              <div class="insights-range-picker">
+                <select id="insights-range" class="trend-range" aria-label="趋势范围"></select>
+              </div>
+              <button class="module-expand-button" type="button" aria-label="放大模块" title="放大模块" aria-pressed="false">
+                <svg class="module-expand-icon module-expand-icon-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path></svg>
+                <svg class="module-expand-icon module-expand-icon-restore" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v6H3M15 3v6h6M21 15h-6v6M3 15h6v6"></path></svg>
+              </button>
             </div>
           </div>
-          <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
-        </section>
 
-        <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
-          <div class="section-heading trend-heading">
-            <div class="section-title-row">
-              <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token 洞察</p>
-              <div class="trend-range-summary">
-                <div class="trend-range-picker">
-                  <select id="token-usage-range" class="trend-range" aria-label="Token 趋势范围"></select>
-                  <svg class="disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+          <div class="insights-layout">
+            <section class="dashboard-section trend-section activity-trend-section" aria-labelledby="trend-heading">
+              <div class="section-heading trend-heading">
+                <div class="section-title-row">
+                  <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
+                  <span id="trend-total" class="trend-total"></span>
                 </div>
-                <span id="token-usage-total" class="trend-total"></span>
+                <div class="trend-heading-actions">
+                  <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
+                </div>
               </div>
-            </div>
+              <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
+            </section>
+
+            <section class="dashboard-section word-cloud-section" aria-labelledby="word-cloud-heading">
+              <div class="section-heading word-cloud-heading">
+                <div class="section-title-row">
+                  <p id="word-cloud-heading" class="section-kicker" data-i18n="wordCloudKicker">关键词词云</p>
+                  <span id="word-cloud-summary" class="word-cloud-summary"></span>
+                </div>
+              </div>
+              <div id="word-cloud" class="word-cloud" aria-live="polite"></div>
+            </section>
+
+            <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
+              <div class="section-heading trend-heading">
+                <div class="section-title-row">
+                  <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token洞察</p>
+                  <span id="token-usage-total" class="trend-total"></span>
+                </div>
+                <div id="token-usage-controls" class="token-usage-controls" aria-label="Token 洞察视图"></div>
+              </div>
+              <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
+            </section>
           </div>
-          <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
         </section>
 
-        <section class="dashboard-section sessions-section" aria-labelledby="threads-heading">
-          <div class="section-heading sessions-heading">
+        <section id="sessions-section" class="dashboard-section sessions-section is-collapsed" aria-labelledby="threads-heading">
+          <div class="section-heading sessions-heading module-expand-trigger" data-module-expand="sessions" aria-controls="sessions-section">
             <div class="section-title-row">
               <p class="section-kicker" data-i18n="localHistory">本地历史</p>
               <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
@@ -188,6 +225,10 @@
               <button id="sessions-toggle" class="section-collapse-button" type="button" aria-expanded="false" aria-controls="sessions-content">
                 <span id="sessions-toggle-label" class="visually-hidden">展开本地历史</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+              </button>
+              <button class="module-expand-button" type="button" aria-label="放大模块" title="放大模块" aria-pressed="false">
+                <svg class="module-expand-icon module-expand-icon-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path></svg>
+                <svg class="module-expand-icon module-expand-icon-restore" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v6H3M15 3v6h6M21 15h-6v6M3 15h6v6"></path></svg>
               </button>
             </div>
           </div>
@@ -222,23 +263,20 @@
               <path class="thread-sidebar-toggle-collapse" d="m14 9-3 3 3 3"></path>
             </svg>
           </button>
-          <h2 id="thread-dialog-heading">
-            <span data-i18n="threadDetail">会话详情</span>
-            <span class="thread-dialog-title-separator" aria-hidden="true">·</span>
-            <span id="dialog-title"></span>
-          </h2>
+          <div class="thread-dialog-heading">
+            <h2 id="thread-dialog-heading">
+              <span data-i18n="threadDetail">会话详情</span>
+              <span class="thread-dialog-title-separator" aria-hidden="true">·</span>
+              <span id="dialog-title"></span>
+            </h2>
+            <button id="thread-copy-id" class="thread-copy-id-button" type="button"></button>
+          </div>
         </div>
         <div class="thread-dialog-actions">
           <button id="thread-refresh" class="icon-button refresh-icon-button" type="button"></button>
-          <details id="thread-actions-menu" class="thread-actions-menu">
-            <summary class="thread-toolbar-action" aria-label="更多操作">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>
-            </summary>
-            <div class="thread-actions-popover">
-              <button id="thread-export" type="button"></button>
-              <button id="thread-copy-id" type="button"></button>
-            </div>
-          </details>
+          <button id="thread-export" class="thread-toolbar-action thread-export-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"></path></svg>
+          </button>
           <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
         </div>
       </header>
@@ -282,7 +320,7 @@
       </section>
     </dialog>
     <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
-      <form id="settings-form" class="settings-content">
+      <form id="settings-form" class="settings-content" novalidate>
         <header class="settings-header">
           <div>
             <p id="settings-kicker" class="section-kicker">本机偏好</p>
@@ -303,12 +341,40 @@
         <section class="settings-group">
           <label id="settings-refresh-label" for="settings-refresh-interval">自动刷新间隔</label>
           <p id="settings-refresh-hint" class="settings-hint">影响额度、趋势和已展开的会话列表。</p>
-          <select id="settings-refresh-interval">
+          <select id="settings-refresh-interval" class="settings-refresh-select">
             <option value="30">30 秒</option>
             <option value="60">1 分钟</option>
             <option value="120">2 分钟</option>
             <option value="300">5 分钟</option>
+            <option value="600">10 分钟</option>
           </select>
+        </section>
+        <section class="settings-group">
+          <span id="settings-quota-thresholds-label" class="settings-group-label">额度提醒阈值</span>
+          <p id="settings-quota-thresholds-hint" class="settings-hint">固定三个提醒档次，数值需依次递增。</p>
+          <div class="settings-threshold-grid" role="group" aria-labelledby="settings-quota-thresholds-label" aria-describedby="settings-quota-thresholds-hint settings-status">
+            <label class="settings-threshold-item" for="settings-quota-threshold-1">
+              <span id="settings-quota-threshold-low">第一档</span>
+              <span class="settings-threshold-input">
+                <input id="settings-quota-threshold-1" type="number" min="1" max="100" step="1" value="80" required />
+                <span aria-hidden="true">%</span>
+              </span>
+            </label>
+            <label class="settings-threshold-item" for="settings-quota-threshold-2">
+              <span id="settings-quota-threshold-medium">第二档</span>
+              <span class="settings-threshold-input">
+                <input id="settings-quota-threshold-2" type="number" min="1" max="100" step="1" value="90" required />
+                <span aria-hidden="true">%</span>
+              </span>
+            </label>
+            <label class="settings-threshold-item" for="settings-quota-threshold-3">
+              <span id="settings-quota-threshold-high">第三档</span>
+              <span class="settings-threshold-input">
+                <input id="settings-quota-threshold-3" type="number" min="1" max="100" step="1" value="100" required />
+                <span aria-hidden="true">%</span>
+              </span>
+            </label>
+          </div>
         </section>
         <p id="settings-status" class="settings-status" aria-live="polite" hidden></p>
         <footer class="settings-actions">

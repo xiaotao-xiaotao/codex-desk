@@ -1,16 +1,29 @@
-# Codex Desk — Codex CLI 额度监控与会话管理工具
+# Codex Desk
 
-[English](README.md)
+<p align="center">
+  <strong>一眼掌握 Codex CLI 额度，几秒钟恢复本地会话。</strong><br />
+  面向 Windows、macOS 和 Linux 的隐私优先 Codex CLI 桌面助手。
+</p>
 
-[![Latest Release](https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver)](https://github.com/xiaotao-xiaotao/codex-desk/releases)
-[![License](https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat)](https://github.com/xiaotao-xiaotao/codex-desk/stargazers)
+<p align="center">
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases"><strong>下载最新版本</strong></a>
+  · <a href="README.md">English</a>
+</p>
 
-**实时掌控 Codex CLI 额度，快速找回本地会话。**
+<p align="center">
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/releases"><img src="https://img.shields.io/github/v/release/xiaotao-xiaotao/codex-desk?display_name=tag&sort=semver" alt="最新版本" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/xiaotao-xiaotao/codex-desk" alt="MIT License" /></a>
+  <a href="https://github.com/xiaotao-xiaotao/codex-desk/stargazers"><img src="https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat" alt="GitHub Stars" /></a>
+</p>
 
-Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮显示额度状态，提供账户与额度概览、额度阈值提醒、本地会话浏览、活动与 Token 趋势、详情洞察和跨设备迁移。账户、额度与会话数据通过本机 `codex app-server --stdio` 获取；Token 用量会读取本机 Codex 会话文件中的累计快照。不上传到第三方服务，也不读取或保存 `auth.json`。
+## 为什么用 Codex Desk？
 
-如果它帮你更方便地管理 Codex 会话，欢迎点一个 **Star**，也欢迎通过 Issue 提交建议。
+- **不再错过额度状态**：在桌面悬浮显示用量；可选开启 80%、90% 和 100% 的额度提醒。
+- **更快回到正在做的事**：搜索本地 Codex 会话，查看消息与文件变更，一键复制准确的 `codex resume <session ID>` 命令。
+- **看懂自己的使用情况**：按天或按会话查看活动趋势、常见主题和 Token 用量。
+- **数据始终留在本机**：仅通过本机 `codex app-server --stdio` 和本地会话文件读取数据；不上传数据，也不读取或保存 `auth.json`。
+
+使用前只需已安装并登录 [Codex CLI](https://github.com/openai/codex)。如果它帮你节省了时间，欢迎点一个 **Star**，或通过 [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) 提建议，帮助项目触达更多 Codex 用户。
 
 ## 下载
 
@@ -38,10 +51,10 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 
 ## 界面预览
 
-以下截图展示悬浮额度球、会话总览与会话详情界面。
+以下截图展示悬浮额度球、数据洞察、会话详情与文件变更界面。
 
 <p align="center">
-  <img src="docs/screenshots/quota-orb-dark-zh.png" alt="Codex Desk 深色悬浮额度球" width="120" />
+  <img src="docs/screenshots/quota-orb-light-zh.png" alt="Codex Desk 浅色悬浮额度球" width="120" />
 </p>
 
 ### 展开总览
@@ -67,17 +80,19 @@ Codex Desk 是一个隐私优先的 Codex CLI 桌面控制台：在桌面悬浮�
 ## 功能概览
 
 - **账户与额度概览**：展示脱敏登录邮箱、当前套餐、额度窗口、已用比例、重置时间、可用限额重置次数，并可跳转官方账单入口查看订阅到期时间。
-- **额度提醒**：用户主动启用系统通知后，在额度达到 80%、90% 或 100% 时提醒；每个重置窗口的每个阈值只提醒一次。
+- **额度提醒**：用户主动启用系统通知后，可在额度达到三个自定义阈值时提醒（默认 80%、90% 和 100%）；每个重置窗口的每个阈值只提醒一次。
 - **活动趋势**：可查看近 3、7 或 30 天，以代码绘制折线趋势图；消息、工具调用、文件变更和异常四个维度可独立显示或隐藏。
-- **Token 洞察**：从本机 Codex 会话文件的累计 Token 快照汇总近 3、7 或 30 天的每日使用趋势和合计；会话详情还可查看总量、输入、输出、缓存输入和推理输出。
-- **本地会话**：读取本机非归档的持久化会话，每页展示 10 个；支持按标题或会话 ID 模糊搜索，并同时显示创建时间与最后更新时间。
-- **会话详情与洞察**：查看用户消息和 Codex 回复、复制单条内容；同一回合的过程性回复会默认折叠并显示用时，最终回复保持展开。会话概览侧栏可按需展开，首次读取和刷新详情时显示覆盖整个内容区的加载状态；剪贴板支持时可连同图片以富文本复制，双击图片可打开独立预览，并汇总消息数、工具调用数、文件变更数和异常数。
+- **关键词词云**：按所选时间范围汇总用户输入中的高频主题，并过滤代码块、网址和常见技术噪声。
+- **Token 洞察**：从本机 Codex 会话文件的累计 Token 快照汇总近 3、7 或 30 天的每日趋势和按会话分布；会话详情还可查看总量、输入、输出、缓存输入和推理输出。
+- **本地会话**：读取本机非归档的持久化会话，支持按标题或会话 ID 模糊搜索，并同时显示创建时间与最后更新时间；放大模块后会根据窗口高度自适应分页数量。
+- **专注看板布局**：数据洞察和本地历史均可放大至整个窗口，也可按需让窗口始终置顶。
+- **会话详情与洞察**：查看用户消息和 Codex 回复、复制单条内容；同一回合的过程性回复会默认折叠并显示用时，最终回复保持展开。会话概览侧栏可按需展开，首次读取和刷新详情时显示覆盖整个内容区的加载状态；剪贴板支持时可连同图片以富文本复制，双击图片可打开独立预览。详情页汇总消息与工具调用，概览侧栏集中展示文件变更、异常和 Token 明细。
 - **文件变更对比**：回复下方会聚合显示该回合的文件与工具操作；文件卡片展示文件名和增删行数，可展开查看明细，并打开左右对比或上下两种 diff 视图。展示的是会话历史中保存的差异，不读取当前工作区文件。
 - **快速继续会话**：在会话详情中一键复制 `codex resume <会话 ID>`，可直接粘贴到终端继续工作。
 - **会话导入导出**：可选择单个会话、当前页或全部筛选结果，导出为可移植的 Codex Desk 会话包；可在另一台已登录 Codex CLI 的设备中导入为新会话。
 - **单实例运行**：重复启动会唤起已有窗口，避免重复启动 Codex app-server 与悬浮窗。
-- **本机设置**：可指定 Codex CLI 可执行文件或启动脚本路径，并配置 30 秒至 5 分钟的自动刷新间隔；路径会在保存前通过 `codex --version` 验证。
-- **连接与刷新恢复**：首次读取失败时显示整页连接异常状态并提供重新加载入口；连续刷新失败后会暂停自动刷新，手动刷新成功后自动恢复。
+- **本机设置**：可指定 Codex CLI 可执行文件或启动脚本路径，配置 30 秒至 10 分钟的自动刷新间隔，以及 1% 至 100% 范围内递增的三个额度提醒阈值；路径会在保存前通过 `codex --version` 验证。
+- **连接与刷新恢复**：首次读取失败时显示整页连接异常状态并提供重试入口；连续失败时采用有上限的指数退避，恢复后回到正常刷新周期。
 - **版本更新提醒**：可从主面板手动检查 GitHub 仓库公开的版本文件；发现新版本后展示 Release 更新内容并提供下载入口。
 - **本机数据边界**：账户、额度与会话数据通过本机 `codex app-server --stdio` 获取，Token 用量仅从本机 Codex 会话文件的累计快照读取。不会读取或保存 `auth.json`，也不会上传本机数据；版本检查只向 GitHub 请求公开的版本和 Release 信息。
 
@@ -130,15 +145,7 @@ npm install
 npm run tauri dev
 ```
 
-如果 PowerShell 提示找不到 `cargo`，说明 Rust 安装目录尚未加入 `PATH`。先将实际安装目录加入当前终端；例如本机自定义安装在 D 盘时：
-
-```powershell
-$toolchainBin = "$env:USERPROFILE\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin"
-$env:Path = "$toolchainBin;D:\Software\Rust\cargo\bin;$env:Path"
-npm run tauri dev
-```
-
-建议随后将 Rust 的 `cargo\bin` 目录加入用户 `PATH`，避免每次都要设置。
+如果 PowerShell 提示找不到 `cargo`，请确认已通过 `rustup` 安装 Rust，重新打开终端后执行 `cargo --version` 检查环境变量。
 
 macOS 的同一项目可直接执行：
 
@@ -161,12 +168,12 @@ npm run tauri build
 ## 使用方式
 
 - 点击额度球可展开本地看板；需要收起时，使用标题栏的“收起为悬浮球”按钮。
-- 展开后可在额度区域下方查看活动趋势和 Token 洞察；两者均可选择近 3、7 或 30 天，活动趋势可独立显示或隐藏“消息 / 工具 / 文件变更 / 异常”。
+- 展开后可查看活动趋势、关键词词云和 Token 洞察；三者共用近 3、7 或 30 天范围，Token 洞察可切换每日趋势与会话分布，活动趋势可独立显示或隐藏“消息 / 工具 / 文件变更 / 异常”。
+- 数据洞察与本地历史均可放大至整个窗口；标题栏可切换窗口置顶状态。
 - 可在首页选择启用额度 80% / 90% / 100% 的系统提醒。
 - 本地会话支持按标题或会话 ID 模糊搜索；可勾选后导入、导出，点击会话可查看详情，复制会话 ID 或单条消息内容。会话中的图片可双击放大；“近期操作”中的文件变更可查看历史 diff。
 - 会话详情可复制 `codex resume <会话 ID>` 命令，在终端继续对应会话。
 - 会话详情最多展示最新 500 条可识别消息；上方洞察区展示汇总指标，展开“近期操作”可查看结构化记录。
-- 应用启动后会常驻一个本机 `codex app-server` 进程；额度、会话、详情和趋势请求会严格串行复用该连接，退出应用时会将其关闭。
 - 展开后可拖动标题区域改变悬浮位置。
 - 自动刷新按设置的间隔执行（默认 60 秒），底部状态栏会显示下次刷新倒计时。从悬浮球展开时会保留现有数据和原定时节奏，不会立即重新刷新；需要马上更新时可点击“立即刷新”。
-- 点击“最小化到系统托盘”可隐藏看板，并可从托盘菜单重新打开；点击“退出程序”才会结束应用。
+- 点击“最小化到系统托盘”可隐藏看板，并可从托盘菜单重新打开、重启或退出应用。

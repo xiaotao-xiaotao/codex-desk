@@ -10,12 +10,14 @@ use tauri::{
 struct TrayMenuItems {
     show: MenuItem<tauri::Wry>,
     refresh: MenuItem<tauri::Wry>,
+    restart: MenuItem<tauri::Wry>,
     quit: MenuItem<tauri::Wry>,
 }
 
 struct TrayLabels {
     show: &'static str,
     refresh: &'static str,
+    restart: &'static str,
     quit: &'static str,
     tooltip: &'static str,
 }
@@ -25,24 +27,28 @@ fn labels_for(language: &str) -> TrayLabels {
         "zh-TW" => TrayLabels {
             show: "顯示",
             refresh: "重新整理",
+            restart: "重啟",
             quit: "結束",
             tooltip: "Codex 桌面控制台",
         },
         "ja" => TrayLabels {
             show: "表示",
             refresh: "更新",
+            restart: "再起動",
             quit: "終了",
             tooltip: "Codex デスク",
         },
         "ko" => TrayLabels {
             show: "표시",
             refresh: "새로 고침",
+            restart: "다시 시작",
             quit: "종료",
             tooltip: "Codex 데스크",
         },
         "en" => TrayLabels {
             show: "Show",
             refresh: "Refresh",
+            restart: "Restart",
             quit: "Quit",
             tooltip: "Codex Desk",
         },
@@ -50,6 +56,7 @@ fn labels_for(language: &str) -> TrayLabels {
         _ => TrayLabels {
             show: "显示",
             refresh: "刷新",
+            restart: "重启",
             quit: "退出",
             tooltip: "Codex 桌面控制台",
         },
@@ -76,18 +83,32 @@ pub fn close_app_server_and_exit(app: AppHandle) {
     });
 }
 
+/// 先断开本机 CLI 连接，再由 Tauri 在当前实例退出后拉起新实例，避免触发单实例冲突。
+pub fn restart_app(app: AppHandle) {
+    let app_handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        app_handle
+            .state::<app_server::AppServerState>()
+            .shutdown()
+            .await;
+        app_handle.request_restart();
+    });
+}
+
 /// 创建托盘菜单及鼠标事件。菜单文本默认中文，WebView 初始化后会立即同步语言。
 pub fn setup(app: &mut App) -> tauri::Result<()> {
     // Windows 原生托盘菜单按最长文案计算宽度，使用简短标签减少横向占用。
     let show = MenuItemBuilder::with_id("show", "显示").build(app)?;
     let refresh = MenuItemBuilder::with_id("refresh", "刷新").build(app)?;
+    let restart = MenuItemBuilder::with_id("restart", "重启").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "退出").build(app)?;
-    let menu = MenuBuilder::new(app)
-        .items(&[&show, &refresh, &quit])
+    let tray_menu = MenuBuilder::new(app)
+        .items(&[&show, &refresh, &restart, &quit])
         .build()?;
     app.manage(TrayMenuItems {
         show: show.clone(),
         refresh: refresh.clone(),
+        restart: restart.clone(),
         quit: quit.clone(),
     });
 
@@ -99,13 +120,16 @@ pub fn setup(app: &mut App) -> tauri::Result<()> {
     TrayIconBuilder::with_id("quota-tray")
         .icon(tray_icon)
         .tooltip("Codex 桌面控制台")
-        .menu(&menu)
+        .menu(&tray_menu)
+        // 左键只负责显示主窗口，托盘菜单仅由右键打开，避免菜单与窗口争抢焦点而闪现。
+        .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
             "refresh" => {
                 show_main_window(app);
                 let _ = app.emit("quota://refresh", ());
             }
+            "restart" => restart_app(app.clone()),
             "quit" => close_app_server_and_exit(app.clone()),
             _ => {}
         })
@@ -136,6 +160,10 @@ pub fn set_tray_language(language: String, app: AppHandle) -> Result<(), String>
         .refresh
         .set_text(labels.refresh)
         .map_err(|error| format!("无法更新托盘刷新菜单：{error}"))?;
+    items
+        .restart
+        .set_text(labels.restart)
+        .map_err(|error| format!("无法更新托盘重启菜单：{error}"))?;
     items
         .quit
         .set_text(labels.quit)

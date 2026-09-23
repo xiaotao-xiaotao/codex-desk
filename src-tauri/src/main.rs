@@ -11,23 +11,41 @@ mod threads;
 mod tray;
 mod usage;
 
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
+use tokio::io::AsyncReadExt;
 
-// 820px 在减少桌面占用的同时，为标题栏、额度卡和趋势图保留必要的横向空间。
-const EXPANDED_WINDOW_WIDTH: f64 = 820.0;
-// 会话卡收紧后同步压缩展开高度，避免分页前留下空白区域。
+// 900px 为右侧词云留出更舒展的排版空间，同时仍保持为紧凑悬浮看板。
+const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
+// 展开会话保持正常阅读密度；内容超出固定高度时由列表自身滚动承接。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
-// 本地历史收起后仍展示账户概览、两张趋势图和同步状态，避免底部内容被窗口边缘裁切。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 550.0;
+// 洞察卡压缩后同步收紧收起态窗口，仅保留刷新状态下方的安全留白。
+const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 590.0;
+// 动态测量异常时限制窗口高度，避免空内容或错误布局把窗口压缩到不可操作。
+const MIN_DASHBOARD_WINDOW_HEIGHT: f64 = 420.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
 const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/#settings/Billing";
 const GITHUB_RELEASES_URL: &str = "https://github.com/xiaotao-xiaotao/codex-desk/releases";
+// 文件链接只预览开头 512 KiB，避免大型日志或 JSONL 一次性占满 WebView 内存。
+const LOCAL_TEXT_PREVIEW_MAX_BYTES: usize = 512 * 1024;
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalTextPreview {
+    path: String,
+    name: String,
+    content: String,
+    size: u64,
+    truncated: bool,
+}
 
 #[tauri::command]
 async fn read_quota(
@@ -63,15 +81,59 @@ fn choose_cli_path(window: WebviewWindow) -> Option<String> {
         .map(|path| path.to_string_lossy().into_owned())
 }
 
+/// 用户点击历史消息中的本地文件链接后，按需读取一小段文本用于只读预览。
+#[tauri::command]
+async fn read_local_text_preview(path: String) -> Result<LocalTextPreview, String> {
+    let requested_path = PathBuf::from(path.trim());
+    if !requested_path.is_absolute() {
+        return Err("仅支持预览绝对路径文件".to_owned());
+    }
+    let canonical_path = tokio::fs::canonicalize(&requested_path)
+        .await
+        .map_err(|error| format!("无法找到文件：{error}"))?;
+    let metadata = tokio::fs::metadata(&canonical_path)
+        .await
+        .map_err(|error| format!("无法读取文件信息：{error}"))?;
+    if !metadata.is_file() {
+        return Err("该路径不是文件".to_owned());
+    }
+
+    let file = tokio::fs::File::open(&canonical_path)
+        .await
+        .map_err(|error| format!("无法打开文件：{error}"))?;
+    let mut bytes = Vec::with_capacity(LOCAL_TEXT_PREVIEW_MAX_BYTES + 1);
+    file.take((LOCAL_TEXT_PREVIEW_MAX_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(|error| format!("无法读取文件：{error}"))?;
+    let truncated = bytes.len() > LOCAL_TEXT_PREVIEW_MAX_BYTES
+        || metadata.len() > LOCAL_TEXT_PREVIEW_MAX_BYTES as u64;
+    bytes.truncate(LOCAL_TEXT_PREVIEW_MAX_BYTES);
+    if bytes.contains(&0) {
+        return Err("该文件不是可预览的文本文件".to_owned());
+    }
+
+    Ok(LocalTextPreview {
+        name: canonical_path
+            .file_name()
+            .map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
+        path: canonical_path.to_string_lossy().into_owned(),
+        content: String::from_utf8_lossy(&bytes).into_owned(),
+        size: metadata.len(),
+        truncated,
+    })
+}
+
 #[tauri::command]
 async fn search_threads(
     state: State<'_, app_server::AppServerState>,
     list_state: State<'_, threads::ThreadListState>,
     query: String,
     page: u32,
+    page_size: u32,
     force_refresh: bool,
 ) -> Result<threads::ThreadSearchResult, String> {
-    threads::search_threads(&state, &list_state, &query, page, force_refresh).await
+    threads::search_threads(&state, &list_state, &query, page, page_size, force_refresh).await
 }
 
 #[tauri::command]
@@ -156,8 +218,9 @@ async fn read_thread_trends(
 #[tauri::command]
 async fn read_token_usage(
     state: State<'_, app_server::AppServerState>,
+    local_usage_state: State<'_, local_usage::LocalUsageState>,
 ) -> Result<usage::TokenUsageSnapshot, String> {
-    usage::read_token_usage(&state).await
+    usage::read_token_usage(&state, &local_usage_state).await
 }
 
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
@@ -233,9 +296,17 @@ fn toggle_window_maximized(window: WebviewWindow) -> Result<bool, String> {
 }
 
 #[tauri::command]
+fn set_window_always_on_top(always_on_top: bool, window: WebviewWindow) -> Result<(), String> {
+    window
+        .set_always_on_top(always_on_top)
+        .map_err(|error| format!("无法切换窗口置顶状态：{error}"))
+}
+
+#[tauri::command]
 fn resize_float_window(
     expanded: bool,
     sessions_expanded: bool,
+    collapsed_height: Option<f64>,
     window: WebviewWindow,
 ) -> Result<(), String> {
     // 展开且显示会话列表时保留完整阅读空间；本地历史收起时窗口同步缩短。
@@ -245,7 +316,11 @@ fn resize_float_window(
             if sessions_expanded {
                 EXPANDED_WINDOW_HEIGHT
             } else {
-                COLLAPSED_SESSIONS_WINDOW_HEIGHT
+                collapsed_height
+                    .filter(|height| height.is_finite())
+                    .map_or(COLLAPSED_SESSIONS_WINDOW_HEIGHT, |height| {
+                        height.clamp(MIN_DASHBOARD_WINDOW_HEIGHT, EXPANDED_WINDOW_HEIGHT)
+                    })
             },
         )
     } else {
@@ -298,10 +373,8 @@ fn resize_float_window(
     // 窗口保持不可手动缩放，避免 Windows 在拖至屏幕边缘时显示 Snap 贴靠预览；
     // 程序仍可通过原生 API 切换展开和收起尺寸。
     window
-        // 展开看板不抢占其他应用；仅收起为悬浮球时保持在最前，便于随时恢复。
-        .set_always_on_top(!expanded)
         // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
-        .and_then(|_| window.unmaximize())
+        .unmaximize()
         .and_then(|_| window.set_size(Size::Logical(LogicalSize::new(width, height))))
         .and_then(|_| window.set_position(Position::Physical(target_position)))
         .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
@@ -315,6 +388,7 @@ fn quit_app(app: AppHandle) {
 fn main() {
     tauri::Builder::default()
         .manage(app_server::AppServerState::default())
+        .manage(local_usage::LocalUsageState::default())
         .manage(threads::ThreadTrendState::default())
         .manage(threads::ThreadListState::default())
         .plugin(tauri_plugin_notification::init())
@@ -327,7 +401,7 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
                 // 否则前端加载异常或 Windows 恢复出错误窗口尺寸时，只能看到托盘图标。
-                if let Err(error) = resize_float_window(true, false, window) {
+                if let Err(error) = resize_float_window(true, false, None, window) {
                     eprintln!("初始化主面板尺寸失败：{error}");
                 }
             }
@@ -350,6 +424,7 @@ fn main() {
             open_update_page,
             configure_cli_path,
             choose_cli_path,
+            read_local_text_preview,
             search_threads,
             list_threads_for_selection,
             export_threads,
@@ -362,6 +437,7 @@ fn main() {
             start_dragging,
             hide_window,
             toggle_window_maximized,
+            set_window_always_on_top,
             resize_float_window,
             quit_app,
             tray::set_tray_language
