@@ -31,7 +31,7 @@ export function createAccountOverviewView({ t, invoke }) {
   }
 
   function render() {
-    if (loading) {
+    if (loading && !profile) {
       email.textContent = plan.textContent = t("accountLoading");
       emailVisibilityButton.hidden = true;
       message.hidden = true;
@@ -39,7 +39,9 @@ export function createAccountOverviewView({ t, invoke }) {
     }
 
     const hasEmail = Boolean(profile?.email);
-    email.textContent = hasEmail && !isEmailVisible ? maskEmail(profile.email) : (profile?.email ?? t("accountEmailUnavailable"));
+    const accountReadFailed = error?.key === "accountReadFailed";
+    email.textContent = hasEmail && !isEmailVisible ? maskEmail(profile.email)
+      : (profile?.email ?? t(accountReadFailed ? "accountDataReadFailed" : "accountEmailUnavailable"));
     // 脱敏状态下不保留完整邮箱的悬浮提示，避免看似隐藏但仍可直接读到原文。
     email.title = hasEmail && isEmailVisible ? profile.email : "";
     emailVisibilityButton.hidden = !hasEmail;
@@ -48,7 +50,7 @@ export function createAccountOverviewView({ t, invoke }) {
     const visibilityLabel = t(isEmailVisible ? "hideAccountEmail" : "showAccountEmail");
     emailVisibilityButton.title = visibilityLabel;
     emailVisibilityButton.setAttribute("aria-label", visibilityLabel);
-    plan.textContent = profile?.planType ?? t("accountPlanUnavailable");
+    plan.textContent = profile?.planType ?? t(accountReadFailed ? "accountDataReadFailed" : "accountPlanUnavailable");
     message.hidden = !error;
     message.textContent = error ? t(error.key, { error: error.detail }) : "";
   }

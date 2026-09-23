@@ -2,6 +2,9 @@ use crate::app_server::AppServerState;
 use serde::Serialize;
 use serde_json::{json, Value};
 
+/// 账号元数据偶尔比额度请求慢，单独延长等待时间，避免已登录时误报读取失败。
+const ACCOUNT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+
 /// 仅包含个人中心需要展示的账户元数据，不透传任何认证凭据。
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +18,11 @@ pub struct AccountProfile {
 /// 通过已建立的本机 app-server 读取当前账户，不读取 auth.json，也不主动刷新令牌。
 pub async fn read_account(state: &AppServerState) -> Result<AccountProfile, String> {
     let result = state
-        .request("account/read", json!({ "refreshToken": false }))
+        .request_with_timeout(
+            "account/read",
+            json!({ "refreshToken": false }),
+            ACCOUNT_REQUEST_TIMEOUT,
+        )
         .await?;
     let account = result.get("account").filter(|value| !value.is_null());
     let field = |name| {

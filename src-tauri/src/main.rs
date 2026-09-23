@@ -25,7 +25,7 @@ const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
 // 展开会话保持正常阅读密度；内容超出固定高度时由列表自身滚动承接。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
 // 洞察卡压缩后同步收紧收起态窗口，仅保留刷新状态下方的安全留白。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 590.0;
+const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 580.0;
 // 动态测量异常时限制窗口高度，避免空内容或错误布局把窗口压缩到不可操作。
 const MIN_DASHBOARD_WINDOW_HEIGHT: f64 = 420.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。

@@ -34,6 +34,7 @@ const EXPANDED_THREAD_LAYOUT = {
 const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;
 const COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS = 80;
 const COLLAPSED_WINDOW_BOTTOM_GAP_PX = 7;
+const COLLAPSED_WINDOW_RESIZE_TOLERANCE_PX = 2;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -175,7 +176,6 @@ let dashboardUnavailable = false;
 let dashboardRetryStatus = null;
 let currentAppVersion = "";
 let collapsedWindowResizeTimer = null;
-let lastCollapsedWindowHeight = null;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
@@ -191,10 +191,13 @@ function measuredCollapsedWindowHeight() {
 }
 
 async function syncCollapsedWindowHeight() {
-  if (!expanded || sessionsExpanded || windowMaximized || expandedModule || dashboardUnavailable) return;
+  // 首轮额度和账号仍在更新时先保持启动尺寸，避免占位内容连续触发窗口移动。
+  if (!expanded || sessionsExpanded || windowMaximized || expandedModule || dashboardUnavailable
+    || refreshController?.isRefreshing()) return;
   const collapsedHeight = measuredCollapsedWindowHeight();
-  if (collapsedHeight === null || collapsedHeight === lastCollapsedWindowHeight) return;
-  lastCollapsedWindowHeight = collapsedHeight;
+  if (collapsedHeight === null) return;
+  // 字体取整造成的微小差异不值得移动整个原生窗口；底部留白足以容纳这点误差。
+  if (Math.abs(collapsedHeight - window.innerHeight) <= COLLAPSED_WINDOW_RESIZE_TOLERANCE_PX) return;
   try {
     await invoke("resize_float_window", {
       expanded: true,
@@ -202,7 +205,6 @@ async function syncCollapsedWindowHeight() {
       collapsedHeight,
     });
   } catch (error) {
-    lastCollapsedWindowHeight = null;
     console.error("同步收起态窗口高度失败", error);
   }
 }
@@ -275,6 +277,7 @@ refreshController = createRefreshController({
     currentThreadPage,
     forceRefresh,
   ),
+  refreshAccount: () => accountView.refresh(),
   getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
   onRefreshingChange: (isRefreshing) => {
@@ -377,6 +380,7 @@ function setModuleExpanded(nextModule, focusOrigin = null) {
     expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
     threadListElement.style.removeProperty("--expanded-thread-row-count");
   }
+  if (!next && !sessionsExpanded) scheduleCollapsedWindowResize();
 
   // 覆盖层完成 Grid/Flex 布局后，使用实际尺寸重绘两张 SVG 与词云。
   window.requestAnimationFrame(() => {
@@ -447,7 +451,6 @@ async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
         sessionsExpanded: nextExpanded,
         collapsedHeight,
       });
-      lastCollapsedWindowHeight = nextExpanded ? null : collapsedHeight;
     } catch (error) {
       if (!nextExpanded) {
         sessionsExpanded = previousExpanded;
@@ -460,10 +463,12 @@ async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
   }
   if (nextExpanded) {
     sessionsExpanded = true;
-    lastCollapsedWindowHeight = null;
     renderSessionsVisibility();
   }
-  if (!sessionsExpanded) return;
+  if (!sessionsExpanded) {
+    if (!resizeWindow) scheduleCollapsedWindowResize();
+    return;
+  }
 
   // 会话列表仅在用户主动展开后读取，避免首屏加载大量本地历史。
   currentThreadPage = 1;
@@ -904,6 +909,7 @@ async function toggleWindowMaximized() {
     if (restoreExpanded !== null && sessionsExpanded !== restoreExpanded) {
       await setSessionsExpanded(restoreExpanded, { resizeWindow: false });
     }
+    if (!sessionsExpanded) scheduleCollapsedWindowResize();
     wordCloudView.setWindowResizeTransitioning(false);
   } catch (error) {
     windowMaximized = previousMaximized;
@@ -1017,7 +1023,6 @@ async function bootstrap() {
   await setExpanded(true);
   // 首次启动需要立即读取；后续从悬浮球展开只恢复视图，刷新仍由定时器或用户操作触发。
   await refreshController.refreshQuota(true);
-  void accountView.refresh();
   restartAutoRefreshTimer();
   window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
 }

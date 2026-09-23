@@ -16,6 +16,7 @@ export function createRefreshController({
   getExpanded,
   getSessionsExpanded,
   refreshThreadList,
+  refreshAccount,
   getTrendDays,
   setStatus,
   onRefreshingChange,
@@ -225,6 +226,12 @@ export function createRefreshController({
       if (!latestQuota) onAvailabilityChange(false);
       scheduleNextAutoRefresh(retryDelayMs());
     } finally {
+      // 账号和额度使用同一轮刷新，但各自的读取失败不应影响另一项结果。
+      try {
+        await refreshAccount();
+      } catch (error) {
+        console.error(error);
+      }
       refreshing = false;
       onRefreshingChange(false);
       renderSyncedStatus();
