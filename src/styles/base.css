@@ -5,6 +5,8 @@ button, input { font: inherit; }
 .float-app { position: relative; width: 100%; height: 100%; }
 
 .panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 3px 8px 6px; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
+/* 固定窗口高度下，错误提示或窄屏布局变长时允许滚动查看完整内容。 */
+.panel.is-sessions-collapsed:not(.is-module-expanded) { overflow-y: auto; }
 .is-expanded .panel { opacity: 1; pointer-events: auto; transform: scale(1); }
 .is-expanded .quota-orb { opacity: 0; pointer-events: none; transform: scale(.78); }
 /* 收窗前两层都立即隐藏，避免原生窗口先缩小时把旧面板裁成一块短暂残影。 */

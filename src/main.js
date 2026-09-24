@@ -32,9 +32,6 @@ const EXPANDED_THREAD_LAYOUT = {
   rowGapPx: 8,
 };
 const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;
-const COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS = 80;
-const COLLAPSED_WINDOW_BOTTOM_GAP_PX = 7;
-const COLLAPSED_WINDOW_RESIZE_TOLERANCE_PX = 2;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -175,52 +172,10 @@ let suppressOrbClick = false;
 let dashboardUnavailable = false;
 let dashboardRetryStatus = null;
 let currentAppVersion = "";
-let collapsedWindowResizeTimer = null;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
-}
-
-function measuredCollapsedWindowHeight() {
-  // 首次额度尚未渲染时沿用原生兜底高度，避免根据占位内容把窗口过早压小。
-  if (!refreshController?.getLatestQuota()) return null;
-  const statusBottom = status.getBoundingClientRect().bottom;
-  if (!Number.isFinite(statusBottom) || statusBottom <= 0) return null;
-  return Math.ceil(statusBottom + COLLAPSED_WINDOW_BOTTOM_GAP_PX);
-}
-
-async function syncCollapsedWindowHeight() {
-  // 首轮额度和账号仍在更新时先保持启动尺寸，避免占位内容连续触发窗口移动。
-  if (!expanded || sessionsExpanded || windowMaximized || expandedModule || dashboardUnavailable
-    || refreshController?.isRefreshing()) return;
-  const collapsedHeight = measuredCollapsedWindowHeight();
-  if (collapsedHeight === null) return;
-  // 字体取整造成的微小差异不值得移动整个原生窗口；底部留白足以容纳这点误差。
-  if (Math.abs(collapsedHeight - window.innerHeight) <= COLLAPSED_WINDOW_RESIZE_TOLERANCE_PX) return;
-  try {
-    await invoke("resize_float_window", {
-      expanded: true,
-      sessionsExpanded: false,
-      collapsedHeight,
-    });
-  } catch (error) {
-    console.error("同步收起态窗口高度失败", error);
-  }
-}
-
-function scheduleCollapsedWindowResize() {
-  window.clearTimeout(collapsedWindowResizeTimer);
-  collapsedWindowResizeTimer = window.setTimeout(
-    () => void syncCollapsedWindowHeight(),
-    COLLAPSED_WINDOW_RESIZE_DEBOUNCE_MS,
-  );
-}
-
-function setupCollapsedWindowAutoResize() {
-  if (typeof ResizeObserver !== "function") return;
-  const resizeObserver = new ResizeObserver(scheduleCollapsedWindowResize);
-  [...panel.children].forEach((element) => resizeObserver.observe(element));
 }
 
 function renderAppVersion() {
@@ -280,12 +235,7 @@ refreshController = createRefreshController({
   refreshAccount: () => accountView.refresh(),
   getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
-  onRefreshingChange: (isRefreshing) => {
-    setRefreshIconButtonLoading(refreshButton, isRefreshing);
-    // 首轮额度可能没有可展示的卡片，区块高度不变时 ResizeObserver 不会再次触发；
-    // 请求结束后主动按真实内容收紧窗口，避免状态栏下方保留兜底高度产生的空白。
-    if (!isRefreshing) scheduleCollapsedWindowResize();
-  },
+  onRefreshingChange: (isRefreshing) => setRefreshIconButtonLoading(refreshButton, isRefreshing),
   onAvailabilityChange: (available) => {
     dashboardUnavailable = !available;
     renderDashboardAvailability();
@@ -324,6 +274,7 @@ function renderCurrentThreadPage() {
 
 function renderSessionsVisibility() {
   sessionsSection.classList.toggle("is-collapsed", !sessionsExpanded);
+  panel.classList.toggle("is-sessions-collapsed", !sessionsExpanded);
   sessionsContent.hidden = !sessionsExpanded;
   sessionsToggle.setAttribute("aria-expanded", String(sessionsExpanded));
   const labelKey = sessionsExpanded ? "collapseLocalHistory" : "expandLocalHistory";
@@ -380,8 +331,6 @@ function setModuleExpanded(nextModule, focusOrigin = null) {
     expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
     threadListElement.style.removeProperty("--expanded-thread-row-count");
   }
-  if (!next && !sessionsExpanded) scheduleCollapsedWindowResize();
-
   // 覆盖层完成 Grid/Flex 布局后，使用实际尺寸重绘两张 SVG 与词云。
   window.requestAnimationFrame(() => {
     trendView.render();
@@ -433,23 +382,16 @@ function setupModuleExpansion() {
 async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
   if (sessionsExpanded === nextExpanded) return;
   const previousExpanded = sessionsExpanded;
-  let collapsedHeight = null;
   if (!nextExpanded) {
-    // 先完成折叠布局再测量状态栏底部，避免用展开列表的高度计算收起态窗口。
     sessionsExpanded = false;
     renderSessionsVisibility();
-    if (resizeWindow) {
-      await new Promise((resolve) => window.requestAnimationFrame(resolve));
-      collapsedHeight = measuredCollapsedWindowHeight();
-    }
   }
   if (resizeWindow) {
     try {
-      // 普通窗口中收起会话区时同步压缩高度；最大化时仅切换内容可见性。
+      // 普通窗口按两种固定高度切换；最大化时仅切换内容可见性。
       await invoke("resize_float_window", {
         expanded: true,
         sessionsExpanded: nextExpanded,
-        collapsedHeight,
       });
     } catch (error) {
       if (!nextExpanded) {
@@ -465,10 +407,7 @@ async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
     sessionsExpanded = true;
     renderSessionsVisibility();
   }
-  if (!sessionsExpanded) {
-    if (!resizeWindow) scheduleCollapsedWindowResize();
-    return;
-  }
+  if (!sessionsExpanded) return;
 
   // 会话列表仅在用户主动展开后读取，避免首屏加载大量本地历史。
   currentThreadPage = 1;
@@ -479,7 +418,7 @@ async function toggleSessionsExpanded() {
   const nextExpanded = !sessionsExpanded;
   if (!nextExpanded && windowMaximized) {
     // 最大化窗口使用完整高度；直接隐藏列表会把剩余高度留成空白。
-    // 先还原窗口，再由普通收起流程按实际内容高度压缩窗口。
+    // 先还原窗口，再由普通收起流程切换到固定高度。
     await toggleWindowMaximized();
     if (windowMaximized) return;
   }
@@ -811,7 +750,6 @@ async function setExpanded(nextExpanded) {
     await invoke("resize_float_window", {
       expanded: nextExpanded,
       sessionsExpanded,
-      collapsedHeight: nextExpanded && !sessionsExpanded ? measuredCollapsedWindowHeight() : null,
     });
   } catch (error) {
     if (!nextExpanded) {
@@ -909,7 +847,6 @@ async function toggleWindowMaximized() {
     if (restoreExpanded !== null && sessionsExpanded !== restoreExpanded) {
       await setSessionsExpanded(restoreExpanded, { resizeWindow: false });
     }
-    if (!sessionsExpanded) scheduleCollapsedWindowResize();
     wordCloudView.setWindowResizeTransitioning(false);
   } catch (error) {
     windowMaximized = previousMaximized;
@@ -991,14 +928,9 @@ async function bootstrap() {
     await importTransferFile(file);
   });
   setupWindowDragging();
-  setupCollapsedWindowAutoResize();
   const threadListResizeObserver = new ResizeObserver(scheduleExpandedThreadLayoutSync);
   threadListResizeObserver.observe(threadListElement);
-  window.addEventListener("resize", () => {
-    scheduleExpandedThreadLayoutSync();
-    // 窗口尺寸可能由最大化还原或系统恢复改变，普通收起态需要重新贴合内容高度。
-    scheduleCollapsedWindowResize();
-  });
+  window.addEventListener("resize", scheduleExpandedThreadLayoutSync);
   threadListView.onSearchInput(() => {
     window.clearTimeout(searchTimer);
     currentThreadPage = 1;
