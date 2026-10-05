@@ -49,14 +49,20 @@
 .thread-select input:hover { border-color: #5d9bf1; }
 .thread-select input:checked { border-color: #1677ff; background-color: #1677ff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.25 8.15 2.9 2.85 6.6-6.15' fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.15'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 8px; }
 .thread-select input:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(22, 119, 255, .18); }
-.thread-title { display: -webkit-box; grid-column: 2; grid-row: 1; align-self: start; overflow: hidden; padding-right: 24px; overflow-wrap: anywhere; color: #263242; font-size: .75rem; font-weight: 650; line-height: 1.24; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.thread-title { display: -webkit-box; grid-column: 2; grid-row: 1; align-self: start; overflow: hidden; padding-right: 44px; overflow-wrap: anywhere; color: #263242; font-size: .75rem; font-weight: 650; line-height: 1.24; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 /* 复选框与标题同处首行，元信息跨整张卡片并从左边缘开始，便于快速扫读。 */
 .thread-meta { display: flex; grid-column: 1 / -1; grid-row: 2; width: 100%; min-width: 0; align-items: center; gap: 7px; }
 .thread-id-line { display: flex; flex: 0 0 auto; min-width: 0; }
 .thread-meta code { display: block; overflow: hidden; color: #7d8998; font-family: "Cascadia Code", Consolas, monospace; font-size: .57rem; text-overflow: ellipsis; white-space: nowrap; }
 .thread-meta time { display: inline-flex; min-width: 0; align-items: center; gap: 7px; overflow: hidden; color: #7f8a97; font-size: .59rem; font-variant-numeric: tabular-nums; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .thread-meta time::before { width: 1px; height: 10px; flex: 0 0 1px; background: #d8e0e8; content: ""; }
-/* 复制只在当前卡片被操作时显现，不干扰常态阅读，也不会遮挡预留了右侧空间的标题。 */
+/* 图钉与复制共用按钮尺寸；未固定时只在操作卡片时显现，避免遮挡标题。 */
+.thread-pin-button { position: absolute; top: 2px; right: 28px; opacity: 0; transition: color .15s, background .15s, opacity .15s; }
+.thread-pin-button.is-pinned { color: #1677ff; opacity: 1; }
+.thread-pin-button:hover:not(:disabled), .thread-pin-button:focus-visible { opacity: 1; }
+.thread-pin-button:disabled { cursor: wait; }
+.thread-item:hover .thread-pin-button, .thread-item:focus-within .thread-pin-button { opacity: 1; }
+@media (hover: none) { .thread-pin-button { opacity: 1; } }
 .thread-item .id-copy-button { position: absolute; top: 2px; right: 6px; opacity: 0; pointer-events: none; transition: color .15s, background .15s, opacity .15s; }
 .thread-item:hover .id-copy-button,
 .thread-item:focus-within .id-copy-button { opacity: 1; pointer-events: auto; }

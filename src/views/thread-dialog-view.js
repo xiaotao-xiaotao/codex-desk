@@ -26,13 +26,14 @@ function timestampToMilliseconds(value) {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-function formatMessageTime(message) {
+function formatMessageTime(message, formatUpdated) {
   // 回复优先显示完成时间；提问没有完成时间时显示所属回合的开始时间。
   const timestamp = timestampToMilliseconds(message.completedAt)
     ?? timestampToMilliseconds(message.startedAt);
   if (timestamp === null) return null;
   const date = new Date(timestamp);
-  return `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+  if (Number.isNaN(date.getTime())) return null;
+  return { label: formatUpdated(date), dateTime: date.toISOString() };
 }
 
 function formatMessageDuration(message) {
@@ -160,6 +161,8 @@ export function createThreadDialogView({
   copyText,
   copyMessage,
   onRefreshThread,
+  onLoadOlderTurns,
+  onReadFullOverview,
   onReadLocalFile,
   onExportThread,
 }) {
@@ -193,6 +196,10 @@ export function createThreadDialogView({
   });
   let currentDetail = null;
   let currentReadError = null;
+  let loadingOlder = false;
+  let olderLoadError = null;
+  let loadingFullOverview = false;
+  let detailGeneration = 0;
   // 默认优先展示对话内容；概览信息按需展开，避免窄窗口被左侧栏挤占。
   let sidebarExpanded = false;
   const messageSearch = createThreadMessageSearch({
@@ -266,6 +273,27 @@ export function createThreadDialogView({
   function renderMessages(detail, { focusCurrentMatch = false } = {}) {
     messageList.replaceChildren();
     const { matchingIndexes, activeMessageIndex } = messageSearch.getState();
+    if (detail.nextCursor) {
+      const historyBar = document.createElement("div");
+      historyBar.className = "thread-history-bar";
+      const hint = document.createElement("span");
+      hint.className = "thread-history-hint";
+      hint.textContent = t("loadedHistoryOnly");
+      const loadOlder = document.createElement("button");
+      loadOlder.type = "button";
+      loadOlder.className = "thread-load-older";
+      loadOlder.textContent = t(loadingOlder ? "loadingOlderTurns" : "loadOlderTurns");
+      loadOlder.disabled = loadingOlder;
+      loadOlder.addEventListener("click", () => void loadOlderTurns());
+      historyBar.append(hint, loadOlder);
+      messageList.append(historyBar);
+    }
+    if (olderLoadError) {
+      const error = document.createElement("p");
+      error.className = "thread-history-error";
+      error.textContent = t("olderTurnsFailed", { error: olderLoadError });
+      messageList.append(error);
+    }
     if (detail.truncated) {
       const hint = document.createElement("p");
       hint.className = "dialog-hint";
@@ -357,11 +385,12 @@ export function createThreadDialogView({
       if (fileSummary) entry.append(fileSummary);
       const actions = document.createElement("div");
       actions.className = "message-actions";
-      const time = formatMessageTime(message);
+      const time = formatMessageTime(message, formatUpdated);
       if (time) {
         const timeLabel = document.createElement("time");
         timeLabel.className = "message-time";
-        timeLabel.textContent = time;
+        timeLabel.dateTime = time.dateTime;
+        timeLabel.textContent = time.label;
         actions.append(timeLabel);
       }
       if (message.text) {
@@ -392,9 +421,79 @@ export function createThreadDialogView({
     }
   }
 
+  async function loadOlderTurns() {
+    const detail = currentDetail;
+    if (!detail?.nextCursor || loadingOlder) return;
+    const generation = detailGeneration;
+    const cursor = detail.nextCursor;
+    loadingOlder = true;
+    olderLoadError = null;
+    const loadButton = messageList.querySelector(".thread-load-older");
+    if (loadButton) {
+      loadButton.disabled = true;
+      loadButton.textContent = t("loadingOlderTurns");
+    }
+    try {
+      const page = await onLoadOlderTurns(detail.id, cursor);
+      if (generation !== detailGeneration || currentDetail !== detail) return;
+      detail.messages = [...page.messages, ...detail.messages];
+      detail.nextCursor = page.nextCursor;
+      if (!detail.overviewComplete) {
+        detail.fileChanges = [...page.fileChanges, ...detail.fileChanges];
+        detail.issues = [...page.issues, ...detail.issues];
+        for (const [key, value] of Object.entries(page.insights)) {
+          detail.insights[key] = (detail.insights[key] ?? 0) + value;
+        }
+        detail.overviewComplete = !page.nextCursor;
+      }
+      loadingOlder = false;
+      messageSearch.setMessages(detail.messages);
+      insightsView.render(detail);
+      overviewView.setDetail(detail, { preserveDisclosure: true });
+      renderMessages(detail);
+      // 用户从列表顶部请求更早记录，完成后停在新页开头，避免新增内容被滚走。
+      messageList.scrollTop = 0;
+    } catch (error) {
+      if (generation !== detailGeneration || currentDetail !== detail) return;
+      loadingOlder = false;
+      olderLoadError = String(error);
+      renderMessages(detail);
+      messageList.querySelector(".thread-load-older")?.focus();
+    }
+  }
+
+  async function loadFullOverview() {
+    const detail = currentDetail;
+    if (!detail || detail.overviewComplete || loadingFullOverview) return;
+    const generation = detailGeneration;
+    loadingFullOverview = true;
+    overviewView.setNotice(t("loadingFullOverview"));
+    try {
+      const overview = await onReadFullOverview(detail.id);
+      if (generation !== detailGeneration || currentDetail !== detail) return;
+      detail.fileChanges = overview.fileChanges;
+      detail.issues = overview.issues;
+      detail.insights = overview.insights;
+      detail.overviewComplete = true;
+      insightsView.render(detail);
+      overviewView.setDetail(detail, { preserveDisclosure: true });
+      overviewView.setNotice(null);
+    } catch (error) {
+      if (generation === detailGeneration && currentDetail === detail) {
+        overviewView.setNotice(t("readFailed", { error: String(error) }));
+      }
+    } finally {
+      if (generation === detailGeneration) loadingFullOverview = false;
+    }
+  }
+
   function openLoading(thread) {
+    detailGeneration += 1;
     currentDetail = null;
     currentReadError = null;
+    loadingOlder = false;
+    olderLoadError = null;
+    loadingFullOverview = false;
     messageSearch.reset();
     setDialogTitle(thread.title);
     setDialogMeta(thread.updatedAt);
@@ -409,8 +508,12 @@ export function createThreadDialogView({
   }
 
   function showDetail(detail) {
+    detailGeneration += 1;
     currentDetail = detail;
     currentReadError = null;
+    loadingOlder = false;
+    olderLoadError = null;
+    loadingFullOverview = false;
     messageSearch.setMessages(detail.messages, { resetActiveMatch: true });
     setDialogTitle(detail.title);
     setDialogMeta(detail.updatedAt);
@@ -419,6 +522,7 @@ export function createThreadDialogView({
     overviewView.setDetail(detail);
     renderActions();
     renderMessages(detail);
+    if (sidebarExpanded) void loadFullOverview();
   }
 
   function showReadFailure(error) {
@@ -464,6 +568,7 @@ export function createThreadDialogView({
   sidebarToggle.addEventListener("click", () => {
     sidebarExpanded = !sidebarExpanded;
     renderSidebarVisibility();
+    if (sidebarExpanded) void loadFullOverview();
   });
   copyIdButton.addEventListener("click", async () => {
     if (!currentDetail) return;

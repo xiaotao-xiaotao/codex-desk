@@ -87,7 +87,7 @@ h2 { margin: 0; color: #1f2329; font-size: .87rem; }
 /* 行数由容器高度同步：维持紧凑卡片，优先增加可见会话数而非拉伸卡片。 */
 .sessions-section.is-module-expanded .thread-list { grid-template-rows: repeat(var(--expanded-thread-row-count, 10), minmax(54px, 1fr)); }
 
-.status { flex: 0 0 auto; min-height: 13px; margin-top: 2px; color: #637286; font-size: .64rem; }
+.status { flex: 0 0 auto; min-height: 13px; margin: 2px 0 0; color: #637286; font-size: .64rem; }
 .status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: .66rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .status[data-kind="warning"] { color: #ad6800; }
 .status[data-kind="error"] { color: #cf1322; }

@@ -40,6 +40,7 @@ export function createThreadOverviewView({ t, onViewFileChange }) {
   let filesOpen = false;
   let issuesOpen = false;
   let tokenOpen = false;
+  let notice = null;
 
   function renderFileChanges(detail) {
     const files = fileEntries(detail);
@@ -51,7 +52,7 @@ export function createThreadOverviewView({ t, onViewFileChange }) {
     const title = document.createElement("strong");
     title.textContent = t("threadFileChangesRecord");
     const count = document.createElement("span");
-    count.textContent = t("threadRecordCount", { count: files.length });
+    count.textContent = `${t("threadRecordCount", { count: files.length })}${detail.overviewComplete ? "" : ` · ${t("loadedInsights")}`}`;
     summary.append(title, count);
     disclosure.append(summary);
 
@@ -102,7 +103,7 @@ export function createThreadOverviewView({ t, onViewFileChange }) {
     const title = document.createElement("strong");
     title.textContent = t("threadIssuesRecord");
     const count = document.createElement("span");
-    count.textContent = t("threadRecordCount", { count: issues.length });
+    count.textContent = `${t("threadRecordCount", { count: issues.length })}${detail.overviewComplete ? "" : ` · ${t("loadedInsights")}`}`;
     summary.append(title, count);
     disclosure.append(summary);
 
@@ -179,6 +180,12 @@ export function createThreadOverviewView({ t, onViewFileChange }) {
     overview.replaceChildren();
     if (!currentDetail) return;
     const sections = [];
+    if (notice) {
+      const message = document.createElement("p");
+      message.className = "thread-overview-empty";
+      message.textContent = notice;
+      sections.push(message);
+    }
     // 零条记录不占据概览空间；异常存在时由上方摘要提示并默认展开详情。
     if (fileEntries(currentDetail).length > 0) sections.push(renderFileChanges(currentDetail));
     if (issueEntries(currentDetail).length > 0) sections.push(renderIssues(currentDetail));
@@ -186,17 +193,21 @@ export function createThreadOverviewView({ t, onViewFileChange }) {
     overview.append(...sections);
   }
 
-  function setDetail(detail) {
+  function setDetail(detail, { preserveDisclosure = false } = {}) {
     currentDetail = detail;
-    showAllFiles = false;
-    filesOpen = false;
-    issuesOpen = issueEntries(detail).length > 0;
-    tokenOpen = false;
+    if (!preserveDisclosure) {
+      notice = null;
+      showAllFiles = false;
+      filesOpen = false;
+      issuesOpen = issueEntries(detail).length > 0;
+      tokenOpen = false;
+    }
     render();
   }
 
   function clear() {
     currentDetail = null;
+    notice = null;
     showAllFiles = false;
     filesOpen = false;
     issuesOpen = false;
@@ -204,5 +215,10 @@ export function createThreadOverviewView({ t, onViewFileChange }) {
     overview.replaceChildren();
   }
 
-  return { setDetail, clear, updateLanguage: render };
+  function setNotice(message) {
+    notice = message;
+    render();
+  }
+
+  return { setDetail, setNotice, clear, updateLanguage: render };
 }

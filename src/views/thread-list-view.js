@@ -1,7 +1,7 @@
 /**
  * 会话列表的分页、空态和复制按钮都在此处渲染；查询策略仍由页面控制器决定。
  */
-export function createThreadListView({ t, formatUpdated, copyText, onOpenThread, onSelectionChange }) {
+export function createThreadListView({ t, formatUpdated, copyText, onOpenThread, onSelectionChange, onTogglePinned }) {
   const threadList = document.querySelector("#thread-list");
   const threadSearch = document.querySelector("#thread-search");
   const searchResult = document.querySelector("#search-result");
@@ -41,6 +41,9 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
           <time class="thread-updated-at"></time>
           <time class="thread-created-at"></time>
         </div>
+        <button class="copy-icon-button thread-pin-button" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1 6 3 3v2H6v-2l3-3-1-6Zm4 11v7" /></svg>
+        </button>
         <button class="id-copy-button" type="button"></button>
       `;
       const selectionInput = item.querySelector(".thread-select input");
@@ -55,6 +58,20 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
         onSelectionChange(thread, selectionInput.checked);
       });
       item.querySelector(".thread-title").textContent = thread.title;
+      const pinButton = item.querySelector(".thread-pin-button");
+      pinButton.classList.toggle("is-pinned", Boolean(thread.isPinned));
+      pinButton.setAttribute("aria-pressed", String(Boolean(thread.isPinned)));
+      pinButton.title = pinButton.ariaLabel = t(thread.isPinned ? "unpinThread" : "pinThread");
+      pinButton.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        pinButton.disabled = true;
+        try {
+          await onTogglePinned(thread);
+        } finally {
+          pinButton.disabled = false;
+        }
+      });
+      pinButton.addEventListener("keydown", (event) => event.stopPropagation());
       const id = item.querySelector("code");
       id.textContent = `${thread.id.slice(0, 8)}…`;
       id.title = `${t("copyId")}：${thread.id}`;

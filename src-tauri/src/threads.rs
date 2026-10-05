@@ -4,7 +4,7 @@ use jieba_rs::Jieba;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
@@ -17,8 +17,10 @@ const MAX_TRANSFER_BUNDLE_BYTES: usize = 64 * 1_024 * 1_024;
 const MAX_THREAD_TITLE_LENGTH: usize = 160;
 const TRANSFER_FORMAT: &str = "codex-desk-thread-bundle";
 const TRANSFER_VERSION: u32 = 1;
-// 详情弹窗保留更完整的上下文，同时限制超长会话占用过多内存与渲染空间。
+// 旧版 CLI 的完整读取回退和趋势统计保留最近消息上限；新分页详情不截断回合。
 const MAX_MESSAGES: usize = 500;
+// 每次只取最近一小段回合；旧回合通过游标继续读取，避免打开长会话时传输完整历史。
+const THREAD_TURN_PAGE_SIZE: usize = 12;
 const MAX_ACTIVITIES: usize = 30;
 const TREND_CACHE_TTL: Duration = Duration::from_secs(60);
 // App Server 可同时准备同一批只读详情；控制批量大小，避免趋势统计长时间占住交互连接。
@@ -37,6 +39,8 @@ const MAX_THREAD_IMAGES_PER_MESSAGE: usize = 8;
 pub struct ThreadSummary {
     id: String,
     title: String,
+    /// 用户手动固定的会话优先显示，不改变会话的更新时间。
+    is_pinned: bool,
     /// 会话首次创建时间；用于和最后更新时间并列展示，避免旧会话被误判为新建。
     created_at: Option<Value>,
     updated_at: Option<Value>,
@@ -269,20 +273,53 @@ struct CachedThreadList {
 /// 会话搜索与跨页选择共用同一份短期摘要缓存，避免快速输入时重复拉取全部分页。
 pub struct ThreadListState {
     cached: Mutex<Option<CachedThreadList>>,
-}
-
-impl Default for ThreadListState {
-    fn default() -> Self {
-        Self {
-            cached: Mutex::new(None),
-        }
-    }
+    /// 旧版 Codex 尚无原生固定字段时，在应用数据目录保存用户的固定选择。
+    pin_overrides: Mutex<HashMap<String, bool>>,
+    pin_path: PathBuf,
 }
 
 impl ThreadListState {
+    pub fn new(pin_path: PathBuf) -> Self {
+        let pin_overrides = match std::fs::read(&pin_path) {
+            Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_else(|error| {
+                eprintln!("无法解析会话固定记录：{error}");
+                HashMap::new()
+            }),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => HashMap::new(),
+            Err(error) => {
+                eprintln!("无法读取会话固定记录：{error}");
+                HashMap::new()
+            }
+        };
+        Self {
+            cached: Mutex::new(None),
+            pin_overrides: Mutex::new(pin_overrides),
+            pin_path,
+        }
+    }
+
     /// 导入成功后列表数据已变化，后续搜索必须重新拉取。
     pub async fn invalidate(&self) {
         *self.cached.lock().await = None;
+    }
+
+    async fn save_pin_override(&self, thread_id: &str, is_pinned: bool) -> Result<(), String> {
+        let mut pin_overrides = self.pin_overrides.lock().await;
+        let mut updated = pin_overrides.clone();
+        updated.insert(thread_id.to_owned(), is_pinned);
+        let parent = self.pin_path.parent().ok_or("会话固定记录路径无效")?;
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|error| format!("无法创建会话固定记录目录：{error}"))?;
+        let bytes = serde_json::to_vec(&updated)
+            .map_err(|error| format!("无法序列化会话固定记录：{error}"))?;
+        tokio::fs::write(&self.pin_path, bytes)
+            .await
+            .map_err(|error| format!("无法保存会话固定记录：{error}"))?;
+        *pin_overrides = updated;
+        drop(pin_overrides);
+        self.invalidate().await;
+        Ok(())
     }
 }
 
@@ -302,6 +339,27 @@ pub struct ThreadDetail {
     issues: Vec<ThreadActivity>,
     messages: Vec<ThreadDetailMessage>,
     truncated: bool,
+    insights: ThreadInsights,
+    next_cursor: Option<String>,
+    /// 分页尚未读完时，洞察与文件记录只统计已加载的回合。
+    overview_complete: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThreadDetailPage {
+    messages: Vec<ThreadDetailMessage>,
+    file_changes: Vec<ThreadFileChange>,
+    issues: Vec<ThreadActivity>,
+    insights: ThreadInsights,
+    next_cursor: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThreadFullOverview {
+    file_changes: Vec<ThreadFileChange>,
+    issues: Vec<ThreadActivity>,
     insights: ThreadInsights,
 }
 
@@ -342,6 +400,36 @@ pub async fn list_threads_for_selection(
         list_all_threads(state, list_state, false).await?,
         query,
     ))
+}
+
+/// 新版 Codex 同步原生固定状态；旧版不支持该字段时由 Desk 持久化。
+pub async fn set_thread_pinned(
+    state: &AppServerState,
+    list_state: &ThreadListState,
+    thread_id: &str,
+    is_pinned: bool,
+) -> Result<(), String> {
+    if !is_valid_thread_id(thread_id) {
+        return Err("无效的会话标识".to_owned());
+    }
+    match state
+        .request(
+            "thread/metadata/update",
+            json!({ "threadId": thread_id, "isPinned": is_pinned }),
+        )
+        .await
+    {
+        Ok(_) => {}
+        Err(error) if pinning_unavailable(&error) => {}
+        Err(error) => return Err(error),
+    }
+    list_state.save_pin_override(thread_id, is_pinned).await
+}
+
+fn pinning_unavailable(error: &str) -> bool {
+    let error = error.to_ascii_lowercase();
+    error.contains("thread metadata update must include at least one field")
+        || error.contains("method not found")
 }
 
 /// 将选中的本机会话导出为 Desk 自有 JSON 包。单条会话读取失败不会中止其他会话，
@@ -444,11 +532,6 @@ pub async fn import_threads(
         }
     }
 
-    // 导入线程会被当前 app-server 加载并持有写入权。批量导入结束后关闭这条连接，
-    // 让 CLI 可以立即恢复新会话；前端随后的会话刷新会按需建立下一条连接。
-    // AppServerState 由 Mutex 管理，因此整个程序任一时刻最多存在一条 app-server 连接。
-    state.shutdown().await;
-
     Ok(ThreadImportResult {
         total: imported + failures.len(),
         imported,
@@ -522,7 +605,9 @@ async fn list_all_threads(
             }
         }
     }
-    let threads = fetch_all_threads(state).await?;
+    let mut threads = fetch_all_threads(state).await?;
+    let pin_overrides = list_state.pin_overrides.lock().await;
+    apply_pin_overrides(&mut threads, &pin_overrides);
     *cached = Some(CachedThreadList {
         generated_at: Instant::now(),
         threads: threads.clone(),
@@ -560,6 +645,16 @@ async fn fetch_all_threads(state: &AppServerState) -> Result<Vec<ThreadSummary>,
     Ok(threads)
 }
 
+fn apply_pin_overrides(threads: &mut [ThreadSummary], pin_overrides: &HashMap<String, bool>) {
+    for thread in threads.iter_mut() {
+        if let Some(is_pinned) = pin_overrides.get(&thread.id) {
+            thread.is_pinned = *is_pinned;
+        }
+    }
+    // 服务端按更新时间倒序返回；稳定排序保留固定组和普通组各自的原始顺序。
+    threads.sort_by_key(|thread| !thread.is_pinned);
+}
+
 fn next_thread_cursor(result: &Value) -> Option<Value> {
     ["nextCursor", "next_cursor"]
         .iter()
@@ -568,18 +663,50 @@ fn next_thread_cursor(result: &Value) -> Option<Value> {
         .filter(|cursor| cursor.as_str().is_none_or(|value| !value.is_empty()))
 }
 
-/// 读取一个会话的消息、结构化操作和汇总指标；不解析本地 JSONL 文件。
+/// 首次只读取最近一页回合；历史页面由 read_thread_page 按需追加。
 pub async fn read_thread(state: &AppServerState, thread_id: &str) -> Result<ThreadDetail, String> {
     if !is_valid_thread_id(thread_id) {
         return Err("无效的会话标识".to_owned());
     }
-    let result = state
+    let mut result = state
         .request(
             "thread/read",
-            json!({ "threadId": thread_id, "includeTurns": true }),
+            json!({ "threadId": thread_id, "includeTurns": false }),
         )
         .await?;
-    let mut detail = normalize_thread_detail(&result)?;
+    let page = state
+        .request(
+            "thread/turns/list",
+            json!({
+                "threadId": thread_id,
+                "limit": THREAD_TURN_PAGE_SIZE,
+                "sortDirection": "desc",
+                "itemsView": "full",
+            }),
+        )
+        .await;
+    let mut detail = match page {
+        Ok(page) => {
+            let next_cursor = page_cursor(&page);
+            insert_page_turns(&mut result, &page)?;
+            let mut detail = normalize_thread_detail_with_limit(&result, None)?;
+            detail.next_cursor = next_cursor;
+            detail.overview_complete = detail.next_cursor.is_none();
+            detail
+        }
+        Err(error) if pagination_unavailable(&error) => {
+            // 旧版 CLI 没有回合分页时沿用原有读取方式，保证基础会话详情仍可使用。
+            let fallback = state
+                .request(
+                    "thread/read",
+                    json!({ "threadId": thread_id, "includeTurns": true }),
+                )
+                .await?;
+            result = fallback;
+            normalize_thread_detail(&result)?
+        }
+        Err(error) => return Err(error),
+    };
     let token_path = result
         .get("thread")
         .and_then(|thread| thread.get("path"))
@@ -590,6 +717,87 @@ pub async fn read_thread(state: &AppServerState, thread_id: &str) -> Result<Thre
         None => None,
     };
     Ok(detail)
+}
+
+/// 向前翻页时只传回这一页的可见内容及其局部统计。
+pub async fn read_thread_page(
+    state: &AppServerState,
+    thread_id: &str,
+    cursor: &str,
+) -> Result<ThreadDetailPage, String> {
+    if !is_valid_thread_id(thread_id) || cursor.is_empty() {
+        return Err("无效的会话分页参数".to_owned());
+    }
+    let page = state
+        .request(
+            "thread/turns/list",
+            json!({
+                "threadId": thread_id,
+                "cursor": cursor,
+                "limit": THREAD_TURN_PAGE_SIZE,
+                "sortDirection": "desc",
+                "itemsView": "full",
+            }),
+        )
+        .await?;
+    let mut result = json!({ "thread": { "id": thread_id, "turns": [] } });
+    insert_page_turns(&mut result, &page)?;
+    let detail = normalize_thread_detail_with_limit(&result, None)?;
+    Ok(ThreadDetailPage {
+        messages: detail.messages,
+        file_changes: detail.file_changes,
+        issues: detail.issues,
+        insights: detail.insights,
+        next_cursor: page_cursor(&page),
+    })
+}
+
+/// 侧栏展开时才汇总全部历史，避免每次打开详情都先传输完整回合。
+pub async fn read_thread_full_overview(
+    state: &AppServerState,
+    thread_id: &str,
+) -> Result<ThreadFullOverview, String> {
+    if !is_valid_thread_id(thread_id) {
+        return Err("无效的会话标识".to_owned());
+    }
+    let result = state
+        .request(
+            "thread/read",
+            json!({ "threadId": thread_id, "includeTurns": true }),
+        )
+        .await?;
+    let detail = normalize_thread_detail(&result)?;
+    Ok(ThreadFullOverview {
+        file_changes: detail.file_changes,
+        issues: detail.issues,
+        insights: detail.insights,
+    })
+}
+
+fn insert_page_turns(result: &mut Value, page: &Value) -> Result<(), String> {
+    let mut turns = page
+        .get("data")
+        .and_then(Value::as_array)
+        .ok_or("Codex 未返回回合分页数据")?
+        .clone();
+    // API 默认按新到旧返回，现有消息归一化按时间顺序处理。
+    turns.reverse();
+    result["thread"]["turns"] = Value::Array(turns);
+    Ok(())
+}
+
+fn page_cursor(page: &Value) -> Option<String> {
+    page.get("nextCursor")
+        .and_then(Value::as_str)
+        .filter(|cursor| !cursor.is_empty())
+        .map(str::to_owned)
+}
+
+fn pagination_unavailable(error: &str) -> bool {
+    let error = error.to_ascii_lowercase();
+    error.contains("experimentalapi capability")
+        || error.contains("method not found")
+        || error.contains("not supported")
 }
 
 async fn read_transfer_thread(
@@ -678,6 +886,15 @@ async fn import_transfer_thread(
             .request("thread/delete", json!({ "threadId": thread_id }))
             .await;
         return Err(error);
+    }
+    // 共享 daemon 不能通过退出进程释放导入状态；仅取消 Desk 对新会话的订阅。
+    // 其他客户端的订阅和任务继续运行，无订阅者时由 daemon 按协议延迟卸载。
+    if let Err(error) = state
+        .request("thread/unsubscribe", json!({ "threadId": thread_id }))
+        .await
+    {
+        // 历史已经写入，不将清理失败算作导入失败，避免用户重试产生重复会话。
+        eprintln!("导入会话 {thread_id} 已写入，但取消 Desk 订阅失败：{error}");
     }
     Ok(())
 }
@@ -798,6 +1015,10 @@ fn normalize_threads(result: &Value) -> Vec<ThreadSummary> {
             Some(ThreadSummary {
                 id,
                 title,
+                is_pinned: thread
+                    .get("isPinned")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
                 created_at,
                 updated_at,
             })
@@ -806,6 +1027,13 @@ fn normalize_threads(result: &Value) -> Vec<ThreadSummary> {
 }
 
 fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
+    normalize_thread_detail_with_limit(result, Some(MAX_MESSAGES))
+}
+
+fn normalize_thread_detail_with_limit(
+    result: &Value,
+    message_limit: Option<usize>,
+) -> Result<ThreadDetail, String> {
     let thread = result.get("thread").ok_or("Codex 未返回可识别的会话详情")?;
     let id = thread
         .get("id")
@@ -942,9 +1170,9 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
     // 过程消息已合并进最终回复的折叠区，后续截断按实际可见消息计数。
     messages.retain(|message| !message.hidden);
 
-    let truncated = messages.len() > MAX_MESSAGES;
+    let truncated = message_limit.is_some_and(|limit| messages.len() > limit);
     let mut messages = if truncated {
-        messages.split_off(messages.len() - MAX_MESSAGES)
+        messages.split_off(messages.len() - message_limit.expect("已确认存在消息上限"))
     } else {
         messages
     };
@@ -977,6 +1205,8 @@ fn normalize_thread_detail(result: &Value) -> Result<ThreadDetail, String> {
         messages,
         truncated,
         insights,
+        next_cursor: None,
+        overview_complete: true,
     })
 }
 
@@ -1870,32 +2100,14 @@ fn is_failed_status(status: Option<&str>) -> bool {
 }
 
 fn filter_threads(threads: Vec<ThreadSummary>, query: &str) -> Vec<ThreadSummary> {
-    let keywords: Vec<String> = query
-        .split_whitespace()
-        .map(|word| word.to_lowercase())
-        .collect();
-    if keywords.is_empty() {
+    let keyword = query.trim().to_lowercase();
+    if keyword.is_empty() {
         return threads;
     }
     threads
         .into_iter()
-        .filter(|thread| {
-            let searchable = format!("{}\n{}", thread.title, thread.id).to_lowercase();
-            keywords
-                .iter()
-                .all(|keyword| fuzzy_matches(&searchable, keyword))
-        })
+        .filter(|thread| thread.title.to_lowercase().contains(&keyword))
         .collect()
-}
-
-fn fuzzy_matches(value: &str, keyword: &str) -> bool {
-    if value.contains(keyword) {
-        return true;
-    }
-    let mut characters = value.chars();
-    keyword
-        .chars()
-        .all(|target| characters.by_ref().any(|value| value == target))
 }
 
 /// 前端会根据容器形态请求不同页长；限制到 1–30 条，避免异常参数造成大批量渲染。
@@ -2101,9 +2313,94 @@ mod tests {
     }
 
     #[test]
-    fn fuzzy_search_keeps_subsequence_matches() {
-        assert!(fuzzy_matches("修复仪表盘布局", "修盘"));
-        assert!(!fuzzy_matches("修复仪表盘布局", "测试"));
+    fn title_search_ignores_case_and_does_not_search_ids() {
+        let threads = vec![ThreadSummary {
+            id: "thread-12345678".to_owned(),
+            title: "Fix Dashboard".to_owned(),
+            is_pinned: false,
+            created_at: None,
+            updated_at: None,
+        }];
+        assert_eq!(filter_threads(threads.clone(), "dashboard").len(), 1);
+        assert!(filter_threads(threads.clone(), "12345678").is_empty());
+        assert!(filter_threads(threads, "Fix board").is_empty());
+    }
+
+    #[test]
+    fn pinned_threads_keep_their_recent_order_ahead_of_other_threads() {
+        let mut threads = normalize_threads(&json!({
+            "data": [
+                { "id": "thread-11111111", "title": "普通一", "isPinned": false },
+                { "id": "thread-22222222", "title": "固定一", "isPinned": true },
+                { "id": "thread-33333333", "title": "普通二", "isPinned": false },
+                { "id": "thread-44444444", "title": "固定二", "isPinned": true }
+            ]
+        }));
+        let pin_overrides = HashMap::from([
+            ("thread-11111111".to_owned(), true),
+            ("thread-22222222".to_owned(), false),
+        ]);
+        apply_pin_overrides(&mut threads, &pin_overrides);
+        assert_eq!(
+            threads
+                .iter()
+                .map(|thread| thread.id.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "thread-11111111",
+                "thread-44444444",
+                "thread-22222222",
+                "thread-33333333"
+            ]
+        );
+    }
+
+    #[test]
+    fn recognizes_old_codex_pinning_error() {
+        assert!(pinning_unavailable(
+            "thread metadata update must include at least one field"
+        ));
+        assert!(!pinning_unavailable("thread not found"));
+    }
+
+    #[tokio::test]
+    async fn pin_override_survives_state_reload() {
+        let path = std::env::temp_dir().join(format!(
+            "codex-desk-thread-pins-test-{}-{}.json",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("系统时间应晚于 Unix 纪元")
+                .as_nanos()
+        ));
+        let state = ThreadListState::new(path.clone());
+        state
+            .save_pin_override("thread-12345678", true)
+            .await
+            .expect("固定状态应能写入");
+        let reloaded = ThreadListState::new(path.clone());
+        assert_eq!(
+            reloaded.pin_overrides.lock().await.get("thread-12345678"),
+            Some(&true)
+        );
+        std::fs::remove_file(path).expect("应清理测试固定记录");
+    }
+
+    #[test]
+    fn older_turn_page_is_restored_to_chronological_message_order() {
+        let mut result = json!({ "thread": { "id": "thread-12345678", "turns": [] } });
+        let page = json!({
+            "data": [
+                { "id": "turn-new", "items": [{ "type": "agentMessage", "text": "新回复" }] },
+                { "id": "turn-old", "items": [{ "type": "agentMessage", "text": "旧回复" }] }
+            ],
+            "nextCursor": "older-cursor"
+        });
+        insert_page_turns(&mut result, &page).expect("分页数据应可注入会话");
+        let detail = normalize_thread_detail_with_limit(&result, None).expect("应可归一化分页");
+        assert_eq!(detail.messages[0].text, "旧回复");
+        assert_eq!(detail.messages[1].text, "新回复");
+        assert_eq!(page_cursor(&page).as_deref(), Some("older-cursor"));
     }
 
     #[test]
@@ -2134,6 +2431,7 @@ mod tests {
         let original = ThreadSummary {
             id: "thr_12345678".to_owned(),
             title: "缓存验证".to_owned(),
+            is_pinned: false,
             created_at: None,
             updated_at: Some(json!(1_700_000_000_i64)),
         };

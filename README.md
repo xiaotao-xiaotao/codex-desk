@@ -25,9 +25,9 @@
 - **Never lose track of your quota** — keep a floating desktop indicator visible, with optional alerts at 80%, 90%, and 100% usage.
 - **Return to useful work faster** — search local Codex sessions, inspect messages and file changes, then copy the exact `codex resume <session ID>` command.
 - **Understand how you use Codex** — explore activity trends, recurring topics, and Token usage by day or session.
-- **Keep your data on your machine** — data is read locally through `codex app-server --stdio` and local session files. Codex Desk never uploads your data or reads or stores `auth.json`.
+- **Keep your data on your machine** — data is read locally through the local shared Codex daemon and local session files. Codex Desk never uploads your data or reads or stores `auth.json`.
 
-Works with an already installed and signed-in [Codex CLI](https://github.com/openai/codex). If Codex Desk saves you time, a **Star** or an [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) helps the project reach more Codex users.
+Requires an installed and signed-in **Codex CLI ≥ 0.157.0** ([installation guide](https://github.com/openai/codex)). If Codex Desk saves you time, a **Star** or an [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) helps the project reach more Codex users.
 
 ## Download
 
@@ -37,7 +37,7 @@ Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao
 - **macOS**: download the `.dmg` installer that matches your Mac's chip.
 - **Linux**: download the `.deb` package for Debian/Ubuntu, or the `.AppImage` package for most other desktop distributions.
 
-Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
+Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) **version 0.157.0 or later** separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
 
 ### macOS installation
 
@@ -60,13 +60,14 @@ After installation, you still need to install and sign in to Codex CLI separatel
 - **Activity trends**: view the last 3, 7, or 30 days and independently show or hide messages, tool calls, file changes, and errors in a code-drawn line chart.
 - **Keyword cloud**: summarize recurring topics from user prompts over the selected range while filtering code blocks, URLs, and common technical noise.
 - **Token insights**: aggregate daily Token usage and per-session distribution for the last 3, 7, or 30 days from cumulative snapshots in local Codex session files; session details also show total, input, output, cached-input, and reasoning-output usage.
-- **Local sessions**: browse non-archived local sessions, search by title or session ID, and view creation and update times. Expanding the section adapts pagination to the available window height.
+- **Local sessions**: browse non-archived local sessions, pin frequently used sessions above the rest, search titles without case sensitivity, and view creation and update times. Expanding the section adapts pagination to the available window height.
+- When the installed Codex CLI does not support native pin metadata, Codex Desk stores pin choices in its local app data; they do not sync to other Codex clients.
 - **Focused dashboard layout**: expand Data insights or Local history to fill the window, and keep the window above other apps when needed.
-- **Session details and insights**: inspect user messages and Codex replies, with intermediate replies from the same turn collapsed under elapsed time while the final reply stays expanded. Expand the overview sidebar on demand, use full-area loading feedback while details are being read or refreshed, enlarge images in a dedicated preview, and copy messages with images when the system clipboard supports rich content. The detail view summarizes messages and tool calls, while the overview sidebar groups file changes, errors, and Token usage.
+- **Session details and insights**: inspect recent turns first and load older history on demand, with intermediate replies from the same turn collapsed under elapsed time while the final reply stays expanded. Expand the overview sidebar to load full-history counts and records, enlarge images in a dedicated preview, and copy messages with images when the system clipboard supports rich content. Message search covers loaded history.
 - **File change comparison**: aggregate file and tool activity below the relevant reply. File cards show filenames and added/removed line counts, and can be expanded before opening side-by-side or inline diffs. Historical diffs are shown from the session record and are not read from the current workspace.
 - **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
-- **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate Codex app-server and floating-orb instances.
+- **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate daemon connections and floating-orb instances.
 - **Local settings**: choose a Codex CLI executable or launcher path, an auto-refresh interval from 30 seconds to 10 minutes, and three ascending quota alert thresholds from 1% to 100%. Custom paths are validated with `codex --version` before saving.
 - **Connection recovery**: if the initial read fails, the dashboard shows a full-page connection state with a retry action. Repeated failures use bounded exponential backoff and return to the normal refresh schedule after recovery.
 - **Update notifications**: manually check the public version file from the dashboard; when a newer version is available, show its Release notes and provide a download link.
@@ -107,8 +108,16 @@ Only Codex Desk v1 bundles are supported. The app does not import Codex JSONL fi
 
 - Node.js 24 or later
 - Rust stable toolchain (only required for development and packaging), installed with `rustup`
-- Codex CLI installed and signed in
+- **Codex CLI ≥ 0.157.0**, installed and signed in
 - WebView2 on Windows (normally included with Windows 10/11)
+
+### Shared daemon lifecycle
+
+- Desk automatically runs `codex app-server daemon start`, reusing an existing daemon. It no longer starts a dedicated `app-server --stdio` instance.
+- Account and quota, session interactions, and background statistics use separate connections to the same local service.
+- Quitting or restarting Desk closes only its own connections and proxies. The shared daemon and other Codex clients remain running.
+- Check your CLI with `codex --version`; upgrade older versions with `npm install -g @openai/codex@latest`. Desk enforces the minimum version and has no legacy CLI fallback.
+- The CLI path in Settings launches the daemon and proxies. Changing it does not restart an existing shared daemon.
 
 ## Development
 

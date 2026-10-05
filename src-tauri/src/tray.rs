@@ -71,7 +71,7 @@ pub fn show_main_window(app: &AppHandle) {
     }
 }
 
-/// 应用退出时显式结束常驻 app-server，避免子进程依赖操作系统回收。
+/// 应用退出时只断开 Desk 的连接并回收 proxy，保留其他客户端共享的 daemon。
 pub fn close_app_server_and_exit(app: AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {

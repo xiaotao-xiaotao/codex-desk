@@ -463,6 +463,14 @@ const QUOTA_LABEL_TRANSLATIONS = {
   ko: { compactQuotaWindowDays: "{count}일", compactQuotaWindowHours: "{count}시간", usedPercent: "{used}% 사용", resetTime: "다음 재설정: {value}", resetCountdown: "다음 재설정: {value}", quotaWarning: "할당량 부족", quotaCritical: "할당량 소진", unknown: "알 수 없음" },
 };
 
+const SESSION_HISTORY_TRANSLATIONS = {
+  "zh-CN": { searchPlaceholder: "按会话标题搜索", pinThread: "固定会话", unpinThread: "取消固定", threadPinned: "会话已固定", threadUnpinned: "已取消固定", loadOlderTurns: "加载更早记录", loadingOlderTurns: "正在加载更早记录…", olderTurnsFailed: "加载更早记录失败：{error}", loadedHistoryOnly: "仅搜索已加载消息", loadedInsights: "已加载记录", loadingFullOverview: "正在汇总完整会话…" },
+  "zh-TW": { searchPlaceholder: "依工作階段標題搜尋", pinThread: "釘選工作階段", unpinThread: "取消釘選", threadPinned: "工作階段已釘選", threadUnpinned: "已取消釘選", loadOlderTurns: "載入更早記錄", loadingOlderTurns: "正在載入更早記錄…", olderTurnsFailed: "載入更早記錄失敗：{error}", loadedHistoryOnly: "僅搜尋已載入訊息", loadedInsights: "已載入記錄", loadingFullOverview: "正在彙總完整工作階段…" },
+  en: { searchPlaceholder: "Search session titles", pinThread: "Pin session", unpinThread: "Unpin session", threadPinned: "Session pinned", threadUnpinned: "Session unpinned", loadOlderTurns: "Load older history", loadingOlderTurns: "Loading older history…", olderTurnsFailed: "Could not load older history: {error}", loadedHistoryOnly: "Search covers loaded messages", loadedInsights: "Loaded history", loadingFullOverview: "Summarizing the full session…" },
+  ja: { searchPlaceholder: "セッション名で検索", pinThread: "セッションを固定", unpinThread: "固定を解除", threadPinned: "セッションを固定しました", threadUnpinned: "固定を解除しました", loadOlderTurns: "古い履歴を読み込む", loadingOlderTurns: "古い履歴を読み込み中…", olderTurnsFailed: "古い履歴を読み込めません：{error}", loadedHistoryOnly: "読み込み済みのメッセージのみ検索", loadedInsights: "読み込み済みの履歴", loadingFullOverview: "セッション全体を集計中…" },
+  ko: { searchPlaceholder: "세션 제목 검색", pinThread: "세션 고정", unpinThread: "고정 해제", threadPinned: "세션을 고정했습니다", threadUnpinned: "고정을 해제했습니다", loadOlderTurns: "이전 기록 불러오기", loadingOlderTurns: "이전 기록을 불러오는 중…", olderTurnsFailed: "이전 기록을 불러오지 못했습니다: {error}", loadedHistoryOnly: "불러온 메시지만 검색", loadedInsights: "불러온 기록", loadingFullOverview: "전체 세션을 집계하는 중…" },
+};
+
 // 低优先级文案先合并，后面的业务分组覆盖同名键，保持原有查询优先级。
 const TRANSLATION_SOURCES = [
   TRANSLATIONS,
@@ -476,6 +484,7 @@ const TRANSLATION_SOURCES = [
   PRODUCT_TRANSLATIONS,
   ACCOUNT_TRANSLATIONS,
   DIALOG_SEARCH_TRANSLATIONS,
+  SESSION_HISTORY_TRANSLATIONS,
   HOME_SUMMARY_TRANSLATIONS,
   MODULE_EXPAND_TRANSLATIONS,
   SESSION_SECTION_TRANSLATIONS,

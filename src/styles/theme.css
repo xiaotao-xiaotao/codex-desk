@@ -111,6 +111,10 @@
 :root[data-theme="dark"] .thread-select input { border-color: #607084; background-color: #111820; }
 :root[data-theme="dark"] .thread-select input:hover { border-color: #69b1ff; }
 :root[data-theme="dark"] .thread-select input:checked { border-color: #4096ff; background-color: #4096ff; }
+:root[data-theme="dark"] .thread-pin-button { color: #aab7c7; }
+:root[data-theme="dark"] .thread-pin-button.is-pinned { color: #69b1ff; }
+:root[data-theme="dark"] .thread-pin-button:hover:not(:disabled),
+:root[data-theme="dark"] .thread-pin-button:focus-visible { color: #69b1ff; background: #24354a; }
 :root[data-theme="dark"] .thread-meta time::before { background: #46576a; }
 :root[data-theme="dark"] .copy-icon-button { border: 0; color: #aab7c7; background: transparent; }
 :root[data-theme="dark"] .copy-icon-button:hover:not(:disabled) { border: 0; color: #e6edf3; background: #2a3544; }
@@ -195,6 +199,11 @@
 :root[data-theme="dark"] .activity-status-interrupted { color: #ffbb79; background: #402b18; }
 :root[data-theme="dark"] .activity-status-inProgress { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .message-list { background: #10151c; }
+:root[data-theme="dark"] .thread-history-bar { border-color: #2c3948; }
+:root[data-theme="dark"] .thread-history-hint { color: #8c9aab; }
+:root[data-theme="dark"] .thread-load-older { border-color: #37506b; color: #8dc5ff; background: #18212c; }
+:root[data-theme="dark"] .thread-load-older:hover:not(:disabled) { border-color: #367dc6; background: #1c3855; }
+:root[data-theme="dark"] .thread-history-error { color: #ff9191; }
 :root[data-theme="dark"] .message { border-color: #2c3948; color: #d9e2ec; background: #18212c; }
 :root[data-theme="dark"] .message-markdown blockquote { border-left-color: #526274; color: #b4c0ce; background: #151d27; }
 :root[data-theme="dark"] .message-markdown a { color: #79b8ff; text-decoration-color: rgba(121, 184, 255, .42); }

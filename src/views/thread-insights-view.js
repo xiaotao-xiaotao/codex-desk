@@ -23,6 +23,12 @@ export function createThreadInsightsView({ t }) {
       createSummaryItem(t("insightMessages"), insights.messages),
       createSummaryItem(t("insightToolCalls"), insights.toolCalls),
     );
+    if (!detail.overviewComplete) {
+      const scope = document.createElement("span");
+      scope.className = "insight-summary-scope";
+      scope.textContent = t("loadedInsights");
+      primary.append(scope);
+    }
     insightList.replaceChildren(primary);
   }
 

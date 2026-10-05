@@ -117,6 +117,8 @@ const dialogView = createThreadDialogView({
   copyText: copyToClipboard,
   copyMessage: copyMessageToClipboard,
   onRefreshThread: (threadId) => invoke("read_thread", { threadId }),
+  onLoadOlderTurns: (threadId, cursor) => invoke("read_thread_page", { threadId, cursor }),
+  onReadFullOverview: (threadId) => invoke("read_thread_full_overview", { threadId }),
   onReadLocalFile: (path) => invoke("read_local_text_preview", { path }),
   onExportThread: exportThreadFromDialog,
 });
@@ -146,6 +148,7 @@ const threadListView = createThreadListView({
   copyText: copyToClipboard,
   onOpenThread: openThread,
   onSelectionChange: setThreadSelected,
+  onTogglePinned: toggleThreadPinned,
 });
 
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
@@ -775,6 +778,19 @@ async function setExpanded(nextExpanded) {
   app.classList.toggle("is-expanded", expanded);
   app.classList.remove("is-collapsing");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
+}
+
+async function toggleThreadPinned(thread) {
+  try {
+    await invoke("set_thread_pinned", {
+      threadId: thread.id,
+      isPinned: !thread.isPinned,
+    });
+    await searchThreads(threadListView.getSearchQuery(), currentThreadPage, true);
+    setStatus(t(thread.isPinned ? "threadUnpinned" : "threadPinned"));
+  } catch (error) {
+    setStatus(t("readFailed", { error: String(error) }), "error");
+  }
 }
 
 function setupLanguageControls() {

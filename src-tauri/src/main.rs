@@ -135,6 +135,16 @@ async fn search_threads(
 }
 
 #[tauri::command]
+async fn set_thread_pinned(
+    state: State<'_, app_server::AppServerState>,
+    list_state: State<'_, threads::ThreadListState>,
+    thread_id: String,
+    is_pinned: bool,
+) -> Result<(), String> {
+    threads::set_thread_pinned(&state, &list_state, &thread_id, is_pinned).await
+}
+
+#[tauri::command]
 async fn list_threads_for_selection(
     state: State<'_, app_server::AppServerState>,
     list_state: State<'_, threads::ThreadListState>,
@@ -204,6 +214,23 @@ async fn read_thread(
 }
 
 #[tauri::command]
+async fn read_thread_page(
+    state: State<'_, app_server::AppServerState>,
+    thread_id: String,
+    cursor: String,
+) -> Result<threads::ThreadDetailPage, String> {
+    threads::read_thread_page(&state, &thread_id, &cursor).await
+}
+
+#[tauri::command]
+async fn read_thread_full_overview(
+    state: State<'_, app_server::AppServerState>,
+    thread_id: String,
+) -> Result<threads::ThreadFullOverview, String> {
+    threads::read_thread_full_overview(&state, &thread_id).await
+}
+
+#[tauri::command]
 async fn read_thread_trends(
     state: State<'_, app_server::AppServerState>,
     trend_state: State<'_, threads::ThreadTrendState>,
@@ -269,7 +296,7 @@ fn start_dragging(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 fn hide_window(window: WebviewWindow) -> Result<(), String> {
-    // 最小化后保留常驻 app-server，用户可从托盘菜单恢复悬浮窗。
+    // 最小化后保留 Desk 与共享 daemon 的连接，用户可从托盘菜单恢复悬浮窗。
     window
         .hide()
         .map_err(|error| format!("无法最小化悬浮窗：{error}"))
@@ -383,13 +410,14 @@ fn main() {
         .manage(app_server::AppServerState::default())
         .manage(local_usage::LocalUsageState::default())
         .manage(threads::ThreadTrendState::default())
-        .manage(threads::ThreadListState::default())
         .plugin(tauri_plugin_notification::init())
-        // 第二次启动由首个实例接收，并唤起已有窗口，避免重复启动 app-server 与悬浮窗。
+        // 第二次启动由首个实例接收，并唤起已有窗口，避免重复连接与悬浮窗。
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             tray::show_main_window(app);
         }))
         .setup(|app| {
+            let pin_path = app.path().app_local_data_dir()?.join("thread-pins.json");
+            app.manage(threads::ThreadListState::new(pin_path));
             tray::setup(app)?;
             if let Some(window) = app.get_webview_window("main") {
                 // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
@@ -419,11 +447,14 @@ fn main() {
             choose_cli_path,
             read_local_text_preview,
             search_threads,
+            set_thread_pinned,
             list_threads_for_selection,
             export_threads,
             choose_export_path,
             import_threads,
             read_thread,
+            read_thread_page,
+            read_thread_full_overview,
             read_thread_trends,
             read_token_usage,
             open_billing_page,
