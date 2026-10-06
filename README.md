@@ -106,7 +106,7 @@ Only Codex Desk v1 bundles are supported. The app does not import Codex JSONL fi
 
 ## Requirements
 
-- Node.js 24 or later
+- Node.js 24 or later (only required for Codex Desk development and packaging; Codex CLI dependencies depend on its installation method)
 - Rust stable toolchain (only required for development and packaging), installed with `rustup`
 - **Codex CLI ≥ 0.157.0**, installed and signed in
 - WebView2 on Windows (normally included with Windows 10/11)
@@ -136,6 +136,8 @@ npm run tauri dev
 ## Build
 
 Release metadata has a single source of truth: `version.json` in the repository root. For a new release, update its version, publication date, and localized release notes; Tauri, the installer, the Codex app-server client, and update checks all use that file.
+
+Push a `v<version>` tag matching the version file to build all platform installers with GitHub Actions and generate the Chinese and English Release body from that tag's `version.json`. Update checks read the version file directly from `main`, so push the tag promptly after merging release metadata and confirm that all platform builds succeed and all installers are uploaded to the Release.
 
 ```powershell
 npm run tauri build

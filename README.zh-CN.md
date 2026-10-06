@@ -131,7 +131,7 @@
 
 ## 运行要求
 
-- Node.js 24 或更高版本
+- Node.js 24 或更高版本（仅开发、打包 Codex Desk 所需；Codex CLI 的依赖取决于其安装方式）
 - Rust（仅开发、打包所需）：使用 `rustup` 安装稳定版工具链
 - 已安装并登录 **Codex CLI ≥ 0.157.0**；本应用通过本机共享 daemon 读取额度和会话数据，不读取或保存 `auth.json`
 - Windows 需要 WebView2（Windows 10/11 通常已内置）
@@ -167,6 +167,8 @@ npm run tauri dev
 ## 打包
 
 发布信息统一维护在仓库根目录的 `version.json`。新版本发布前只需修改其中的版本号、发布日期和多语言更新说明，Tauri、安装包、Codex app-server 客户端和更新检查都会读取该文件。
+
+推送与版本号一致的 `v<版本号>` 标签后，GitHub Actions 会构建各平台安装包，并从该标签下的 `version.json` 生成中英文 Release 正文。应用更新检查直接读取 `main` 分支的版本文件，合并版本信息后应及时推送标签，并确认各平台构建成功、Release 安装包上传齐全。
 
 ```powershell
 npm run tauri build

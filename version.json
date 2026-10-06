@@ -1,31 +1,46 @@
 {
-  "version": "1.2.1",
-  "publishedAt": "2026-09-23",
+  "version": "1.2.2",
+  "publishedAt": "2026-10-06",
   "releaseNotes": {
     "zh-CN": [
-      "新增可自定义的额度提醒阈值，并改进会话消息 Markdown 与图片预览",
-      "优化 Token 用量缓存和增量扫描，提升趋势与会话详情加载体验",
-      "修复托盘唤起焦点闪烁、会话 ID 显示和消息时间处理等问题"
+      "接入本机 Codex 共享 daemon，要求 Codex CLI ≥ 0.157.0；退出或重启 Desk 不停止共享服务",
+      "新增会话固定与历史回合分页，概览侧栏按需汇总完整会话；会话内搜索仅覆盖已加载消息",
+      "按本机自然日计算 Token 消耗增量，覆盖跨天续聊并过滤重复快照；会话分布仅统计所选区间用量",
+      "修复缺失或异常额度误显示为剩余 100% 的问题，避免无效数据触发提醒，并改进账号读取与刷新",
+      "统一界面排版与间距，优化窗口收起行为，并更新多语言文案",
+      "会话列表搜索调整为按标题包含匹配、忽略大小写，不再支持会话 ID 或字符子序列模糊匹配"
     ],
     "zh-TW": [
-      "新增可自訂的額度提醒門檻，並改進工作階段訊息 Markdown 與圖片預覽",
-      "最佳化 Token 用量快取與增量掃描，提升趨勢和工作階段詳情載入體驗",
-      "修正系統匣喚起焦點閃爍、工作階段 ID 顯示及訊息時間處理等問題"
+      "接入本機 Codex 共用 daemon，需要 Codex CLI ≥ 0.157.0；退出或重新啟動 Desk 不會停止共用服務",
+      "新增工作階段釘選與歷史回合分頁，概覽側欄按需彙整完整工作階段；階段內搜尋僅涵蓋已載入訊息",
+      "依本機自然日計算 Token 消耗增量，涵蓋跨日續聊並過濾重複快照；工作階段分佈僅統計所選區間用量",
+      "修正缺失或異常額度誤顯示為剩餘 100% 的問題，避免無效資料觸發提醒，並改善帳號讀取與重新整理",
+      "統一介面排版與間距，改善視窗收合行為，並更新多語言文案",
+      "工作階段列表搜尋改為標題包含比對、不區分大小寫，不再支援工作階段 ID 或字元子序列模糊比對"
     ],
     "en": [
-      "Added configurable quota alert thresholds and improved Markdown and image previews in sessions",
-      "Improved Token usage caching and incremental scanning for faster trends and session details",
-      "Fixed tray focus flicker, session ID display, and message timestamp handling"
+      "Connected to the local shared Codex daemon; requires Codex CLI ≥ 0.157.0. Quitting or restarting Desk leaves the shared service running",
+      "Added session pinning and turn pagination, with full-session summaries loaded on demand; in-session search covers loaded messages only",
+      "Calculate daily Token increments in the local time zone, covering resumed sessions across days and filtering duplicate snapshots; session distributions count only the selected range",
+      "Fixed missing or invalid quota appearing as 100% remaining, prevented alerts from invalid data, and improved account reads and refreshes",
+      "Standardized layout and spacing, improved window collapsing, and updated localized text",
+      "Session list search now uses case-insensitive title substring matching; session ID and character-subsequence fuzzy matching are no longer supported"
     ],
     "ja": [
-      "クォータ通知のしきい値設定に対応し、セッションの Markdown 表示と画像プレビューを改善",
-      "Token 使用量のキャッシュと増分スキャンを改善し、推移とセッション詳細の読み込みを高速化",
-      "トレイ操作時のフォーカスちらつき、セッション ID 表示、メッセージ時刻処理を修正"
+      "ローカルの Codex 共有 daemon に接続。Codex CLI ≥ 0.157.0 が必要です。Desk の終了や再起動時も共有サービスは継続します",
+      "セッションの固定と過去のターンのページ読み込みを追加。全履歴の概要は必要に応じて取得し、セッション内検索は読み込み済みのメッセージのみを対象とします",
+      "ローカル時間の暦日ごとに Token 消費の増分を計算し、日をまたぐ再開と重複スナップショットに対応。セッション別集計は選択期間の使用量のみを対象とします",
+      "未取得または無効なクォータが残り 100% と表示される問題を修正。無効なデータによる通知を防ぎ、アカウントの読み込みと更新を改善",
+      "画面のレイアウトと間隔を統一し、ウィンドウの折りたたみ動作と多言語の文言を改善",
+      "セッション一覧の検索を大文字・小文字を区別しないタイトルの部分一致に変更。セッション ID と文字の部分列によるあいまい一致は対象外になりました"
     ],
     "ko": [
-      "할당량 알림 임계값 설정을 추가하고 세션 Markdown 표시 및 이미지 미리보기를 개선",
-      "Token 사용량 캐시와 증분 스캔을 개선해 추세 및 세션 상세 로딩을 빠르게 개선",
-      "트레이 포커스 깜박임, 세션 ID 표시 및 메시지 시간 처리를 수정"
+      "로컬 Codex 공유 daemon에 연결하며 Codex CLI ≥ 0.157.0이 필요합니다. Desk를 종료하거나 재시작해도 공유 서비스는 계속 실행됩니다",
+      "세션 고정과 이전 턴 페이지 로딩을 추가하고 전체 세션 요약을 필요할 때 불러옵니다. 세션 내 검색은 로딩된 메시지만 대상으로 합니다",
+      "로컬 시간대의 날짜별 Token 소비 증분을 계산해 날짜를 넘긴 세션 재개를 반영하고 중복 스냅샷을 제외합니다. 세션별 분포는 선택 기간의 사용량만 집계합니다",
+      "누락되거나 잘못된 할당량이 잔여 100%로 표시되는 문제를 수정하고 잘못된 데이터의 알림을 방지했으며 계정 조회와 새로고침을 개선했습니다",
+      "화면 배치와 간격을 통일하고 창 접기 동작 및 다국어 문구를 개선했습니다",
+      "세션 목록 검색을 대소문자를 구분하지 않는 제목 부분 일치로 변경했습니다. 세션 ID 및 문자 부분 수열의 퍼지 검색은 더 이상 지원하지 않습니다"
     ]
   }
 }

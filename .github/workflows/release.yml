@@ -147,6 +147,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: 检出发布标签代码
+        uses: actions/checkout@v7
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # 与应用更新提示复用同一份文案，避免自动提交摘要遗漏升级要求和行为变化。
+      - name: 从版本文件生成发布说明
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const { version, publishedAt, releaseNotes } = JSON.parse(readFileSync('version.json', 'utf8'));
+          if (process.env.GITHUB_REF_NAME !== `v${version}`) {
+            throw new Error(`发布标签 ${process.env.GITHUB_REF_NAME} 与版本号 ${version} 不一致`);
+          }
+          const sections = [['zh-CN', '更新内容'], ['en', "What's changed"]];
+          const body = [`# Codex Desk v${version}`, '', `${publishedAt}`, ''];
+          for (const [language, heading] of sections) {
+            const notes = releaseNotes?.[language];
+            if (!Array.isArray(notes) || notes.length === 0 || notes.some(note => typeof note !== 'string' || !note.trim())) {
+              throw new Error(`缺少有效的 ${language} 发布说明`);
+            }
+            body.push(`## ${heading}`, '', ...notes.map(note => `- ${note}`), '');
+          }
+          writeFileSync('release-notes.md', body.join('\n'), 'utf8');
+          NODE
+
       - name: 下载所有安装包
         uses: actions/download-artifact@v8
         with:
@@ -156,7 +186,8 @@ jobs:
       - name: 创建 Release 并上传安装包
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: Codex Desk ${{ github.ref_name }}
+          body_path: release-notes.md
           files: |
             release-assets/**/*.dmg
             release-assets/**/*.msi
