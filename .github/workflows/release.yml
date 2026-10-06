@@ -186,7 +186,7 @@ jobs:
       - name: 创建 Release 并上传安装包
         uses: softprops/action-gh-release@v2
         with:
-          name: Codex Desk ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           body_path: release-notes.md
           files: |
             release-assets/**/*.dmg
