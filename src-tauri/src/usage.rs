@@ -6,7 +6,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-// 图表展示近 30 天，多保留几个有会话的日期以覆盖没有会话的自然日。
+// 图表展示近 30 天，本地按自然日保留额外余量。
 const LOCAL_FALLBACK_DAY_LIMIT: usize = 35;
 
 #[derive(Serialize)]
@@ -26,7 +26,7 @@ pub struct TokenUsageSnapshot {
     current_streak_days: Option<u64>,
     longest_streak_days: Option<u64>,
     daily_usage_buckets: Vec<TokenUsageBucket>,
-    /// 仅由本机 JSONL 会话快照生成，供按会话 Token 区间统计。
+    /// 仅由本机 JSONL 事件增量生成，供选定日期区间内的会话 Token 分布统计。
     local_session_usage: Vec<LocalSessionTokenUsage>,
 }
 

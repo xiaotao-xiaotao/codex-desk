@@ -28,7 +28,7 @@ const EXPANDED_THREAD_LAYOUT = {
   columns: 2,
   minRows: 10,
   maxRows: 15,
-  targetRowHeightPx: 60,
+  targetRowHeightPx: 64,
   rowGapPx: 8,
 };
 const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;

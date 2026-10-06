@@ -31,7 +31,11 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus, getT
     const primaryWindow = quota?.windows?.[0];
     if (!primaryWindow) return;
 
-    const used = Math.round(Number(primaryWindow.usedPercent));
+    const percentage = primaryWindow.usedPercent;
+    // 缺失值或非法数据不能作为额度已耗尽的依据。
+    if (typeof percentage !== "number" || !Number.isFinite(percentage)
+      || percentage < 0 || percentage > 100) return;
+    const used = Math.round(percentage);
     // 设置页按从低到高展示，判断时倒序查找，优先提醒本次已达到的最高档次。
     const thresholds = normalizeQuotaAlertThresholds(getThresholds?.()).sort((a, b) => b - a);
     const threshold = thresholds.find((value) => used >= value);

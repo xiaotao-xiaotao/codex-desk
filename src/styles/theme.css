@@ -1,4 +1,7 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
+:root[data-theme="dark"] .quota-card.is-unavailable { border-color: #2a3544; background: #151b23; box-shadow: inset 3px 0 0 #718096; }
+:root[data-theme="dark"] .quota-card.is-unavailable .quota-value strong,
+:root[data-theme="dark"] .quota-orb.is-unavailable .orb-value { color: #9aa9ba; }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { --token-distribution-color: #69b1ff; --token-distribution-hover-color: #8dc5ff; color: #e6edf3; color-scheme: dark; }
 /* 收起态窗口本身透明，悬浮球不投射阴影，避免桌面上出现误认为底色的灰色区域。 */
@@ -225,6 +228,7 @@
 :root[data-theme="dark"] .message-duration,
 :root[data-theme="dark"] .message-duration-disclosure summary { border-bottom-color: #2c3948; color: #98a7b8; }
 :root[data-theme="dark"] .message-turn-toggle:hover { color: #98c9ff; background: #183653; }
+:root[data-theme="dark"] .message-turn-toggle { color: #98a7b8; }
 :root[data-theme="dark"] .turn-id-badge { color: #91a0b0; background: transparent; }
 :root[data-theme="dark"] .turn-id-badge:hover:not(:disabled) { color: #b9d8f7; background: #1c2b3a; }
 :root[data-theme="dark"] .turn-id-badge span { color: #7f8d9d; }

@@ -542,6 +542,7 @@ dependencies = [
 name = "codex-desk"
 version = "0.0.0"
 dependencies = [
+ "chrono",
  "futures-util",
  "jieba-rs",
  "rfd",

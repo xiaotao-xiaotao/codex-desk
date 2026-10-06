@@ -11,6 +11,8 @@ serde_json = "1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+# 按本机自然日归档 rollout 事件，复用依赖树中已有的日期库。
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 # daemon 的本地 proxy 转发 WebSocket 字节；使用标准 WebSocket 库处理握手、掩码和控制帧。
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
 tokio-tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }

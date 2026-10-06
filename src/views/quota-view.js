@@ -26,14 +26,21 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     return remainingPercent <= 10 ? "critical" : remainingPercent <= 20 ? "warning" : "normal";
   }
 
+  function roundedPercent(value) {
+    return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100
+      ? Math.round(value) : null;
+  }
+
   function render(quota) {
     const primary = quota.windows?.[0];
-    const remaining = primary ? Math.round(primary.remainingPercent) : null;
+    const remaining = roundedPercent(primary?.remainingPercent);
     orbValue.textContent = remaining === null ? "--" : `${remaining}%`;
     // 悬浮球只呈现当前主额度窗口，Pro 等无短周期额度时会自然回退为 7 天窗口。
     orbLabel.textContent = primary ? formatOrbWindow(primary.durationMinutes) : t("remaining");
     orb.style.setProperty("--quota-progress", `${remaining === null ? 0 : remaining}%`);
     const primaryState = getQuotaState(remaining);
+    orb.classList.toggle("is-unavailable", remaining === null);
+    orbValue.title = remaining === null ? t("quotaDataUnavailable") : "";
     for (const state of ["normal", "warning", "critical"]) {
       orb.classList.toggle(`is-${state}`, primaryState === state);
     }
@@ -66,12 +73,14 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     quotaList.replaceChildren();
     quotaList.setAttribute("aria-busy", "false");
     for (const window of (quota.windows || [])) {
-      const remainingPercent = Math.round(window.remainingPercent);
-      const progress = Math.max(0, Math.min(100, window.remainingPercent));
+      const remainingPercent = roundedPercent(window.remainingPercent);
+      const usedPercent = roundedPercent(window.usedPercent);
+      const progress = remainingPercent === null ? 0 : window.remainingPercent;
       const item = document.createElement("article");
       item.className = "quota-card";
       const quotaState = getQuotaState(remainingPercent);
       item.classList.add(`is-${quotaState}`);
+      item.classList.toggle("is-unavailable", remainingPercent === null);
 
       // 每个额度窗口都展示名称，避免首个窗口因复用标题区而与其他卡片层级不一致。
       const name = document.createElement("h3");
@@ -80,12 +89,12 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
       const value = document.createElement("div");
       value.className = "quota-value";
       const remainingValue = document.createElement("strong");
-      remainingValue.textContent = `${remainingPercent}%`;
+      remainingValue.textContent = remainingPercent === null ? "--" : `${remainingPercent}%`;
       const remainingLabel = document.createElement("span");
-      remainingLabel.textContent = t("remaining");
+      remainingLabel.textContent = t(remainingPercent === null ? "quotaDataUnavailable" : "remaining");
       const used = document.createElement("span");
       used.className = "quota-used";
-      used.textContent = `（${t("usedPercent", { used: Math.round(window.usedPercent) })}）`;
+      used.textContent = usedPercent === null ? "" : `（${t("usedPercent", { used: usedPercent })}）`;
       if (quotaState !== "normal") {
         const alert = document.createElement("span");
         alert.className = "quota-alert";
@@ -118,6 +127,9 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     if (showOrbWarning) {
       orbValue.textContent = "!";
       orbLabel.textContent = t("unknown");
+      orb.classList.remove("is-warning", "is-critical");
+      orb.classList.add("is-normal", "is-unavailable");
+      orb.style.setProperty("--quota-progress", "0%");
     }
   }
 

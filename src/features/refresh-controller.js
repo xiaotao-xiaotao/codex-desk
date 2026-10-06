@@ -28,7 +28,7 @@ export function createRefreshController({
   onRetryStatusChange,
 }) {
   const INSIGHTS_CACHE_KEY = "codex-desk-insights-cache-v1";
-  const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v1";
+  const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v2";
   // 退避持续进行但设置上限，避免长期离线时把下一次重试推到不合理的未来。
   const MAX_AUTO_REFRESH_BACKOFF_MS = 24 * 60 * 60 * 1_000;
   // Token 账号汇总优先占用 App Server；趋势缓存已可即时展示，后台更新下一任务再启动。

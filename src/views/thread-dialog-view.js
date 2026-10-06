@@ -109,37 +109,43 @@ function createCollapsedMessagesDisclosure({
   const disclosure = document.createElement("details");
   disclosure.className = "message-duration-disclosure";
   const summary = document.createElement("summary");
-  // 原生 summary 会让整行都可点击；改由独立箭头控制，避免点击回合 ID 时误展开。
+  // 展开入口包含箭头与文字，回合 ID 仍独立复制，避免点击元信息时误展开。
   summary.tabIndex = -1;
   summary.addEventListener("click", (event) => event.preventDefault());
   const turnMeta = createMessageTurnMeta({
     t,
     message,
-    duration: duration ?? "—",
+    duration,
     onCopyTurnId,
-  });
-  if (turnMeta) {
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "message-turn-toggle";
-    toggle.textContent = "›";
-    const renderToggle = () => {
-      toggle.setAttribute("aria-expanded", String(disclosure.open));
-      toggle.title = toggle.ariaLabel = t(
-        disclosure.open ? "threadCollapseRecords" : "threadViewAllRecords",
-      );
-    };
-    toggle.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      disclosure.open = !disclosure.open;
-      renderToggle();
-    });
-    const durationLabel = turnMeta.querySelector(".message-turn-duration");
-    durationLabel?.append(toggle);
+  }) ?? document.createElement("span");
+  turnMeta.className = "message-turn-meta";
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "message-turn-toggle";
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "m9 6 6 6-6 6");
+  icon.append(path);
+  const label = document.createElement("span");
+  label.textContent = t("threadProcessRecords");
+  toggle.append(icon, label);
+  const renderToggle = () => {
+    toggle.setAttribute("aria-expanded", String(disclosure.open));
+    toggle.title = toggle.ariaLabel = t(
+      disclosure.open ? "threadCollapseRecords" : "threadViewAllRecords",
+    );
+  };
+  toggle.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    disclosure.open = !disclosure.open;
     renderToggle();
-    summary.append(turnMeta);
-  }
+  });
+  turnMeta.prepend(toggle);
+  renderToggle();
+  summary.append(turnMeta);
   const content = document.createElement("div");
   content.className = "message-collapsed-content";
   for (const text of collapsedMessages) {
@@ -412,7 +418,7 @@ export function createThreadDialogView({
         });
         actions.append(copy);
       }
-      // 过程消息与工具记录已收进“用时”区域，最终回复的操作栏保持在正文之后。
+      // 过程消息与工具记录收进“过程记录”区域，最终回复的操作栏保持在正文之后。
       if (actions.childElementCount > 0) entry.append(actions);
       messageList.append(entry);
     }

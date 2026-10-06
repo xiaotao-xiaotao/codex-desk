@@ -1,16 +1,16 @@
 .update-banner { position: absolute; z-index: 20; top: 58px; right: 14px; display: grid; width: min(430px, calc(100% - 28px)); grid-template-columns: 32px minmax(0, 1fr); gap: 10px; padding: 12px; border: 1px solid #cfe0f5; border-radius: 11px; color: #344154; background: rgba(255, 255, 255, .98); box-shadow: 0 14px 38px rgba(31, 41, 55, .2); }
 .update-banner[hidden] { display: none; }
-.update-banner-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; color: #fff; background: #1677ff; font-size: 1rem; font-weight: 800; }
+.update-banner-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; color: #fff; background: #1677ff; font-size: var(--font-title); font-weight: 800; }
 .update-banner-content { min-width: 0; }
-.update-banner h2 { margin: 1px 0 0; color: #263445; font-size: .8rem; line-height: 1.35; }
-.update-banner-version { margin: 7px 0 0; color: #738095; font-size: .64rem; line-height: 1.45; }
-.update-banner-notes { display: grid; max-height: 116px; gap: 4px; margin-top: 9px; overflow-y: auto; color: #526173; font-size: .67rem; line-height: 1.45; }
+.update-banner h2 { margin: 1px 0 0; color: #263445; font-size: var(--font-section); line-height: 1.35; }
+.update-banner-version { margin: 7px 0 0; color: #738095; font-size: var(--font-caption); line-height: 1.45; }
+.update-banner-notes { display: grid; max-height: 116px; gap: var(--space-xs); margin-top: 9px; overflow-y: auto; color: #526173; font-size: var(--font-caption); line-height: 1.45; }
 .update-banner-notes[hidden] { display: none; }
 .update-banner-notes p { position: relative; margin: 0; padding-left: 11px; }
 .update-banner-notes p::before { position: absolute; left: 0; color: #1677ff; content: "•"; }
 .update-banner-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
 .update-banner-actions[hidden] { display: none; }
-.update-banner-actions button { min-height: 27px; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: 6px; color: #607084; background: #fff; cursor: pointer; font-size: .64rem; font-weight: 700; }
+.update-banner-actions button { min-height: var(--control-size); padding: 0 9px; border: 1px solid #dbe2ea; border-radius: var(--control-radius); color: #607084; background: #fff; cursor: pointer; font-size: var(--font-caption); font-weight: 700; }
 .update-banner-actions button:hover { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
 .update-banner-actions .update-banner-primary { border-color: #1677ff; color: #fff; background: #1677ff; }
 .update-banner-actions .update-banner-primary:hover { border-color: #0958d9; color: #fff; background: #0958d9; }

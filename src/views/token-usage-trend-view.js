@@ -132,13 +132,12 @@ export function createTokenUsageTrendView({ t }) {
     const days = recentDayKeys(selectedDays);
     const firstDay = days[0];
     const lastDay = days.at(-1);
-    return (response?.localSessionUsage ?? []).filter((session) => {
-      const tokens = Number(session.tokens) || 0;
-      return tokens > 0
-        && typeof session.startDate === "string"
-        && session.startDate >= firstDay
-        && session.startDate <= lastDay;
-    });
+    // 同一会话跨天续聊时，只累计当前所选区间，避免把历史消耗归到创建日。
+    return (response?.localSessionUsage ?? []).map((session) => ({
+      tokens: (session.dailyUsage ?? [])
+        .filter((bucket) => bucket.startDate >= firstDay && bucket.startDate <= lastDay)
+        .reduce((sum, bucket) => sum + (Number(bucket.tokens) || 0), 0),
+    })).filter((session) => session.tokens > 0);
   }
 
   function distributionForRange() {
