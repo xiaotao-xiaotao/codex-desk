@@ -52,7 +52,7 @@ const selectedThreadCount = document.querySelector("#selected-thread-count");
 const dashboardLayout = document.querySelector(".dashboard-layout");
 const sidebarToggle = document.querySelector("#sidebar-toggle");
 const sidebarMediaQuery = window.matchMedia("(max-width: 760px)");
-// 窄屏默认收起；手动切换后尊重用户选择，避免尺寸变化反复覆盖状态。
+// 首次打开默认收起；手动切换后尊重用户选择，避免尺寸变化反复覆盖状态。
 let sidebarCollapsedPreference = null;
 const dashboardNav = document.querySelector(".dashboard-nav");
 const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-section]")];
@@ -334,7 +334,7 @@ function setDashboardSection(nextSection) {
 }
 
 function renderSidebar() {
-  const collapsed = sidebarCollapsedPreference ?? sidebarMediaQuery.matches;
+  const collapsed = sidebarCollapsedPreference ?? true;
   dashboardLayout.classList.toggle("is-sidebar-collapsed", collapsed);
   sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
   sidebarToggle.title = sidebarToggle.ariaLabel = t(collapsed ? "expandSidebar" : "collapseSidebar");
