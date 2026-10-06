@@ -10,6 +10,10 @@
 /* 常规卡片以标题栏和图表两段组成；图表占满各自剩余高度，避免 Token 卡底部留白。 */
 .insights-layout .trend-section:not(.is-chart-expanded) { display: grid; grid-template-rows: auto minmax(0, 1fr); }
 .insights-layout .trend-section:not(.is-chart-expanded) .thread-trend-chart { height: auto; min-height: 0; }
+/* 会话收起后的 580px 窗口需为状态栏预留空间，避免统一字号后正常内容也触发整页滚动。 */
+@media (min-width: 701px) {
+  .panel.is-sessions-collapsed:not(.is-module-expanded) .insights-layout { --insight-card-height: 136px; }
+}
 .activity-trend-section { grid-area: activity; }
 .token-usage-section { grid-area: tokens; }
 .word-cloud-section { display: grid; grid-area: topics; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
