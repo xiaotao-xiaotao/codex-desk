@@ -24,14 +24,12 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
 button, input { font: inherit; }
 .float-app { position: relative; width: 100%; height: 100%; }
 
-.panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 3px 8px 6px; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
-/* 固定窗口高度下，错误提示或窄屏布局变长时允许滚动查看完整内容。 */
-.panel.is-sessions-collapsed:not(.is-module-expanded) { overflow-y: auto; }
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
 .is-expanded .panel { opacity: 1; pointer-events: auto; transform: scale(1); }
 .is-expanded .quota-orb { opacity: 0; pointer-events: none; transform: scale(.78); }
 /* 收窗前两层都立即隐藏，避免原生窗口先缩小时把旧面板裁成一块短暂残影。 */
 .is-collapsing .panel, .is-collapsing .quota-orb { visibility: hidden; transition: none; }
-.panel-header { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-md); margin: 0 0 2px; padding: 2px 8px; border: 1px solid #e7e9ee; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(31, 35, 41, .03); user-select: text; }
+.panel-header { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-md); min-height: 46px; margin: 0; padding: 7px 14px; border-bottom: 1px solid #e7edf5; background: #fff; user-select: text; }
 /* 仅中间空白拖动区移动窗口，标题和其余文字始终可以正常框选、复制。 */
 .window-drag-region { min-width: 16px; align-self: stretch; flex: 1 1 auto; cursor: grab; user-select: none; }
 .window-drag-region:active { cursor: grabbing; }
@@ -67,8 +65,8 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .dashboard-retry-button { min-width: 88px; padding: 7px 16px; border: 1px solid #1677ff; border-radius: var(--control-radius); color: #fff; background: #1677ff; font: inherit; font-size: var(--font-body); font-weight: 700; cursor: pointer; }
 .dashboard-retry-button:hover { border-color: #4096ff; background: #4096ff; }
 .dashboard-retry-button:focus-visible { outline: 2px solid rgba(22, 119, 255, .3); outline-offset: 2px; }
-.panel.is-dashboard-unavailable > .dashboard-section,
-.panel.is-dashboard-unavailable > .status { display: none; }
+.panel.is-dashboard-unavailable .dashboard-page,
+.panel.is-dashboard-unavailable .status { display: none; }
 
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: 6px; }
 .section-kicker { margin: 0 0 1px; color: #8b95a1; font-size: var(--font-caption); font-weight: 700; letter-spacing: .04em; }
@@ -78,37 +76,75 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .section-title-row .section-kicker::after { margin-left: 5px; color: #d4dce5; content: "｜"; }
 .section-title-row h2 { color: #8b95a1; font-size: var(--font-caption); font-weight: 700; letter-spacing: .04em; }
 
-/* 一级模块保留标题栏空白区双击快捷操作；可见入口收敛为标题右侧的图标按钮。 */
-.module-expand-trigger { position: relative; display: grid; min-width: 0; grid-template-columns: max-content minmax(0, 1fr) max-content; align-items: center; column-gap: var(--space-sm); cursor: default; outline: 0; user-select: none; }
-.module-expand-trigger > .section-title-row { grid-column: 1; cursor: text; user-select: text; }
-.module-expand-trigger > .insights-heading-actions,
-.module-expand-trigger > .sessions-heading-actions { grid-column: 3; justify-self: end; }
-.insights-heading-actions { display: flex; align-items: center; gap: var(--space-xs); }
-.module-expand-button { display: grid; width: var(--control-size); height: var(--control-size); flex: 0 0 var(--control-size); padding: 0; place-items: center; border: 1px solid transparent; border-radius: var(--control-radius); color: #91a0b1; background: transparent; cursor: pointer; transition: color .16s ease, border-color .16s ease, background-color .16s ease; }
-.module-expand-button:hover { border-color: #d4e6fb; color: #1668c6; background: #f2f7ff; }
-.module-expand-button:focus-visible { border-color: #91caff; outline: 0; color: #1668c6; background: #f2f7ff; box-shadow: 0 0 0 2px rgba(22, 119, 255, .12); }
-.module-expand-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
-.module-expand-icon-restore { display: none; }
-.module-expand-trigger.is-module-expanded .module-expand-icon-expand { display: none; }
-.module-expand-trigger.is-module-expanded .module-expand-icon-restore { display: block; }
-/* 放大态保持在当前窗口内，顶部程序栏仍可操作；未放大的模块只隐藏，不改变其原布局状态。 */
-.panel.is-module-expanded > .dashboard-section:not(.is-module-expanded),
-.panel.is-module-expanded > .status { opacity: 0; pointer-events: none; user-select: none; }
-.panel > .dashboard-section.is-module-expanded { position: absolute; z-index: 30; inset: 42px 8px 6px; min-height: 0; margin: 0; padding: 12px; overflow: hidden; border-color: #d9e3ee; box-shadow: 0 16px 38px rgba(15, 23, 42, .14); isolation: isolate; }
-.panel > .insights-overview.is-module-expanded { display: flex; flex-direction: column; gap: var(--space-sm); }
-.insights-overview.is-module-expanded .insights-overview-heading { flex: 0 0 auto; margin-bottom: 0; }
-.insights-overview.is-module-expanded .insights-layout { flex: 1 1 auto; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); }
-.insights-overview.is-module-expanded .word-cloud,
-.insights-overview.is-module-expanded .word-cloud-section { min-height: 0; }
-.sessions-section.is-module-expanded { display: flex; flex-direction: column; }
-.sessions-section.is-module-expanded .section-heading { flex: 0 0 auto; margin-bottom: 8px; padding-bottom: 5px; }
-.sessions-section.is-module-expanded .sessions-content { min-height: 0; }
-.sessions-section.is-module-expanded .section-collapse-button { display: none; }
-/* 行数由容器高度同步：维持紧凑卡片，优先增加可见会话数而非拉伸卡片。 */
-.sessions-section.is-module-expanded .thread-list { grid-template-rows: repeat(var(--expanded-thread-row-count, 10), minmax(60px, 1fr)); }
-
 .status { flex: 0 0 auto; min-height: 13px; margin: 2px 0 0; color: #637286; font-size: var(--font-caption); }
 .status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: var(--font-caption); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .status[data-kind="warning"] { color: #ad6800; }
 .status[data-kind="error"] { color: #cf1322; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+
+/* 导航与内容共享固定窗口；滚动留在各栏目内部，侧栏和全局操作始终可用。 */
+.dashboard-layout { display: grid; grid-template-columns: 156px minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
+.dashboard-sidebar { display: flex; min-height: 0; flex-direction: column; gap: 30px; padding: 24px 12px 18px; border-right: 1px solid #e4ecf7; background: linear-gradient(165deg, #f1f7ff, #f8faff 70%); }
+.sidebar-brand { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 4px; padding: 0; color: #526780; font-size: 12px; letter-spacing: -.025em; }
+.sidebar-brand-name { display: flex; min-width: 0; align-items: center; gap: 4px; white-space: nowrap; }
+.sidebar-brand-icon { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: #1677ff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-brand strong { color: #172f51; font-weight: 750; }
+.sidebar-toggle { display: grid; width: 28px; height: 28px; flex: 0 0 auto; padding: 5px; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
+.sidebar-toggle:hover { color: #1668c6; background: #e4efff; }
+.sidebar-toggle:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
+.sidebar-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dashboard-nav { display: flex; flex-direction: column; gap: 8px; }
+.dashboard-nav-button { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; color: #5f7189; background: transparent; text-align: left; font-size: var(--font-body); font-weight: 600; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease; }
+.dashboard-nav-button svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.dashboard-nav-button:hover { color: #1668c6; background: #eaf3ff; transform: translateX(2px); }
+.dashboard-nav-button:active { transform: scale(.98); }
+.dashboard-nav-button.is-active { border-color: #d7e7ff; color: #1668c6; background: #e6f1ff; font-weight: 750; }
+.dashboard-nav-button.is-active::before { position: absolute; top: 13px; bottom: 13px; left: -1px; width: 3px; border-radius: 0 3px 3px 0; background: #1677ff; content: ""; }
+.dashboard-nav-button:focus-visible { outline: 2px solid #1677ff; outline-offset: 3px; }
+:root[lang="en"] .dashboard-nav-button { font-size: 12px; }
+.dashboard-workspace { display: flex; min-width: 0; min-height: 0; flex-direction: column; padding: 16px 20px 12px; }
+.dashboard-page { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; animation: dashboard-page-enter .2s ease-out; }
+.dashboard-workspace > .dashboard-page[hidden] { display: none; }
+.dashboard-page:focus-visible { outline: 2px solid #91caff; outline-offset: 5px; border-radius: 6px; }
+.dashboard-workspace > .status { min-height: 26px; margin: 12px 0 0; padding-top: 8px; border-top: 1px solid #e7edf5; font-size: 10px; line-height: 1.5; }
+.dashboard-loading-overlay { --loading-overlay-inset: 47px 0 0 var(--dashboard-sidebar-width, 156px); border-radius: 0 0 17px 0; }
+
+@keyframes dashboard-page-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 收起只隐藏栏目文字，保留导航、设置和恢复入口；内容区自动获得剩余宽度。 */
+.dashboard-layout.is-sidebar-collapsed { grid-template-columns: 62px minmax(0, 1fr); }
+.is-sidebar-collapsed .dashboard-sidebar { align-items: center; gap: 30px; padding-left: 8px; padding-right: 8px; }
+.is-sidebar-collapsed .sidebar-brand { justify-content: center; padding: 0; }
+.is-sidebar-collapsed .sidebar-brand > span { display: none; }
+.is-sidebar-collapsed .sidebar-toggle-chevron { transform: rotate(180deg); transform-origin: 14.5px 12px; }
+.is-sidebar-collapsed .dashboard-nav { width: 100%; }
+.is-sidebar-collapsed .dashboard-nav-button { justify-content: center; padding-left: 0; padding-right: 0; }
+.is-sidebar-collapsed .dashboard-nav-button > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.panel:has(.is-sidebar-collapsed) { --dashboard-sidebar-width: 62px; }
+@media (max-width: 760px) {
+  .dashboard-workspace { padding: 14px 16px 10px; }
+  .title-row .eyebrow { display: none; }
+}
+@media (max-width: 560px) {
+  .panel-header { flex-wrap: wrap; gap: 4px; padding: 8px 10px; }
+  .header-actions { justify-content: flex-end; width: 100%; }
+  .dashboard-workspace { padding: 12px 12px 10px; }
+  .dashboard-loading-overlay { --loading-overlay-inset: 75px 0 0 var(--dashboard-sidebar-width, 156px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel, .dashboard-nav-button, .progress-track span { transition: none; }
+  .dashboard-page { animation: none; }
+}
+
+/* 常驻偏好操作置于侧栏底部，和栏目导航使用一致的点击区域。 */
+.sidebar-bottom { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+.sidebar-utilities { display: flex; align-items: center; gap: 6px; padding: 0 6px; }
+.sidebar-utility-button { min-height: 38px; padding-top: 8px; padding-bottom: 8px; font-weight: 500; }
+.sidebar-utilities #theme-button { width: 30px; flex: 0 0 30px; justify-content: center; padding: 6px; }
+.sidebar-utilities #theme-label { display: none; }
+.sidebar-utilities #settings-button { flex: 1; width: auto; padding: 8px 4px; }
+.sidebar-utilities #settings-button > svg { display: none; }
+.is-sidebar-collapsed .sidebar-bottom { width: 100%; }
+.is-sidebar-collapsed .sidebar-utilities { flex-direction: column; padding: 0; }
+.is-sidebar-collapsed .sidebar-utilities #settings-button { flex: 0 0 auto; width: 100%; justify-content: center; }
+.is-sidebar-collapsed .sidebar-utilities #settings-button > svg { display: block; }

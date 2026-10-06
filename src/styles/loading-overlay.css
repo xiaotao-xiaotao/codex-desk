@@ -4,6 +4,6 @@
 .loading-overlay[data-kind="error"] { color: #cf1322; }
 .loading-overlay[data-kind="error"] .loading-overlay-spinner { display: none; }
 .dashboard-loading-overlay { --loading-overlay-inset: 59px 10px 10px; border-radius: 11px; }
-.thread-loading-overlay { --loading-overlay-inset: 42px 0 0; }
+.thread-loading-overlay { --loading-overlay-inset: var(--thread-toolbar-height, 64px) 0 0; }
 
 @keyframes loading-overlay-rotate { to { transform: rotate(360deg); } }

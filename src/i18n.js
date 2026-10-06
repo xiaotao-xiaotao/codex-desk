@@ -31,7 +31,7 @@ const TRANSLATIONS = {
   },
   en: {
     pinWindow: "Keep window on top", unpinWindow: "Stop keeping window on top", windowAlwaysOnTopFailed: "Could not change the always-on-top state: {error}",
-    appTitle: "Codex Desk", secureAccess: "Local secure access", remaining: "Left", accountUsage: "ACCOUNT USAGE", quotaOverview: "Quota overview", quotaWindow: "Quota window", quotaWindowDays: "{count} days", quotaWindowHours: "{count} hours", quotaWindowMinutes: "{count} min", localHistory: "LOCAL HISTORY", searchPlaceholder: "Search title or session ID", localOnly: "Local data only", previousPage: "Previous", nextPage: "Next", threadDetail: "Session details", closeThreadDetail: "Close session details", minimize: "Minimize to system tray", collapse: "Collapse to floating orb", refresh: "Refresh now", quit: "Quit", expandOrb: "Expand Codex quota details", collapseOrb: "Collapse Codex Desk", orbTitle: "Click to expand, drag to move", theme: "Theme", themeSystem: "System", themeLight: "Light", themeDark: "Dark", language: "Language", languageSystem: "System", languageZhCN: "简体中文", languageZhTW: "繁體中文", languageEn: "English", languageJa: "日本語", languageKo: "한국어", readingLocalData: "Reading local Codex data…", readingThread: "Reading session…", readingSearch: "Searching…", readFailed: "Read failed: {error}", threadReadFailed: "Could not read sessions. Confirm that this Codex version supports session lists.", noMatches: "No matching recent sessions.", noThreads: "No local sessions to display.", searchMatches: "{total} matches", viewingThread: "View session: {title}", copyId: "Copy ID", copied: "Copied", copyFailed: "Failed", copy: "Copy", copyFailedLong: "Copy failed", updatedUnknown: "Update time unavailable", resetUnknown: "Reset time unavailable", resetCredits: "Reset credits: {credits}", syncedStatus: "Local Codex synced{plan} (local data only · refreshes in {seconds}s)", planPrefix: " · {plan}", noMessages: "This session has no user messages or Codex replies to display.", you: "You", codex: "Codex", windowResizeFailed: "Could not resize floating window: {error}", windowMaximizeFailed: "Could not toggle window maximization: {error}", initializationFailed: "Initialization failed: {error}", clipboardDenied: "The system did not allow clipboard access", localFilePreview: "Preview local file", localFileLoading: "Reading file…", localFileTruncated: "Large file: showing only the beginning ({size} bytes total)", localFileReadFailed: "Could not preview file: {error}",
+    appTitle: "Codex Desk", secureAccess: "Local secure access", remaining: "Left", accountUsage: "Account usage", quotaOverview: "Quota overview", quotaWindow: "Quota window", quotaWindowDays: "{count} days", quotaWindowHours: "{count} hours", quotaWindowMinutes: "{count} min", localHistory: "Local history", searchPlaceholder: "Search title or session ID", localOnly: "Local data only", previousPage: "Previous", nextPage: "Next", threadDetail: "Session details", closeThreadDetail: "Close session details", minimize: "Minimize to system tray", collapse: "Collapse to floating orb", refresh: "Refresh now", quit: "Quit", expandOrb: "Expand Codex quota details", collapseOrb: "Collapse Codex Desk", orbTitle: "Click to expand, drag to move", theme: "Theme", themeSystem: "System", themeLight: "Light", themeDark: "Dark", language: "Language", languageSystem: "System", languageZhCN: "简体中文", languageZhTW: "繁體中文", languageEn: "English", languageJa: "日本語", languageKo: "한국어", readingLocalData: "Reading local Codex data…", readingThread: "Reading session…", readingSearch: "Searching…", readFailed: "Read failed: {error}", threadReadFailed: "Could not read sessions. Confirm that this Codex version supports session lists.", noMatches: "No matching recent sessions.", noThreads: "No local sessions to display.", searchMatches: "{total} matches", viewingThread: "View session: {title}", copyId: "Copy ID", copied: "Copied", copyFailed: "Failed", copy: "Copy", copyFailedLong: "Copy failed", updatedUnknown: "Update time unavailable", resetUnknown: "Reset time unavailable", resetCredits: "Reset credits: {credits}", syncedStatus: "Local Codex synced{plan} (local data only · refreshes in {seconds}s)", planPrefix: " · {plan}", noMessages: "This session has no user messages or Codex replies to display.", you: "You", codex: "Codex", windowResizeFailed: "Could not resize floating window: {error}", windowMaximizeFailed: "Could not toggle window maximization: {error}", initializationFailed: "Initialization failed: {error}", clipboardDenied: "The system did not allow clipboard access", localFilePreview: "Preview local file", localFileLoading: "Reading file…", localFileTruncated: "Large file: showing only the beginning ({size} bytes total)", localFileReadFailed: "Could not preview file: {error}",
   },
   ja: {
     pinWindow: "常に最前面に表示", unpinWindow: "最前面表示を解除", windowAlwaysOnTopFailed: "最前面表示を切り替えられません：{error}",
@@ -274,11 +274,11 @@ const TOKEN_USAGE_TRANSLATIONS = {
 
 // 三张洞察图共用同一时间范围；词云文案独立维护以保持卡片足够紧凑。
 const WORD_CLOUD_TRANSLATIONS = {
-  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudWordCount: "{word}：出现 {count} 次", wordCloudExpand: "双击放大词云", wordCloudCollapse: "双击词云或按 Esc 退出放大视图", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
-  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudWordCount: "{word}：出現 {count} 次", wordCloudExpand: "按兩下放大詞雲", wordCloudCollapse: "按兩下詞雲或按 Esc 離開放大檢視", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
-  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudWordCount: "{word}: {count} occurrences", wordCloudExpand: "Double-click to expand the keyword cloud", wordCloudCollapse: "Double-click the keyword cloud or press Esc to exit the expanded view", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
-  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudWordCount: "{word}：{count} 回", wordCloudExpand: "ダブルクリックでキーワードクラウドを拡大", wordCloudCollapse: "キーワードクラウドをダブルクリックするか Esc キーで拡大表示を終了", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
-  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudWordCount: "{word}: {count}회", wordCloudExpand: "두 번 클릭하여 워드클라우드 확대", wordCloudCollapse: "워드클라우드를 두 번 클릭하거나 Esc를 눌러 확대 보기 종료", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
+  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudWordCount: "{word}：出现 {count} 次", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
+  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudWordCount: "{word}：出現 {count} 次", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
+  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudWordCount: "{word}: {count} occurrences", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
+  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudWordCount: "{word}：{count} 回", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
+  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudWordCount: "{word}: {count}회", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
 };
 
 const SESSION_ANALYTICS_TRANSLATIONS = {
@@ -288,8 +288,9 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     recentThreads: "最近更新的会话",
     searchThreads: "搜索最近更新的会话",
     searchTotal: "共 {total} 个本机会话",
-    updated: "最后更新：{value}",
-    created: "创建：{value}",
+    threadIdLabel: "会话ID：",
+    updated: "最后更新时间：{value}",
+    created: "创建时间：{value}",
     threadStatusUnknown: "未提供",
     threadFileChangesRecord: "文件变更记录", threadIssuesRecord: "失败与中断", threadRecordCount: "共 {count} 条", threadNoFileChanges: "暂无文件变更", threadNoIssues: "暂无异常记录", threadViewAllRecords: "查看全部", threadCollapseRecords: "收起", threadTokenUsage: "Token 用量", threadTokenCompact: "{total} Token", threadTokenTotal: "总消耗：{total} Token", threadTokenInputOutput: "输入：{input} ｜输出：{output}", threadTokenCached: "缓存输入：{tokens}", threadTokenReasoning: "推理输出：{tokens}", threadTokenUnavailable: "当前会话未保存 Token 快照。", threadMessageDuration: "用时 {value}", threadTurnId: "会话ID:", threadExport: "导出会话", threadCopyId: "复制会话 ID", threadRefresh: "刷新", threadMoreActions: "更多操作",
   },
@@ -299,8 +300,9 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     recentThreads: "最近更新的工作階段",
     searchThreads: "搜尋最近更新的工作階段",
     searchTotal: "共 {total} 個本機工作階段",
-    updated: "最後更新：{value}",
-    created: "建立：{value}",
+    threadIdLabel: "工作階段 ID：",
+    updated: "最後更新時間：{value}",
+    created: "建立時間：{value}",
     threadStatusUnknown: "未提供",
     threadFileChangesRecord: "檔案變更記錄", threadIssuesRecord: "失敗與中斷", threadRecordCount: "共 {count} 筆", threadNoFileChanges: "暫無檔案變更", threadNoIssues: "暫無異常記錄", threadViewAllRecords: "檢視全部", threadCollapseRecords: "收合", threadTokenUsage: "Token 用量", threadTokenCompact: "{total} Token", threadTokenTotal: "總消耗：{total} Token", threadTokenInputOutput: "輸入：{input} ｜輸出：{output}", threadTokenCached: "快取輸入：{tokens}", threadTokenReasoning: "推理輸出：{tokens}", threadTokenUnavailable: "目前工作階段未儲存 Token 快照。", threadMessageDuration: "耗時 {value}", threadTurnId: "工作階段 ID：", threadExport: "匯出工作階段", threadCopyId: "複製工作階段 ID", threadRefresh: "重新整理", threadMoreActions: "更多操作",
   },
@@ -311,6 +313,7 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     searchThreads: "Search recently updated sessions",
     searchTotal: "{total} local sessions",
     updated: "Last updated: {value}",
+    threadIdLabel: "Session ID:",
     created: "Created: {value}",
     threadStatusUnknown: "Unavailable",
     threadFileChangesRecord: "FILE CHANGES", threadIssuesRecord: "FAILURES & INTERRUPTIONS", threadRecordCount: "{count} total", threadNoFileChanges: "No file changes", threadNoIssues: "No issues", threadViewAllRecords: "View all", threadCollapseRecords: "Collapse", threadTokenUsage: "TOKEN USAGE", threadTokenCompact: "{total} tokens", threadTokenTotal: "Total: {total} tokens", threadTokenInputOutput: "Input: {input} | Output: {output}", threadTokenCached: "Cached input: {tokens}", threadTokenReasoning: "Reasoning output: {tokens}", threadTokenUnavailable: "No Token snapshot is saved for this session.", threadMessageDuration: "Took {value}", threadTurnId: "Session ID:", threadExport: "Export", threadCopyId: "Copy session ID", threadRefresh: "Refresh", threadMoreActions: "More actions",
@@ -322,11 +325,13 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     searchThreads: "最近更新したセッションを検索",
     searchTotal: "ローカルセッション：{total} 件",
     updated: "最終更新：{value}",
+    threadIdLabel: "セッション ID：",
     created: "作成：{value}",
     threadStatusUnknown: "未提供",
     threadFileChangesRecord: "ファイル変更", threadIssuesRecord: "失敗と中断", threadRecordCount: "{count} 件", threadNoFileChanges: "ファイル変更はありません", threadNoIssues: "例外はありません", threadViewAllRecords: "すべて表示", threadCollapseRecords: "折りたたむ", threadTokenUsage: "Token 使用量", threadTokenCompact: "{total} Token", threadTokenTotal: "合計：{total} Token", threadTokenInputOutput: "入力：{input} ｜出力：{output}", threadTokenCached: "キャッシュ入力：{tokens}", threadTokenReasoning: "推論出力：{tokens}", threadTokenUnavailable: "このセッションの Token スナップショットはありません。", threadMessageDuration: "所要時間 {value}", threadTurnId: "セッション ID：", threadExport: "エクスポート", threadCopyId: "セッション ID をコピー", threadRefresh: "更新", threadMoreActions: "その他の操作",
   },
   ko: {
+    threadIdLabel: "세션 ID:",
     threadExpandSidebar: "세션 개요 펼치기",
     threadCollapseSidebar: "세션 개요 접기",
     recentThreads: "최근 업데이트된 세션",
@@ -438,18 +443,23 @@ const HOME_SUMMARY_TRANSLATIONS = {
 
 const DIALOG_SEARCH_TRANSLATIONS = {
   "zh-CN": {
+    threadBackToHistory: "返回历史",
     searchThreadMessages: "搜索当前会话", searchThreadMessagesPlaceholder: "搜索当前会话内容", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "无匹配", threadTruncated: "该会话较长，仅搜索并显示最近 500 条消息。",
   },
   "zh-TW": {
+    threadBackToHistory: "返回歷史",
     searchThreadMessages: "搜尋目前工作階段", searchThreadMessagesPlaceholder: "搜尋目前工作階段內容", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "沒有符合項目", threadTruncated: "此工作階段較長，僅搜尋並顯示最近 500 則訊息。",
   },
   en: {
+    threadBackToHistory: "Back to history",
     searchThreadMessages: "Search this session", searchThreadMessagesPlaceholder: "Search messages", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "No matches", threadTruncated: "This session is long; only the latest 500 messages can be searched and displayed.",
   },
   ja: {
+    threadBackToHistory: "履歴に戻る",
     searchThreadMessages: "このセッションを検索", searchThreadMessagesPlaceholder: "メッセージを検索", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "一致なし", threadTruncated: "このセッションは長いため、最新 500 件のメッセージのみ検索・表示できます。",
   },
   ko: {
+    threadBackToHistory: "기록으로 돌아가기",
     searchThreadMessages: "현재 세션 검색", searchThreadMessagesPlaceholder: "메시지 검색", threadSearchMatches: "{current} / {total}", threadSearchNoMatches: "일치 항목 없음", threadTruncated: "이 세션은 길어서 최근 500개 메시지만 검색하고 표시합니다.",
   },
 };
@@ -471,8 +481,44 @@ const SESSION_HISTORY_TRANSLATIONS = {
   ko: { threadProcessRecords: "처리 기록", searchPlaceholder: "세션 제목 검색", pinThread: "세션 고정", unpinThread: "고정 해제", threadPinned: "세션을 고정했습니다", threadUnpinned: "고정을 해제했습니다", loadOlderTurns: "이전 기록 불러오기", loadingOlderTurns: "이전 기록을 불러오는 중…", olderTurnsFailed: "이전 기록을 불러오지 못했습니다: {error}", loadedHistoryOnly: "불러온 메시지만 검색", loadedInsights: "불러온 기록", loadingFullOverview: "전체 세션을 집계하는 중…" },
 };
 
+const NAVIGATION_TRANSLATIONS = {
+  "zh-CN": { mainNavigation: "主导航", collapseSidebar: "收起侧栏", expandSidebar: "展开侧栏" },
+  "zh-TW": { mainNavigation: "主導覽", collapseSidebar: "收起側欄", expandSidebar: "展開側欄" },
+  en: { mainNavigation: "Main navigation", collapseSidebar: "Collapse sidebar", expandSidebar: "Expand sidebar" },
+  ja: { mainNavigation: "メインナビゲーション", collapseSidebar: "サイドバーを閉じる", expandSidebar: "サイドバーを開く" },
+  ko: { mainNavigation: "주 탐색", collapseSidebar: "사이드바 접기", expandSidebar: "사이드바 펼치기" },
+};
+
+const ACCOUNT_USAGE_TRANSLATIONS = {
+  "zh-CN": { accountLastSynced: "最近同步", accountUsageSummaryLabel: "历史使用概况", accountLifetimeTokens: "累计 Token", accountPeakTokens: "单日 Token 峰值", accountLongestTask: "最长任务用时", accountLongestStreak: "最长连续天数", accountCurrentStreak: "当前连续天数", accountUsageHoursMinutes: "{hours} 小时 {minutes} 分", accountUsageMinutes: "{minutes} 分钟", accountUsageSeconds: "{seconds} 秒", accountUsageDays: "{count} 天" },
+  "zh-TW": { accountLastSynced: "最近同步", accountUsageSummaryLabel: "歷史使用概況", accountLifetimeTokens: "累計 Token", accountPeakTokens: "單日 Token 峰值", accountLongestTask: "最長任務用時", accountLongestStreak: "最長連續天數", accountCurrentStreak: "目前連續天數", accountUsageHoursMinutes: "{hours} 小時 {minutes} 分", accountUsageMinutes: "{minutes} 分鐘", accountUsageSeconds: "{seconds} 秒", accountUsageDays: "{count} 天" },
+  en: { accountLastSynced: "Last synced", accountUsageSummaryLabel: "Usage history overview", accountLifetimeTokens: "Lifetime Tokens", accountPeakTokens: "Daily Token peak", accountLongestTask: "Longest task", accountLongestStreak: "Longest streak", accountCurrentStreak: "Current streak", accountUsageHoursMinutes: "{hours}h {minutes}m", accountUsageMinutes: "{minutes}m", accountUsageSeconds: "{seconds} seconds", accountUsageDays: "{count} days" },
+  ja: { accountLastSynced: "最終同期", accountUsageSummaryLabel: "利用履歴の概要", accountLifetimeTokens: "累計 Token", accountPeakTokens: "1日の Token ピーク", accountLongestTask: "最長タスク時間", accountLongestStreak: "最長連続日数", accountCurrentStreak: "現在の連続日数", accountUsageHoursMinutes: "{hours}時間{minutes}分", accountUsageMinutes: "{minutes}分", accountUsageSeconds: "{seconds}秒", accountUsageDays: "{count}日" },
+  ko: { accountLastSynced: "최근 동기화", accountUsageSummaryLabel: "사용 기록 개요", accountLifetimeTokens: "누적 Token", accountPeakTokens: "일일 Token 최대", accountLongestTask: "최장 작업 시간", accountLongestStreak: "최장 연속 일수", accountCurrentStreak: "현재 연속 일수", accountUsageHoursMinutes: "{hours}시간 {minutes}분", accountUsageMinutes: "{minutes}분", accountUsageSeconds: "{seconds}초", accountUsageDays: "{count}일" },
+};
+
+const TOKEN_HEATMAP_TRANSLATIONS = {
+  "zh-CN": { tokenHeatmapTitle: "每日 Token 活跃度", tokenHeatmapPrevious: "上个月", tokenHeatmapNext: "下个月", tokenHeatmapNoData: "本月暂无 Token 用量记录", tokenHeatmapLess: "少", tokenHeatmapMore: "多", tokenHeatmapSummary: "累计 {total} Token · 活跃 {active} 天" },
+  "zh-TW": { tokenHeatmapTitle: "每日 Token 活躍度", tokenHeatmapPrevious: "上個月", tokenHeatmapNext: "下個月", tokenHeatmapNoData: "本月暫無 Token 用量記錄", tokenHeatmapLess: "少", tokenHeatmapMore: "多", tokenHeatmapSummary: "累計 {total} Token · 活躍 {active} 天" },
+  en: { tokenHeatmapTitle: "Daily Token activity", tokenHeatmapPrevious: "Previous month", tokenHeatmapNext: "Next month", tokenHeatmapNoData: "No Token usage recorded this month", tokenHeatmapLess: "Less", tokenHeatmapMore: "More", tokenHeatmapSummary: "{total} Tokens · {active} active days" },
+  ja: { tokenHeatmapTitle: "日別 Token アクティビティ", tokenHeatmapPrevious: "前の月", tokenHeatmapNext: "次の月", tokenHeatmapNoData: "今月の Token 使用記録はありません", tokenHeatmapLess: "少", tokenHeatmapMore: "多", tokenHeatmapSummary: "合計 {total} Token · {active}日間アクティブ" },
+  ko: { tokenHeatmapTitle: "일별 Token 활동", tokenHeatmapPrevious: "이전 달", tokenHeatmapNext: "다음 달", tokenHeatmapNoData: "이달의 Token 사용 기록이 없습니다", tokenHeatmapLess: "적음", tokenHeatmapMore: "많음", tokenHeatmapSummary: "총 {total} Token · {active}일 활동" },
+};
+
+const TOPIC_TRANSLATIONS = {
+  "zh-CN": { conversationTopics: "会话主题", topicsHint: "点击主题查看会话 · 最近 100 个会话，每个会话最多 500 条用户输入", topicFilterSummary: "{word} · 近 {days} 天 · 出现 {occurrences} 次 · 涉及 {count} 个会话", topicWordSummary: "{word} · 出现 {occurrences} 次 · 涉及 {count} 个会话", topicMatchCount: "出现 {count} 次" },
+  "zh-TW": { conversationTopics: "工作階段主題", topicsHint: "點擊主題查看工作階段 · 最近 100 個工作階段，每個最多 500 則使用者輸入", topicFilterSummary: "{word} · 近 {days} 天 · 出現 {occurrences} 次 · 涉及 {count} 個工作階段", topicWordSummary: "{word} · 出現 {occurrences} 次 · 涉及 {count} 個工作階段", topicMatchCount: "出現 {count} 次" },
+  en: { conversationTopics: "Session topics", topicsHint: "Select a topic · Latest 100 sessions, up to 500 user messages each", topicFilterSummary: "{word} · {days} days · {occurrences} occurrences · {count} sessions", topicWordSummary: "{word} · {occurrences} occurrences · {count} sessions", topicMatchCount: "{count} occurrences" },
+  ja: { conversationTopics: "セッションのテーマ", topicsHint: "テーマからセッションを表示 · 最新100件、各500件までのユーザー入力", topicFilterSummary: "{word} · 過去{days}日 · {occurrences}回 · {count}セッション", topicWordSummary: "{word} · {occurrences}回 · {count}セッション", topicMatchCount: "{count}回" },
+  ko: { conversationTopics: "세션 주제", topicsHint: "주제로 세션 보기 · 최근 100개 세션, 각 사용자 입력 최대 500개", topicFilterSummary: "{word} · 최근 {days}일 · {occurrences}회 · {count}개 세션", topicWordSummary: "{word} · {occurrences}회 · {count}개 세션", topicMatchCount: "{count}회" },
+};
+
 // 低优先级文案先合并，后面的业务分组覆盖同名键，保持原有查询优先级。
 const TRANSLATION_SOURCES = [
+  NAVIGATION_TRANSLATIONS,
+  TOPIC_TRANSLATIONS,
+  TOKEN_HEATMAP_TRANSLATIONS,
+  ACCOUNT_USAGE_TRANSLATIONS,
   TRANSLATIONS,
   IMAGE_PREVIEW_TRANSLATIONS,
   FILE_DIFF_TRANSLATIONS,

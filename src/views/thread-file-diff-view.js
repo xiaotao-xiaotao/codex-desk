@@ -13,6 +13,7 @@ export function createThreadFileDiffView({ t }) {
   const unifiedButton = document.querySelector("#file-diff-unified");
   let currentActivity = null;
   let layout = "side-by-side";
+  let returnFocusElement = null;
 
   function changeTypeLabel(changeType) {
     const labels = {
@@ -157,6 +158,7 @@ export function createThreadFileDiffView({ t }) {
   }
 
   function show(activity) {
+    returnFocusElement = document.activeElement;
     currentActivity = activity;
     // 每次进入文件对比都以左右布局打开；用户可在当前查看期间切换为上下布局。
     layout = "side-by-side";
@@ -167,7 +169,9 @@ export function createThreadFileDiffView({ t }) {
   }
 
   function close() {
+    const wasOpen = !panel.hidden;
     panel.hidden = true;
+    if (wasOpen && returnFocusElement?.isConnected) returnFocusElement.focus();
   }
 
   function isOpen() {

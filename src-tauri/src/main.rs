@@ -22,10 +22,10 @@ use tokio::io::AsyncReadExt;
 
 // 900px 为右侧词云留出更舒展的排版空间，同时仍保持为紧凑悬浮看板。
 const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
-// 展开会话保持正常阅读密度；内容超出固定高度时由列表自身滚动承接。
+// 保留旧版独立展开会话模式的尺寸兼容。
 const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
-// 本地历史收起时使用固定高度，避免异步内容更新引起窗口跳动。
-const COLLAPSED_SESSIONS_WINDOW_HEIGHT: f64 = 580.0;
+// 统一看板高度容纳十条紧凑历史记录和分页，避免栏目切换或刷新时调整窗口。
+const DASHBOARD_WINDOW_HEIGHT: f64 = 700.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
@@ -340,7 +340,7 @@ fn resize_float_window(
             if sessions_expanded {
                 EXPANDED_WINDOW_HEIGHT
             } else {
-                COLLAPSED_SESSIONS_WINDOW_HEIGHT
+                DASHBOARD_WINDOW_HEIGHT
             },
         )
     } else {

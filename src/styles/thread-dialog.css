@@ -1,50 +1,41 @@
-.thread-dialog { position: relative; width: min(1080px, calc(100% - 32px)); height: min(88vh, 780px); padding: 0; overflow: hidden; border: 1px solid #e1e5eb; border-radius: 16px; color: #1f2329; background: #fff; box-shadow: 0 24px 80px rgba(15, 23, 42, .22); }
-.thread-dialog::backdrop { background: rgba(15, 23, 42, .38); }
-.thread-dialog-toolbar { display: flex; height: 42px; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #e7ebef; background: #fff; }
+.thread-dialog { position: relative; display: flex; width: 100%; min-width: 0; min-height: 0; flex: 1 1 auto; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid #e1e9f3; border-radius: 14px; color: #1f2329; background: #fff; }
+.thread-dialog[hidden] { display: none; }
+.thread-dialog-toolbar { display: flex; min-height: 64px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #e7edf5; background: #fff; }
+.thread-back-button { display: inline-grid; width: var(--control-size); height: var(--control-size); flex: 0 0 auto; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; }
+.thread-back-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.thread-back-button:hover { color: #1677ff; background: #edf5ff; }
+.thread-back-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .thread-dialog-title { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 6px; }
-.thread-dialog-heading { display: grid; min-width: 0; flex: 1 1 auto; gap: 1px; }
+.thread-dialog-heading { display: grid; min-width: 0; flex: 1 1 auto; gap: 5px; }
+.thread-dialog-title-row { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.thread-dialog-title-row h2 { min-width: 0; }
 .thread-dialog-toolbar h2 { display: flex; min-width: 0; margin: 0; align-items: baseline; gap: 5px; color: #263445; font-size: var(--font-title); font-weight: 760; letter-spacing: .01em; }
-#dialog-title { overflow: hidden; color: #536273; font-size: var(--font-body); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.thread-dialog-title-separator { color: #a3adb8; font-weight: 500; }
+#dialog-title { overflow: hidden; color: #30445f; font-size: var(--font-body); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .thread-dialog-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; }
-.thread-copy-id-button { display: inline-flex; width: fit-content; min-width: 0; max-width: 100%; align-items: center; gap: var(--space-xs); justify-self: start; padding: 0 3px; overflow: hidden; border: 0; border-radius: 4px; color: #8a96a4; background: transparent; cursor: pointer; font: inherit; line-height: 1.15; text-align: left; transition: color .15s, background-color .15s; }
-.thread-copy-id-button code { min-width: 0; overflow: hidden; font-family: "Cascadia Code", Consolas, monospace; font-size: var(--font-caption); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.thread-copy-id-button.copy-icon-button { width: 20px; height: 20px; flex: 0 0 auto; color: #8a96a4; background: transparent; }
 .thread-copy-id-button:hover:not(:disabled) { color: #216da9; background: #edf6ff; }
 .thread-copy-id-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .thread-copy-id-button:disabled { cursor: default; }
-.thread-copy-id-button::after { width: 0; flex: 0 0 auto; overflow: hidden; color: #718197; content: "✓"; font-size: var(--font-caption); opacity: 0; transition: width .15s, opacity .15s; }
-.thread-copy-id-button.is-copied::after { width: 10px; opacity: 1; }
 .thread-copy-id-button.is-failed { color: #bf3340; background: #fff5f5; }
 .thread-toolbar-action { display: grid; width: var(--control-size); height: var(--control-size); padding: 0; place-items: center; border: 0; border-radius: var(--control-radius); color: #6f7d8d; background: transparent; cursor: pointer; list-style: none; }
 .thread-toolbar-action svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
 .thread-toolbar-action:hover:not(:disabled) { color: #1668c6; background: #edf5ff; }
 .thread-toolbar-action:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .thread-toolbar-action:disabled { cursor: default; opacity: .45; }
-/* 概览作为覆盖式抽屉出现，避免在桌面悬浮窗中长期挤压会话正文。 */
-.dialog-content { position: relative; display: flex; height: calc(100% - 42px); min-height: 0; flex-direction: row; }
-.dialog-sidebar { position: absolute; z-index: 2; inset: 0 auto 0 0; display: flex; width: min(240px, calc(100% - 56px)); min-width: 0; min-height: 0; flex-direction: column; border-right: 1px solid #dfe5ec; background: #fff; box-shadow: 12px 0 28px rgba(31, 41, 55, .12); }
-.dialog-messages-pane { display: flex; min-width: 0; min-height: 0; flex: 1 1 auto; flex-direction: column; background: #f7f8fa; }
-.dialog-meta { color: #8a94a0; font-size: var(--font-caption); }
-.dialog-meta { margin: 0; padding: 8px 14px; border-bottom: 1px solid #edf0f3; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.dialog-search { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-sm); padding: 10px 20px 8px; border-bottom: 1px solid #e4e8ed; background: #f7f8fa; }
-.thread-sidebar-toggle { display: grid; width: var(--control-size); height: var(--control-size); flex: 0 0 var(--control-size); place-items: center; padding: 0; border: 0; border-radius: var(--control-radius); color: #5f748c; background: transparent; cursor: pointer; }
-.thread-sidebar-toggle-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
-.thread-sidebar-toggle-collapse { display: none; }
-.thread-sidebar-toggle[aria-expanded="true"] .thread-sidebar-toggle-expand { display: none; }
-.thread-sidebar-toggle[aria-expanded="true"] .thread-sidebar-toggle-collapse { display: block; }
-.thread-sidebar-toggle:hover { color: #1668c6; background: #edf5ff; }
-.thread-sidebar-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
+/* 正文始终占满详情宽度，统计仅保留在顶部摘要中。 */
+.dialog-content { position: relative; display: flex; min-height: 0; flex: 1 1 auto; flex-direction: row; }
+.dialog-messages-pane { display: flex; min-width: 0; min-height: 0; flex: 1 1 auto; flex-direction: column; background: #f7faff; }
+.dialog-search { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-sm); padding: 8px 16px; border-bottom: 1px solid #e7edf5; background: #f7faff; }
 .dialog-search input { min-width: 0; height: var(--control-size); flex: 1 1 auto; padding: 0 9px; border: 1px solid #dbe2ea; border-radius: var(--control-radius); outline: 0; color: #1f2937; background: #fbfcfe; font-size: var(--font-body); }
 .dialog-search input::placeholder { color: #9ba6b2; }
 .dialog-search input:focus { border-color: #1677ff; background: #fff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .12); }
 .dialog-search-result { min-width: 44px; overflow: hidden; color: #788697; font-size: var(--font-caption); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-/* 汇总只保留消息与工具数量，文件和失败记录统一在下方查看。 */
-.dialog-insights { flex: 0 0 auto; padding: 12px 14px 10px; border-bottom: 1px solid #edf0f3; background: #fff; }
+/* 标题下只展示轻量统计；Token 明细通过悬停查看，保留正文阅读空间。 */
 .insight-list { display: grid; gap: var(--space-sm); }
-.insight-summary-primary { display: flex; align-items: center; gap: 0; color: #6e7d8e; font-size: var(--font-caption); }
+.insight-summary-primary { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; color: #7f8a97; font-size: var(--font-caption); }
 .insight-summary-item { white-space: nowrap; }
 .insight-summary-item + .insight-summary-item::before { margin: 0 7px; color: #bcc4cd; content: "·"; }
-.insight-summary-item strong { color: #344154; font-size: var(--font-body); font-variant-numeric: tabular-nums; }
+.insight-summary-item strong { color: #64748b; font-size: inherit; font-weight: 500; font-variant-numeric: tabular-nums; }
 .insight-summary-scope { margin-left: 8px; color: #8a96a4; font-size: var(--font-caption); white-space: nowrap; }
 .activity-summary-hint { overflow: hidden; color: #98a4b2; font-size: var(--font-caption); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .activity-list { display: grid; height: 100%; min-height: 0; align-content: start; gap: 0; overflow-x: hidden; overflow-y: scroll; padding: 2px 3px 2px 0; border: 1px solid #e7ebef; border-radius: 8px; background: #fff; scrollbar-gutter: stable; touch-action: pan-y; }
@@ -74,7 +65,7 @@
 .close-icon-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .close-icon-button:hover { color: #4d5a69; background: #eef1f4; }
 .close-icon-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
-.message-list { display: grid; flex: 1 1 auto; min-height: 0; align-content: start; gap: 9px; overflow-y: auto; padding: 10px 20px 20px; background: #f7f8fa; }
+.message-list { display: grid; flex: 1 1 auto; min-height: 0; align-content: start; gap: 14px; overflow-y: auto; padding: 14px 16px 20px; background: #f7faff; }
 .message-entry { display: grid; width: 100%; min-width: 0; gap: 6px; }
 .message-entry-user { justify-self: end; justify-items: end; }
 .message-entry-assistant { justify-self: start; justify-items: start; }
@@ -249,15 +240,14 @@
 .activity-file-preview-line.is-removed { background: #fff0ef; }
 .activity-file-preview-line.is-removed code { color: #a83e38; }
 .dialog-hint { width: 100%; margin: 0; padding: 13px 14px; border: 1px dashed #d5dce5; border-radius: 10px; color: #7d8792; background: #fff; font-size: var(--font-section); }
-.thread-history-bar { display: flex; width: 100%; min-width: 0; min-height: 30px; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px 5px; border-bottom: 1px solid #e3e8ef; }
-.thread-history-hint { min-width: 0; color: #8a96a4; font-size: var(--font-caption); line-height: 1.3; }
-.thread-load-older { flex: 0 0 auto; min-height: var(--control-size); padding: 3px 9px; border: 1px solid #c9dbf0; border-radius: var(--control-radius); color: #1668c6; background: #fff; cursor: pointer; font-size: var(--font-body); font-weight: 650; white-space: nowrap; }
-.thread-load-older:hover:not(:disabled) { border-color: #8fb9ed; background: #edf5ff; }
+.thread-load-older { display: inline-flex; justify-self: center; align-items: center; gap: 5px; min-height: 24px; padding: 3px 8px; border: 0; border-radius: var(--control-radius); color: #6d86a3; background: transparent; cursor: pointer; font-size: var(--font-caption); white-space: nowrap; }
+.thread-load-older::before { content: "↑"; }
+.thread-load-older:hover:not(:disabled) { color: #1677ff; background: #edf5ff; }
 .thread-load-older:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .thread-load-older:disabled { opacity: .65; cursor: wait; }
 .thread-history-error { width: 100%; margin: -3px 0 0; padding: 0 2px; color: #b4232c; font-size: var(--font-caption); line-height: 1.4; }
 /* Diff 使用当前会话快照覆盖详情内容，不创建嵌套原生 dialog，确保 WebView2 的 Esc 行为稳定。 */
-.file-diff-panel { position: absolute; z-index: 3; inset: 42px 0 0; display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); background: #f7f8fa; }
+.file-diff-panel { position: absolute; z-index: 3; inset: var(--thread-toolbar-height, 64px) 0 0; display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); background: #f7f8fa; }
 .file-diff-panel[hidden] { display: none; }
 .thread-image-preview { position: absolute; z-index: 4; inset: 0; display: grid; padding: 48px 28px 28px; place-items: center; background: rgba(15, 23, 42, .82); cursor: zoom-out; }
 .thread-image-preview[hidden] { display: none; }
@@ -297,40 +287,8 @@
 .file-diff-side-by-side-line.is-added { color: #176b4f; background: #eaf8f0; }
 .file-diff-side-by-side-line.is-removed { color: #a83e38; background: #fff0ef; }
 
-/* 左侧会话概览按“摘要、更新时间、记录”分区，正文始终使用完整宽度。 */
-.dialog-sidebar { display: grid; grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; }
-.dialog-sidebar[hidden] { display: none; }
-.thread-overview { min-height: 0; overflow-y: auto; padding: 0 14px; }
-.thread-overview-section { padding: 12px 0; border-bottom: 1px solid #edf0f3; }
-.thread-overview-section h4 { margin: 0 0 7px; color: #536273; font-size: var(--font-caption); font-weight: 760; letter-spacing: .04em; }
-.thread-overview-info-list { display: grid; gap: 5px; margin: 0; }
-.thread-overview-info-row { display: grid; min-width: 0; grid-template-columns: 64px minmax(0, 1fr); gap: 7px; align-items: baseline; }
-.thread-overview-info-row dt { overflow: hidden; color: #8a96a4; font-size: var(--font-caption); text-overflow: ellipsis; white-space: nowrap; }
-.thread-overview-info-row dd, .thread-overview-info-row code { min-width: 0; margin: 0; overflow: hidden; color: #3a4858; font-size: var(--font-caption); line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
-.thread-overview-info-row code { font-family: "Cascadia Code", Consolas, monospace; }
-.thread-overview-disclosure { padding: 12px 0; border-bottom: 1px solid #edf0f3; }
-.thread-overview-disclosure summary { display: grid; min-height: 36px; grid-template-columns: minmax(0, 1fr) auto 12px; align-items: center; gap: var(--space-sm); color: #536273; cursor: pointer; list-style: none; user-select: none; }
-.thread-overview-disclosure summary::-webkit-details-marker { display: none; }
-.thread-overview-disclosure summary::after { content: "›"; grid-column: 3; grid-row: 1; justify-self: end; color: #94a0ad; font-size: var(--font-section); transform: rotate(0deg); transition: transform .15s; }
-.thread-overview-disclosure[open] summary::after { transform: rotate(90deg); }
-.thread-overview-disclosure summary strong { min-width: 0; color: #465568; font-size: var(--font-caption); font-weight: 750; }
-.thread-overview-disclosure summary span { color: #8a96a4; font-size: var(--font-caption); white-space: nowrap; }
-.thread-overview-record-list { display: grid; gap: 2px; padding: 0 0 8px; }
-.thread-overview-empty { margin: 0; padding: 3px 0; color: #929dab; font-size: var(--font-caption); line-height: 1.45; }
-.thread-overview-file-row { display: grid; width: 100%; min-height: 27px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 4px 5px; border: 0; border-radius: 5px; color: #415164; background: transparent; cursor: pointer; text-align: left; }
-.thread-overview-file-row:hover, .thread-overview-file-row:focus-visible { background: #f0faf5; }
-.thread-overview-file-row:focus-visible { outline: 2px solid #6dcaa3; outline-offset: -1px; }
-.thread-overview-file-row code { min-width: 0; overflow: hidden; font-family: "Cascadia Code", Consolas, monospace; font-size: var(--font-caption); text-overflow: ellipsis; white-space: nowrap; }
-.thread-overview-file-row span { padding: 2px 4px; border-radius: 4px; color: #17825f; background: #e8f8ef; font-size: var(--font-caption); font-weight: 700; white-space: nowrap; }
-.thread-overview-view-all { justify-self: start; padding: 3px 0; border: 0; color: #2677ba; background: transparent; cursor: pointer; font-size: var(--font-caption); font-weight: 700; }
-.thread-overview-view-all:hover { color: #0958d9; text-decoration: underline; }
-.thread-overview-issues summary strong { color: #9a641d; }
-.thread-overview-issue-row { display: grid; gap: 2px; padding: 5px; border-radius: 5px; color: #7f5d32; background: #fff9ee; }
-.thread-overview-issue-row strong, .thread-overview-issue-row span { overflow: hidden; font-size: var(--font-caption); text-overflow: ellipsis; white-space: nowrap; }
-.thread-overview-issue-row span { color: #9a876d; }
-.thread-token-usage { display: grid; gap: var(--space-xs); padding: 0 0 9px; color: #718094; font-size: var(--font-caption); line-height: 1.4; }
-.thread-token-usage strong { color: #356fae; font-size: var(--font-caption); }
-@media (max-width: 760px) {
-  .thread-dialog { width: calc(100% - 18px); height: min(92vh, 780px); }
-  .dialog-sidebar { width: min(224px, calc(100% - 44px)); }
+@media (max-width: 560px) {
+  .thread-dialog-toolbar { gap: 6px; padding: 10px 8px; }
+  .dialog-search { padding: 8px 10px; }
+  .message-list { padding: 12px 10px 16px; }
 }

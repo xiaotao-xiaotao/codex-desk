@@ -23,15 +23,7 @@ import { createWordCloudView } from "./views/word-cloud-view.js";
 
 const DRAG_THRESHOLD_PX = 4;
 const AUTO_DISMISS_DURATION_MS = 4_000;
-const THREAD_PAGE_SIZE = { normal: 10 };
-const EXPANDED_THREAD_LAYOUT = {
-  columns: 2,
-  minRows: 10,
-  maxRows: 15,
-  targetRowHeightPx: 64,
-  rowGapPx: 8,
-};
-const THREAD_LAYOUT_RESIZE_DEBOUNCE_MS = 80;
+const THREAD_PAGE_SIZE = 10;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -57,13 +49,17 @@ const selectPageThreadsButton = document.querySelector("#select-page-threads");
 const selectAllThreadsButton = document.querySelector("#select-all-threads");
 const clearThreadSelectionButton = document.querySelector("#clear-thread-selection");
 const selectedThreadCount = document.querySelector("#selected-thread-count");
-const sessionsSection = document.querySelector(".sessions-section");
-const sessionsContent = document.querySelector("#sessions-content");
-const sessionsToggle = document.querySelector("#sessions-toggle");
-const sessionsToggleLabel = document.querySelector("#sessions-toggle-label");
-const moduleExpandTriggers = [...document.querySelectorAll("[data-module-expand]")];
-const moduleSections = {
+const dashboardLayout = document.querySelector(".dashboard-layout");
+const sidebarToggle = document.querySelector("#sidebar-toggle");
+const sidebarMediaQuery = window.matchMedia("(max-width: 760px)");
+// 窄屏默认收起；手动切换后尊重用户选择，避免尺寸变化反复覆盖状态。
+let sidebarCollapsedPreference = null;
+const dashboardNav = document.querySelector(".dashboard-nav");
+const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-section]")];
+const dashboardSections = {
+  account: document.querySelector("#account-section"),
   insights: document.querySelector("#insights-section"),
+  topics: document.querySelector("#topics-section"),
   sessions: document.querySelector("#sessions-section"),
 };
 const quotaAlertStatus = document.querySelector("#quota-alert-status");
@@ -121,6 +117,14 @@ const dialogView = createThreadDialogView({
   onReadFullOverview: (threadId) => invoke("read_thread_full_overview", { threadId }),
   onReadLocalFile: (path) => invoke("read_local_text_preview", { path }),
   onExportThread: exportThreadFromDialog,
+  onOpen: () => {
+    Object.values(dashboardSections).forEach((section) => { section.hidden = true; });
+  },
+  onClose: (restoreHistory) => {
+    threadReadVersion += 1;
+    renderCurrentThreadPage();
+    if (restoreHistory) setDashboardSection(activeDashboardSection);
+  },
 });
 const settingsView = createSettingsDialogView({
   t,
@@ -136,12 +140,11 @@ const trendView = createThreadTrendView({
   t,
   onRangeChange: (days) => {
     tokenUsageView.setRange(days);
-    wordCloudView.setRange(days);
     void refreshController?.refreshThreadTrends();
   },
 });
 const tokenUsageView = createTokenUsageTrendView({ t });
-const wordCloudView = createWordCloudView({ t });
+const wordCloudView = createWordCloudView({ t, onSelectTopic: selectTopic });
 const threadListView = createThreadListView({
   t,
   formatUpdated,
@@ -154,16 +157,16 @@ const threadListView = createThreadListView({
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
 let expanded = true;
 let alwaysOnTop = false;
-let sessionsExpanded = false;
+let activeDashboardSection = "account";
+let threadReadVersion = 0;
+let lastOpenedThreadId = null;
 let windowMaximized = false;
-let sessionsExpandedBeforeMaximize = null;
-let expandedModule = null;
-let sessionsExpandedBeforeModule = null;
-let moduleExpandFocusOrigin = null;
+let topicFilter = null;
+let topicRequestVersion = 0;
+let topicDays = 7;
+const topicsRange = document.querySelector("#topics-range");
 let searchTimer = null;
 let searchRequestVersion = 0;
-let expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
-let expandedThreadLayoutTimer = null;
 let currentThreadPage = 1;
 let currentPageThreads = [];
 let currentThreadEmptyMessage = "";
@@ -210,6 +213,7 @@ function renderDashboardAvailability() {
   }
   dashboardErrorDescription.textContent = details.join("\n");
   dashboardRetry.textContent = t("dashboardRetry");
+  if (!dashboardUnavailable) setDashboardSection(activeDashboardSection);
 }
 
 async function retryDashboard() {
@@ -227,9 +231,9 @@ refreshController = createRefreshController({
   quotaAlerts,
   trendView,
   tokenUsageView,
-  wordCloudView,
+  refreshTopics,
   getExpanded: () => expanded,
-  getSessionsExpanded: () => sessionsExpanded,
+  getSessionsExpanded: () => activeDashboardSection === "sessions",
   refreshThreadList: (forceRefresh) => searchThreads(
     threadListView.getSearchQuery(),
     currentThreadPage,
@@ -238,7 +242,10 @@ refreshController = createRefreshController({
   refreshAccount: () => accountView.refresh(),
   getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
-  onRefreshingChange: (isRefreshing) => setRefreshIconButtonLoading(refreshButton, isRefreshing),
+  onRefreshingChange: (isRefreshing) => {
+    setRefreshIconButtonLoading(refreshButton, isRefreshing);
+    if (!isRefreshing) renderAccountSyncTime();
+  },
   onAvailabilityChange: (available) => {
     dashboardUnavailable = !available;
     renderDashboardAvailability();
@@ -252,6 +259,21 @@ refreshController = createRefreshController({
     if (dashboardUnavailable) renderDashboardAvailability();
   },
 });
+
+function renderAccountSyncTime() {
+  const element = document.querySelector("#account-last-synced");
+  const syncedAt = refreshController?.getLatestQuotaSyncedAt();
+  if (syncedAt == null) {
+    element.textContent = "--";
+    element.removeAttribute("datetime");
+    element.removeAttribute("title");
+    return;
+  }
+  const date = new Date(syncedAt);
+  element.textContent = new Intl.DateTimeFormat(i18n.getLocale(), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
+  element.dateTime = date.toISOString();
+  element.title = new Intl.DateTimeFormat(i18n.getLocale(), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(date);
+}
 
 function renderQuotaAlertStatus() {
   const enabled = quotaAlerts.isEnabled();
@@ -272,161 +294,86 @@ async function toggleQuotaAlerts() {
 }
 
 function renderCurrentThreadPage() {
-  threadListView.renderThreads(currentPageThreads, currentThreadEmptyMessage, selectedThreadIds);
+  threadListView.renderThreads(currentPageThreads, currentThreadEmptyMessage, selectedThreadIds, lastOpenedThreadId);
 }
 
-function renderSessionsVisibility() {
-  sessionsSection.classList.toggle("is-collapsed", !sessionsExpanded);
-  panel.classList.toggle("is-sessions-collapsed", !sessionsExpanded);
-  sessionsContent.hidden = !sessionsExpanded;
-  sessionsToggle.setAttribute("aria-expanded", String(sessionsExpanded));
-  const labelKey = sessionsExpanded ? "collapseLocalHistory" : "expandLocalHistory";
-  sessionsToggle.title = sessionsToggle.ariaLabel = t(labelKey);
-  sessionsToggleLabel.textContent = t(labelKey);
-}
-
-/**
- * 一级模块在当前面板内覆盖展开，不修改原生窗口尺寸；本地历史进入放大态时
- * 临时展开列表，以便用户直接搜索和浏览更多会话，退出后恢复此前的折叠状态。
- */
-function setModuleExpanded(nextModule, focusOrigin = null) {
-  const normalizedModule = Object.prototype.hasOwnProperty.call(moduleSections, nextModule)
-    ? nextModule
-    : null;
-  const previousModule = expandedModule;
-  const next = previousModule === normalizedModule ? null : normalizedModule;
-  const openingSessionsModule = next === "sessions" && previousModule !== "sessions";
-  const wasSessionsExpanded = sessionsExpanded;
-  const shouldRestoreNormalThreadPage = previousModule === "sessions"
-    && next !== "sessions"
-    && sessionsExpandedBeforeModule === true;
-
-  if (previousModule === "sessions" && next !== "sessions" && sessionsExpandedBeforeModule === false) {
-    void setSessionsExpanded(false, { resizeWindow: false });
+/** 栏目切换只改变内容可见性，保留筛选和选择状态，并避免调整原生窗口尺寸。 */
+function setDashboardSection(nextSection) {
+  if (!Object.prototype.hasOwnProperty.call(dashboardSections, nextSection)) return;
+  const changed = activeDashboardSection !== nextSection;
+  // 侧栏收起和自动同步会重复选择当前栏目，不应打断正在阅读的详情。
+  if (dialogView.isOpen()) {
+    if (!changed) return;
+    dialogView.close(false);
   }
-  if (previousModule === "sessions" && next !== "sessions") {
-    sessionsExpandedBeforeModule = null;
-  }
-
-  expandedModule = next;
-  moduleExpandFocusOrigin = next ? focusOrigin : moduleExpandFocusOrigin;
-  panel.classList.toggle("is-module-expanded", Boolean(next));
-  Object.entries(moduleSections).forEach(([name, section]) => {
-    section.classList.toggle("is-module-expanded", name === next);
+  activeDashboardSection = nextSection;
+  // 离开历史页后使未完成的搜索失效，避免旧请求覆盖下一次进入时的结果。
+  if (changed) searchRequestVersion += 1;
+  Object.entries(dashboardSections).forEach(([name, section]) => {
+    section.hidden = name !== nextSection;
   });
-  updateModuleExpandTriggers();
-
-  if (openingSessionsModule) {
-    sessionsExpandedBeforeModule = wasSessionsExpanded;
-    currentThreadPage = 1;
-    if (wasSessionsExpanded) {
-      void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
-    } else {
-      // 先写入放大状态，再加载数据，确保首个请求就按 20 条分页。
-      void setSessionsExpanded(true, { resizeWindow: false });
-    }
-  } else if (shouldRestoreNormalThreadPage) {
-    // 退出放大后回到常规 10 条分页，避免页码与可见条数不一致。
-    currentThreadPage = 1;
-    void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
-  }
-  if (previousModule === "sessions" && next !== "sessions") {
-    expandedThreadRowCount = EXPANDED_THREAD_LAYOUT.minRows;
-    threadListElement.style.removeProperty("--expanded-thread-row-count");
-  }
-  // 覆盖层完成 Grid/Flex 布局后，使用实际尺寸重绘两张 SVG 与词云。
+  dashboardNavButtons.forEach((button) => {
+    const selected = button.dataset.dashboardSection === nextSection;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-selected", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
   window.requestAnimationFrame(() => {
-    trendView.render();
-    tokenUsageView.render();
-    wordCloudView.render();
-    syncExpandedThreadLayout();
-  });
-
-  if (!next && moduleExpandFocusOrigin && expanded) {
-    moduleExpandFocusOrigin.focus();
-    moduleExpandFocusOrigin = null;
-  }
-}
-
-function updateModuleExpandTriggers() {
-  moduleExpandTriggers.forEach((trigger) => {
-    const isExpanded = trigger.dataset.moduleExpand === expandedModule;
-    trigger.classList.toggle("is-module-expanded", isExpanded);
-    const expandButton = trigger.querySelector(".module-expand-button");
-    const label = t(isExpanded ? "moduleRestoreLabel" : "moduleExpandLabel");
-    expandButton.ariaLabel = label;
-    expandButton.title = label;
-    expandButton.ariaPressed = String(isExpanded);
-  });
-}
-
-function setupModuleExpansion() {
-  moduleExpandTriggers.forEach((trigger) => {
-    const expandButton = trigger.querySelector(".module-expand-button");
-    expandButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      setModuleExpanded(trigger.dataset.moduleExpand, expandButton);
-    });
-    trigger.addEventListener("dblclick", (event) => {
-      // 标题文字仍可双击选中复制；仅标题栏空白区用于切换模块放大。
-      if (event.target !== trigger) return;
-      event.preventDefault();
-      setModuleExpanded(trigger.dataset.moduleExpand, expandButton);
-    });
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || !expandedModule) return;
-    event.preventDefault();
-    setModuleExpanded(null);
-  });
-  updateModuleExpandTriggers();
-}
-
-async function setSessionsExpanded(nextExpanded, { resizeWindow = true } = {}) {
-  if (sessionsExpanded === nextExpanded) return;
-  const previousExpanded = sessionsExpanded;
-  if (!nextExpanded) {
-    sessionsExpanded = false;
-    renderSessionsVisibility();
-  }
-  if (resizeWindow) {
-    try {
-      // 普通窗口按两种固定高度切换；最大化时仅切换内容可见性。
-      await invoke("resize_float_window", {
-        expanded: true,
-        sessionsExpanded: nextExpanded,
-      });
-    } catch (error) {
-      if (!nextExpanded) {
-        sessionsExpanded = previousExpanded;
-        renderSessionsVisibility();
+    // 隐藏栏目没有有效尺寸；恢复可见后再重绘，保证 SVG 与 Canvas 使用实际容器大小。
+    if (activeDashboardSection === "insights") {
+      trendView.render();
+      tokenUsageView.render();
+    } else if (activeDashboardSection === "topics") {
+      wordCloudView.render();
+    } else if (activeDashboardSection === "sessions" && !dashboardUnavailable) {
+      if (changed) {
+        void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
       }
-      console.error("调整会话区窗口尺寸失败", error);
-      setStatus(t("windowResizeFailed", { error: String(error) }), "error");
-      return;
     }
-  }
-  if (nextExpanded) {
-    sessionsExpanded = true;
-    renderSessionsVisibility();
-  }
-  if (!sessionsExpanded) return;
-
-  // 会话列表仅在用户主动展开后读取，避免首屏加载大量本地历史。
-  currentThreadPage = 1;
-  await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+  });
 }
 
-async function toggleSessionsExpanded() {
-  const nextExpanded = !sessionsExpanded;
-  if (!nextExpanded && windowMaximized) {
-    // 最大化窗口使用完整高度；直接隐藏列表会把剩余高度留成空白。
-    // 先还原窗口，再由普通收起流程切换到固定高度。
-    await toggleWindowMaximized();
-    if (windowMaximized) return;
-  }
-  if (sessionsExpanded === nextExpanded) return;
-  await setSessionsExpanded(nextExpanded);
+function renderSidebar() {
+  const collapsed = sidebarCollapsedPreference ?? sidebarMediaQuery.matches;
+  dashboardLayout.classList.toggle("is-sidebar-collapsed", collapsed);
+  sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+  sidebarToggle.title = sidebarToggle.ariaLabel = t(collapsed ? "expandSidebar" : "collapseSidebar");
+}
+
+function setupDashboardNavigation() {
+  sidebarToggle.addEventListener("click", () => {
+    sidebarCollapsedPreference = !dashboardLayout.classList.contains("is-sidebar-collapsed");
+    renderSidebar();
+    setDashboardSection(activeDashboardSection);
+  });
+  sidebarMediaQuery.addEventListener("change", () => {
+    renderSidebar();
+    setDashboardSection(activeDashboardSection);
+  });
+  renderSidebar();
+  threadListElement.style.setProperty("--thread-row-count", String(THREAD_PAGE_SIZE));
+  dashboardNavButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      dialogView.close(false);
+      setDashboardSection(button.dataset.dashboardSection);
+    });
+  });
+  dashboardNav.addEventListener("keydown", (event) => {
+    const currentIndex = dashboardNavButtons.indexOf(event.target);
+    if (currentIndex < 0) return;
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowDown") nextIndex = (currentIndex + 1) % dashboardNavButtons.length;
+    else if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + dashboardNavButtons.length) % dashboardNavButtons.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = dashboardNavButtons.length - 1;
+    else return;
+    event.preventDefault();
+    const nextButton = dashboardNavButtons[nextIndex];
+    nextButton.focus();
+    dialogView.close(false);
+    setDashboardSection(nextButton.dataset.dashboardSection);
+  });
+  setDashboardSection("account");
 }
 
 function updateTransferControls() {
@@ -569,7 +516,7 @@ async function selectAllFilteredThreads() {
   updateTransferControls();
   setStatus(t("selectingThreads"));
   try {
-    const threads = await invoke("list_threads_for_selection", {
+    const threads = topicFilter ? topicFilter.threads : await invoke("list_threads_for_selection", {
       query: threadListView.getSearchQuery().trim(),
     });
     selectedThreadIds = new Set(threads.map((thread) => thread.id));
@@ -589,6 +536,7 @@ function renderTheme() {
   document.documentElement.dataset.theme = theme.getResolvedTheme();
   themeButton.title = `${t("theme")}：${t(`theme${mode[0].toUpperCase()}${mode.slice(1)}`)}`;
   themeButton.ariaLabel = themeButton.title;
+  document.querySelector("#theme-label").textContent = t(`theme${mode[0].toUpperCase()}${mode.slice(1)}`);
   themeIcon.innerHTML = THEME_ICONS[mode];
   // 词云颜色由当前主题计算，主题切换后按已有数据重新排版并更新颜色。
   wordCloudView.render();
@@ -607,9 +555,16 @@ function syncNativeTrayLanguage() {
 function applyLanguage() {
   document.documentElement.lang = i18n.getLocale();
   document.title = t("appTitle");
+  renderSidebar();
   syncNativeTrayLanguage();
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     element.textContent = t(element.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-label]").forEach((element) => {
+    element.setAttribute("aria-label", t(element.dataset.i18nLabel));
+  });
+  dashboardNavButtons.forEach((button) => {
+    button.title = t(button.querySelector("[data-i18n]").dataset.i18n);
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
     element.placeholder = t(element.dataset.i18nPlaceholder);
@@ -628,8 +583,8 @@ function applyLanguage() {
     dashboardLoadingOverlay.setMessage(t("readingLocalData"));
   }
   renderQuotaAlertStatus();
-  updateModuleExpandTriggers();
   orb.title = t("orbTitle");
+  renderAccountSyncTime();
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
   const languageMode = i18n.getMode();
@@ -645,6 +600,7 @@ function applyLanguage() {
   trendView.render();
   tokenUsageView.render();
   renderTheme();
+  renderTopicsControls();
   renderCurrentThreadPage();
   updateTransferControls();
   if (refreshController.getLatestQuota() && !refreshController.isRefreshing()) {
@@ -653,8 +609,8 @@ function applyLanguage() {
   } else if (!refreshController.isRefreshing()) {
     setStatus(t("readingLocalData"));
   }
-  renderSessionsVisibility();
-  if (expanded && sessionsExpanded) searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+  setDashboardSection(activeDashboardSection);
+  if (expanded && activeDashboardSection === "sessions") void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
 
 function selectLanguage(nextLanguage) {
@@ -662,50 +618,67 @@ function selectLanguage(nextLanguage) {
   applyLanguage();
 }
 
-function getExpandedThreadRowCount() {
-  const availableHeight = threadListElement.clientHeight;
-  if (availableHeight === 0) return EXPANDED_THREAD_LAYOUT.minRows;
-
-  // 以不超过常规 60px 卡高为目标计算行数，窗口变大时优先增加会话数而非拉大卡片。
-  const rows = Math.ceil(
-    (availableHeight + EXPANDED_THREAD_LAYOUT.rowGapPx)
-    / (EXPANDED_THREAD_LAYOUT.targetRowHeightPx + EXPANDED_THREAD_LAYOUT.rowGapPx),
-  );
-  return Math.min(
-    EXPANDED_THREAD_LAYOUT.maxRows,
-    Math.max(EXPANDED_THREAD_LAYOUT.minRows, rows),
-  );
+function renderTopicsControls() {
+  topicsRange.replaceChildren(...[3, 7, 30].map((days) => {
+    const option = document.createElement("option");
+    option.value = days;
+    option.textContent = t(`trendRange${days}`);
+    return option;
+  }));
+  topicsRange.value = topicDays;
+  topicsRange.ariaLabel = t("conversationTopics");
+  const bar = document.querySelector("#topic-filter-bar");
+  bar.hidden = !topicFilter;
+  document.querySelector("#topic-filter-summary").textContent = topicFilter ? t("topicFilterSummary", {
+    word: topicFilter.name, days: topicFilter.days, occurrences: topicFilter.value, count: topicFilter.threads.length,
+  }) : "";
 }
 
-function syncExpandedThreadLayout() {
-  if (expandedModule !== "sessions" || !sessionsExpanded) return;
-  const nextRowCount = getExpandedThreadRowCount();
-  if (nextRowCount === expandedThreadRowCount) return;
+async function refreshTopics(forceRefresh = false) {
+  const requestVersion = ++topicRequestVersion;
+  const days = topicDays;
+  wordCloudView.showLoading();
+  try {
+    const data = await invoke("read_thread_trends", { days, forceRefresh });
+    if (requestVersion !== topicRequestVersion) return;
+    wordCloudView.setData(data.wordCloud, days);
+  } catch (error) {
+    if (requestVersion !== topicRequestVersion) return;
+    console.error("读取会话主题失败", error);
+    wordCloudView.showError();
+  }
+}
 
-  expandedThreadRowCount = nextRowCount;
-  threadListElement.style.setProperty("--expanded-thread-row-count", String(nextRowCount));
+function selectTopic(topic) {
+  window.clearTimeout(searchTimer);
+  searchRequestVersion += 1;
+  topicFilter = { ...topic, threads: topic.threads.map((thread) => ({ ...thread })) };
   currentThreadPage = 1;
-  void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
+  selectedThreadIds.clear();
+  document.querySelector("#thread-search").value = topic.name;
+  renderTopicsControls();
+  setDashboardSection("sessions");
 }
 
-function scheduleExpandedThreadLayoutSync() {
-  if (expandedThreadLayoutTimer !== null) window.clearTimeout(expandedThreadLayoutTimer);
-  expandedThreadLayoutTimer = window.setTimeout(() => {
-    expandedThreadLayoutTimer = null;
-    syncExpandedThreadLayout();
-  }, THREAD_LAYOUT_RESIZE_DEBOUNCE_MS);
-}
+topicsRange.addEventListener("change", () => {
+  topicDays = Number(topicsRange.value);
+  wordCloudView.setRange(topicDays);
+  void refreshTopics();
+});
 
 async function searchThreads(query, page = 1, forceRefresh = false) {
-  if (!expanded || !sessionsExpanded) return;
+  if (!expanded || activeDashboardSection !== "sessions" || dashboardUnavailable) return;
   const requestVersion = ++searchRequestVersion;
   const keyword = query.trim();
   threadListView.setSearchResult(t("readingSearch"));
   try {
-    const pageSize = expandedModule === "sessions"
-      ? expandedThreadRowCount * EXPANDED_THREAD_LAYOUT.columns
-      : THREAD_PAGE_SIZE.normal;
-    const data = await invoke("search_threads", { query: keyword, page, pageSize, forceRefresh });
+    // 主题结果来自词云快照，避免标题搜索和统计分词使用不同口径。
+    const total = topicFilter?.threads.length ?? 0;
+    const snapshotPage = Math.max(1, Math.min(page, Math.max(1, Math.ceil(total / THREAD_PAGE_SIZE))));
+    const data = topicFilter ? {
+      threads: topicFilter.threads.slice((snapshotPage - 1) * THREAD_PAGE_SIZE, snapshotPage * THREAD_PAGE_SIZE),
+      page: snapshotPage, total, totalPages: Math.ceil(total / THREAD_PAGE_SIZE),
+    } : await invoke("search_threads", { query: keyword, page, pageSize: THREAD_PAGE_SIZE, forceRefresh });
     if (requestVersion !== searchRequestVersion) return;
     currentThreadPage = data.page;
     currentPageThreads = data.threads;
@@ -729,11 +702,14 @@ async function searchThreads(query, page = 1, forceRefresh = false) {
 }
 
 async function openThread(thread) {
+  lastOpenedThreadId = thread.id;
+  const version = ++threadReadVersion;
   dialogView.openLoading(thread);
   try {
-    dialogView.showDetail(await invoke("read_thread", { threadId: thread.id }));
+    const detail = await invoke("read_thread", { threadId: thread.id });
+    if (version === threadReadVersion) dialogView.showDetail(detail);
   } catch (error) {
-    dialogView.showReadFailure(error);
+    if (version === threadReadVersion) dialogView.showReadFailure(error);
   }
 }
 
@@ -741,7 +717,6 @@ async function setExpanded(nextExpanded) {
   // 收起时必须先在 WebView 隐藏完整面板，再让原生窗口缩为 56px。
   // 否则 Windows 会先裁切旧面板的一帧，产生“Codex”标题残影。
   if (!nextExpanded) {
-    setModuleExpanded(null);
     app.classList.add("is-collapsing");
     app.classList.remove("is-expanded");
     // 将隐藏状态提交给渲染队列后再发起原生缩窗，避免尺寸变化抢在样式更新之前。
@@ -752,7 +727,8 @@ async function setExpanded(nextExpanded) {
     // 原生层统一控制窗口尺寸和锚点；展开时保持先扩窗、后显示面板的原有顺序。
     await invoke("resize_float_window", {
       expanded: nextExpanded,
-      sessionsExpanded,
+      // 导航栏目共用紧凑窗口，重新展开也不因停留在历史页而增高。
+      sessionsExpanded: false,
     });
   } catch (error) {
     if (!nextExpanded) {
@@ -767,12 +743,6 @@ async function setExpanded(nextExpanded) {
   expanded = nextExpanded;
   if (!expanded && windowMaximized) {
     windowMaximized = false;
-    wordCloudView.setWindowMaximized(false);
-    if (sessionsExpandedBeforeMaximize !== null) {
-      sessionsExpanded = sessionsExpandedBeforeMaximize;
-      sessionsExpandedBeforeMaximize = null;
-      renderSessionsVisibility();
-    }
   }
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
@@ -786,8 +756,10 @@ async function toggleThreadPinned(thread) {
       threadId: thread.id,
       isPinned: !thread.isPinned,
     });
+    const wasPinned = thread.isPinned;
+    if (topicFilter) thread.isPinned = !wasPinned;
     await searchThreads(threadListView.getSearchQuery(), currentThreadPage, true);
-    setStatus(t(thread.isPinned ? "threadUnpinned" : "threadPinned"));
+    setStatus(t(wasPinned ? "threadUnpinned" : "threadPinned"));
   } catch (error) {
     setStatus(t("readFailed", { error: String(error) }), "error");
   }
@@ -844,29 +816,14 @@ async function toggleWindowMaximized() {
   const previousMaximized = windowMaximized;
   const expectedMaximized = !previousMaximized;
   wordCloudView.setWindowResizeTransitioning(true);
-  // 原生窗口变形会先触发 ResizeObserver；提前同步状态，避免还原时按 300 词错误重绘一帧。
+  // 原生窗口动画期间暂停词云排版，完成后按最终尺寸重绘一次。
   windowMaximized = expectedMaximized;
-  wordCloudView.setWindowMaximized(expectedMaximized, { redraw: false });
   try {
     const maximized = await invoke("toggle_window_maximized");
     windowMaximized = maximized;
-    wordCloudView.setWindowMaximized(maximized, { redraw: false });
-    if (maximized) {
-      sessionsExpandedBeforeMaximize = sessionsExpanded;
-      if (!sessionsExpanded) await setSessionsExpanded(true, { resizeWindow: false });
-      wordCloudView.setWindowResizeTransitioning(false);
-      return;
-    }
-
-    const restoreExpanded = sessionsExpandedBeforeMaximize;
-    sessionsExpandedBeforeMaximize = null;
-    if (restoreExpanded !== null && sessionsExpanded !== restoreExpanded) {
-      await setSessionsExpanded(restoreExpanded, { resizeWindow: false });
-    }
     wordCloudView.setWindowResizeTransitioning(false);
   } catch (error) {
     windowMaximized = previousMaximized;
-    wordCloudView.setWindowMaximized(previousMaximized, { redraw: false });
     wordCloudView.setWindowResizeTransitioning(false);
     console.error("切换窗口最大化失败", error);
     setStatus(t("windowMaximizeFailed", { error: String(error) }), "error");
@@ -909,7 +866,7 @@ async function bootstrap() {
   applyLanguage();
   void loadAppVersion();
   setupLanguageControls();
-  setupModuleExpansion();
+  setupDashboardNavigation();
   themeButton.addEventListener("click", () => {
     theme.cycleMode();
     renderTheme();
@@ -930,7 +887,6 @@ async function bootstrap() {
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);
-  sessionsToggle.addEventListener("click", () => void toggleSessionsExpanded());
   selectPageThreadsButton.addEventListener("click", () => {
     currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
     renderCurrentThreadPage();
@@ -944,11 +900,11 @@ async function bootstrap() {
     await importTransferFile(file);
   });
   setupWindowDragging();
-  const threadListResizeObserver = new ResizeObserver(scheduleExpandedThreadLayoutSync);
-  threadListResizeObserver.observe(threadListElement);
-  window.addEventListener("resize", scheduleExpandedThreadLayoutSync);
   threadListView.onSearchInput(() => {
     window.clearTimeout(searchTimer);
+    searchRequestVersion += 1;
+    topicFilter = null;
+    renderTopicsControls();
     currentThreadPage = 1;
     clearThreadSelection();
     searchTimer = window.setTimeout(() => searchThreads(threadListView.getSearchQuery(), 1), 260);

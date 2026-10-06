@@ -29,3 +29,98 @@
 .reset-credits-tooltip-description { color: #738095; }
 .account-message { margin: 5px 1px 0; color: #cf1322; font-size: var(--font-caption); line-height: 1.4; }
 .account-email-item { flex: 0 1 auto; max-width: 45%; }
+
+.dashboard-page .account-details { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; margin: 0; padding: 16px; border-radius: 14px; background: #fff; }
+.dashboard-page .account-detail-item { flex-wrap: wrap; align-content: start; gap: 7px; }
+.dashboard-page .account-detail-label { width: 100%; color: #64748b; font-weight: 400; }
+.dashboard-page .account-detail-label::after { content: none; }
+.dashboard-page .account-detail-item strong,
+.dashboard-page .account-reset-credits strong { font-size: var(--font-body); color: #30445f; }
+.dashboard-page .account-email-item { max-width: 100%; }
+.account-detail-heading { display: flex; width: 100%; min-width: 0; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.dashboard-page .account-detail-heading .account-detail-label { width: auto; }
+.account-detail-heading .account-billing-button { margin-left: 0; }
+.dashboard-page .account-email-item strong { max-width: calc(100% - 28px); }
+.dashboard-page .account-email-item::after,
+.dashboard-page .account-reset-credits::before { content: none; }
+.dashboard-page .account-reset-credits { flex-wrap: wrap; align-content: start; gap: 7px; }
+.dashboard-page .account-billing-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; gap: 10px 16px; margin: 0; padding-top: 12px; border-top: 1px solid #edf1f7; }
+.dashboard-page .account-billing-actions .quota-alert-control { padding-left: 16px; border-left: 1px solid #edf1f7; }
+.dashboard-page .account-billing-button { font-weight: 600; }
+.dashboard-page .reset-credits-info { width: 16px; height: 16px; margin-left: 3px; transform: none; }
+.dashboard-page .reset-credits-tooltip { max-width: min(400px, 70vw); left: auto; right: 0; white-space: normal; }
+
+@media (max-width: 560px) {
+  .dashboard-page .account-details { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
+  .dashboard-page .account-email-item { grid-column: 1 / -1; }
+  .dashboard-page .account-billing-actions .quota-alert-control { padding-left: 0; border-left: 0; }
+}
+
+/* 热力图承接额度下方空白；每天一格，低饱和蓝色让额度数字保持首要层级。 */
+.token-heatmap-section { flex: 0 0 auto; padding: 14px 16px; border: 1px solid #e7edf3; border-radius: 14px; background: #fff; }
+.token-heatmap-heading, .token-heatmap-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.token-heatmap-heading { margin-bottom: 10px; }
+.token-heatmap-heading h3 { margin: 0; color: #30445f; font-size: var(--font-body); font-weight: 650; }
+.token-heatmap-heading > span, .token-heatmap-footer { color: #7f8a97; font-size: var(--font-caption); }
+.token-heatmap { position: relative; min-height: 146px; }
+.token-heatmap > .trend-empty { display: grid; min-height: 146px; margin: 0; place-items: center; text-align: center; }
+.token-heatmap-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px 6px; }
+.token-heatmap-weekday { color: #8a96a7; font-size: var(--font-caption); line-height: 16px; text-align: center; }
+.token-heatmap-day, .token-heatmap-legend i { border: 1px solid rgba(22, 119, 255, .06); border-radius: 4px; background: var(--heatmap-fill); }
+.token-heatmap-day { display: grid; min-height: 20px; place-items: center; color: var(--heatmap-ink); font-size: 10px; font-variant-numeric: tabular-nums; transition: filter .15s; }
+.token-heatmap-day:hover { filter: brightness(.93); }
+.token-heatmap-day:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
+.token-heatmap-section [data-level="0"] { --heatmap-fill: #f1f5f9; --heatmap-ink: #8190a2; }
+.token-heatmap-section [data-level="1"] { --heatmap-fill: #dbeafe; --heatmap-ink: #396590; }
+.token-heatmap-section [data-level="2"] { --heatmap-fill: #93c5fd; --heatmap-ink: #244b7b; }
+.token-heatmap-section [data-level="3"] { --heatmap-fill: #3b82f6; --heatmap-ink: #fff; }
+.token-heatmap-section [data-level="4"] { --heatmap-fill: #1d4ed8; --heatmap-ink: #fff; }
+.token-heatmap-footer { margin-top: 10px; flex-wrap: wrap; }
+.token-heatmap-legend { display: flex; align-items: center; gap: 4px; }
+.token-heatmap-legend i { width: 10px; height: 10px; }
+:root[data-theme="dark"] .token-heatmap-section { border-color: #2a3544; background: #151b23; }
+:root[data-theme="dark"] .token-heatmap-heading h3 { color: #d4e3f5; }
+:root[data-theme="dark"] .token-heatmap-section [data-level="0"] { --heatmap-fill: #202b39; --heatmap-ink: #9aacc0; }
+:root[data-theme="dark"] .token-heatmap-section [data-level="1"] { --heatmap-fill: #a8d0ff; --heatmap-ink: #244b7b; }
+:root[data-theme="dark"] .token-heatmap-section [data-level="2"] { --heatmap-fill: #609eef; --heatmap-ink: #152c50; }
+:root[data-theme="dark"] .token-heatmap-section [data-level="3"] { --heatmap-fill: #2f71d5; }
+:root[data-theme="dark"] .token-heatmap-section [data-level="4"] { --heatmap-fill: #1d4ed8; --heatmap-ink: #fff; }
+
+.token-heatmap-month-picker { display: flex; align-items: center; gap: 6px; color: #64748b; font-size: var(--font-caption); }
+.token-heatmap-month-picker > span { min-width: 82px; text-align: center; }
+.token-heatmap-month-picker .selection-button { min-height: 22px; width: 24px; padding: 0; font-size: 16px; line-height: 20px; }
+.token-heatmap-month-picker .selection-button:disabled { opacity: .35; cursor: default; }
+.token-heatmap-day.is-future { background: transparent; border: 1px dashed #e7edf3; }
+:root[data-theme="dark"] .token-heatmap-month-picker { color: #9aacc0; }
+:root[data-theme="dark"] .token-heatmap-day.is-future { border-color: #2a3544; }
+
+/* 五项账户累计统计独立于月历筛选；数字在上、标签在下，保持紧凑扫描顺序。 */
+.account-usage-summary { display: grid; flex: 0 0 auto; grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 60px; margin: 0; padding: 10px 0; border: 1px solid #e7edf3; border-radius: 12px; background: #fff; }
+.account-usage-summary > div { display: flex; min-width: 0; flex-direction: column-reverse; align-items: center; justify-content: center; gap: 5px; padding: 0 6px; }
+.account-usage-summary > div + div { border-left: 1px solid #edf1f7; }
+.account-usage-summary dt { max-width: 100%; color: #7f8a97; font-size: var(--font-caption); line-height: 1.2; text-align: center; }
+.account-usage-summary dd { max-width: 100%; margin: 0; color: #3979c9; font-size: var(--font-body); font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
+/* 为统计栏腾出空间，同时保留固定窗口中的完整六周月历。 */
+.dashboard-page.quota-section { gap: 10px; }
+.dashboard-page.quota-section > .account-details { gap: 10px; padding: 14px; }
+.dashboard-page.quota-section .account-billing-actions { padding-top: 10px; }
+.dashboard-page.quota-section .quota-card { min-height: 148px; gap: 8px; padding: 14px; }
+.token-heatmap-section { padding: 12px 14px; }
+.token-heatmap-heading { margin-bottom: 8px; }
+.token-heatmap-footer { margin-top: 8px; }
+.token-heatmap-day { min-height: 18px; }
+:root[data-theme="dark"] .account-usage-summary { border-color: #2a3544; background: #151b23; }
+:root[data-theme="dark"] .account-usage-summary > div + div { border-color: #2a3544; }
+:root[data-theme="dark"] .account-usage-summary dd { color: #90bfff; }
+@media (max-width: 560px) {
+  .account-usage-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 0; }
+  .account-usage-summary > div:nth-child(4) { border-left: 0; }
+}
+
+.account-sync-time { display: flex; flex: 1 1 120px; min-width: 120px; align-items: center; gap: 6px; color: #7f8a97; font-size: var(--font-caption); white-space: nowrap; }
+.account-sync-time time { color: #526780; font-variant-numeric: tabular-nums; }
+:root[data-theme="dark"] .account-sync-time { border-color: #29384c; color: #9aacc0; }
+:root[data-theme="dark"] .account-sync-time time { color: #b7c9df; }
+@media (max-width: 560px) {
+  .account-sync-time { flex: 0 1 auto; }
+}

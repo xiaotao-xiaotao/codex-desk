@@ -52,12 +52,6 @@
                 <option value="ko">한국어</option>
               </select>
             </label>
-            <button id="theme-button" class="icon-button" type="button" title="主题：跟随系统" aria-label="主题：跟随系统">
-              <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
-            </button>
-            <button id="settings-button" class="icon-button" type="button" title="设置" aria-label="打开设置">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
-            </button>
             <button id="quit-button" class="close-icon-button" type="button" title="退出程序" aria-label="退出程序"></button>
           </div>
         </header>
@@ -75,144 +69,206 @@
           </div>
         </aside>
 
-        <section id="dashboard-error" class="dashboard-error" aria-live="assertive" hidden>
-          <svg class="dashboard-error-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4.9 8.5a10.4 10.4 0 0 1 14.2 0M7.8 11.4a6.3 6.3 0 0 1 8.4 0M10.7 14.4a2.2 2.2 0 0 1 2.6 0" />
-            <path d="M12 18.2h.01" />
-          </svg>
-          <h2 id="dashboard-error-title"></h2>
-          <p id="dashboard-error-description"></p>
-          <button id="dashboard-retry" class="dashboard-retry-button" type="button"></button>
-        </section>
-
-        <section class="dashboard-section quota-section" aria-labelledby="quota-heading">
-          <div class="section-heading">
-            <div class="quota-title-row">
-              <h2 id="quota-heading" class="quota-heading-title" data-i18n="accountUsage">账户用量</h2>
-              <span class="quota-heading-subtitle" data-i18n="quotaOverview">额度概览</span>
-            </div>
-            <div class="quota-alert-control">
-              <span id="quota-alert-status" class="quota-alert-status"></span>
-              <button id="quota-alert-toggle" class="quota-alert-toggle" type="button"></button>
-            </div>
-          </div>
-          <div class="account-details">
-            <div class="account-detail-item account-email-item">
-              <span class="account-detail-label" data-i18n="accountEmail">登录邮箱</span>
-              <strong id="account-email">正在读取账号信息…</strong>
-              <button id="account-email-visibility" class="email-visibility-button" type="button" aria-pressed="true" hidden>
-                <svg class="email-visibility-icon email-visibility-icon-show" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-                  <circle cx="12" cy="12" r="2.5" />
-                </svg>
-                <svg class="email-visibility-icon email-visibility-icon-hide" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M3 3l18 18M10.6 6.1A9.3 9.3 0 0 1 12 6c6 0 9.5 6 9.5 6a15.2 15.2 0 0 1-2.1 2.8M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.8-.4 3.9-1" />
-                </svg>
+        <div class="dashboard-layout">
+          <aside class="dashboard-sidebar">
+            <div class="sidebar-brand">
+              <span class="sidebar-brand-name"><svg class="sidebar-brand-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" opacity=".22" /><path d="M12 3a9 9 0 1 1-8.6 6.3M12 7.5V12l3.5 2" /></svg><span>Codex <strong>Desk</strong></span></span>
+              <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="dashboard-navigation" aria-label="收起侧栏" title="收起侧栏">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /><path class="sidebar-toggle-chevron" d="m16 9-3 3 3 3" /></svg>
               </button>
             </div>
-            <div class="account-detail-item">
-              <span class="account-detail-label" data-i18n="accountPlan">订阅方案</span>
-              <strong id="account-plan">正在读取账号信息…</strong>
-            </div>
-            <div id="reset-credits-row" class="account-reset-credits" hidden>
-              <span class="account-detail-label">
-                <span data-i18n="resetCreditsTitle">使用限额重置</span>
-                <button id="reset-credits-info" class="reset-credits-info" type="button" aria-describedby="reset-credits-tooltip" aria-label="查看使用限额重置说明">
-                  <span aria-hidden="true">ⓘ</span>
-                </button>
-                <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
-              </span>
-              <strong id="reset-credits-summary"></strong>
-            </div>
-            <div class="account-billing-actions">
-              <button id="account-billing" class="account-billing-button" type="button" data-i18n="openBilling">查看订阅到期时间</button>
-            </div>
-          </div>
-          <p id="account-message" class="account-message" hidden></p>
-          <div class="account-quota-divider" aria-hidden="true"></div>
-          <div id="quota-list" class="quota-list" aria-live="polite" aria-busy="true">
-            <article class="quota-card quota-card-placeholder" aria-hidden="true">
-              <h3 data-i18n="quotaWindow">额度窗口</h3>
-              <div class="quota-value">
-                <strong>--</strong>
-                <span data-i18n="remaining">剩余</span>
-              </div>
-              <div class="progress-track"><span></span></div>
-            </article>
-            <article class="quota-card quota-card-placeholder" aria-hidden="true">
-              <h3 data-i18n="quotaWindow">额度窗口</h3>
-              <div class="quota-value">
-                <strong>--</strong>
-                <span data-i18n="remaining">剩余</span>
-              </div>
-              <div class="progress-track"><span></span></div>
-            </article>
-          </div>
-        </section>
-
-        <section id="insights-section" class="dashboard-section insights-overview" aria-labelledby="insights-overview-heading">
-          <div class="section-heading insights-overview-heading module-expand-trigger" data-module-expand="insights" aria-controls="insights-section">
-            <div class="section-title-row">
-              <p class="section-kicker" data-i18n="insightsOverview">数据洞察</p>
-              <h2 id="insights-overview-heading" data-i18n="insightsOverviewTitle">趋势总览</h2>
-            </div>
-            <div class="insights-heading-actions">
-              <div class="insights-range-picker">
-                <select id="insights-range" class="trend-range" aria-label="趋势范围"></select>
-              </div>
-              <button class="module-expand-button" type="button" aria-label="放大模块" title="放大模块" aria-pressed="false">
-                <svg class="module-expand-icon module-expand-icon-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path></svg>
-                <svg class="module-expand-icon module-expand-icon-restore" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v6H3M15 3v6h6M21 15h-6v6M3 15h6v6"></path></svg>
+            <nav id="dashboard-navigation" class="dashboard-nav" role="tablist" aria-orientation="vertical" data-i18n-label="mainNavigation">
+              <button id="nav-account" class="dashboard-nav-button is-active" type="button" role="tab" aria-selected="true" aria-controls="account-section" data-dashboard-section="account">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20v-2a7 7 0 0 1 14 0v2" /></svg>
+                <span data-i18n="accountUsage">账户用量</span>
               </button>
+              <button id="nav-insights" class="dashboard-nav-button" type="button" role="tab" aria-selected="false" aria-controls="insights-section" tabindex="-1" data-dashboard-section="insights">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16M8 15v-4M12 15V7M16 15V9" /></svg>
+                <span data-i18n="insightsOverview">数据洞察</span>
+              </button>
+              <button id="nav-topics" class="dashboard-nav-button" type="button" role="tab" aria-selected="false" aria-controls="topics-section" tabindex="-1" data-dashboard-section="topics">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5Z" /><path d="M8 9h8M8 12h5" /></svg>
+                <span data-i18n="conversationTopics">会话主题</span>
+              </button>
+              <button id="nav-sessions" class="dashboard-nav-button" type="button" role="tab" aria-selected="false" aria-controls="sessions-section" tabindex="-1" data-dashboard-section="sessions">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" /><circle cx="19" cy="18" r="2" /></svg>
+                <span data-i18n="localHistory">本地历史</span>
+              </button>
+            </nav>
+            <div class="sidebar-bottom">
+              <div class="sidebar-utilities">
+            <button id="theme-button" class="dashboard-nav-button sidebar-utility-button" type="button" title="主题：跟随系统" aria-label="主题：跟随系统">
+              <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+              <span id="theme-label"></span>
+            </button>
+            <button id="settings-button" class="dashboard-nav-button sidebar-utility-button" type="button" title="设置" aria-label="打开设置">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+              <span data-i18n="settingsTitle">设置</span>
+            </button>
+              </div>
             </div>
-          </div>
-
-          <div class="insights-layout">
-            <section class="dashboard-section trend-section activity-trend-section" aria-labelledby="trend-heading">
-              <div class="section-heading trend-heading">
-                <div class="section-title-row">
-                  <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
-                  <span id="trend-total" class="trend-total"></span>
-                </div>
-                <div class="trend-heading-actions">
-                  <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
-                </div>
-              </div>
-              <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
+          </aside>
+          <div class="dashboard-workspace">
+            <section id="dashboard-error" class="dashboard-error" aria-live="assertive" hidden>
+              <svg class="dashboard-error-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.9 8.5a10.4 10.4 0 0 1 14.2 0M7.8 11.4a6.3 6.3 0 0 1 8.4 0M10.7 14.4a2.2 2.2 0 0 1 2.6 0" />
+                <path d="M12 18.2h.01" />
+              </svg>
+              <h2 id="dashboard-error-title"></h2>
+              <p id="dashboard-error-description"></p>
+              <button id="dashboard-retry" class="dashboard-retry-button" type="button"></button>
             </section>
 
-            <section class="dashboard-section word-cloud-section" aria-labelledby="word-cloud-heading">
-              <div class="section-heading word-cloud-heading">
-                <div class="section-title-row">
-                  <p id="word-cloud-heading" class="section-kicker" data-i18n="wordCloudKicker">关键词词云</p>
-                  <span id="word-cloud-summary" class="word-cloud-summary"></span>
+            <section id="account-section" class="dashboard-section dashboard-page quota-section" role="tabpanel" aria-labelledby="nav-account" tabindex="0">
+              <div class="account-details">
+                <div class="account-detail-item account-email-item">
+                  <span class="account-detail-label" data-i18n="accountEmail">登录邮箱</span>
+                  <strong id="account-email">正在读取账号信息…</strong>
+                  <button id="account-email-visibility" class="email-visibility-button" type="button" aria-pressed="true" hidden>
+                    <svg class="email-visibility-icon email-visibility-icon-show" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                      <circle cx="12" cy="12" r="2.5" />
+                    </svg>
+                    <svg class="email-visibility-icon email-visibility-icon-hide" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 3l18 18M10.6 6.1A9.3 9.3 0 0 1 12 6c6 0 9.5 6 9.5 6a15.2 15.2 0 0 1-2.1 2.8M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.8-.4 3.9-1" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="account-detail-item">
+                  <div class="account-detail-heading">
+                    <span class="account-detail-label" data-i18n="accountPlan">订阅方案</span>
+                    <button id="account-billing" class="account-billing-button" type="button" data-i18n="openBilling">查看订阅到期时间</button>
+                  </div>
+                  <strong id="account-plan">正在读取账号信息…</strong>
+                </div>
+                <div id="reset-credits-row" class="account-reset-credits" hidden>
+                  <span class="account-detail-label">
+                    <span data-i18n="resetCreditsTitle">使用限额重置</span>
+                    <button id="reset-credits-info" class="reset-credits-info" type="button" aria-describedby="reset-credits-tooltip" aria-label="查看使用限额重置说明">
+                      <span aria-hidden="true">ⓘ</span>
+                    </button>
+                    <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
+                  </span>
+                  <strong id="reset-credits-summary"></strong>
+                </div>
+                <div class="account-billing-actions">
+                  <span class="account-sync-time"><span data-i18n="accountLastSynced">最近同步</span><time id="account-last-synced">--</time></span>
+                  <div class="quota-alert-control">
+                    <span id="quota-alert-status" class="quota-alert-status"></span>
+                    <button id="quota-alert-toggle" class="quota-alert-toggle" type="button"></button>
+                  </div>
                 </div>
               </div>
-              <div id="word-cloud" class="word-cloud" aria-live="polite"></div>
-            </section>
-
-            <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
-              <div class="section-heading trend-heading">
-                <div class="section-title-row">
-                  <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token洞察</p>
-                  <span id="token-usage-total" class="trend-total"></span>
-                </div>
-                <div id="token-usage-controls" class="token-usage-controls" aria-label="Token 洞察视图"></div>
+              <p id="account-message" class="account-message" hidden></p>
+              <div class="account-quota-divider" aria-hidden="true"></div>
+              <div id="quota-list" class="quota-list" aria-live="polite" aria-busy="true">
+                <article class="quota-card quota-card-placeholder" aria-hidden="true">
+                  <h3 data-i18n="quotaWindow">额度窗口</h3>
+                  <div class="quota-value">
+                    <strong>--</strong>
+                    <span data-i18n="remaining">剩余</span>
+                  </div>
+                  <div class="progress-track"><span></span></div>
+                </article>
+                <article class="quota-card quota-card-placeholder" aria-hidden="true">
+                  <h3 data-i18n="quotaWindow">额度窗口</h3>
+                  <div class="quota-value">
+                    <strong>--</strong>
+                    <span data-i18n="remaining">剩余</span>
+                  </div>
+                  <div class="progress-track"><span></span></div>
+                </article>
               </div>
-              <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
+              <dl id="account-usage-summary" class="account-usage-summary" aria-label="历史使用概况" data-i18n-label="accountUsageSummaryLabel" aria-busy="true">
+                <div><dt data-i18n="accountLifetimeTokens">累计 Token</dt><dd data-usage-metric="lifetimeTokens">--</dd></div>
+                <div><dt data-i18n="accountPeakTokens">单日 Token 峰值</dt><dd data-usage-metric="peakDailyTokens">--</dd></div>
+                <div><dt data-i18n="accountLongestTask">最长任务用时</dt><dd data-usage-metric="longestRunningTurnSec">--</dd></div>
+                <div><dt data-i18n="accountLongestStreak">最长连续天数</dt><dd data-usage-metric="longestStreakDays">--</dd></div>
+                <div><dt data-i18n="accountCurrentStreak">当前连续天数</dt><dd data-usage-metric="currentStreakDays">--</dd></div>
+              </dl>
+              <section class="token-heatmap-section" aria-labelledby="token-heatmap-heading">
+                <div class="token-heatmap-heading">
+                  <h3 id="token-heatmap-heading" data-i18n="tokenHeatmapTitle">每日 Token 活跃度</h3>
+                  <div class="token-heatmap-month-picker">
+                    <button id="token-heatmap-previous" class="selection-button" type="button">‹</button>
+                    <span id="token-heatmap-month" aria-live="polite"></span>
+                    <button id="token-heatmap-next" class="selection-button" type="button">›</button>
+                  </div>
+                </div>
+                <div id="token-heatmap" class="token-heatmap" aria-busy="true"></div>
+                <div class="token-heatmap-footer">
+                  <span id="token-heatmap-summary" aria-live="polite"></span>
+                  <div class="token-heatmap-legend" aria-hidden="true">
+                    <span data-i18n="tokenHeatmapLess">少</span>
+                    <i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i>
+                    <span data-i18n="tokenHeatmapMore">多</span>
+                  </div>
+                </div>
+              </section>
             </section>
-          </div>
-        </section>
 
-        <section id="sessions-section" class="dashboard-section sessions-section is-collapsed" aria-labelledby="threads-heading">
-          <div class="section-heading sessions-heading module-expand-trigger" data-module-expand="sessions" aria-controls="sessions-section">
-            <div class="section-title-row">
-              <p class="section-kicker" data-i18n="localHistory">本地历史</p>
-              <h2 id="threads-heading" data-i18n="recentThreads">最近会话</h2>
-            </div>
-            <div class="sessions-heading-actions">
-              <div class="thread-tools">
-                <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
+            <section id="insights-section" class="dashboard-section dashboard-page insights-overview app-scrollable" role="tabpanel" aria-labelledby="nav-insights" tabindex="0" hidden>
+              <div class="insights-layout">
+                <section class="dashboard-section trend-section activity-trend-section" aria-labelledby="trend-heading">
+                  <div class="section-heading trend-heading">
+                    <div class="section-title-row">
+                      <p id="trend-heading" class="section-kicker" data-i18n="trendKicker">活动洞察</p>
+                      <span id="trend-total" class="trend-total"></span>
+                    </div>
+                    <div class="insights-range-picker">
+                      <select id="insights-range" class="trend-range" aria-label="趋势范围"></select>
+                    </div>
+                    <div class="trend-heading-actions">
+                      <div id="trend-controls" class="trend-controls" aria-label="趋势指标"></div>
+                    </div>
+                  </div>
+                  <div id="thread-trend-chart" class="thread-trend-chart" aria-live="polite"></div>
+                </section>
+
+                <section class="dashboard-section trend-section token-usage-section" aria-labelledby="token-usage-heading">
+                  <div class="section-heading trend-heading">
+                    <div class="section-title-row">
+                      <p id="token-usage-heading" class="section-kicker" data-i18n="tokenUsageKicker">Token洞察</p>
+                      <span id="token-usage-total" class="trend-total"></span>
+                    </div>
+                  </div>
+                  <div id="token-usage-chart" class="thread-trend-chart token-usage-chart" aria-live="polite"></div>
+                </section>
+
+                <section class="dashboard-section trend-section token-distribution-section" aria-labelledby="token-distribution-heading">
+                  <div class="section-heading trend-heading">
+                    <div class="section-title-row">
+                      <p id="token-distribution-heading" class="section-kicker" data-i18n="tokenUsageDistributionTitle">会话 Token 分布</p>
+                      <span id="token-distribution-total" class="trend-total"></span>
+                    </div>
+                  </div>
+                  <div id="token-distribution-chart" class="thread-trend-chart" aria-live="polite"></div>
+                </section>
+
+              </div>
+            </section>
+
+            <section id="topics-section" class="dashboard-section dashboard-page topics-page" role="tabpanel" aria-labelledby="nav-topics" tabindex="0" hidden>
+              <div class="topics-toolbar">
+                <p data-i18n="topicsHint">点击主题查看匹配会话；统计最近 100 个会话的用户输入。</p>
+                <div class="insights-range-picker"><select id="topics-range" aria-label="主题时间范围"></select></div>
+              </div>
+                <section class="dashboard-section word-cloud-section" aria-labelledby="word-cloud-heading">
+                  <div class="section-heading word-cloud-heading">
+                    <div class="section-title-row">
+                      <p id="word-cloud-heading" class="section-kicker" data-i18n="wordCloudKicker">关键词词云</p>
+                      <span id="word-cloud-summary" class="word-cloud-summary"></span>
+                    </div>
+                  </div>
+                  <div id="word-cloud" class="word-cloud" aria-live="polite"></div>
+                </section>
+            </section>
+
+            <section id="sessions-section" class="dashboard-section dashboard-page sessions-section" role="tabpanel" aria-labelledby="nav-sessions" tabindex="0" hidden>
+              <div id="topic-filter-bar" class="topic-filter-bar" hidden>
+                <span id="topic-filter-summary"></span>
+              </div>
+              <div class="sessions-toolbar">
                 <label class="thread-search">
                   <span class="visually-hidden" data-i18n="searchThreads">搜索最近会话</span>
                   <input id="thread-search" type="search" placeholder="按会话标题搜索" data-i18n-placeholder="searchPlaceholder" autocomplete="off" />
@@ -221,104 +277,88 @@
                   <button id="import-threads" class="thread-action-button" type="button" data-i18n="importThreads">导入</button>
                   <button id="export-threads" class="thread-action-button thread-action-button-primary" type="button" data-i18n="exportThreads" disabled>导出</button>
                 </div>
-              </div>
-              <button id="sessions-toggle" class="section-collapse-button" type="button" aria-expanded="false" aria-controls="sessions-content">
-                <span id="sessions-toggle-label" class="visually-hidden">展开本地历史</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
-              </button>
-              <button class="module-expand-button" type="button" aria-label="放大模块" title="放大模块" aria-pressed="false">
-                <svg class="module-expand-icon module-expand-icon-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path></svg>
-                <svg class="module-expand-icon module-expand-icon-restore" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v6H3M15 3v6h6M21 15h-6v6M3 15h6v6"></path></svg>
-              </button>
-            </div>
-          </div>
-          <div id="sessions-content" class="sessions-content" hidden>
-            <div id="thread-selection-bar" class="thread-selection-bar" hidden>
-              <button id="select-page-threads" class="selection-button" type="button" data-i18n="selectPage">全选本页</button>
-              <button id="select-all-threads" class="selection-button" type="button" data-i18n="selectAllResults">全选筛选结果</button>
-              <button id="clear-thread-selection" class="selection-button selection-button-muted" type="button" data-i18n="clearSelection">清除</button>
-              <span id="selected-thread-count" class="selected-thread-count" aria-live="polite"></span>
-            </div>
-            <div id="thread-list" class="thread-list app-scrollable" aria-live="polite"></div>
-            <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
-              <button id="previous-page" class="pagination-button" type="button" data-i18n="previousPage">上一页</button>
-              <span id="page-indicator" class="page-indicator"></span>
-              <button id="next-page" class="pagination-button" type="button" data-i18n="nextPage">下一页</button>
-            </nav>
-          </div>
-        </section>
 
-        <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
+              </div>
+              <div id="sessions-content" class="sessions-content">
+                <div id="thread-list" class="thread-list app-scrollable" aria-live="polite"></div>
+                <div class="sessions-footer">
+                <div id="thread-selection-bar" class="thread-selection-bar" hidden>
+                  <button id="select-page-threads" class="selection-button" type="button" data-i18n="selectPage">全选本页</button>
+                  <button id="select-all-threads" class="selection-button" type="button" data-i18n="selectAllResults">全选筛选结果</button>
+                  <button id="clear-thread-selection" class="selection-button selection-button-muted" type="button" data-i18n="clearSelection">清除</button>
+                  <span id="selected-thread-count" class="selected-thread-count" aria-live="polite"></span>
+                </div>
+                <span id="search-result" class="search-result" data-i18n="localOnly">仅从本机读取</span>
+                <nav id="thread-pagination" class="thread-pagination" aria-label="会话分页" hidden>
+                  <button id="previous-page" class="pagination-button" type="button" data-i18n="previousPage">上一页</button>
+                  <span id="page-indicator" class="page-indicator"></span>
+                  <button id="next-page" class="pagination-button" type="button" data-i18n="nextPage">下一页</button>
+                </nav>
+                </div>
+              </div>
+            </section>
+
+            <section id="thread-dialog" class="thread-dialog" hidden tabindex="-1" aria-labelledby="thread-dialog-heading">
+              <header class="thread-dialog-toolbar">
+                <div class="thread-dialog-title">
+                  <button id="dialog-close" class="thread-back-button" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+                  </button>
+                  <div class="thread-dialog-heading">
+                    <div class="thread-dialog-title-row">
+                      <h2 id="thread-dialog-heading"><span id="dialog-title"></span></h2>
+                      <button id="thread-copy-id" class="thread-copy-id-button" type="button"></button>
+                    </div>
+                    <div id="thread-insights" class="insight-list" aria-live="polite"></div>
+                  </div>
+                </div>
+                <div class="thread-dialog-actions">
+                  <button id="thread-refresh" class="icon-button refresh-icon-button" type="button"></button>
+                  <button id="thread-export" class="thread-toolbar-action thread-export-button" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"></path></svg>
+                  </button>
+                </div>
+              </header>
+              <section class="dialog-content">
+                <section class="dialog-messages-pane" aria-label="聊天消息">
+                  <div class="dialog-search" role="search">
+                    <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
+                    <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
+                    <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
+                  </div>
+                  <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
+                </section>
+              </section>
+              <section id="file-diff-panel" class="file-diff-panel" role="dialog" aria-labelledby="file-diff-title" hidden>
+                <header class="file-diff-toolbar">
+                  <div>
+                    <h3 id="file-diff-title"></h3>
+                    <p id="file-diff-summary" class="file-diff-summary"></p>
+                  </div>
+                  <div class="file-diff-actions">
+                    <div class="file-diff-layout-switch" role="group">
+                      <button id="file-diff-side-by-side" class="file-diff-layout-button" type="button" aria-pressed="true"></button>
+                      <button id="file-diff-unified" class="file-diff-layout-button" type="button" aria-pressed="false"></button>
+                    </div>
+                    <button id="file-diff-close" class="close-icon-button" type="button"></button>
+                  </div>
+                </header>
+                <div id="file-diff-list" class="file-diff-list app-scrollable"></div>
+              </section>
+              <section id="thread-image-preview" class="thread-image-preview" role="dialog" aria-labelledby="thread-image-preview-title" hidden>
+                <h3 id="thread-image-preview-title" class="visually-hidden"></h3>
+                <button id="thread-image-preview-close" class="close-icon-button" type="button"></button>
+                <img id="thread-image-preview-image" alt="" />
+              </section>
+            </section>
+
+            <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
+          </div>
+        </div>
       </section>
     </main>
     <input id="import-file-input" type="file" accept="application/json,.codex-desk.json" hidden />
-    <dialog id="thread-dialog" class="thread-dialog" aria-labelledby="thread-dialog-heading">
-      <header class="thread-dialog-toolbar">
-        <div class="thread-dialog-title">
-          <button id="thread-sidebar-toggle" class="thread-sidebar-toggle" type="button" aria-expanded="false" aria-controls="thread-sidebar">
-            <svg class="thread-sidebar-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3.5" y="4" width="17" height="16" rx="2.5"></rect>
-              <path d="M9 4v16"></path>
-              <path class="thread-sidebar-toggle-expand" d="m11 9 3 3-3 3"></path>
-              <path class="thread-sidebar-toggle-collapse" d="m14 9-3 3 3 3"></path>
-            </svg>
-          </button>
-          <div class="thread-dialog-heading">
-            <h2 id="thread-dialog-heading">
-              <span data-i18n="threadDetail">会话详情</span>
-              <span class="thread-dialog-title-separator" aria-hidden="true">·</span>
-              <span id="dialog-title"></span>
-            </h2>
-            <button id="thread-copy-id" class="thread-copy-id-button" type="button"></button>
-          </div>
-        </div>
-        <div class="thread-dialog-actions">
-          <button id="thread-refresh" class="icon-button refresh-icon-button" type="button"></button>
-          <button id="thread-export" class="thread-toolbar-action thread-export-button" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"></path></svg>
-          </button>
-          <button id="dialog-close" class="close-icon-button" type="button" aria-label="关闭会话详情"></button>
-        </div>
-      </header>
-      <section class="dialog-content is-sidebar-collapsed">
-        <aside id="thread-sidebar" class="dialog-sidebar" hidden>
-          <section class="dialog-insights" aria-label="会话洞察">
-            <div id="thread-insights" class="insight-list"></div>
-          </section>
-          <p id="dialog-meta" class="dialog-meta"></p>
-          <div id="thread-overview" class="thread-overview app-scrollable"></div>
-        </aside>
-        <section class="dialog-messages-pane" aria-label="聊天消息">
-          <div class="dialog-search" role="search">
-            <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
-            <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
-            <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>
-          </div>
-          <div id="message-list" class="message-list app-scrollable" aria-live="polite"></div>
-        </section>
-      </section>
-      <section id="file-diff-panel" class="file-diff-panel" role="dialog" aria-modal="true" aria-labelledby="file-diff-title" hidden>
-        <header class="file-diff-toolbar">
-          <div>
-            <h3 id="file-diff-title"></h3>
-            <p id="file-diff-summary" class="file-diff-summary"></p>
-          </div>
-          <div class="file-diff-actions">
-            <div class="file-diff-layout-switch" role="group">
-              <button id="file-diff-side-by-side" class="file-diff-layout-button" type="button" aria-pressed="true"></button>
-              <button id="file-diff-unified" class="file-diff-layout-button" type="button" aria-pressed="false"></button>
-            </div>
-            <button id="file-diff-close" class="close-icon-button" type="button"></button>
-          </div>
-        </header>
-        <div id="file-diff-list" class="file-diff-list app-scrollable"></div>
-      </section>
-      <section id="thread-image-preview" class="thread-image-preview" role="dialog" aria-modal="true" aria-labelledby="thread-image-preview-title" hidden>
-        <h3 id="thread-image-preview-title" class="visually-hidden"></h3>
-        <button id="thread-image-preview-close" class="close-icon-button" type="button"></button>
-        <img id="thread-image-preview-image" alt="" />
-      </section>
-    </dialog>
+
     <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
       <form id="settings-form" class="settings-content" novalidate>
         <header class="settings-header">

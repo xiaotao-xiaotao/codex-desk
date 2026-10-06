@@ -40,6 +40,7 @@ export function createChartTooltip(target) {
  */
 export function createExpandableChart({ chart, section, getTitle, getActionLabel, canRender, render }) {
   let expanded = false;
+  let scrollBeforeExpanded = 0;
   let resizeFrame = null;
 
   function updateAccessibility() {
@@ -61,7 +62,11 @@ export function createExpandableChart({ chart, section, getTitle, getActionLabel
 
   function toggle() {
     expanded = !expanded;
+    const page = section.closest(".dashboard-page");
+    if (expanded && page) scrollBeforeExpanded = page.scrollTop;
     section.classList.toggle("is-chart-expanded", expanded);
+    // 独立栏目可能已向下滚动；放大时让覆盖层回到可见区域，退出后恢复阅读位置。
+    if (page) page.scrollTop = expanded ? 0 : scrollBeforeExpanded;
     updateAccessibility();
     scheduleRender();
   }

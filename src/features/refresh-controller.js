@@ -12,7 +12,7 @@ export function createRefreshController({
   quotaAlerts,
   trendView,
   tokenUsageView,
-  wordCloudView,
+  refreshTopics,
   getExpanded,
   getSessionsExpanded,
   refreshThreadList,
@@ -28,7 +28,7 @@ export function createRefreshController({
   onRetryStatusChange,
 }) {
   const INSIGHTS_CACHE_KEY = "codex-desk-insights-cache-v1";
-  const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v2";
+  const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v3";
   // 退避持续进行但设置上限，避免长期离线时把下一次重试推到不合理的未来。
   const MAX_AUTO_REFRESH_BACKOFF_MS = 24 * 60 * 60 * 1_000;
   // Token 账号汇总优先占用 App Server；趋势缓存已可即时展示，后台更新下一任务再启动。
@@ -36,6 +36,7 @@ export function createRefreshController({
   // 启动时 CLI 的认证与 app-server 可能仍在初始化，先快速重连，避免瞬时失败直接占满页面。
   const INITIAL_QUOTA_RETRY_DELAYS_MS = [500, 1_500];
   let latestQuota = null;
+  let latestQuotaSyncedAt = null;
   let refreshing = false;
   let nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
   let consecutiveRefreshFailures = 0;
@@ -60,7 +61,6 @@ export function createRefreshController({
       return false;
     }
     trendView.setData(data);
-    wordCloudView.setData(data.wordCloud, data.days);
     return true;
   }
 
@@ -158,7 +158,6 @@ export function createRefreshController({
     // 同一天的上次结果先立即展示，后台完成后再无闪烁替换为最新统计。
     const restoredFromCache = restoreCachedThreadTrends(days);
     trendView.showLoading();
-    wordCloudView.showLoading();
     try {
       const data = await invoke("read_thread_trends", {
         forceRefresh,
@@ -167,13 +166,11 @@ export function createRefreshController({
       if (requestVersion !== trendRequestVersion) return;
       cacheThreadTrends(data);
       trendView.setData(data);
-      wordCloudView.setData(data.wordCloud, data.days);
     } catch (error) {
       if (requestVersion !== trendRequestVersion) return;
       console.error(error);
       if (!restoredFromCache) {
         trendView.showError();
-        wordCloudView.showError();
       }
     }
   }
@@ -201,6 +198,8 @@ export function createRefreshController({
     setStatus(t("readingLocalData"));
     try {
       latestQuota = await readQuotaWithStartupRetry();
+      // 仅成功读取额度时更新，失败重试保留上次成功时间，避免误导数据新鲜度。
+      latestQuotaSyncedAt = Date.now();
       consecutiveRefreshFailures = 0;
       latestRefreshError = "";
       scheduleNextAutoRefresh(getAutoRefreshIntervalMs());
@@ -211,6 +210,7 @@ export function createRefreshController({
         if (getSessionsExpanded()) await refreshThreadList(forceTrendRefresh);
         // 先提交 Token 请求，使 App Server 的交互优先级在趋势批量读取前生效。
         void refreshTokenUsage();
+        void refreshTopics(forceTrendRefresh);
         window.setTimeout(
           () => void refreshThreadTrends(forceTrendRefresh),
           BACKGROUND_INSIGHTS_START_DELAY_MS,
@@ -243,6 +243,7 @@ export function createRefreshController({
 
   return {
     getLatestQuota: () => latestQuota,
+    getLatestQuotaSyncedAt: () => latestQuotaSyncedAt,
     isRefreshing: () => refreshing,
     getNextAutoRefreshDelayMs: () => Math.max(0, nextAutoRefreshAt - Date.now()),
     refreshQuota,

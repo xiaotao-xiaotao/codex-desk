@@ -9,8 +9,10 @@ export function createThreadImagePreviewView({ t }) {
   const image = document.querySelector("#thread-image-preview-image");
   const closeButton = document.querySelector("#thread-image-preview-close");
   let isHandlingEscape = false;
+  let returnFocusElement = null;
 
   function show(sourceImage) {
+    returnFocusElement = sourceImage;
     isHandlingEscape = false;
     image.src = sourceImage.currentSrc || sourceImage.src;
     image.alt = sourceImage.alt;
@@ -19,7 +21,9 @@ export function createThreadImagePreviewView({ t }) {
   }
 
   function close() {
+    const wasOpen = !preview.hidden;
     preview.hidden = true;
+    if (wasOpen && returnFocusElement?.isConnected) returnFocusElement.focus();
     // 清理 data URL，避免详情中的大图继续占用 WebView 内存。
     image.removeAttribute("src");
     image.alt = "";

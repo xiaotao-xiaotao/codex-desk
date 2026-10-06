@@ -2,9 +2,7 @@ import { createThreadActivityView, createThreadInsightsView } from "./thread-ins
 import { createThreadFileDiffView } from "./thread-file-diff-view.js";
 import { createThreadImagePreviewView } from "./thread-image-preview-view.js";
 import { createThreadMessageSearch } from "./thread-message-search.js";
-import { createThreadOverviewView } from "./thread-overview-view.js";
 import { renderCopyIconButton } from "../utils/copy-icon-button.js";
-import { renderCloseIconButton } from "../utils/close-icon-button.js";
 import { createLoadingOverlay } from "../utils/loading-overlay.js";
 import { renderMessageMarkdown } from "../utils/markdown-renderer.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "../utils/refresh-icon-button.js";
@@ -171,13 +169,11 @@ export function createThreadDialogView({
   onReadFullOverview,
   onReadLocalFile,
   onExportThread,
+  onOpen,
+  onClose,
 }) {
   const threadDialog = document.querySelector("#thread-dialog");
-  const dialogContent = document.querySelector(".dialog-content");
-  const dialogSidebar = document.querySelector("#thread-sidebar");
-  const sidebarToggle = document.querySelector("#thread-sidebar-toggle");
   const dialogTitle = document.querySelector("#dialog-title");
-  const dialogMeta = document.querySelector("#dialog-meta");
   const messageList = document.querySelector("#message-list");
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
@@ -196,18 +192,13 @@ export function createThreadDialogView({
     t,
     onViewFileChanges: (activity) => fileDiffView.show(activity),
   });
-  const overviewView = createThreadOverviewView({
-    t,
-    onViewFileChange: (activity) => fileDiffView.show(activity),
-  });
   let currentDetail = null;
   let currentReadError = null;
   let loadingOlder = false;
   let olderLoadError = null;
   let loadingFullOverview = false;
   let detailGeneration = 0;
-  // 默认优先展示对话内容；概览信息按需展开，避免窄窗口被左侧栏挤占。
-  let sidebarExpanded = false;
+  let returnFocusElement = null;
   const messageSearch = createThreadMessageSearch({
     t,
     input: searchInput,
@@ -224,13 +215,10 @@ export function createThreadDialogView({
 
   function renderCopyIdButton(state = "idle") {
     const threadId = currentDetail?.id ?? "";
-    copyIdButton.classList.toggle("is-copied", state === "copied");
-    copyIdButton.classList.toggle("is-failed", state === "failed");
-    const value = document.createElement("code");
-    value.textContent = threadId;
-    copyIdButton.replaceChildren(value);
-    copyIdButton.title = threadId ? `${t("threadCopyId")}：${threadId}` : t("threadCopyId");
-    copyIdButton.ariaLabel = copyIdButton.title;
+    renderCopyIconButton(copyIdButton, {
+      label: threadId ? `${t("threadCopyId")}：${threadId}` : t("threadCopyId"),
+      state,
+    });
   }
 
   function renderActions() {
@@ -243,15 +231,7 @@ export function createThreadDialogView({
     refreshButton.disabled = disabled;
   }
 
-  function renderSidebarVisibility() {
-    dialogContent.classList.toggle("is-sidebar-collapsed", !sidebarExpanded);
-    dialogSidebar.hidden = !sidebarExpanded;
-    sidebarToggle.setAttribute("aria-expanded", String(sidebarExpanded));
-    const labelKey = sidebarExpanded ? "threadCollapseSidebar" : "threadExpandSidebar";
-    sidebarToggle.title = sidebarToggle.ariaLabel = t(labelKey);
-  }
-
-  function setDialogTitle(title) {
+  function setDialogTitle(title, updatedAt) {
     const normalizedTitle = String(title ?? "").replace(/\s+/g, " ").trim();
     const titleCharacters = Array.from(normalizedTitle);
     const displayTitle = titleCharacters.length > DIALOG_TITLE_MAX_LENGTH
@@ -259,14 +239,9 @@ export function createThreadDialogView({
       : normalizedTitle;
     // 保留完整标题，避免摘要模式丢失原始会话上下文。
     dialogTitle.textContent = displayTitle;
-    dialogTitle.title = normalizedTitle;
+    const updatedLabel = updatedAt ? t("updated", { value: formatUpdated(updatedAt) }) : "";
+    dialogTitle.title = [normalizedTitle, updatedLabel].filter(Boolean).join("\n");
     dialogTitle.ariaLabel = normalizedTitle;
-  }
-
-  function setDialogMeta(updatedAt) {
-    // 概览只保留高频使用的更新时间；创建时间和会话 ID 不再长期占据侧栏。
-    dialogMeta.textContent = updatedAt ? t("updated", { value: formatUpdated(updatedAt) }) : "";
-    dialogMeta.hidden = !updatedAt;
   }
 
   function focusActiveMatch() {
@@ -278,21 +253,16 @@ export function createThreadDialogView({
 
   function renderMessages(detail, { focusCurrentMatch = false } = {}) {
     messageList.replaceChildren();
+    searchInput.title = t(detail.nextCursor || detail.truncated ? "loadedHistoryOnly" : "searchThreadMessages");
     const { matchingIndexes, activeMessageIndex } = messageSearch.getState();
     if (detail.nextCursor) {
-      const historyBar = document.createElement("div");
-      historyBar.className = "thread-history-bar";
-      const hint = document.createElement("span");
-      hint.className = "thread-history-hint";
-      hint.textContent = t("loadedHistoryOnly");
       const loadOlder = document.createElement("button");
       loadOlder.type = "button";
       loadOlder.className = "thread-load-older";
       loadOlder.textContent = t(loadingOlder ? "loadingOlderTurns" : "loadOlderTurns");
       loadOlder.disabled = loadingOlder;
       loadOlder.addEventListener("click", () => void loadOlderTurns());
-      historyBar.append(hint, loadOlder);
-      messageList.append(historyBar);
+      messageList.append(loadOlder);
     }
     if (olderLoadError) {
       const error = document.createElement("p");
@@ -455,7 +425,6 @@ export function createThreadDialogView({
       loadingOlder = false;
       messageSearch.setMessages(detail.messages);
       insightsView.render(detail);
-      overviewView.setDetail(detail, { preserveDisclosure: true });
       renderMessages(detail);
       // 用户从列表顶部请求更早记录，完成后停在新页开头，避免新增内容被滚走。
       messageList.scrollTop = 0;
@@ -473,7 +442,6 @@ export function createThreadDialogView({
     if (!detail || detail.overviewComplete || loadingFullOverview) return;
     const generation = detailGeneration;
     loadingFullOverview = true;
-    overviewView.setNotice(t("loadingFullOverview"));
     try {
       const overview = await onReadFullOverview(detail.id);
       if (generation !== detailGeneration || currentDetail !== detail) return;
@@ -482,11 +450,9 @@ export function createThreadDialogView({
       detail.insights = overview.insights;
       detail.overviewComplete = true;
       insightsView.render(detail);
-      overviewView.setDetail(detail, { preserveDisclosure: true });
-      overviewView.setNotice(null);
     } catch (error) {
       if (generation === detailGeneration && currentDetail === detail) {
-        overviewView.setNotice(t("readFailed", { error: String(error) }));
+        insightsView.render(detail, { error: String(error) });
       }
     } finally {
       if (generation === detailGeneration) loadingFullOverview = false;
@@ -500,17 +466,19 @@ export function createThreadDialogView({
     loadingOlder = false;
     olderLoadError = null;
     loadingFullOverview = false;
+    setRefreshIconButtonLoading(refreshButton, false);
     messageSearch.reset();
-    setDialogTitle(thread.title);
-    setDialogMeta(thread.updatedAt);
+    setDialogTitle(thread.title, thread.updatedAt);
     messageList.replaceChildren();
     insightsView.clear();
-    overviewView.clear();
     renderActions();
     fileDiffView.clear();
     imagePreviewView.close();
     showStatus(t("readingThread"));
-    threadDialog.showModal();
+    returnFocusElement = document.activeElement;
+    threadDialog.hidden = false;
+    onOpen();
+    dialogCloseButton.focus();
   }
 
   function showDetail(detail) {
@@ -520,15 +488,15 @@ export function createThreadDialogView({
     loadingOlder = false;
     olderLoadError = null;
     loadingFullOverview = false;
+    setRefreshIconButtonLoading(refreshButton, false);
     messageSearch.setMessages(detail.messages, { resetActiveMatch: true });
-    setDialogTitle(detail.title);
-    setDialogMeta(detail.updatedAt);
+    setDialogTitle(detail.title, detail.updatedAt);
     statusOverlay.hide();
     insightsView.render(detail);
-    overviewView.setDetail(detail);
     renderActions();
     renderMessages(detail);
-    if (sidebarExpanded) void loadFullOverview();
+    // 正文优先呈现，完整统计在后台补齐；分页未读完时明确标注已加载范围。
+    void loadFullOverview();
   }
 
   function showReadFailure(error) {
@@ -537,29 +505,26 @@ export function createThreadDialogView({
   }
 
   function updateLanguage() {
-    renderCloseIconButton(dialogCloseButton, { label: t("closeThreadDetail") });
-    renderSidebarVisibility();
+    dialogCloseButton.title = dialogCloseButton.ariaLabel = t("threadBackToHistory");
     renderActions();
     imagePreviewView.updateLanguage();
-    if (!threadDialog.open) {
+    if (threadDialog.hidden) {
       dialogTitle.textContent = "";
       dialogTitle.removeAttribute("title");
       dialogTitle.removeAttribute("aria-label");
-      // 文件对比面板在详情弹窗内延迟打开；关闭详情时切换语言也需提前同步其按钮文案。
+      // 文件对比按需打开；离开详情时切换语言也需提前同步其按钮文案。
       fileDiffView.updateLanguage();
       return;
     }
     if (currentDetail) {
-      setDialogMeta(currentDetail.updatedAt);
+      setDialogTitle(currentDetail.title, currentDetail.updatedAt);
       insightsView.render(currentDetail);
-      overviewView.updateLanguage();
       renderActions();
       fileDiffView.updateLanguage();
       messageSearch.setMessages(currentDetail.messages);
       renderMessages(currentDetail);
     } else {
       insightsView.clear();
-      overviewView.clear();
       fileDiffView.clear();
       messageSearch.updateLanguage();
       if (currentReadError !== null) showReadFailure(currentReadError);
@@ -570,12 +535,24 @@ export function createThreadDialogView({
     }
   }
 
-  dialogCloseButton.addEventListener("click", () => threadDialog.close());
-  sidebarToggle.addEventListener("click", () => {
-    sidebarExpanded = !sidebarExpanded;
-    renderSidebarVisibility();
-    if (sidebarExpanded) void loadFullOverview();
-  });
+  function close(restoreHistory = true) {
+    if (threadDialog.hidden) return;
+    // 离开详情后使分页与概览请求失效，防止旧请求更新下一次打开的会话。
+    detailGeneration += 1;
+    threadDialog.hidden = true;
+    setRefreshIconButtonLoading(refreshButton, false);
+    statusOverlay.hide();
+    imagePreviewView.close();
+    fileDiffView.close();
+    onClose(restoreHistory);
+    if (restoreHistory) {
+      const target = returnFocusElement?.isConnected
+        ? returnFocusElement
+        : document.querySelector("#thread-list .is-last-opened");
+      target?.focus({ preventScroll: true });
+    }
+  }
+  dialogCloseButton.addEventListener("click", () => close());
   copyIdButton.addEventListener("click", async () => {
     if (!currentDetail) return;
     copyIdButton.disabled = true;
@@ -590,43 +567,54 @@ export function createThreadDialogView({
   });
   refreshButton.addEventListener("click", async () => {
     if (!currentDetail) return;
+    const generation = detailGeneration;
     currentReadError = null;
     refreshButton.disabled = true;
     setRefreshIconButtonLoading(refreshButton, true);
     showStatus(t("readingThread"));
     try {
-      showDetail(await onRefreshThread(currentDetail.id));
+      const detail = await onRefreshThread(currentDetail.id);
+      if (generation === detailGeneration) showDetail(detail);
     } catch (error) {
-      showReadFailure(error);
+      if (generation === detailGeneration) showReadFailure(error);
     } finally {
-      setRefreshIconButtonLoading(refreshButton, false);
-      renderActions();
+      if (generation === detailGeneration) {
+        setRefreshIconButtonLoading(refreshButton, false);
+        renderActions();
+      }
     }
   });
   exportButton.addEventListener("click", async () => {
     if (!currentDetail) return;
+    const generation = detailGeneration;
     exportButton.disabled = true;
     try {
       await onExportThread(currentDetail.id);
-      renderActions();
+      if (generation === detailGeneration) renderActions();
     } catch (error) {
-      showStatus(t("readFailed", { error: String(error) }), true);
-      renderActions();
+      if (generation === detailGeneration) {
+        showStatus(t("readFailed", { error: String(error) }), true);
+        renderActions();
+      }
     }
   });
-  threadDialog.addEventListener("cancel", (event) => {
+  threadDialog.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || event.repeat || document.querySelector("dialog[open]")) return;
+    event.preventDefault();
     if (imagePreviewView.isOpen() || imagePreviewView.handlingEscape()) {
-      event.preventDefault();
       if (imagePreviewView.isOpen()) imagePreviewView.close();
     } else if (fileDiffView.isOpen()) {
-      event.preventDefault();
       fileDiffView.close();
+    } else {
+      close();
     }
   });
-  threadDialog.addEventListener("click", (event) => {
-    if (event.target === threadDialog) threadDialog.close();
-  });
   renderActions();
-  renderSidebarVisibility();
-  return { openLoading, showDetail, showReadFailure, updateLanguage };
+  // 多语言摘要在窄窗口可能换行，浮层始终从真实工具栏底部开始。
+  const toolbarObserver = new ResizeObserver(([entry]) => {
+    const height = entry.target.getBoundingClientRect().height;
+    if (height > 0) threadDialog.style.setProperty("--thread-toolbar-height", `${height}px`);
+  });
+  toolbarObserver.observe(threadDialog.querySelector(".thread-dialog-toolbar"));
+  return { openLoading, showDetail, showReadFailure, updateLanguage, close, isOpen: () => !threadDialog.hidden };
 }

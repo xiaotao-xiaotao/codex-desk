@@ -10,7 +10,7 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
   const nextPageButton = document.querySelector("#next-page");
   const pageIndicator = document.querySelector("#page-indicator");
 
-  function renderThreads(threads, emptyMessage, selectedThreadIds = new Set()) {
+  function renderThreads(threads, emptyMessage, selectedThreadIds = new Set(), lastOpenedThreadId = null) {
     threadList.replaceChildren();
     if (threads.length === 0) {
       const empty = document.createElement("section");
@@ -30,6 +30,8 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
     for (const thread of threads) {
       const item = document.createElement("article");
       item.className = "thread-item";
+      item.classList.toggle("is-last-opened", thread.id === lastOpenedThreadId);
+      if (thread.id === lastOpenedThreadId) item.setAttribute("aria-current", "true");
       item.tabIndex = 0;
       item.setAttribute("role", "button");
       item.setAttribute("aria-label", t("viewingThread", { title: thread.title }));
@@ -37,7 +39,7 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
         <label class="thread-select"><input type="checkbox" /><span class="visually-hidden"></span></label>
         <span class="thread-title"></span>
         <div class="thread-meta">
-          <div class="thread-id-line"><code></code></div>
+          <div class="thread-id-line"><span class="thread-id-label"></span><code></code></div>
           <time class="thread-updated-at"></time>
           <time class="thread-created-at"></time>
         </div>
@@ -51,13 +53,19 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
       selectionInput.checked = selectedThreadIds.has(thread.id);
       selectionInput.setAttribute("aria-label", t("selectThread", { title: thread.title }));
       selectionLabel.textContent = t("selectThread", { title: thread.title });
-      selectionInput.addEventListener("click", (event) => event.stopPropagation());
-      selectionInput.addEventListener("keydown", (event) => event.stopPropagation());
+      // label 空白区域也会触发点击；整块选择区阻止冒泡，避免同时打开会话详情。
+      const selectionControl = item.querySelector(".thread-select");
+      selectionControl.addEventListener("click", (event) => event.stopPropagation());
+      selectionControl.addEventListener("keydown", (event) => event.stopPropagation());
       selectionInput.addEventListener("change", (event) => {
         event.stopPropagation();
         onSelectionChange(thread, selectionInput.checked);
       });
-      item.querySelector(".thread-title").textContent = thread.title;
+      const title = item.querySelector(".thread-title");
+      title.textContent = thread.topicCount
+        ? `${thread.title} · ${t("topicMatchCount", { count: thread.topicCount })} · ${thread.topicSnippet}`
+        : thread.title;
+      title.title = title.textContent;
       const pinButton = item.querySelector(".thread-pin-button");
       pinButton.classList.toggle("is-pinned", Boolean(thread.isPinned));
       pinButton.setAttribute("aria-pressed", String(Boolean(thread.isPinned)));
@@ -73,7 +81,8 @@ export function createThreadListView({ t, formatUpdated, copyText, onOpenThread,
       });
       pinButton.addEventListener("keydown", (event) => event.stopPropagation());
       const id = item.querySelector("code");
-      id.textContent = `${thread.id.slice(0, 8)}…`;
+      item.querySelector(".thread-id-label").textContent = t("threadIdLabel");
+      id.textContent = thread.id;
       id.title = `${t("copyId")}：${thread.id}`;
       const updatedAt = item.querySelector(".thread-updated-at");
       updatedAt.textContent = t("updated", { value: formatUpdated(thread.updatedAt) });

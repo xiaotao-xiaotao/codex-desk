@@ -91,7 +91,12 @@ async fn read_local_usage_at(
 ) -> Result<LocalTokenUsageSnapshot, String> {
     let _scan_guard = state.scan_lock.lock().await;
     let day_directories = discover_session_day_directories(sessions_root).await?;
-    let first_day = today - Duration::days(day_limit.saturating_sub(1) as i64);
+    // 0 表示不限制历史起点，供按月浏览使用；仍排除未来日期。
+    let first_day = if day_limit == 0 {
+        NaiveDate::MIN
+    } else {
+        today - Duration::days(day_limit.saturating_sub(1) as i64)
+    };
     let first_key = first_day.to_string();
     let last_key = today.to_string();
     let mut totals = BTreeMap::<String, u64>::new();
@@ -105,7 +110,8 @@ async fn read_local_usage_at(
             let daily_usage: Vec<_> = usage
                 .into_iter()
                 .filter(|bucket| {
-                    day_limit > 0 && bucket.start_date >= first_key && bucket.start_date <= last_key
+                    (day_limit == 0 || bucket.start_date >= first_key)
+                        && bucket.start_date <= last_key
                 })
                 .collect();
             for bucket in &daily_usage {
@@ -655,6 +661,20 @@ mod tests {
                     daily_usage: usage.daily_usage.clone()
                 }]
             );
+            let history = read_local_usage_at(&state, &root, 0, today).await.unwrap();
+            assert_eq!(
+                history.daily_usage,
+                vec![
+                    bucket(&old_day, 900),
+                    bucket(&previous_day, 100),
+                    bucket(&current_day, 50)
+                ]
+            );
+            assert!(history
+                .daily_usage
+                .iter()
+                .all(|day| day.start_date <= current_day));
+            assert_eq!(state.parsed_file_count.load(Ordering::Relaxed), 1);
             assert_eq!(
                 read_latest_thread_usage(&path).await.unwrap().total_tokens,
                 1080

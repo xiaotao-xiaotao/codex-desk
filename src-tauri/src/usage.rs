@@ -6,8 +6,8 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-// 图表展示近 30 天，本地按自然日保留额外余量。
-const LOCAL_FALLBACK_DAY_LIMIT: usize = 35;
+// 月历需要可追溯到有记录的历史月份；0 表示读取全部本机日桶，复用文件缓存。
+const LOCAL_FALLBACK_DAY_LIMIT: usize = 0;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

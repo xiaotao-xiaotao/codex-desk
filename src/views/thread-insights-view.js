@@ -1,10 +1,11 @@
 import { groupConsecutiveActivities } from "./activity-summary.js";
 
-function createSummaryItem(label, value) {
+function createSummaryItem(label, value, title = "") {
   const item = document.createElement("span");
   item.className = "insight-summary-item";
   const metricValue = document.createElement("strong");
-  metricValue.textContent = String(value ?? 0);
+  metricValue.textContent = value == null ? "--" : String(value);
+  item.title = title;
   item.append(metricValue, document.createTextNode(` ${label}`));
   return item;
 }
@@ -15,7 +16,7 @@ function createSummaryItem(label, value) {
 export function createThreadInsightsView({ t }) {
   const insightList = document.querySelector("#thread-insights");
 
-  function render(detail) {
+  function render(detail, { error } = {}) {
     const insights = detail.insights ?? {};
     const primary = document.createElement("div");
     primary.className = "insight-summary-primary";
@@ -23,10 +24,25 @@ export function createThreadInsightsView({ t }) {
       createSummaryItem(t("insightMessages"), insights.messages),
       createSummaryItem(t("insightToolCalls"), insights.toolCalls),
     );
+    const usage = detail.tokenUsage;
+    const numberFormat = new Intl.NumberFormat(document.documentElement.lang || undefined);
+    const tokenValue = usage?.totalTokens;
+    const tokenLabel = tokenValue == null ? null : new Intl.NumberFormat(
+      document.documentElement.lang || undefined,
+      { notation: "compact", maximumFractionDigits: 1 },
+    ).format(tokenValue);
+    const tokenTitle = usage ? [
+      t("threadTokenTotal", { total: numberFormat.format(tokenValue) }),
+      t("threadTokenInputOutput", { input: numberFormat.format(usage.inputTokens), output: numberFormat.format(usage.outputTokens) }),
+      t("threadTokenCached", { tokens: numberFormat.format(usage.cachedInputTokens) }),
+      t("threadTokenReasoning", { tokens: numberFormat.format(usage.reasoningOutputTokens) }),
+    ].join("\n") : t("threadTokenUnavailable");
+    primary.append(createSummaryItem("Token", tokenLabel, tokenTitle));
     if (!detail.overviewComplete) {
       const scope = document.createElement("span");
       scope.className = "insight-summary-scope";
       scope.textContent = t("loadedInsights");
+      scope.title = error ? t("readFailed", { error }) : t("loadingFullOverview");
       primary.append(scope);
     }
     insightList.replaceChildren(primary);
@@ -47,7 +63,7 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
   fullTextTooltip.className = "activity-full-text-tooltip";
   fullTextTooltip.hidden = true;
   fullTextTooltip.setAttribute("role", "tooltip");
-  // 原生 dialog 位于顶层；提示必须成为 dialog 子元素才不会被弹窗遮住。
+  // 提示挂在详情容器中，切换主栏目时随详情隐藏，避免悬浮提示残留。
   document.querySelector("#thread-dialog").append(fullTextTooltip);
 
   function positionFullTextTooltip(clientX, clientY) {
