@@ -37,8 +37,6 @@
 :root[data-theme="dark"] .section-title-row .section-kicker { color: #e6edf3; }
 :root[data-theme="dark"] .section-title-row .section-kicker::after { color: #46576a; }
 :root[data-theme="dark"] .section-title-row h2 { color: #9aa9ba; }
-:root[data-theme="dark"] .quota-alert-status { color: #aab7c7; background: #2a3544; }
-:root[data-theme="dark"] .quota-alert-status.is-enabled { border-color: #245c4b; color: #77d9b5; background: #163a31; }
 :root[data-theme="dark"] .quota-alert-toggle { border-color: #315f90; color: #8dc5ff; background: #152b43; }
 :root[data-theme="dark"] .quota-alert-toggle:hover { border-color: #4c85b8; color: #c7e2ff; background: #1b3857; }
 :root[data-theme="dark"] .quota-alert-toggle.is-enabled { border-color: #245c4b; color: #77d9b5; background: #163a31; }
@@ -278,6 +276,8 @@
 :root[data-theme="dark"] .settings-intro, :root[data-theme="dark"] .settings-hint { color: #9aa9ba; }
 :root[data-theme="dark"] .settings-group { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .settings-group > label, :root[data-theme="dark"] .settings-group-label { color: #d5dfeb; }
+:root[data-theme="dark"] .settings-reading-grid label { color: #aab7c7; }
+:root[data-theme="dark"] .settings-reading-preview { border-color: #344456; color: #d9e2ec; background: #111820; }
 :root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-secondary-button, :root[data-theme="dark"] .settings-refresh-select { border-color: #344456; color: #d5dfeb; background: #111820; }
 :root[data-theme="dark"] .settings-threshold-item { border-color: #344456; color: #9aa9ba; background: #111820; }
 :root[data-theme="dark"] .settings-refresh-select { color-scheme: dark; }
@@ -293,12 +293,10 @@
 :root[data-theme="dark"] .dashboard-nav-button:hover { color: #a6d2ff; background: #1a304b; }
 :root[data-theme="dark"] .dashboard-nav-button.is-active { border-color: #294b74; color: #9eccff; background: #1b3555; }
 :root[data-theme="dark"] .dashboard-nav-button.is-active::before { background: #69b1ff; }
-:root[data-theme="dark"] .dashboard-workspace > .status { border-color: #29384c; color: #a0afc3; }
+:root[data-theme="dark"] .dashboard-status { border-color: #29384c; color: #a0afc3; }
 :root[data-theme="dark"] .dashboard-page { background: transparent; }
 :root[data-theme="dark"] .dashboard-page .quota-reset-time { background: transparent; }
 :root[data-theme="dark"] .dashboard-page .account-details { background: #151b23; }
 :root[data-theme="dark"] .dashboard-page .account-detail-item strong,
 :root[data-theme="dark"] .dashboard-page .account-reset-credits strong { color: #d5e3f5; }
-:root[data-theme="dark"] .dashboard-page .account-billing-actions { border-color: #29384c; }
-:root[data-theme="dark"] .dashboard-page .account-billing-actions .quota-alert-control { border-color: #29384c; }
 :root[data-theme="dark"] .dashboard-page .thread-list { border-color: #29384c; background: #151b23; }

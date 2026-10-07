@@ -107,7 +107,7 @@ function createCollapsedMessagesDisclosure({
   const disclosure = document.createElement("details");
   disclosure.className = "message-duration-disclosure";
   const summary = document.createElement("summary");
-  // 展开入口包含箭头与文字，回合 ID 仍独立复制，避免点击元信息时误展开。
+  // 仅通过箭头展开，回合 ID 仍独立复制，避免点击元信息时误展开。
   summary.tabIndex = -1;
   summary.addEventListener("click", (event) => event.preventDefault());
   const turnMeta = createMessageTurnMeta({
@@ -126,15 +126,14 @@ function createCollapsedMessagesDisclosure({
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("d", "m9 6 6 6-6 6");
   icon.append(path);
-  const label = document.createElement("span");
-  label.textContent = t("threadProcessRecords");
-  toggle.append(icon, label);
+  toggle.append(icon);
   const renderToggle = () => {
     toggle.setAttribute("aria-expanded", String(disclosure.open));
     toggle.title = toggle.ariaLabel = t(
       disclosure.open ? "threadCollapseRecords" : "threadViewAllRecords",
     );
   };
+  disclosure.addEventListener("toggle", renderToggle);
   toggle.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -248,7 +247,8 @@ export function createThreadDialogView({
     const { activeMessageIndex } = messageSearch.getState();
     if (activeMessageIndex === undefined) return;
     const message = messageList.querySelector(`[data-message-index="${activeMessageIndex}"]`);
-    message?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    message?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
   }
 
   function renderMessages(detail, { focusCurrentMatch = false } = {}) {
@@ -388,7 +388,7 @@ export function createThreadDialogView({
         });
         actions.append(copy);
       }
-      // 过程消息与工具记录收进“过程记录”区域，最终回复的操作栏保持在正文之后。
+      // 复制按钮和消息时间放在回复下方，沿用 ChatGPT 客户端的操作栏布局。
       if (actions.childElementCount > 0) entry.append(actions);
       messageList.append(entry);
     }
@@ -412,6 +412,19 @@ export function createThreadDialogView({
     try {
       const page = await onLoadOlderTurns(detail.id, cursor);
       if (generation !== detailGeneration || currentDetail !== detail) return;
+      // 请求期间用户可能继续滚动，收到响应时再记录可见消息，而非使用点击时的位置。
+      const viewportTop = messageList.getBoundingClientRect().top;
+      const anchor = Array.from(messageList.querySelectorAll("[data-message-index]"))
+        .find((entry) => entry.getBoundingClientRect().bottom > viewportTop);
+      const anchorIndex = anchor ? Number(anchor.dataset.messageIndex) : null;
+      const anchorOffset = anchor ? anchor.getBoundingClientRect().top - viewportTop : 0;
+      const previousScrollTop = messageList.scrollTop;
+      const previousScrollHeight = messageList.scrollHeight;
+      const expandedRecords = Array.from(messageList.querySelectorAll(".message-entry details[open]"))
+        .map((disclosure) => ({
+          index: Number(disclosure.closest(".message-entry").dataset.messageIndex),
+          className: disclosure.className,
+        }));
       detail.messages = [...page.messages, ...detail.messages];
       detail.nextCursor = page.nextCursor;
       if (!detail.overviewComplete) {
@@ -426,14 +439,27 @@ export function createThreadDialogView({
       messageSearch.setMessages(detail.messages);
       insightsView.render(detail);
       renderMessages(detail);
-      // 用户从列表顶部请求更早记录，完成后停在新页开头，避免新增内容被滚走。
-      messageList.scrollTop = 0;
+      // 加载历史不能收起用户正在阅读的过程或工具记录。
+      for (const record of expandedRecords) {
+        const entry = messageList.querySelector(`[data-message-index="${record.index + page.messages.length}"]`);
+        const disclosure = Array.from(entry?.querySelectorAll("details") ?? [])
+          .find((item) => item.className === record.className);
+        if (disclosure) disclosure.open = true;
+      }
+      // 新消息插到前面后，以原可见消息为锚点，保持读到的内容和屏幕位置不变。
+      const restoredAnchor = anchorIndex === null ? null
+        : messageList.querySelector(`[data-message-index="${anchorIndex + page.messages.length}"]`);
+      messageList.scrollTop = restoredAnchor
+        ? messageList.scrollTop + restoredAnchor.getBoundingClientRect().top - viewportTop - anchorOffset
+        : previousScrollTop + messageList.scrollHeight - previousScrollHeight;
     } catch (error) {
       if (generation !== detailGeneration || currentDetail !== detail) return;
+      const previousScrollTop = messageList.scrollTop;
       loadingOlder = false;
       olderLoadError = String(error);
       renderMessages(detail);
-      messageList.querySelector(".thread-load-older")?.focus();
+      messageList.scrollTop = previousScrollTop;
+      messageList.querySelector(".thread-load-older")?.focus({ preventScroll: true });
     }
   }
 

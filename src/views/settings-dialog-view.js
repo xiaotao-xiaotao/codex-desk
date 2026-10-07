@@ -1,4 +1,5 @@
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
+import { READING_SETTINGS } from "../features/settings-controller.js";
 
 export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }) {
   const openButton = document.querySelector("#settings-button");
@@ -17,7 +18,38 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   const cancelButton = document.querySelector("#settings-cancel");
   const saveButton = document.querySelector("#settings-save");
   const status = document.querySelector("#settings-status");
+  const readingPreview = document.querySelector("#settings-reading-preview");
+  const readingResetButton = document.querySelector("#settings-reading-reset");
+  const readingControls = Object.entries(READING_SETTINGS).map(([field, config]) => ({
+    field, config, select: document.querySelector(`[data-reading-setting="${field}"]`),
+  }));
   let saving = false;
+
+  function renderReadingPreview() {
+    for (const { config, select } of readingControls) {
+      const option = config.options.find((option) => option.value === select.value);
+      readingPreview.style.setProperty(config.cssProperty, option.cssValue);
+    }
+  }
+
+  function renderReadingOptions() {
+    document.querySelector("#settings-reading-title").textContent = t("settingsReadingTitle");
+    readingResetButton.textContent = t("settingsReadingReset");
+    document.querySelector("#settings-reading-hint").textContent = t("settingsReadingHint");
+    readingPreview.textContent = t("settingsReadingPreview");
+    for (const { field, config, select } of readingControls) {
+      const selected = select.value || getSettings()[field];
+      document.querySelector(`[data-reading-label="${field}"]`).textContent = t(config.labelKey);
+      select.replaceChildren(...config.options.map((option) => {
+        const element = document.createElement("option");
+        element.value = option.value;
+        element.textContent = option.label ?? t(option.labelKey);
+        return element;
+      }));
+      select.value = selected;
+    }
+    renderReadingPreview();
+  }
 
   function renderIntervalOptions() {
     const selected = refreshInterval.value;
@@ -44,6 +76,8 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     resetButton.disabled = busy;
     refreshInterval.disabled = busy;
     thresholdInputs.forEach((input) => { input.disabled = busy; });
+    readingControls.forEach(({ select }) => { select.disabled = busy; });
+    readingResetButton.disabled = busy;
     cancelButton.disabled = busy;
     saveButton.disabled = busy;
   }
@@ -61,6 +95,8 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     thresholdInputs.forEach((input, index) => {
       input.value = String(settings.quotaAlertThresholds[index]);
     });
+    readingControls.forEach(({ field, select }) => { select.value = settings[field]; });
+    renderReadingPreview();
     showStatus();
   }
 
@@ -80,7 +116,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   function updateLanguage() {
     openButton.title = openButton.ariaLabel = t("openSettings");
     renderCloseIconButton(closeButton, { label: t("closeSettings") });
-    document.querySelector("#settings-kicker").textContent = t("settingsKicker");
     document.querySelector("#settings-title").textContent = t("settingsTitle");
     document.querySelector("#settings-intro").textContent = t("settingsIntro");
     document.querySelector("#settings-cli-label").textContent = t("settingsCliPath");
@@ -98,6 +133,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     cancelButton.textContent = t("settingsCancel");
     saveButton.textContent = t("settingsSave");
     renderIntervalOptions();
+    renderReadingOptions();
   }
 
   browseButton.addEventListener("click", async () => {
@@ -131,6 +167,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
         cliPath: cliPathInput.value,
         refreshIntervalSeconds: Number(refreshInterval.value),
         quotaAlertThresholds,
+        ...Object.fromEntries(readingControls.map(({ field, select }) => [field, select.value])),
       });
       showStatus(t("settingsSaved", { version }));
     } catch (error) {
@@ -143,6 +180,14 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     if (event.target === dialog) dialog.close();
   });
 
+  readingResetButton.addEventListener("click", () => {
+    if (saving) return;
+    // 只恢复阅读选项，沿用表单的保存流程，取消时仍保留已保存的偏好。
+    readingControls.forEach(({ config, select }) => { select.value = config.defaultValue; });
+    renderReadingPreview();
+    showStatus();
+  });
+  readingControls.forEach(({ select }) => select.addEventListener("change", renderReadingPreview));
   updateLanguage();
   return { open, updateLanguage };
 }

@@ -12,6 +12,7 @@
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 12px;
+  --dashboard-sidebar-width: 134px;
   font-size: 16px;
   --token-distribution-color: #4096ff;
   --token-distribution-hover-color: #1677ff;
@@ -66,7 +67,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .dashboard-retry-button:hover { border-color: #4096ff; background: #4096ff; }
 .dashboard-retry-button:focus-visible { outline: 2px solid rgba(22, 119, 255, .3); outline-offset: 2px; }
 .panel.is-dashboard-unavailable .dashboard-page,
-.panel.is-dashboard-unavailable .status { display: none; }
+.panel.is-dashboard-unavailable .dashboard-status { display: none; }
 
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: 6px; }
 .section-kicker { margin: 0 0 1px; color: #8b95a1; font-size: var(--font-caption); font-weight: 700; letter-spacing: .04em; }
@@ -83,31 +84,39 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
 
 /* 导航与内容共享固定窗口；滚动留在各栏目内部，侧栏和全局操作始终可用。 */
-.dashboard-layout { display: grid; grid-template-columns: 156px minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
-.dashboard-sidebar { display: flex; min-height: 0; flex-direction: column; gap: 30px; padding: 24px 12px 18px; border-right: 1px solid #e4ecf7; background: linear-gradient(165deg, #f1f7ff, #f8faff 70%); }
-.sidebar-brand { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 4px; padding: 0; color: #526780; font-size: 12px; letter-spacing: -.025em; }
-.sidebar-brand-name { display: flex; min-width: 0; align-items: center; gap: 4px; white-space: nowrap; }
+/* 中文菜单更短，收紧侧栏；其他语言保留完整名称的单行空间。 */
+:root:lang(en), :root:lang(ja), :root:lang(ko) { --dashboard-sidebar-width: 156px; }
+.dashboard-layout { display: grid; grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
+.dashboard-sidebar { display: flex; min-height: 0; flex-direction: column; gap: 18px; padding: 24px 6px 18px; border-right: 1px solid #e4ecf7; background: linear-gradient(165deg, #f1f7ff, #f8faff 70%); }
+.sidebar-brand { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0; color: #526780; font-size: 12px; letter-spacing: -.025em; }
+.sidebar-brand-name { display: flex; min-width: 0; align-items: center; gap: 4px; margin-left: 6px; white-space: nowrap; }
 .sidebar-brand-icon { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: #1677ff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sidebar-brand strong { color: #172f51; font-weight: 750; }
-.sidebar-toggle { display: grid; width: 28px; height: 28px; flex: 0 0 auto; padding: 5px; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
+.sidebar-toggle { display: grid; width: 24px; height: 28px; flex: 0 0 auto; padding: 3px; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
 .sidebar-toggle:hover { color: #1668c6; background: #e4efff; }
 .sidebar-toggle:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
 .sidebar-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* 菜单通过侧栏内边距获取文字空间，不使用负边距向左偏移。 */
 .dashboard-nav { display: flex; flex-direction: column; gap: 8px; }
-.dashboard-nav-button { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; color: #5f7189; background: transparent; text-align: left; font-size: var(--font-body); font-weight: 600; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease; }
-.dashboard-nav-button svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.dashboard-nav-button:hover { color: #1668c6; background: #eaf3ff; transform: translateX(2px); }
-.dashboard-nav-button:active { transform: scale(.98); }
-.dashboard-nav-button.is-active { border-color: #d7e7ff; color: #1668c6; background: #e6f1ff; font-weight: 750; }
+.dashboard-nav-button { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; min-height: 44px; padding: 10px 5px; border: 1px solid transparent; border-radius: 10px; color: #5f7189; background: transparent; text-align: left; font-size: var(--font-body); font-weight: 600; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease; }
+.dashboard-nav-button > span { white-space: nowrap; }
+.dashboard-nav .dashboard-nav-button { height: 44px; line-height: 20px; }
+.dashboard-nav-button svg { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.dashboard-nav-button:hover { color: #1668c6; background: #eaf3ff; }
+.dashboard-nav-button.is-active { border-color: #d7e7ff; color: #1668c6; background: #e6f1ff; }
 .dashboard-nav-button.is-active::before { position: absolute; top: 13px; bottom: 13px; left: -1px; width: 3px; border-radius: 0 3px 3px 0; background: #1677ff; content: ""; }
 .dashboard-nav-button:focus-visible { outline: 2px solid #1677ff; outline-offset: 3px; }
-:root[lang="en"] .dashboard-nav-button { font-size: 12px; }
+:root:lang(en) .dashboard-nav-button,
+:root:lang(ja) .dashboard-nav-button,
+:root:lang(ko) .dashboard-nav-button { font-size: 12px; }
 .dashboard-workspace { display: flex; min-width: 0; min-height: 0; flex-direction: column; padding: 16px 20px 12px; }
 .dashboard-page { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; animation: dashboard-page-enter .2s ease-out; }
 .dashboard-workspace > .dashboard-page[hidden] { display: none; }
 .dashboard-page:focus-visible { outline: 2px solid #91caff; outline-offset: 5px; border-radius: 6px; }
-.dashboard-workspace > .status { min-height: 26px; margin: 12px 0 0; padding-top: 8px; border-top: 1px solid #e7edf5; font-size: 10px; line-height: 1.5; }
-.dashboard-loading-overlay { --loading-overlay-inset: 47px 0 0 var(--dashboard-sidebar-width, 156px); border-radius: 0 0 17px 0; }
+/* 同步时间跟随状态信息排列；窄窗口允许整项换行，避免挤压倒计时。 */
+.dashboard-status { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 4px 18px; min-height: 26px; margin: 12px 0 0; padding-top: 8px; border-top: 1px solid #e7edf5; font-size: 10px; line-height: 1.5; }
+.dashboard-status > .status { flex: 0 1 auto; min-width: 0; min-height: 0; margin: 0; font-size: inherit; overflow-wrap: anywhere; }
+.dashboard-loading-overlay { --loading-overlay-inset: 47px 0 0 var(--dashboard-sidebar-width); border-radius: 0 0 17px 0; }
 
 @keyframes dashboard-page-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -117,7 +126,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .is-sidebar-collapsed .sidebar-brand { justify-content: center; padding: 0; }
 .is-sidebar-collapsed .sidebar-brand > span { display: none; }
 .is-sidebar-collapsed .sidebar-toggle-chevron { transform: rotate(180deg); transform-origin: 14.5px 12px; }
-.is-sidebar-collapsed .dashboard-nav { width: 100%; }
+.is-sidebar-collapsed .dashboard-nav { width: 100%; margin-inline: 0; }
 .is-sidebar-collapsed .dashboard-nav-button { justify-content: center; padding-left: 0; padding-right: 0; }
 .is-sidebar-collapsed .dashboard-nav-button > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .panel:has(.is-sidebar-collapsed) { --dashboard-sidebar-width: 62px; }
@@ -129,7 +138,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
   .panel-header { flex-wrap: wrap; gap: 4px; padding: 8px 10px; }
   .header-actions { justify-content: flex-end; width: 100%; }
   .dashboard-workspace { padding: 12px 12px 10px; }
-  .dashboard-loading-overlay { --loading-overlay-inset: 75px 0 0 var(--dashboard-sidebar-width, 156px); }
+  .dashboard-loading-overlay { --loading-overlay-inset: 75px 0 0 var(--dashboard-sidebar-width); }
 }
 @media (prefers-reduced-motion: reduce) {
   .panel, .dashboard-nav-button, .progress-track span { transition: none; }

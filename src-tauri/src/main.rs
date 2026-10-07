@@ -30,7 +30,8 @@ const DASHBOARD_WINDOW_HEIGHT: f64 = 700.0;
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
 const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
-const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/#settings/Billing";
+const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/settings/billing";
+const CODEX_USAGE_URL: &str = "https://chatgpt.com/settings/usage";
 const GITHUB_RELEASES_URL: &str = "https://github.com/xiaotao-xiaotao/codex-desk/releases";
 // 文件链接只预览开头 512 KiB，避免大型日志或 JSONL 一次性占满 WebView 内存。
 const LOCAL_TEXT_PREVIEW_MAX_BYTES: usize = 512 * 1024;
@@ -255,6 +256,11 @@ fn open_billing_page() -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_quota_reset_page() -> Result<(), String> {
+    open_external_url(CODEX_USAGE_URL, "Codex 用量页面")
+}
+
+#[tauri::command]
 fn open_update_page() -> Result<(), String> {
     open_external_url(GITHUB_RELEASES_URL, "GitHub 更新页面")
 }
@@ -458,6 +464,7 @@ fn main() {
             read_thread_trends,
             read_token_usage,
             open_billing_page,
+            open_quota_reset_page,
             start_dragging,
             hide_window,
             toggle_window_maximized,

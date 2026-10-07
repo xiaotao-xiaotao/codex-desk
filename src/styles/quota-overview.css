@@ -19,10 +19,10 @@
 
 /* 账户资料与用量概览共用一张卡，通过细分隔线保留信息层次。 */
 .account-quota-divider { margin: 1px 0 2px; border-top: 1px solid #edf1f5; }
-.quota-alert-control { display: flex; align-items: center; gap: var(--space-xs); }
-.quota-alert-status { padding: 2px 5px; border-radius: 999px; color: #8793a2; background: #f2f4f7; font-size: var(--font-caption); font-weight: 700; line-height: 1.2; }
-.quota-alert-status.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
-.quota-alert-toggle { min-height: var(--control-size); padding: 2px 6px; border: 1px solid #b7d4ff; border-radius: 4px; color: #1668c6; background: #f5f9ff; cursor: pointer; font-size: var(--font-caption); font-weight: 700; line-height: 1.2; }
+.quota-alert-toggle { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; min-height: var(--control-size); padding: 2px 6px; border: 1px solid #b7d4ff; border-radius: 4px; color: #1668c6; background: #f5f9ff; cursor: pointer; font-size: var(--font-caption); font-weight: 500; line-height: 1.2; white-space: nowrap; }
+.quota-alert-toggle[hidden] { display: none; }
+.quota-alert-icon { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.quota-alert-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
 .quota-alert-toggle:hover { border-color: #69a5ef; color: #0958d9; background: #eaf3ff; }
 .quota-alert-toggle.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
 .quota-window-name { padding: 2px 5px; border-radius: 4px; color: #3979c9; background: #eef6ff; font-size: var(--font-caption); font-weight: 650; white-space: nowrap; }
@@ -32,6 +32,7 @@
 .quota-list > .quota-card:only-child { grid-column: 1 / -1; }
 .quota-card { position: relative; display: grid; min-height: 65px; grid-template-columns: max-content minmax(0, 1fr); grid-template-areas: "title reset" "value value" "progress progress"; column-gap: var(--space-sm); row-gap: 2px; padding: 5px 9px; border: 1px solid #dfe8fb; border-radius: 9px; background: linear-gradient(120deg, #f4f8ff, #fff 68%); box-shadow: inset 3px 0 0 #1677ff; }
 .quota-card h3 { grid-area: title; align-self: center; margin: 0; color: #4c5b70; font-size: var(--font-body); font-weight: 700; line-height: 1.15; }
+.quota-card-heading { grid-area: title; display: flex; min-width: 0; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; }
 .quota-value { grid-area: value; display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-xs); margin-top: 1px; }
 .quota-value strong { color: #1677ff; font-size: var(--font-metric); line-height: 1; letter-spacing: -.055em; }
 .quota-value span { color: #6f7b88; font-size: var(--font-caption); }
@@ -68,9 +69,8 @@
 /* 资料与额度按内容高度排列，避免随窗口增高拉出大片卡片留白。 */
 .dashboard-page.quota-section { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .dashboard-page.quota-section > .account-details { flex: 0 0 auto; }
-.dashboard-page .quota-alert-control { justify-content: flex-end; flex-wrap: wrap; max-width: 100%; gap: 7px; }
-.dashboard-page .quota-alert-toggle { min-height: 30px; padding: 5px 10px; border-radius: 7px; }
-.dashboard-page .quota-alert-status { padding: 4px 7px; font-weight: 500; }
+.dashboard-page .quota-alert-toggle { min-height: 24px; padding: 3px 7px; border-radius: 6px; }
+.dashboard-page .quota-card-heading { min-height: 24px; }
 .dashboard-page .account-quota-divider { display: none; }
 .dashboard-page .quota-list { flex: 0 0 auto; gap: 12px; }
 .dashboard-page .quota-card { min-height: 170px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "value" "progress" "reset"; grid-template-rows: auto 1fr auto auto; gap: 12px; padding: 16px; border-radius: 14px; }
@@ -83,7 +83,6 @@
 .dashboard-page .quota-reset-time { justify-self: start; max-width: 100%; padding: 0; background: transparent; flex-wrap: wrap; gap: 4px 8px; }
 
 @media (max-width: 560px) {
-  .dashboard-page .quota-alert-control { justify-content: flex-start; max-width: 100%; }
   .dashboard-page .quota-list { grid-template-columns: minmax(0, 1fr); }
   .dashboard-page .quota-card { min-height: 160px; }
 }

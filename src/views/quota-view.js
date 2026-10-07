@@ -7,6 +7,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
   const orbValue = document.querySelector("#orb-value");
   const orbLabel = document.querySelector("#orb-label");
   const quotaList = document.querySelector("#quota-list");
+  const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
   const resetCreditsRow = document.querySelector("#reset-credits-row");
   const resetCreditsSummary = document.querySelector("#reset-credits-summary");
   const resetCreditsInfo = document.querySelector("#reset-credits-info");
@@ -85,6 +86,14 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
       // 每个额度窗口都展示名称，避免首个窗口因复用标题区而与其他卡片层级不一致。
       const name = document.createElement("h3");
       name.textContent = formatQuotaWindow(window.durationMinutes);
+      const heading = document.createElement("div");
+      heading.className = "quota-card-heading";
+      heading.append(name);
+      // 提醒入口跟随当前主额度窗口，兼容只有周额度的账号。
+      if (window === primary) {
+        quotaAlertToggle.hidden = false;
+        heading.append(quotaAlertToggle);
+      }
 
       const value = document.createElement("div");
       value.className = "quota-value";
@@ -118,7 +127,7 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
       resetAt.className = "quota-reset-at";
       resetAt.textContent = formatResetAt(window.resetsAt);
       resetTime.append(resetCountdown, resetAt);
-      item.append(name, value, track, resetTime);
+      item.append(heading, value, track, resetTime);
       quotaList.append(item);
     }
   }

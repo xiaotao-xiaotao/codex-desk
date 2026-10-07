@@ -7,6 +7,7 @@ export function createAccountOverviewView({ t, invoke }) {
   const emailVisibilityButton = document.querySelector("#account-email-visibility");
   const plan = document.querySelector("#account-plan");
   const billingButton = document.querySelector("#account-billing");
+  const quotaResetButton = document.querySelector("#account-quota-reset");
   const message = document.querySelector("#account-message");
   let profile = null;
   let loading = false;
@@ -90,6 +91,17 @@ export function createAccountOverviewView({ t, invoke }) {
   }
 
   billingButton.addEventListener("click", () => void openBillingPage());
+  quotaResetButton.addEventListener("click", async () => {
+    error = null;
+    render();
+    try {
+      // 只跳转官方用量页，权益的实际兑换由用户在浏览器中完成。
+      await invoke("open_quota_reset_page");
+    } catch (openError) {
+      error = { key: "accountQuotaResetOpenFailed", detail: String(openError) };
+      render();
+    }
+  });
   emailVisibilityButton.addEventListener("click", toggleEmailVisibility);
 
   return { refresh, updateLanguage: render };

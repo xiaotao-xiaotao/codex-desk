@@ -10,7 +10,7 @@ import { createLoadingOverlay } from "./utils/loading-overlay.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "./utils/refresh-icon-button.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createRefreshController } from "./features/refresh-controller.js";
-import { createSettingsController } from "./features/settings-controller.js";
+import { createSettingsController, READING_SETTINGS } from "./features/settings-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createSettingsDialogView } from "./views/settings-dialog-view.js";
@@ -62,7 +62,6 @@ const dashboardSections = {
   topics: document.querySelector("#topics-section"),
   sessions: document.querySelector("#sessions-section"),
 };
-const quotaAlertStatus = document.querySelector("#quota-alert-status");
 const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
 const dashboardError = document.querySelector("#dashboard-error");
 const dashboardErrorTitle = document.querySelector("#dashboard-error-title");
@@ -87,11 +86,20 @@ let refreshController;
 let autoRefreshTimer = null;
 const settingsController = createSettingsController({
   invoke,
-  onSettingsChanged: () => {
+  onSettingsChanged: (settings) => {
+    applyReadingSettings(settings);
     restartAutoRefreshTimer();
     renderQuotaAlertStatus();
   },
 });
+applyReadingSettings(settingsController.getSettings());
+
+function applyReadingSettings(settings) {
+  for (const [field, config] of Object.entries(READING_SETTINGS)) {
+    const option = config.options.find((option) => option.value === settings[field]);
+    document.documentElement.style.setProperty(config.cssProperty, option.cssValue);
+  }
+}
 const quotaAlerts = createQuotaAlertController({
   t,
   formatResetTime,
@@ -278,12 +286,11 @@ function renderAccountSyncTime() {
 function renderQuotaAlertStatus() {
   const enabled = quotaAlerts.isEnabled();
   const thresholds = quotaAlerts.getThresholds().map((threshold) => `${threshold}%`).join("/");
-  quotaAlertStatus.textContent = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled", { thresholds });
-  quotaAlertStatus.classList.toggle("is-enabled", enabled);
-  quotaAlertStatus.title = t("quotaAlerts");
-  quotaAlertToggle.textContent = t(enabled ? "quotaAlertToggleDisable" : "quotaAlertToggleEnable");
+  quotaAlertToggle.title = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled", { thresholds });
+  quotaAlertToggle.querySelector(".quota-alert-toggle-label").textContent = t(enabled ? "quotaAlertEnabledLabel" : "quotaAlertEnableLabel");
   quotaAlertToggle.classList.toggle("is-enabled", enabled);
-  quotaAlertToggle.ariaLabel = t("quotaAlerts");
+  quotaAlertToggle.setAttribute("aria-pressed", String(enabled));
+  quotaAlertToggle.ariaLabel = `${t(enabled ? "quotaAlertToggleDisable" : "quotaAlertToggleEnable")} · ${quotaAlertToggle.title}`;
 }
 
 async function toggleQuotaAlerts() {
@@ -871,7 +878,6 @@ async function bootstrap() {
     theme.cycleMode();
     renderTheme();
   });
-  theme.onSystemThemeChange(renderTheme);
   windowDragRegion.addEventListener("dblclick", (event) => {
     if (event.button !== 0) return;
     // 双击最大化仅限空白拖动区，标题文字可用于双击选词与复制。

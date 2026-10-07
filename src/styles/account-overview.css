@@ -12,7 +12,6 @@
 .email-visibility-button.is-concealed .email-visibility-icon-hide { display: block; }
 /* 字段按内容宽度排列；仅将按钮推到右侧，避免邮箱后产生无意义的大块空白。 */
 .account-email-item::after { align-self: stretch; width: 1px; margin-left: 3px; background: #dfe5ec; content: ""; }
-.account-billing-actions { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-xs); margin-left: auto; }
 .account-billing-button { padding: 0; border: 0; color: #1677ff; background: transparent; cursor: pointer; font-size: var(--font-caption); font-weight: 700; }
 .account-billing-button:hover { color: #0958d9; text-decoration: underline; text-underline-offset: 2px; }
 /* 重置权益嵌入账户行的剩余空间；说明仅由信息图标触发，避免整段字段看起来可操作。 */
@@ -44,8 +43,6 @@
 .dashboard-page .account-email-item::after,
 .dashboard-page .account-reset-credits::before { content: none; }
 .dashboard-page .account-reset-credits { flex-wrap: wrap; align-content: start; gap: 7px; }
-.dashboard-page .account-billing-actions { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; gap: 10px 16px; margin: 0; padding-top: 12px; border-top: 1px solid #edf1f7; }
-.dashboard-page .account-billing-actions .quota-alert-control { padding-left: 16px; border-left: 1px solid #edf1f7; }
 .dashboard-page .account-billing-button { font-weight: 600; }
 .dashboard-page .reset-credits-info { width: 16px; height: 16px; margin-left: 3px; transform: none; }
 .dashboard-page .reset-credits-tooltip { max-width: min(400px, 70vw); left: auto; right: 0; white-space: normal; }
@@ -53,7 +50,6 @@
 @media (max-width: 560px) {
   .dashboard-page .account-details { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
   .dashboard-page .account-email-item { grid-column: 1 / -1; }
-  .dashboard-page .account-billing-actions .quota-alert-control { padding-left: 0; border-left: 0; }
 }
 
 /* 热力图承接额度下方空白；每天一格，低饱和蓝色让额度数字保持首要层级。 */
@@ -103,7 +99,6 @@
 /* 为统计栏腾出空间，同时保留固定窗口中的完整六周月历。 */
 .dashboard-page.quota-section { gap: 10px; }
 .dashboard-page.quota-section > .account-details { gap: 10px; padding: 14px; }
-.dashboard-page.quota-section .account-billing-actions { padding-top: 10px; }
 .dashboard-page.quota-section .quota-card { min-height: 148px; gap: 8px; padding: 14px; }
 .token-heatmap-section { padding: 12px 14px; }
 .token-heatmap-heading { margin-bottom: 8px; }
@@ -117,10 +112,7 @@
   .account-usage-summary > div:nth-child(4) { border-left: 0; }
 }
 
-.account-sync-time { display: flex; flex: 1 1 120px; min-width: 120px; align-items: center; gap: 6px; color: #7f8a97; font-size: var(--font-caption); white-space: nowrap; }
+.account-sync-time { display: flex; flex: 0 0 auto; align-items: baseline; gap: 6px; color: #7f8a97; font-size: inherit; white-space: nowrap; }
 .account-sync-time time { color: #526780; font-variant-numeric: tabular-nums; }
 :root[data-theme="dark"] .account-sync-time { border-color: #29384c; color: #9aacc0; }
 :root[data-theme="dark"] .account-sync-time time { color: #b7c9df; }
-@media (max-width: 560px) {
-  .account-sync-time { flex: 0 1 auto; }
-}

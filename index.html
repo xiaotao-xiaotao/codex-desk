@@ -97,7 +97,7 @@
             </nav>
             <div class="sidebar-bottom">
               <div class="sidebar-utilities">
-            <button id="theme-button" class="dashboard-nav-button sidebar-utility-button" type="button" title="主题：跟随系统" aria-label="主题：跟随系统">
+            <button id="theme-button" class="dashboard-nav-button sidebar-utility-button" type="button" title="主题：白天" aria-label="主题：白天">
               <svg id="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
               <span id="theme-label"></span>
             </button>
@@ -142,28 +142,30 @@
                   <strong id="account-plan">正在读取账号信息…</strong>
                 </div>
                 <div id="reset-credits-row" class="account-reset-credits" hidden>
-                  <span class="account-detail-label">
-                    <span data-i18n="resetCreditsTitle">使用限额重置</span>
-                    <button id="reset-credits-info" class="reset-credits-info" type="button" aria-describedby="reset-credits-tooltip" aria-label="查看使用限额重置说明">
-                      <span aria-hidden="true">ⓘ</span>
-                    </button>
-                    <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
-                  </span>
-                  <strong id="reset-credits-summary"></strong>
-                </div>
-                <div class="account-billing-actions">
-                  <span class="account-sync-time"><span data-i18n="accountLastSynced">最近同步</span><time id="account-last-synced">--</time></span>
-                  <div class="quota-alert-control">
-                    <span id="quota-alert-status" class="quota-alert-status"></span>
-                    <button id="quota-alert-toggle" class="quota-alert-toggle" type="button"></button>
+                  <div class="account-detail-heading">
+                    <span class="account-detail-label">
+                      <span data-i18n="resetCreditsTitle">使用限额重置</span>
+                      <button id="reset-credits-info" class="reset-credits-info" type="button" aria-describedby="reset-credits-tooltip" aria-label="查看使用限额重置说明">
+                        <span aria-hidden="true">ⓘ</span>
+                      </button>
+                      <span id="reset-credits-tooltip" class="reset-credits-tooltip" role="tooltip"></span>
+                    </span>
+                    <button id="account-quota-reset" class="account-billing-button" type="button" role="link" data-i18n="openQuotaReset">前往重置</button>
                   </div>
+                  <strong id="reset-credits-summary"></strong>
                 </div>
               </div>
               <p id="account-message" class="account-message" hidden></p>
               <div class="account-quota-divider" aria-hidden="true"></div>
               <div id="quota-list" class="quota-list" aria-live="polite" aria-busy="true">
                 <article class="quota-card quota-card-placeholder" aria-hidden="true">
-                  <h3 data-i18n="quotaWindow">额度窗口</h3>
+                  <div class="quota-card-heading">
+                    <h3 data-i18n="quotaWindow">额度窗口</h3>
+                    <button id="quota-alert-toggle" class="quota-alert-toggle" type="button" hidden>
+                      <svg class="quota-alert-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
+                      <span class="quota-alert-toggle-label"></span>
+                    </button>
+                  </div>
                   <div class="quota-value">
                     <strong>--</strong>
                     <span data-i18n="remaining">剩余</span>
@@ -352,7 +354,10 @@
               </section>
             </section>
 
-            <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
+            <div class="dashboard-status">
+              <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
+              <span class="account-sync-time"><span data-i18n="accountLastSynced">最近同步</span><time id="account-last-synced">--</time></span>
+            </div>
           </div>
         </div>
       </section>
@@ -363,12 +368,11 @@
       <form id="settings-form" class="settings-content" novalidate>
         <header class="settings-header">
           <div>
-            <p id="settings-kicker" class="section-kicker">本机偏好</p>
-            <h2 id="settings-title">设置</h2>
+            <h2 id="settings-title" class="visually-hidden">设置</h2>
+            <p id="settings-intro" class="settings-intro">配置 Codex CLI 和数据刷新方式，所有设置仅保存在本机。</p>
           </div>
           <button id="settings-close" class="close-icon-button" type="button" aria-label="关闭设置"></button>
         </header>
-        <p id="settings-intro" class="settings-intro">配置 Codex CLI 和数据刷新方式，所有设置仅保存在本机。</p>
         <section class="settings-group">
           <label id="settings-cli-label" for="settings-cli-path">Codex CLI 路径</label>
           <p id="settings-cli-hint" class="settings-hint">留空时使用系统 PATH 中的 codex。</p>
@@ -415,6 +419,19 @@
               </span>
             </label>
           </div>
+        </section>
+        <section class="settings-group" aria-labelledby="settings-reading-title">
+          <div class="settings-reading-header">
+            <span id="settings-reading-title" class="settings-group-label">阅读设置</span>
+            <button id="settings-reading-reset" class="settings-secondary-button" type="button">恢复默认</button>
+          </div>
+          <p id="settings-reading-hint" class="settings-hint">仅影响会话正文；代码块保留等宽字体，未安装的字体会自动回退。</p>
+          <div class="settings-reading-grid">
+            <label for="settings-reading-font"><span data-reading-label="readingFont">字体</span><select id="settings-reading-font" class="settings-refresh-select" data-reading-setting="readingFont"></select></label>
+            <label for="settings-reading-size"><span data-reading-label="readingFontSize">字号</span><select id="settings-reading-size" class="settings-refresh-select" data-reading-setting="readingFontSize"></select></label>
+            <label for="settings-reading-line-height"><span data-reading-label="readingLineHeight">行距</span><select id="settings-reading-line-height" class="settings-refresh-select" data-reading-setting="readingLineHeight"></select></label>
+          </div>
+          <p id="settings-reading-preview" class="settings-reading-preview">这是会话正文预览。调整字体、字号和行距，找到适合你的阅读方式。</p>
         </section>
         <p id="settings-status" class="settings-status" aria-live="polite" hidden></p>
         <footer class="settings-actions">
