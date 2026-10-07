@@ -28,12 +28,13 @@ export function createThreadTrendView({ t, onRangeChange }) {
   const total = document.querySelector("#trend-total");
   const trendSection = chart.closest(".trend-section");
   let response = null;
+  let loadError = false;
   let selectedDays = 7;
   const visibleMetrics = new Set(Object.keys(TREND_SERIES));
   const chartInteraction = createExpandableChart({
     chart,
     section: trendSection,
-    getTitle: () => t("trendTitle"),
+    getTitle: () => t("trendTitle", { days: selectedDays }),
     getActionLabel: (expanded) => t(expanded ? "trendCollapse" : "trendExpand"),
     canRender: () => Boolean(response),
     render: renderChart,
@@ -93,7 +94,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
     if (points.length === 0) {
       const empty = document.createElement("p");
       empty.className = "trend-empty";
-      empty.textContent = t("trendNoData");
+      empty.textContent = t("trendNoData", { days: selectedDays });
       chart.append(empty);
       total.textContent = "";
       return;
@@ -127,7 +128,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
       // 容器会随展开窗口变宽；强制按容器铺满，避免默认等比缩放把底部日期轴挤出可视区。
       preserveAspectRatio: "none",
       role: "img",
-      "aria-label": `${t("trendTitle")}：${selectedSeries.map(([, config]) => t(config.labelKey)).join("、") || "-"}`,
+      "aria-label": `${t("trendTitle", { days: selectedDays })}：${selectedSeries.map(([, config]) => t(config.labelKey)).join("、") || "-"}`,
     });
     const grid = createSvgElement("g", { class: "trend-grid" });
     for (let index = 0; index <= 2; index += 1) {
@@ -202,20 +203,27 @@ export function createThreadTrendView({ t, onRangeChange }) {
     renderRange();
     renderControls();
     chartInteraction.updateAccessibility();
-    renderChart();
+    // 页面或语言切换只重绘当前状态，不能把尚未返回的响应当成空数据。
+    if (response) renderChart();
+    else if (loadError) showError();
+    else showLoading();
   }
 
   function showLoading() {
+    loadError = false;
     chartInteraction.updateAccessibility();
     if (response) return;
     chart.replaceChildren();
     const loading = document.createElement("p");
     loading.className = "trend-empty";
-    loading.textContent = t("trendLoading");
+    loading.textContent = t("trendLoading", { days: selectedDays });
     chart.append(loading);
+    total.textContent = "";
   }
 
   function showError() {
+    loadError = true;
+    response = null;
     chartInteraction.updateAccessibility();
     chart.replaceChildren();
     const error = document.createElement("p");
@@ -226,6 +234,7 @@ export function createThreadTrendView({ t, onRangeChange }) {
   }
 
   function setData(nextResponse) {
+    loadError = false;
     response = nextResponse;
     selectedDays = nextResponse.days ?? selectedDays;
     render();
@@ -235,7 +244,8 @@ export function createThreadTrendView({ t, onRangeChange }) {
     selectedDays = days;
     // 时间范围变更后不能短暂显示上一范围的数据，等待对应范围的响应再绘制。
     response = null;
-    renderRange();
+    loadError = false;
+    render();
   }
 
   range.addEventListener("change", () => {
