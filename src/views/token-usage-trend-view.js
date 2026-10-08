@@ -520,6 +520,7 @@ export function createTokenUsageTrendView({ t }) {
   render();
   return {
     render,
+    clear: () => { response = null; loadError = false; render(); },
     setData: (data) => {
       loadError = false;
       response = data;

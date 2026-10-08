@@ -82,6 +82,11 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20v-2a7 7 0 0 1 14 0v2" /></svg>
                 <span data-i18n="accountUsage">账户用量</span>
               </button>
+              <button id="nav-accounts" class="dashboard-nav-button" type="button" role="tab" aria-selected="false" aria-controls="accounts-section" tabindex="-1" data-dashboard-section="accounts">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15l-3-3M20 16H5l3 3" /></svg>
+                <span data-i18n="accountsTitle">账户管理</span>
+                <small class="accounts-new-badge" hidden>+1</small>
+              </button>
               <button id="nav-insights" class="dashboard-nav-button" type="button" role="tab" aria-selected="false" aria-controls="insights-section" tabindex="-1" data-dashboard-section="insights">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16M8 15v-4M12 15V7M16 15V9" /></svg>
                 <span data-i18n="insightsOverview">数据洞察</span>
@@ -116,23 +121,21 @@
               </svg>
               <h2 id="dashboard-error-title"></h2>
               <p id="dashboard-error-description"></p>
-              <button id="dashboard-retry" class="dashboard-retry-button" type="button"></button>
+              <div class="dashboard-error-actions">
+                <button id="dashboard-retry" class="dashboard-retry-button" type="button"></button>
+                <button id="account-switch-recovery" class="account-switch-trigger" data-open-account-switch type="button"><span data-i18n="accountsManage">切换账户</span></button>
+              </div>
             </section>
 
+            <section id="accounts-section" class="dashboard-section dashboard-page accounts-page app-scrollable" role="tabpanel" aria-labelledby="nav-accounts" tabindex="0" hidden></section>
             <section id="account-section" class="dashboard-section dashboard-page quota-section" role="tabpanel" aria-labelledby="nav-account" tabindex="0">
               <div class="account-details">
                 <div class="account-detail-item account-email-item">
-                  <span class="account-detail-label" data-i18n="accountEmail">登录邮箱</span>
+                  <div class="account-detail-heading">
+                    <span class="account-detail-label" data-i18n="accountEmail">登录邮箱</span>
+                    <button id="account-switch-open" class="account-billing-button" data-open-account-switch type="button"><span data-i18n="accountsManage">切换账户</span></button>
+                  </div>
                   <strong id="account-email">正在读取账号信息…</strong>
-                  <button id="account-email-visibility" class="email-visibility-button" type="button" aria-pressed="true" hidden>
-                    <svg class="email-visibility-icon email-visibility-icon-show" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-                      <circle cx="12" cy="12" r="2.5" />
-                    </svg>
-                    <svg class="email-visibility-icon email-visibility-icon-hide" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M3 3l18 18M10.6 6.1A9.3 9.3 0 0 1 12 6c6 0 9.5 6 9.5 6a15.2 15.2 0 0 1-2.1 2.8M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.8-.4 3.9-1" />
-                    </svg>
-                  </button>
                 </div>
                 <div class="account-detail-item">
                   <div class="account-detail-heading">
@@ -156,6 +159,7 @@
                 </div>
               </div>
               <p id="account-message" class="account-message" hidden></p>
+              <p id="account-switch-notice" class="account-switch-notice" role="status" hidden></p>
               <div class="account-quota-divider" aria-hidden="true"></div>
               <div id="quota-list" class="quota-list" aria-live="polite" aria-busy="true">
                 <article class="quota-card quota-card-placeholder" aria-hidden="true">
@@ -418,6 +422,14 @@
                 <span aria-hidden="true">%</span>
               </span>
             </label>
+          </div>
+        </section>
+        <section class="settings-group">
+          <span id="settings-email-label" class="settings-group-label">邮箱显示</span>
+          <p id="settings-email-hint" class="settings-hint">统一控制账户用量、账户管理及账户弹窗中的邮箱显示。</p>
+          <div class="settings-email-options" role="radiogroup" aria-labelledby="settings-email-label" aria-describedby="settings-email-hint">
+            <label><input type="radio" name="emailVisibility" value="show" checked /><span id="settings-email-show">显示完整邮箱</span></label>
+            <label><input type="radio" name="emailVisibility" value="hide" /><span id="settings-email-hide">隐藏邮箱（脱敏显示）</span></label>
           </div>
         </section>
         <section class="settings-group" aria-labelledby="settings-reading-title">

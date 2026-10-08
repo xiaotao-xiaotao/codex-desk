@@ -11,6 +11,10 @@ serde_json = "1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+# 账户凭据采用同目录原子替换；TOML 编辑保留用户已有配置与注释。
+tempfile = "3"
+toml_edit = "0.25"
+base64 = "0.22"
 # 按本机自然日归档 rollout 事件，复用依赖树中已有的日期库。
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 # daemon 的本地 proxy 转发 WebSocket 字节；使用标准 WebSocket 库处理握手、掩码和控制帧。

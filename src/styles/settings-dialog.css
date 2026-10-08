@@ -31,4 +31,8 @@
 .settings-status { margin: 0; color: #13795b; font-size: var(--font-caption); line-height: 1.45; }
 .settings-status[data-kind="error"] { color: #cf1322; }
 .settings-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.settings-email-options { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 4px 0; }
+.settings-email-options label { display: inline-flex; align-items: center; gap: 7px; color: inherit; font-size: var(--font-body); cursor: pointer; }
+.settings-email-options input[type="radio"] { width: 15px; height: 15px; margin: 0; padding: 0; accent-color: #1677ff; box-shadow: none; }
+.settings-email-options input[type="radio"]:focus-visible { outline: 2px solid #91caff; outline-offset: 3px; }
 .settings-actions button:disabled, .settings-path-row button:disabled, .settings-refresh-select:disabled, .settings-threshold-input input:disabled { cursor: wait; opacity: .65; }

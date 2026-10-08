@@ -195,6 +195,57 @@ impl AppServerState {
         *configured = cli_path;
     }
 
+    /// 切换持有生命周期写锁：等待所有在途 RPC 完成，再替换凭据。
+    /// 只有用户显式选择重启，才停止共享 daemon；默认仅回收 Desk 自己的连接。
+    pub async fn apply_auth_change(
+        &self,
+        store: crate::account_store::AccountStore,
+        id: String,
+        restart: bool,
+    ) -> Result<String, String> {
+        let cli_path = self.cli_path.write().await;
+        store.validate_target(&id)?;
+        if restart {
+            read_cli_version_from(cli_path.as_deref())
+                .await
+                .map_err(|_| "无法启动所选 Codex CLI，登录信息未切换")?;
+        }
+        self.close_connections().await;
+        if restart {
+            run_auth_daemon_command(cli_path.as_deref(), "stop")
+                .await
+                .map_err(|_| "Codex 服务未能退出，登录信息未切换；请结束任务后重试")?;
+        }
+        let committed = tauri::async_runtime::spawn_blocking(move || store.activate(&id))
+            .await
+            .unwrap_or_else(|_| Err("账户保存任务中断，请检查当前登录状态".into()));
+        if let Err(error) = committed {
+            if restart {
+                // 替换失败时尝试恢复原服务；不回滚可能已经轮换的凭据。
+                if run_auth_daemon_command(cli_path.as_deref(), "start")
+                    .await
+                    .is_err()
+                {
+                    return Err(format!("{error}；Codex 服务需要手动启动"));
+                }
+            }
+            return Err(error);
+        }
+        if !restart {
+            return Ok("notRequested".into());
+        }
+        // 写入已经完成，启动失败属于部分成功，不能报告成凭据未切换。
+        Ok(if run_auth_daemon_command(cli_path.as_deref(), "start")
+            .await
+            .is_ok()
+        {
+            "restarted"
+        } else {
+            "startFailed"
+        }
+        .into())
+    }
+
     async fn close_connections(&self) {
         for channel in [&self.account, &self.threads, &self.background] {
             if let Some(server) = channel.lock().await.take() {
@@ -202,6 +253,26 @@ impl AppServerState {
             }
         }
     }
+}
+
+async fn run_auth_daemon_command(cli_path: Option<&Path>, operation: &str) -> Result<(), String> {
+    let mut command = cli_command(cli_path, &["app-server", "daemon", operation]);
+    let status = timeout(
+        DAEMON_START_TIMEOUT,
+        command
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .kill_on_drop(true)
+            .status(),
+    )
+    .await
+    .map_err(|_| "Codex 服务操作超时")?
+    .map_err(|_| "无法执行 Codex 服务操作")?;
+    if !status.success() {
+        return Err("Codex 服务操作失败".into());
+    }
+    Ok(())
 }
 
 /// daemon start 自身负责复用已运行的服务；不启用远程访问，也不更改用户配置。

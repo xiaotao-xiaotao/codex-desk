@@ -21,7 +21,8 @@
 - **不再错过额度状态**：在桌面悬浮显示用量；可选开启 80%、90% 和 100% 的额度提醒。
 - **更快回到正在做的事**：搜索本地 Codex 会话，查看消息与文件变更，一键复制准确的 `codex resume <session ID>` 命令。
 - **看懂自己的使用情况**：按天或按会话查看活动趋势、常见主题和 Token 用量。
-- **数据始终留在本机**：仅通过本机 Codex 共享 daemon 和本地会话文件读取数据；不上传数据，也不读取或保存 `auth.json`。
+- **常用账户随时切换**：在左侧“账户管理”中保存、重命名、移除本机 ChatGPT 登录；账户用量页保留切换快捷入口，切换时可选择同时重启本机 Codex 服务。
+- **数据始终留在本机**：额度与会话通过共享 daemon 和本地文件读取。账户管理仅在本机读取、保存与替换登录凭据，不上传凭据或其他本机数据。
 
 使用前需安装并登录 **Codex CLI ≥ 0.157.0**（[安装说明](https://github.com/openai/codex)）。如果它帮你节省了时间，欢迎点一个 **Star**，或通过 [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) 提建议，帮助项目触达更多 Codex 用户。
 
@@ -95,7 +96,7 @@
 - **本机设置**：可指定 Codex CLI 可执行文件或启动脚本路径，配置 30 秒至 10 分钟的自动刷新间隔，以及 1% 至 100% 范围内递增的三个额度提醒阈值；路径会在保存前通过 `codex --version` 验证。
 - **连接与刷新恢复**：首次读取失败时显示整页连接异常状态并提供重试入口；连续失败时采用有上限的指数退避，恢复后回到正常刷新周期。
 - **版本更新提醒**：可从主面板手动检查 GitHub 仓库公开的版本文件；发现新版本后展示 Release 更新内容并提供下载入口。
-- **本机数据边界**：账户、额度与会话数据通过本机 Codex 共享 daemon 获取，Token 用量仅从本机 Codex 会话文件的累计快照读取。不会读取或保存 `auth.json`，也不会上传本机数据；版本检查只向 GitHub 请求公开的版本和 Release 信息。
+- **本机数据边界**：账户、额度与会话数据通过本机 Codex 共享 daemon 获取，Token 用量从本机会话文件读取。账户管理将 ChatGPT 凭据保存在与 Codex 目录同级的 `.codex-desk/saved-accounts.json`（默认位于用户目录，不读取或迁移旧应用数据目录），切换时原子替换 `CODEX_HOME/auth.json`；凭据不会传入页面、日志或上传。账户库是本机明文文件，请像密码一样保管。Windows 下会话置顶记录也放在 `.codex-desk`，偏好设置及 WebView 缓存放在其中的 `webview/main` 子目录；旧偏好和置顶记录不迁移。版本检查只请求 GitHub 公开信息。
 
 ## 统计口径
 
@@ -133,7 +134,7 @@
 
 - Node.js 24 或更高版本（仅开发、打包 Codex Desk 所需；Codex CLI 的依赖取决于其安装方式）
 - Rust（仅开发、打包所需）：使用 `rustup` 安装稳定版工具链
-- 已安装并登录 **Codex CLI ≥ 0.157.0**；本应用通过本机共享 daemon 读取额度和会话数据，不读取或保存 `auth.json`
+- 已安装并登录 **Codex CLI ≥ 0.157.0**；账户切换需要文件凭据存储（`cli_auth_credentials_store = "file"`）。`auto`、`keyring` 和 `ephemeral` 模式不能直接切换，启用文件管理后需要重新登录。
 - Windows 需要 WebView2（Windows 10/11 通常已内置）
 
 > **ChatGPT 客户端不能替代 Codex CLI。** 即使已安装并登录 ChatGPT 桌面客户端，它也不会提供 `codex` 命令或 Codex 共享 daemon；未单独安装 Codex CLI 时，Codex Desk 无法读取额度、会话和趋势，也无法执行会话导入导出。安装 Codex CLI 后可使用同一个 ChatGPT/OpenAI 账号登录。

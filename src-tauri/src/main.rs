@@ -4,6 +4,7 @@
 )]
 
 mod account;
+mod account_store;
 mod app_server;
 mod local_usage;
 mod quota;
@@ -58,6 +59,88 @@ async fn read_account(
     state: State<'_, app_server::AppServerState>,
 ) -> Result<account::AccountProfile, String> {
     account::read_account(&state).await
+}
+
+#[tauri::command]
+async fn list_saved_accounts(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+) -> Result<account_store::AccountStoreSnapshot, String> {
+    let _guard = state.0.lock().await;
+    let store = account_store::AccountStore::from_app(&app)?;
+    tauri::async_runtime::spawn_blocking(move || store.snapshot())
+        .await
+        .map_err(|_| "账户读取任务中断")?
+}
+
+#[tauri::command]
+async fn save_current_account(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+    label: String,
+) -> Result<account_store::AccountStoreSnapshot, String> {
+    let _guard = state.0.lock().await;
+    let store = account_store::AccountStore::from_app(&app)?;
+    tauri::async_runtime::spawn_blocking(move || store.save_current(&label))
+        .await
+        .map_err(|_| "账户保存任务中断")?
+}
+
+#[tauri::command]
+async fn rename_saved_account(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+    id: String,
+    label: String,
+) -> Result<account_store::AccountStoreSnapshot, String> {
+    let _guard = state.0.lock().await;
+    let store = account_store::AccountStore::from_app(&app)?;
+    tauri::async_runtime::spawn_blocking(move || store.rename(&id, &label))
+        .await
+        .map_err(|_| "账户更新任务中断")?
+}
+
+#[tauri::command]
+async fn remove_saved_account(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+    id: String,
+) -> Result<account_store::AccountStoreSnapshot, String> {
+    let _guard = state.0.lock().await;
+    let store = account_store::AccountStore::from_app(&app)?;
+    tauri::async_runtime::spawn_blocking(move || store.remove(&id))
+        .await
+        .map_err(|_| "账户删除任务中断")?
+}
+
+#[tauri::command]
+async fn enable_account_file_storage(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+) -> Result<account_store::AccountStoreSnapshot, String> {
+    let _guard = state.0.lock().await;
+    let store = account_store::AccountStore::from_app(&app)?;
+    tauri::async_runtime::spawn_blocking(move || store.enable_file_mode())
+        .await
+        .map_err(|_| "配置保存任务中断")?
+}
+
+#[tauri::command]
+async fn switch_saved_account(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+    server: State<'_, app_server::AppServerState>,
+    id: String,
+    restart: bool,
+) -> Result<account_store::SwitchOutcome, String> {
+    let _guard = state.0.lock().await;
+    let store = account_store::AccountStore::from_app(&app)?;
+    let restart = server.apply_auth_change(store.clone(), id, restart).await?;
+    let snapshot = tauri::async_runtime::spawn_blocking(move || store.snapshot())
+        .await
+        .ok()
+        .and_then(Result::ok);
+    Ok(account_store::SwitchOutcome { restart, snapshot })
 }
 
 /// 校验并切换 Codex CLI。返回版本信息，供设置中心在保存前确认目标可执行。
@@ -412,8 +495,15 @@ fn quit_app(app: AppHandle) {
 }
 
 fn main() {
+    let data_directory = account_store::data_directory().expect("无法定位 Codex Desk 数据目录");
+    let mut context = tauri::generate_context!();
+    // 手动创建窗口才能给 WebView 设置绝对数据路径，包含偏好设置和浏览器缓存。
+    for window in &mut context.config_mut().app.windows {
+        window.create = false;
+    }
     tauri::Builder::default()
         .manage(app_server::AppServerState::default())
+        .manage(account_store::AccountStoreState::default())
         .manage(local_usage::LocalUsageState::default())
         .manage(threads::ThreadTrendState::default())
         .plugin(tauri_plugin_notification::init())
@@ -421,9 +511,15 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             tray::show_main_window(app);
         }))
-        .setup(|app| {
-            let pin_path = app.path().app_local_data_dir()?.join("thread-pins.json");
+        .setup(move |app| {
+            std::fs::create_dir_all(&data_directory)?;
+            let pin_path = data_directory.join("thread-pins.json");
             app.manage(threads::ThreadListState::new(pin_path));
+            for window in &app.config().app.windows {
+                tauri::WebviewWindowBuilder::from_config(app, window)?
+                    .data_directory(data_directory.join("webview").join(&window.label))
+                    .build()?;
+            }
             tray::setup(app)?;
             if let Some(window) = app.get_webview_window("main") {
                 // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
@@ -448,6 +544,12 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             read_quota,
             read_account,
+            list_saved_accounts,
+            save_current_account,
+            switch_saved_account,
+            rename_saved_account,
+            remove_saved_account,
+            enable_account_file_storage,
             open_update_page,
             configure_cli_path,
             choose_cli_path,
@@ -473,6 +575,6 @@ fn main() {
             quit_app,
             tray::set_tray_language
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("启动 Codex Desk 失败");
 }

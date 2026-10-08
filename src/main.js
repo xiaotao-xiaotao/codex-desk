@@ -12,6 +12,7 @@ import { createQuotaAlertController } from "./features/quota-alert-controller.js
 import { createRefreshController } from "./features/refresh-controller.js";
 import { createSettingsController, READING_SETTINGS } from "./features/settings-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
+import { createAccountSwitchView } from "./views/account-switch-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createSettingsDialogView } from "./views/settings-dialog-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
@@ -58,6 +59,7 @@ const dashboardNav = document.querySelector(".dashboard-nav");
 const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-section]")];
 const dashboardSections = {
   account: document.querySelector("#account-section"),
+  accounts: document.querySelector("#accounts-section"),
   insights: document.querySelector("#insights-section"),
   topics: document.querySelector("#topics-section"),
   sessions: document.querySelector("#sessions-section"),
@@ -88,6 +90,8 @@ const settingsController = createSettingsController({
   invoke,
   onSettingsChanged: (settings) => {
     applyReadingSettings(settings);
+    accountView.updateLanguage();
+    accountSwitchView.updateLanguage();
     restartAutoRefreshTimer();
     renderQuotaAlertStatus();
   },
@@ -105,8 +109,28 @@ const quotaAlerts = createQuotaAlertController({
   formatResetTime,
   setStatus,
   getThresholds: () => settingsController.getSettings().quotaAlertThresholds,
+  getAccountScope: () => accountView.getAccountScope(),
 });
-const accountView = createAccountOverviewView({ t, invoke });
+const accountView = createAccountOverviewView({ t, invoke, getHideEmails: () => settingsController.getSettings().hideEmails });
+const accountSwitchView = createAccountSwitchView({
+  t,
+  invoke,
+  getHideEmails: () => settingsController.getSettings().hideEmails,
+  onOpen: () => setDashboardSection("accounts"),
+  onBeforeSwitch: async () => {
+    if (autoRefreshTimer !== null) window.clearTimeout(autoRefreshTimer);
+    autoRefreshTimer = null;
+    await refreshController.pauseForAccountChange();
+    accountView.invalidate();
+  },
+  onAfterSwitch: async ({ changed, restarted }) => {
+    refreshController.resumeAfterAccountChange(changed);
+    // 没有重启时账户区展示服务实际身份，绝不把保存的目标摘要当作生效状态。
+    if (changed && restarted) await refreshController.refreshQuota();
+    else await accountView.refresh();
+    restartAutoRefreshTimer();
+  },
+});
 const updateView = createUpdateBannerView({
   t,
   invoke,
@@ -210,7 +234,7 @@ async function loadAppVersion() {
 
 function renderDashboardAvailability() {
   panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
-  dashboardError.hidden = !dashboardUnavailable;
+  dashboardError.hidden = !dashboardUnavailable || activeDashboardSection === "accounts";
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
   const details = [t("dashboardUnavailableDescription")];
   if (dashboardRetryStatus?.error) {
@@ -247,7 +271,8 @@ refreshController = createRefreshController({
     currentThreadPage,
     forceRefresh,
   ),
-  refreshAccount: () => accountView.refresh(),
+  // 新账户识别共用已有刷新周期，手动刷新也同步检查，不额外启动轮询。
+  refreshAccount: () => Promise.all([accountView.refresh(), accountSwitchView.checkCurrentAccount()]),
   getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
   onRefreshingChange: (isRefreshing) => {
@@ -314,6 +339,8 @@ function setDashboardSection(nextSection) {
     dialogView.close(false);
   }
   activeDashboardSection = nextSection;
+  dashboardError.hidden = !dashboardUnavailable || nextSection === "accounts";
+  if (changed && nextSection === "accounts") accountSwitchView.activate();
   // 离开历史页后使未完成的搜索失效，避免旧请求覆盖下一次进入时的结果。
   if (changed) searchRequestVersion += 1;
   Object.entries(dashboardSections).forEach(([name, section]) => {
@@ -584,6 +611,7 @@ function applyLanguage() {
   renderCloseIconButton(quitButton, { label: t("quit") });
   settingsView.updateLanguage();
   accountView.updateLanguage();
+  accountSwitchView.updateLanguage();
   updateView.updateLanguage();
   renderAppVersion();
   if (dashboardLoadingOverlay.isVisible()) {

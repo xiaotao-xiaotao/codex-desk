@@ -66,7 +66,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .dashboard-retry-button { min-width: 88px; padding: 7px 16px; border: 1px solid #1677ff; border-radius: var(--control-radius); color: #fff; background: #1677ff; font: inherit; font-size: var(--font-body); font-weight: 700; cursor: pointer; }
 .dashboard-retry-button:hover { border-color: #4096ff; background: #4096ff; }
 .dashboard-retry-button:focus-visible { outline: 2px solid rgba(22, 119, 255, .3); outline-offset: 2px; }
-.panel.is-dashboard-unavailable .dashboard-page,
+.panel.is-dashboard-unavailable .dashboard-page:not(.accounts-page),
 .panel.is-dashboard-unavailable .dashboard-status { display: none; }
 
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: 6px; }

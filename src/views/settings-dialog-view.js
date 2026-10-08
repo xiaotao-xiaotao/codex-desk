@@ -10,6 +10,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   const browseButton = document.querySelector("#settings-cli-browse");
   const resetButton = document.querySelector("#settings-cli-reset");
   const refreshInterval = document.querySelector("#settings-refresh-interval");
+  const emailVisibilityOptions = [...document.querySelectorAll('input[name="emailVisibility"]')];
   const thresholdInputs = [
     document.querySelector("#settings-quota-threshold-1"),
     document.querySelector("#settings-quota-threshold-2"),
@@ -75,6 +76,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     browseButton.disabled = busy;
     resetButton.disabled = busy;
     refreshInterval.disabled = busy;
+    emailVisibilityOptions.forEach((input) => { input.disabled = busy; });
     thresholdInputs.forEach((input) => { input.disabled = busy; });
     readingControls.forEach(({ select }) => { select.disabled = busy; });
     readingResetButton.disabled = busy;
@@ -92,6 +94,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     const settings = getSettings();
     cliPathInput.value = settings.cliPath;
     refreshInterval.value = String(settings.refreshIntervalSeconds);
+    emailVisibilityOptions.forEach((input) => { input.checked = input.value === (settings.hideEmails ? "hide" : "show"); });
     thresholdInputs.forEach((input, index) => {
       input.value = String(settings.quotaAlertThresholds[index]);
     });
@@ -114,6 +117,10 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   }
 
   function updateLanguage() {
+    document.querySelector("#settings-email-label").textContent = t("settingsEmailVisibility");
+    document.querySelector("#settings-email-hint").textContent = t("settingsEmailVisibilityHint");
+    document.querySelector("#settings-email-show").textContent = t("settingsEmailShow");
+    document.querySelector("#settings-email-hide").textContent = t("settingsEmailHide");
     openButton.title = openButton.ariaLabel = t("openSettings");
     renderCloseIconButton(closeButton, { label: t("closeSettings") });
     document.querySelector("#settings-title").textContent = t("settingsTitle");
@@ -164,6 +171,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     showStatus(t("settingsSaving"));
     try {
       const version = await onSave({
+        hideEmails: emailVisibilityOptions.some((input) => input.checked && input.value === "hide"),
         cliPath: cliPathInput.value,
         refreshIntervalSeconds: Number(refreshInterval.value),
         quotaAlertThresholds,

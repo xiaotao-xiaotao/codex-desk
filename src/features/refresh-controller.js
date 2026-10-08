@@ -46,6 +46,9 @@ export function createRefreshController({
   let tokenUsageRequestVersion = 0;
   let insightsCache = readStoredJson(INSIGHTS_CACHE_KEY, {});
   let tokenUsageCache = readStoredJson(TOKEN_USAGE_CACHE_KEY, null);
+  let accountChangePaused = false;
+  let accountVersion = 0;
+  let refreshFinished = null;
 
   function currentUtcDay() {
     return new Date().toISOString().slice(0, 10);
@@ -153,6 +156,7 @@ export function createRefreshController({
   }
 
   async function refreshThreadTrends(forceRefresh = false) {
+    if (accountChangePaused) return;
     const requestVersion = ++trendRequestVersion;
     const days = getTrendDays();
     // 同一天的上次结果先立即展示，后台完成后再无闪烁替换为最新统计。
@@ -176,6 +180,7 @@ export function createRefreshController({
   }
 
   async function refreshTokenUsage() {
+    if (accountChangePaused) return;
     const requestVersion = ++tokenUsageRequestVersion;
     const restoredFromCache = restoreCachedTokenUsage();
     tokenUsageView.showLoading();
@@ -192,12 +197,18 @@ export function createRefreshController({
   }
 
   async function refreshQuota(forceTrendRefresh = false) {
-    if (refreshing) return;
+    if (refreshing || accountChangePaused) return;
+    const version = accountVersion;
+    let finish;
+    refreshFinished = new Promise((resolve) => { finish = resolve; });
     refreshing = true;
     onRefreshingChange(true);
     setStatus(t("readingLocalData"));
     try {
-      latestQuota = await readQuotaWithStartupRetry();
+      // 提醒使用本轮运行中账户的归属，不能沿用切换前的邮箱。
+      const [result] = await Promise.all([readQuotaWithStartupRetry(), refreshAccount()]);
+      if (version !== accountVersion) return;
+      latestQuota = result;
       // 仅成功读取额度时更新，失败重试保留上次成功时间，避免误导数据新鲜度。
       latestQuotaSyncedAt = Date.now();
       consecutiveRefreshFailures = 0;
@@ -206,6 +217,7 @@ export function createRefreshController({
       onAvailabilityChange(true);
       quotaView.render(latestQuota);
       await quotaAlerts.notify(latestQuota);
+      if (version !== accountVersion) return;
       if (getExpanded()) {
         if (getSessionsExpanded()) await refreshThreadList(forceTrendRefresh);
         // 先提交 Token 请求，使 App Server 的交互优先级在趋势批量读取前生效。
@@ -217,6 +229,7 @@ export function createRefreshController({
         );
       }
     } catch (error) {
+      if (version !== accountVersion) return;
       console.error(error);
       consecutiveRefreshFailures += 1;
       latestRefreshError = String(error);
@@ -226,13 +239,9 @@ export function createRefreshController({
       if (!latestQuota) onAvailabilityChange(false);
       scheduleNextAutoRefresh(retryDelayMs());
     } finally {
-      // 账号和额度使用同一轮刷新，但各自的读取失败不应影响另一项结果。
-      try {
-        await refreshAccount();
-      } catch (error) {
-        console.error(error);
-      }
       refreshing = false;
+      finish();
+      refreshFinished = null;
       onRefreshingChange(false);
       renderSyncedStatus();
     }
@@ -242,6 +251,24 @@ export function createRefreshController({
   restoreCachedTokenUsage();
 
   return {
+    pauseForAccountChange: async () => {
+      accountChangePaused = true;
+      ++accountVersion;
+      ++tokenUsageRequestVersion;
+      // 等待旧刷新退出，防止 finally 与新账户刷新争用同一个状态。
+      if (refreshFinished) await refreshFinished;
+    },
+    resumeAfterAccountChange: (changed) => {
+      if (changed) {
+        latestQuota = null; latestQuotaSyncedAt = null;
+        tokenUsageCache = null;
+        writeStoredValue(TOKEN_USAGE_CACHE_KEY, "null");
+        tokenUsageView.clear();
+        quotaView.render({ windows: [] });
+        consecutiveRefreshFailures = 0; latestRefreshError = "";
+      }
+      accountChangePaused = false;
+    },
     getLatestQuota: () => latestQuota,
     getLatestQuotaSyncedAt: () => latestQuotaSyncedAt,
     isRefreshing: () => refreshing,

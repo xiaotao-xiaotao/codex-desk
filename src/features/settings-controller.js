@@ -75,6 +75,7 @@ export function normalizeQuotaAlertThresholds(value) {
 function normalizeSettings(value) {
   const refreshIntervalSeconds = Number(value?.refreshIntervalSeconds);
   return {
+    hideEmails: value?.hideEmails === true,
     cliPath: typeof value?.cliPath === "string" ? value.cliPath.trim() : "",
     refreshIntervalSeconds: REFRESH_INTERVAL_OPTIONS.has(refreshIntervalSeconds)
       ? refreshIntervalSeconds

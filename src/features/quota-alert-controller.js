@@ -12,7 +12,7 @@ const MAX_HISTORY_ENTRIES = 18;
  * 提醒记录按「重置时间 + 阈值」存储，而不是只记录当前使用率：同一轮额度中用户
  * 可能依次跨过 80%、90%、100%，每个阈值都应最多提醒一次；重置后则允许重新提醒。
  */
-export function createQuotaAlertController({ t, formatResetTime, setStatus, getThresholds }) {
+export function createQuotaAlertController({ t, formatResetTime, setStatus, getThresholds, getAccountScope }) {
   let enabled = readStoredEnum(ALERT_SETTING_KEY, ["enabled", "disabled"], "disabled") === "enabled";
   const storedHistory = readStoredJson(ALERT_HISTORY_KEY, []);
   let history = new Set(
@@ -28,6 +28,8 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus, getT
 
   async function notify(quota) {
     if (!enabled) return;
+    const accountScope = getAccountScope?.();
+    if (!accountScope || accountScope === "unknown") return;
     const primaryWindow = quota?.windows?.[0];
     if (!primaryWindow) return;
 
@@ -41,7 +43,8 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus, getT
     const threshold = thresholds.find((value) => used >= value);
     if (!threshold) return;
 
-    const historyKey = `${primaryWindow.resetsAt ?? "unknown"}:${threshold}`;
+    // 多账户共享提醒偏好，但提醒去重必须按账户隔离。
+    const historyKey = `${accountScope}:${primaryWindow.resetsAt ?? "unknown"}:${threshold}`;
     if (history.has(historyKey)) return;
 
     try {

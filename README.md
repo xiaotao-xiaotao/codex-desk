@@ -25,7 +25,8 @@
 - **Never lose track of your quota** — keep a floating desktop indicator visible, with optional alerts at 80%, 90%, and 100% usage.
 - **Return to useful work faster** — search local Codex sessions, inspect messages and file changes, then copy the exact `codex resume <session ID>` command.
 - **Understand how you use Codex** — explore activity trends, recurring topics, and Token usage by day or session.
-- **Keep your data on your machine** — data is read locally through the local shared Codex daemon and local session files. Codex Desk never uploads your data or reads or stores `auth.json`.
+- **Keep everyday accounts ready** — open Your accounts in the sidebar to save, rename, remove, and switch local ChatGPT sign-ins, with an optional shared-service restart. The account usage page also provides a shortcut.
+- **Keep your data on your machine** — quota and session data come from the local shared Codex daemon and local files. Account management reads and stores credentials locally, never uploads them, and never exposes tokens to the frontend or logs. Saved credentials are plaintext in `.codex-desk/saved-accounts.json`, alongside the Codex directory (under your user directory by default). The old app data directory is not read or migrated; treat saved credentials like passwords.
 
 Requires an installed and signed-in **Codex CLI ≥ 0.157.0** ([installation guide](https://github.com/openai/codex)). If Codex Desk saves you time, a **Star** or an [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) helps the project reach more Codex users.
 
@@ -116,6 +117,7 @@ Only Codex Desk v1 bundles are supported. The app does not import Codex JSONL fi
 - Desk automatically runs `codex app-server daemon start`, reusing an existing daemon. It no longer starts a dedicated `app-server --stdio` instance.
 - Account and quota, session interactions, and background statistics use separate connections to the same local service.
 - Quitting or restarting Desk closes only its own connections and proxies. The shared daemon and other Codex clients remain running.
+- Account switching requires file credential storage (`cli_auth_credentials_store = "file"`). Saving reads the current ChatGPT credentials; switching preserves the previous account's latest tokens and atomically replaces `CODEX_HOME/auth.json`. Removing a saved record does not log out the current account. A service restart happens only when explicitly selected in the switch confirmation, and may interrupt other clients. File replacement alone does not confirm the running client's identity.
 - Check your CLI with `codex --version`; upgrade older versions with `npm install -g @openai/codex@latest`. Desk enforces the minimum version and has no legacy CLI fallback.
 - The CLI path in Settings launches the daemon and proxies. Changing it does not restart an existing shared daemon.
 
