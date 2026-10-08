@@ -96,7 +96,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .sidebar-toggle:hover { border-color: #91caff; color: #1668c6; background: #f0f7ff; box-shadow: 0 2px 8px #1677ff14; }
 .sidebar-toggle:active { border-color: #69b1ff; background: #e6f1ff; box-shadow: none; }
 .sidebar-toggle:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
-.sidebar-toggle svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform .18s ease; }
+.sidebar-toggle .disclosure-chevron { transform: rotate(90deg); }
 /* 菜单通过侧栏内边距获取文字空间，不使用负边距向左偏移。 */
 .dashboard-nav { display: flex; flex-direction: column; gap: 8px; }
 .dashboard-nav-button { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; min-height: 44px; padding: 10px 5px; border: 1px solid transparent; border-radius: 10px; color: #5f7189; background: transparent; text-align: left; font-size: var(--font-body); font-weight: 600; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease; }
@@ -127,7 +127,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .is-sidebar-collapsed .sidebar-brand { justify-content: center; padding: 0; }
 .is-sidebar-collapsed .sidebar-brand-name { margin-left: 0; }
 .is-sidebar-collapsed .sidebar-brand-name > span { display: none; }
-.is-sidebar-collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+.is-sidebar-collapsed .sidebar-toggle .disclosure-chevron { transform: rotate(-90deg); }
 .is-sidebar-collapsed .dashboard-nav { width: 100%; margin-inline: 0; }
 .is-sidebar-collapsed .dashboard-nav-button { justify-content: center; padding-left: 0; padding-right: 0; }
 .is-sidebar-collapsed .dashboard-nav-button > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -143,7 +143,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
   .dashboard-loading-overlay { --loading-overlay-inset: 75px 0 0 var(--dashboard-sidebar-width); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .panel, .dashboard-layout, .sidebar-toggle, .sidebar-toggle svg, .dashboard-nav-button, .progress-track span { transition: none; }
+  .panel, .dashboard-layout, .sidebar-toggle, .sidebar-toggle .disclosure-chevron, .dashboard-nav-button, .progress-track span { transition: none; }
   .dashboard-page { animation: none; }
 }
 

@@ -268,20 +268,20 @@
 :root[data-theme="dark"] .account-billing-button:hover { color: #c7e2ff; }
 :root[data-theme="dark"] .account-email-item::after, :root[data-theme="dark"] .account-reset-credits::before { background: #3a4758; }
 :root[data-theme="dark"] .account-reset-credits strong { color: #d5dfeb; }
-:root[data-theme="dark"] .reset-credits-tooltip { border-color: #3a4859; color: #b7c4d4; background: rgba(24, 33, 44, .98); box-shadow: 0 7px 18px rgba(0, 0, 0, .35); }
-:root[data-theme="dark"] .reset-credits-tooltip-description { color: #9aa9ba; }
 :root[data-theme="dark"] .account-message { color: #ff7875; }
-:root[data-theme="dark"] .settings-dialog { border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
+:root[data-theme="dark"] .settings-dialog { --settings-line: #2c3948; --settings-muted: #9aa9ba; --settings-ink: #d5dfeb; --settings-surface: #1b293b; --settings-selected: #233b58; border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
 :root[data-theme="dark"] .settings-dialog::backdrop { background: rgba(0, 0, 0, .58); }
 :root[data-theme="dark"] .settings-intro, :root[data-theme="dark"] .settings-hint { color: #9aa9ba; }
-:root[data-theme="dark"] .settings-group { border-color: #2c3948; background: #18212c; }
+:root[data-theme="dark"] .settings-group { border-color: #2c3948; background: transparent; }
 :root[data-theme="dark"] .settings-group > label, :root[data-theme="dark"] .settings-group-label { color: #d5dfeb; }
 :root[data-theme="dark"] .settings-reading-grid label { color: #aab7c7; }
-:root[data-theme="dark"] .settings-reading-preview { border-color: #344456; color: #d9e2ec; background: #111820; }
+:root[data-theme="dark"] .settings-reading-preview { color: #d9e2ec; background: transparent; }
 :root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-secondary-button, :root[data-theme="dark"] .settings-refresh-select { border-color: #344456; color: #d5dfeb; background: #111820; }
-:root[data-theme="dark"] .settings-threshold-item { border-color: #344456; color: #9aa9ba; background: #111820; }
+:root[data-theme="dark"] .settings-threshold-item { color: #9aa9ba; background: transparent; }
 :root[data-theme="dark"] .settings-refresh-select { color-scheme: dark; }
 :root[data-theme="dark"] .settings-secondary-button:hover:not(:disabled) { border-color: #4096ff; color: #9ecbff; background: #182b42; }
+:root[data-theme="dark"] .settings-tab:hover, :root[data-theme="dark"] .settings-tab[aria-selected="true"] { color: #a8ceff; }
+:root[data-theme="dark"] .settings-email-options label:has(input:checked) { border-color: #456d9b; }
 :root[data-theme="dark"] .cancel-button { color: #b7c5d6; background: #233044; }
 :root[data-theme="dark"] .cancel-button:hover:not(:disabled) { border-color: #365b87; color: #add2ff; background: #294262; }
 :root[data-theme="dark"] .cancel-button:active:not(:disabled) { border-color: #4773a6; background: #304d72; }
@@ -301,6 +301,5 @@
 :root[data-theme="dark"] .dashboard-page { background: transparent; }
 :root[data-theme="dark"] .dashboard-page .quota-reset-time { background: transparent; }
 :root[data-theme="dark"] .dashboard-page .account-details { background: #151b23; }
-:root[data-theme="dark"] .dashboard-page .account-detail-item strong,
-:root[data-theme="dark"] .dashboard-page .account-reset-credits strong { color: #d5e3f5; }
+:root[data-theme="dark"] .dashboard-page .account-detail-item strong { color: #d5e3f5; }
 :root[data-theme="dark"] .dashboard-page .thread-list { border-color: #29384c; background: #151b23; }

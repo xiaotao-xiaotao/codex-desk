@@ -92,7 +92,7 @@
 .message-markdown a { color: #0969da; text-decoration: underline; text-decoration-color: rgba(9, 105, 218, .38); text-underline-offset: 2px; }
 .message-markdown a:hover { text-decoration-color: currentColor; }
 .message-local-file-link { cursor: pointer; }
-.message-local-file-link::after { display: inline-block; margin-left: 3px; content: "⌄"; font-size: .72em; text-decoration: none; transition: transform .15s; }
+.message-local-file-link::after { margin-left: 3px; vertical-align: middle; content: ""; }
 .message-local-file-link[aria-expanded="true"]::after { transform: rotate(180deg); }
 .message-markdown strong { font-weight: 700; }
 .message-markdown code { padding: .12em .34em; border-radius: 4px; color: #2f3b49; background: #edf0f3; font-family: "Cascadia Code", Consolas, monospace; font-size: .88em; }
@@ -129,10 +129,9 @@
 .message-duration-disclosure .message-turn-meta { gap: 2px; }
 .message-turn-duration { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; white-space: nowrap; }
 .message-turn-toggle { display: inline-flex; min-height: var(--control-size); flex: 0 0 auto; align-items: center; padding: 0; border: 0; border-radius: var(--control-radius); color: #5f748c; background: transparent; cursor: pointer; font: inherit; font-size: var(--font-body); font-weight: 600; line-height: 1.2; white-space: nowrap; transition: color .15s, background-color .15s; }
-.message-turn-toggle svg { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; transition: transform .15s; }
 .message-turn-toggle:hover { color: #216da9; background: #edf6ff; }
 .message-turn-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
-.message-turn-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+.message-turn-toggle[aria-expanded="true"] .disclosure-chevron { transform: rotate(180deg); }
 /* 回合 ID 点击后仅复制完整标识，展开行为由左侧箭头独立承接。 */
 .turn-id-badge { display: inline-flex; min-width: 0; max-width: 100%; flex: 0 1 auto; align-items: center; gap: 5px; margin-left: auto; padding: 2px 4px; overflow: hidden; border: 0; border-radius: 4px; color: #8793a2; background: transparent; cursor: pointer; font: inherit; line-height: 1.2; text-align: left; transition: color .15s, background-color .15s; }
 .turn-id-badge:hover:not(:disabled) { color: #4e6f91; background: #edf2f7; }
@@ -170,8 +169,8 @@
 .message-activity-disclosure { width: 100%; overflow: visible; border: 0; background: transparent; interpolate-size: allow-keywords; }
 .message-activity-disclosure summary { display: flex; min-height: 24px; align-items: center; gap: 6px; padding: 1px 0; color: #657386; cursor: pointer; list-style: none; user-select: none; }
 .message-activity-disclosure summary::-webkit-details-marker { display: none; }
-.message-activity-disclosure summary::after { flex: 0 0 auto; content: "›"; font-size: var(--font-section); transition: transform .15s; }
-.message-activity-disclosure[open] summary::after { transform: rotate(90deg); }
+.message-activity-disclosure > summary::after { content: ""; }
+.message-activity-disclosure[open] > summary::after { transform: rotate(180deg); }
 .message-activity-disclosure summary:hover { color: #344154; }
 .message-activity-disclosure summary:focus-visible { outline: 2px solid #91caff; outline-offset: -2px; }
 .message-activity-disclosure summary strong { min-width: 0; overflow: hidden; color: inherit; font-size: var(--font-body); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
@@ -222,8 +221,7 @@
 .message-file-summary-toggle { display: flex; min-height: 36px; align-items: center; gap: 7px; padding: 7px 12px; border: 0; border-top: 1px solid #dfe3e7; color: #343a42; background: transparent; cursor: pointer; font-size: var(--font-body); font-weight: 650; text-align: left; }
 .message-file-summary-toggle:hover { background: #e9ebed; }
 .message-file-summary-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: -2px; }
-.message-file-summary-toggle-arrow { display: grid; width: 12px; height: 12px; flex: 0 0 auto; place-items: center; color: #6f7883; transition: transform .15s; }
-.message-file-summary-toggle-arrow svg { display: block; width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.message-file-summary-toggle-arrow { color: #6f7883; }
 .message-file-summary-toggle-arrow.is-expanded { transform: rotate(180deg); }
 .activity-file-hover-preview { position: absolute; z-index: 12; top: 100%; left: 0; display: none; width: min(720px, calc(100vw - 48px)); max-height: 420px; overflow: hidden; border: 1px solid #d7dee7; border-radius: 9px; color: #344154; background: #fff; box-shadow: 0 18px 42px rgba(31, 35, 41, .2); pointer-events: auto; }
 .activity-file-item:hover .activity-file-hover-preview, .activity-file-item:focus-within .activity-file-hover-preview { display: block; }
@@ -243,7 +241,9 @@
 .activity-file-preview-line.is-removed { background: #fff0ef; }
 .activity-file-preview-line.is-removed code { color: #a83e38; }
 .dialog-hint { width: 100%; margin: 0; padding: 13px 14px; border: 1px dashed #d5dce5; border-radius: 10px; color: #7d8792; background: #fff; font-size: var(--font-section); }
-.thread-load-older { display: inline-flex; justify-self: center; align-items: center; gap: 5px; min-height: 24px; padding: 3px 8px; border: 0; border-radius: var(--control-radius); color: #6d86a3; background: transparent; cursor: pointer; font-size: var(--font-caption); white-space: nowrap; }
+/* 加载入口缩小顶部留白，并抵消部分消息网格间距，避免短按钮占据一整段空白。 */
+.message-list:has(> .thread-load-older) { padding-top: 6px; }
+.thread-load-older { display: inline-flex; justify-self: center; align-items: center; gap: 5px; min-height: 20px; margin-bottom: -12px; padding: 0 8px; border: 0; border-radius: var(--control-radius); color: #6d86a3; background: transparent; cursor: pointer; font-size: var(--font-caption); white-space: nowrap; }
 .thread-load-older::before { content: "↑"; }
 .thread-load-older:hover:not(:disabled) { color: #1677ff; background: #edf5ff; }
 .thread-load-older:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }

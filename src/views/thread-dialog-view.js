@@ -120,12 +120,9 @@ function createCollapsedMessagesDisclosure({
   const toggle = document.createElement("button");
   toggle.type = "button";
   toggle.className = "message-turn-toggle";
-  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  icon.setAttribute("viewBox", "0 0 24 24");
+  const icon = document.createElement("span");
+  icon.className = "disclosure-chevron";
   icon.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("d", "m9 6 6 6-6 6");
-  icon.append(path);
   toggle.append(icon);
   const renderToggle = () => {
     toggle.setAttribute("aria-expanded", String(disclosure.open));

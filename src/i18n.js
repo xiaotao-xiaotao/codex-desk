@@ -393,19 +393,19 @@ const PRODUCT_TRANSLATIONS = {
 
 const ACCOUNT_TRANSLATIONS = {
   "zh-CN": {
-    accountEmail: "登录邮箱", hideAccountEmail: "隐藏登录邮箱", showAccountEmail: "显示登录邮箱", accountPlan: "订阅方案", resetCreditsTitle: "使用限额重置", resetCreditsDescription: "使用重置功能可恢复 5 小时限额或每周限额。", resetCreditsFullReset: "完全重置（每周 + 5 小时）", resetCreditsCount: "{count} 次", resetCreditTooltipItem: "第 {index} 次：{title} · {expires}", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期时间", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "读取失败", accountReadFailed: "读取账号信息失败：{error}", openBilling: "查看订阅到期时间", accountBillingOpenFailed: "无法打开账单页面：{error}",
+    accountEmail: "登录邮箱", hideAccountEmail: "隐藏登录邮箱", showAccountEmail: "显示登录邮箱", accountPlan: "订阅方案", resetCreditsTitle: "使用限额重置", resetCreditsExpand: "展开", resetCreditsCollapse: "收起", resetCreditsDescription: "使用重置功能可恢复 5 小时限额或每周限额。", resetCreditsFullReset: "完全重置（每周 + 5 小时）", resetCreditsCount: "{count} 次", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期时间", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "读取失败", openBilling: "查看订阅到期时间", accountBillingOpenFailed: "无法打开账单页面：{error}",
   },
   "zh-TW": {
-    accountEmail: "登入信箱", hideAccountEmail: "隱藏登入信箱", showAccountEmail: "顯示登入信箱", accountPlan: "訂閱方案", resetCreditsTitle: "使用限額重設", resetCreditsDescription: "使用重設功能可恢復 5 小時限額、每週限額或兩者。", resetCreditsFullReset: "完全重設（每週 + 5 小時）", resetCreditsCount: "{count} 次", resetCreditTooltipItem: "第 {index} 次：{title} · {expires}", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期時間", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "讀取失敗", accountReadFailed: "讀取帳號資訊失敗：{error}", openBilling: "查看訂閱到期時間", accountBillingOpenFailed: "無法開啟帳單頁面：{error}",
+    accountEmail: "登入信箱", hideAccountEmail: "隱藏登入信箱", showAccountEmail: "顯示登入信箱", accountPlan: "訂閱方案", resetCreditsTitle: "使用限額重設", resetCreditsExpand: "展開", resetCreditsCollapse: "收合", resetCreditsDescription: "使用重設功能可恢復 5 小時限額、每週限額或兩者。", resetCreditsFullReset: "完全重設（每週 + 5 小時）", resetCreditsCount: "{count} 次", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期時間", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "讀取失敗", openBilling: "查看訂閱到期時間", accountBillingOpenFailed: "無法開啟帳單頁面：{error}",
   },
   en: {
-    accountEmail: "Email", hideAccountEmail: "Hide email", showAccountEmail: "Show email", accountPlan: "Plan", resetCreditsTitle: "Rate limit resets", resetCreditsDescription: "A reset can restore your 5-hour limit, weekly limit, or both.", resetCreditsFullReset: "Full reset (Weekly + 5 hr)", resetCreditsCount: "{count}", resetCreditTooltipItem: "Reset {index}: {title} · {expires}", resetCreditExpires: "Expires {value}", resetCreditExpiresUnknown: "No expiry provided", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountDataReadFailed: "Read failed", accountReadFailed: "Could not read account: {error}", openBilling: "View subscription expiry", accountBillingOpenFailed: "Could not open the billing page: {error}",
+    accountEmail: "Email", hideAccountEmail: "Hide email", showAccountEmail: "Show email", accountPlan: "Plan", resetCreditsTitle: "Rate limit resets", resetCreditsExpand: "Expand", resetCreditsCollapse: "Collapse", resetCreditsDescription: "A reset can restore your 5-hour limit, weekly limit, or both.", resetCreditsFullReset: "Full reset (Weekly + 5 hr)", resetCreditsCount: "{count}", resetCreditExpires: "Expires {value}", resetCreditExpiresUnknown: "No expiry provided", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountDataReadFailed: "Read failed", openBilling: "View subscription expiry", accountBillingOpenFailed: "Could not open the billing page: {error}",
   },
   ja: {
-    accountEmail: "メールアドレス", hideAccountEmail: "メールアドレスを隠す", showAccountEmail: "メールアドレスを表示", accountPlan: "プラン", resetCreditsTitle: "レート制限のリセット", resetCreditsDescription: "リセットすると、5 時間枠、週次枠、または両方を回復できます。", resetCreditsFullReset: "完全リセット（週次 + 5 時間）", resetCreditsCount: "{count} 回", resetCreditTooltipItem: "{index} 回目：{title} · {expires}", resetCreditExpires: "有効期限：{value}", resetCreditExpiresUnknown: "有効期限は未提供", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountDataReadFailed: "読み込み失敗", accountReadFailed: "アカウント情報の読み込みに失敗しました：{error}", openBilling: "契約の有効期限を確認", accountBillingOpenFailed: "請求ページを開けませんでした：{error}",
+    accountEmail: "メールアドレス", hideAccountEmail: "メールアドレスを隠す", showAccountEmail: "メールアドレスを表示", accountPlan: "プラン", resetCreditsTitle: "レート制限のリセット", resetCreditsExpand: "展開", resetCreditsCollapse: "折りたたむ", resetCreditsDescription: "リセットすると、5 時間枠、週次枠、または両方を回復できます。", resetCreditsFullReset: "完全リセット（週次 + 5 時間）", resetCreditsCount: "{count} 回", resetCreditExpires: "有効期限：{value}", resetCreditExpiresUnknown: "有効期限は未提供", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountDataReadFailed: "読み込み失敗", openBilling: "契約の有効期限を確認", accountBillingOpenFailed: "請求ページを開けませんでした：{error}",
   },
   ko: {
-    accountEmail: "로그인 이메일", hideAccountEmail: "이메일 숨기기", showAccountEmail: "이메일 표시", accountPlan: "구독 플랜", resetCreditsTitle: "사용 한도 재설정", resetCreditsDescription: "재설정으로 5시간 한도, 주간 한도 또는 둘 다를 복원할 수 있습니다.", resetCreditsFullReset: "전체 재설정(주간 + 5시간)", resetCreditsCount: "{count}회", resetCreditTooltipItem: "{index}회: {title} · {expires}", resetCreditExpires: "만료: {value}", resetCreditExpiresUnknown: "만료 시간이 제공되지 않음", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountDataReadFailed: "읽기 실패", accountReadFailed: "계정 정보를 읽지 못했습니다: {error}", openBilling: "구독 만료일 보기", accountBillingOpenFailed: "청구 페이지를 열 수 없습니다: {error}",
+    accountEmail: "로그인 이메일", hideAccountEmail: "이메일 숨기기", showAccountEmail: "이메일 표시", accountPlan: "구독 플랜", resetCreditsTitle: "사용 한도 재설정", resetCreditsExpand: "펼치기", resetCreditsCollapse: "접기", resetCreditsDescription: "재설정으로 5시간 한도, 주간 한도 또는 둘 다를 복원할 수 있습니다.", resetCreditsFullReset: "전체 재설정(주간 + 5시간)", resetCreditsCount: "{count}회", resetCreditExpires: "만료: {value}", resetCreditExpiresUnknown: "만료 시간이 제공되지 않음", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountDataReadFailed: "읽기 실패", openBilling: "구독 만료일 보기", accountBillingOpenFailed: "청구 페이지를 열 수 없습니다: {error}",
   },
 };
 
@@ -617,7 +617,7 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsFlowRead: "跟随自动刷新或手动刷新读取 auth.json → 按账户 ID 与用户标识对比已保存账户",
     accountsFlowNew: "身份未匹配", accountsFlowNewHint: "显示 +1 → 保存当前账户 → 新增账户记录",
     accountsFlowChanged: "身份相同，Token 有变化", accountsFlowChangedHint: "显示蓝色圆点 → 更新保存 → 更新原记录；仅刷新时间变化不提示。",
-    accountsFlowNote: "凭据保存在 .codex-desk/saved-accounts.json。切换前会更新当前已保存账户的最新凭据；仅替换文件不会立即改变运行中客户端的身份，请重启后核对。",
+    accountsFlowNote: "凭据保存在 .codex-desk/saved-accounts.json；切换前自动更新，切换后请重启客户端核对。",
     accountsCurrentCaption: "当前登录", accountsCurrentUnknown: "暂无可保存的 ChatGPT 登录", accountsSave: "保存当前账户",
     accountsListTitle: "已保存账户", accountsCount: "{count} 个账户", accountsSelected: "已选凭据", accountsSwitch: "切换", accountsReconnect: "重新同步",
     accountsRename: "重命名", accountsRemove: "移除账户", accountsEmailUnknown: "邮箱信息不可用", accountsLoading: "正在读取账户…", accountsLoadingHint: "正在检查本机保存的登录信息。",
@@ -658,7 +658,7 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsFlowRead: "Automatic or manual refresh reads auth.json → compares account ID and user identity with saved accounts",
     accountsFlowNew: "No matching identity", accountsFlowNewHint: "Show +1 → save current account → add a saved account",
     accountsFlowChanged: "Same identity, changed tokens", accountsFlowChangedHint: "Show a blue dot → update saved account → replace the existing record. Refresh timestamps alone do not trigger a hint.",
-    accountsFlowNote: "Credentials are stored in .codex-desk/saved-accounts.json. Switching first updates the current saved account with its latest credentials. Replacing the file alone does not change a running client's identity; restart and verify.",
+    accountsFlowNote: "Credentials: .codex-desk/saved-accounts.json. Updated before switching; restart clients and verify afterward.",
     accountsCurrentCaption: "Local sign-in credentials", accountsCurrentUnknown: "No ChatGPT sign-in available to save", accountsSave: "Save current account",
     accountsListTitle: "Saved accounts", accountsCount: "{count} accounts", accountsSelected: "Selected credentials", accountsSwitch: "Switch", accountsReconnect: "Sync again",
     accountsRename: "Rename", accountsRemove: "Remove account", accountsEmailUnknown: "Email unavailable", accountsLoading: "Reading accounts…", accountsLoadingHint: "Checking sign-in details saved on this device.",
@@ -682,8 +682,17 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
   },
 };
 
+const SETTINGS_LAYOUT_TRANSLATIONS = {
+  "zh-CN": { settingsLayoutIntro: "调整本机偏好，修改后点击保存生效。", settingsStorageHint: "所有设置均保存在本机：{path}", settingsStorageLoading: "正在读取设置保存目录…", settingsStorageReadFailed: "无法读取设置保存目录", settingsCategoryLabel: "设置分类", settingsConnectionTab: "连接与刷新", settingsAlertsTab: "提醒与隐私", settingsReadingTab: "阅读显示", settingsPreviewLabel: "实时预览" },
+  "zh-TW": { settingsLayoutIntro: "調整本機偏好，修改後點擊儲存生效。", settingsStorageHint: "所有設定均保存在本機：{path}", settingsStorageLoading: "正在讀取設定儲存目錄…", settingsStorageReadFailed: "無法讀取設定儲存目錄", settingsCategoryLabel: "設定分類", settingsConnectionTab: "連線與更新", settingsAlertsTab: "提醒與隱私", settingsReadingTab: "閱讀顯示", settingsPreviewLabel: "即時預覽" },
+  en: { settingsLayoutIntro: "Preferences stay on this device. Save to apply changes.", settingsStorageHint: "All settings are saved locally: {path}", settingsStorageLoading: "Reading settings directory…", settingsStorageReadFailed: "Could not read the settings directory", settingsCategoryLabel: "Settings categories", settingsConnectionTab: "Connection & refresh", settingsAlertsTab: "Alerts & privacy", settingsReadingTab: "Reading", settingsPreviewLabel: "Live preview" },
+  ja: { settingsLayoutIntro: "この端末の設定を変更し、保存すると反映されます。", settingsStorageHint: "設定の保存先（この端末）：{path}", settingsStorageLoading: "設定の保存先を読み込み中…", settingsStorageReadFailed: "設定の保存先を読み込めません", settingsCategoryLabel: "設定カテゴリ", settingsConnectionTab: "接続と更新", settingsAlertsTab: "通知とプライバシー", settingsReadingTab: "読みやすさ", settingsPreviewLabel: "プレビュー" },
+  ko: { settingsLayoutIntro: "이 기기의 설정을 변경한 후 저장하면 적용됩니다.", settingsStorageHint: "이 기기의 설정 저장 위치: {path}", settingsStorageLoading: "설정 저장 위치를 읽는 중…", settingsStorageReadFailed: "설정 저장 위치를 읽을 수 없습니다", settingsCategoryLabel: "설정 분류", settingsConnectionTab: "연결 및 새로 고침", settingsAlertsTab: "알림 및 개인정보", settingsReadingTab: "읽기 설정", settingsPreviewLabel: "실시간 미리보기" },
+};
+
 // 低优先级文案先合并，后面的业务分组覆盖同名键，保持原有查询优先级。
 const TRANSLATION_SOURCES = [
+  SETTINGS_LAYOUT_TRANSLATIONS,
   ACCOUNT_SWITCH_TRANSLATIONS,
   NAVIGATION_TRANSLATIONS,
   TOPIC_TRANSLATIONS,

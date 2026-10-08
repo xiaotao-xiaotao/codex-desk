@@ -14,18 +14,49 @@
 .account-email-item::after { align-self: stretch; width: 1px; margin-left: 3px; background: #dfe5ec; content: ""; }
 .account-billing-button { padding: 0; border: 0; color: #1677ff; background: transparent; cursor: pointer; font-size: var(--font-caption); font-weight: 700; }
 .account-billing-button:hover { color: #0958d9; text-decoration: underline; text-underline-offset: 2px; }
-/* 重置权益嵌入账户行的剩余空间；说明仅由信息图标触发，避免整段字段看起来可操作。 */
-.account-reset-credits { position: relative; display: flex; flex: 1 1 auto; min-width: 0; align-items: center; gap: 5px; }
-/* 作者样式会覆盖浏览器对 hidden 的默认 display:none；额度数据返回前不能露出空标题。 */
+/* 账户栏保持紧凑，重置说明和明细仅在用户展开后占用空间。 */
+.account-reset-credits { min-width: 0; }
 .account-reset-credits[hidden] { display: none; }
-.account-reset-credits::before { align-self: stretch; width: 1px; margin-right: 3px; background: #dfe5ec; content: ""; }
-.account-reset-credits strong { min-width: 0; overflow: hidden; color: #344154; font-size: var(--font-caption); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.reset-credits-info { display: inline-grid; flex: 0 0 auto; width: 12px; height: 12px; margin-left: -3px; margin-right: -1px; padding: 0; border: 0; place-items: center; color: #8a96a7; background: transparent; cursor: default; font-size: var(--font-caption); line-height: 1; transform: translateY(-4px); }
-.reset-credits-info:hover { color: #1677ff; }
-.reset-credits-info:focus-visible { border-radius: 50%; outline: 2px solid #91caff; outline-offset: 1px; }
-.reset-credits-tooltip { position: absolute; z-index: 4; top: calc(100% + 7px); left: 0; display: grid; width: max-content; gap: 3px; padding: 7px 8px; border: 1px solid #dce4ed; border-radius: var(--control-radius); color: #526173; background: rgba(255, 255, 255, .98); box-shadow: 0 7px 18px rgba(31, 35, 41, .12); font-size: var(--font-caption); line-height: 1.4; white-space: nowrap; opacity: 0; pointer-events: none; transform: translateY(-2px); transition: opacity .14s ease, transform .14s ease; visibility: hidden; }
-.reset-credits-info:hover ~ .reset-credits-tooltip, .reset-credits-info:focus-visible ~ .reset-credits-tooltip { opacity: 1; transform: translateY(0); visibility: visible; }
-.reset-credits-tooltip-description { color: #738095; }
+.reset-credits-summary { display: flex; align-items: center; gap: 10px; }
+.reset-credits-toggle { display: inline-grid; flex: 0 0 auto; width: 24px; height: 24px; padding: 0; border-radius: 4px; place-items: center; }
+.reset-credits-toggle:hover { background: #eaf3ff; }
+:root[data-theme="dark"] .reset-credits-toggle:hover { background: #20354d; }
+.reset-credits-toggle::after { content: ""; }
+.reset-credits-toggle[aria-expanded="true"]::after { transform: rotate(180deg); }
+.reset-credits-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 3px; border-radius: 2px; }
+.reset-credits-panel { grid-column: 1 / -1; min-width: 0; padding-top: 10px; border-top: 1px solid #edf1f5; }
+.reset-credits-panel[hidden] { display: none; }
+.reset-credits-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.reset-credits-title { color: #64748b; font-size: var(--font-caption); font-weight: 400; }
+.reset-credits-count { color: #30445f; font-size: var(--font-body); font-weight: 650; font-variant-numeric: tabular-nums; }
+.reset-credits-description { margin: 0 0 6px; color: #8190a2; font-size: var(--font-caption); line-height: 1.6; }
+.reset-credits-heading .account-billing-button { padding: 0; }
+.reset-credits-heading .account-billing-button:hover { background: #eaf3ff; }
+.reset-credits-heading .account-billing-button:active { background: #dcecff; }
+.reset-credits-heading .account-billing-button:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
+.reset-credits-list { max-height: 124px; overflow-y: auto; margin: 7px 0 0; padding: 2px 10px; border-radius: 6px; background: #f8fafc; list-style: none; }
+.reset-credits-list:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; border-radius: 3px; }
+/* 所有行共享相同列宽，让日期长短变化也不影响纵向对齐。 */
+.reset-credits-list li { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: baseline; gap: 10px; min-width: 0; padding: 5px 0; }
+.reset-credits-list li + li { border-top: 1px solid #edf1f5; }
+.reset-credit-number { color: #94a3b8; font-size: var(--font-caption); font-variant-numeric: tabular-nums; }
+.reset-credits-list li > div { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); align-items: baseline; min-width: 0; gap: 16px; }
+.reset-credit-title { color: #64748b; font-size: var(--font-caption); line-height: 1.6; overflow-wrap: anywhere; }
+.reset-credit-expiry { color: #8190a2; font-size: var(--font-caption); line-height: 1.6; text-align: left; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+:root[data-theme="dark"] .reset-credits-count { color: #d5e3f5; }
+
+:root[data-theme="dark"] .reset-credits-list { background: #18212c; }
+:root[data-theme="dark"] .reset-credits-list li + li { border-top-color: #293545; }
+:root[data-theme="dark"] .reset-credits-panel { border-top-color: #2a3544; }
+:root[data-theme="dark"] .reset-credits-title,
+:root[data-theme="dark"] .reset-credits-count,
+:root[data-theme="dark"] .reset-credit-title { color: #a0afc3; }
+:root[data-theme="dark"] .reset-credit-number,
+:root[data-theme="dark"] .reset-credits-description,
+:root[data-theme="dark"] .reset-credit-expiry { color: #8b9bb0; }
+:root[data-theme="dark"] .reset-credits-heading .account-billing-button:hover { background: #20354d; }
+:root[data-theme="dark"] .reset-credits-heading .account-billing-button:active { background: #294564; }
+@media (prefers-reduced-motion: reduce) { .reset-credits-heading .account-billing-button { transition: none; } }
 .account-message { margin: 5px 1px 0; color: #cf1322; font-size: var(--font-caption); line-height: 1.4; }
 .account-email-item { flex: 0 1 auto; max-width: 45%; }
 
@@ -33,8 +64,7 @@
 .dashboard-page .account-detail-item { flex-wrap: wrap; align-content: start; gap: 7px; }
 .dashboard-page .account-detail-label { width: 100%; color: #64748b; font-weight: 400; }
 .dashboard-page .account-detail-label::after { content: none; }
-.dashboard-page .account-detail-item strong,
-.dashboard-page .account-reset-credits strong { font-size: var(--font-body); color: #30445f; }
+.dashboard-page .account-detail-item strong { font-size: var(--font-body); color: #30445f; }
 .dashboard-page .account-email-item { max-width: 100%; }
 .account-detail-heading { display: flex; width: 100%; min-width: 0; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .dashboard-page .account-detail-heading .account-detail-label { width: auto; }
@@ -42,14 +72,16 @@
 .dashboard-page .account-email-item strong { max-width: calc(100% - 28px); }
 .dashboard-page .account-email-item::after,
 .dashboard-page .account-reset-credits::before { content: none; }
-.dashboard-page .account-reset-credits { flex-wrap: wrap; align-content: start; gap: 7px; }
+.dashboard-page .account-reset-credits { display: grid; align-content: start; gap: 7px; }
+.dashboard-page .account-reset-credits[hidden] { display: none; }
 .dashboard-page .account-billing-button { font-weight: 600; }
-.dashboard-page .reset-credits-info { width: 16px; height: 16px; margin-left: 3px; transform: none; }
-.dashboard-page .reset-credits-tooltip { max-width: min(400px, 70vw); left: auto; right: 0; white-space: normal; }
 
 @media (max-width: 560px) {
   .dashboard-page .account-details { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
-  .dashboard-page .account-email-item { grid-column: 1 / -1; }
+  .dashboard-page .account-detail-item { grid-column: 1 / -1; }
+  .dashboard-page .account-reset-credits { grid-column: 1 / -1; }
+  .reset-credits-list li > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .reset-credit-expiry { text-align: left; }
 }
 
 /* 热力图承接额度下方空白；每天一格，低饱和蓝色让额度数字保持首要层级。 */

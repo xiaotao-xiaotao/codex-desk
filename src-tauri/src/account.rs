@@ -2,8 +2,8 @@ use crate::app_server::AppServerState;
 use serde::Serialize;
 use serde_json::{json, Value};
 
-/// 账号元数据偶尔比额度请求慢，单独延长等待时间，避免已登录时误报读取失败。
-const ACCOUNT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+/// 切换账户或服务重启后元数据可能返回较慢，最多等待 40 秒。
+const ACCOUNT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(40);
 
 /// 仅包含个人中心需要展示的账户元数据，不透传任何认证凭据。
 #[derive(Serialize)]

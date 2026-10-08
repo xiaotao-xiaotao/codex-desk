@@ -10,8 +10,22 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
   const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
   const resetCreditsRow = document.querySelector("#reset-credits-row");
   const resetCreditsSummary = document.querySelector("#reset-credits-summary");
-  const resetCreditsInfo = document.querySelector("#reset-credits-info");
-  const resetCreditsTooltip = document.querySelector("#reset-credits-tooltip");
+  const resetCreditsList = document.querySelector("#reset-credits-list");
+  const resetCreditsToggle = document.querySelector("#reset-credits-toggle");
+  const resetCreditsPanel = document.querySelector("#reset-credits-panel");
+  let resetCreditsExpanded = false;
+
+  function renderResetCreditsExpansion() {
+    resetCreditsPanel.hidden = !resetCreditsExpanded;
+    resetCreditsToggle.setAttribute("aria-expanded", String(resetCreditsExpanded));
+    resetCreditsToggle.setAttribute("aria-label", t(resetCreditsExpanded ? "resetCreditsCollapse" : "resetCreditsExpand"));
+  }
+
+  resetCreditsToggle.addEventListener("click", () => {
+    resetCreditsExpanded = !resetCreditsExpanded;
+    renderResetCreditsExpansion();
+  });
+  renderResetCreditsExpansion();
 
   function formatOrbWindow(durationMinutes) {
     const minutes = Number(durationMinutes);
@@ -48,27 +62,33 @@ export function createQuotaView({ t, formatQuotaWindow, formatResetAt, formatRes
     const resetCredits = Number(quota.resetCredits ?? 0);
     const resetCreditDetails = Array.isArray(quota.resetCreditDetails) ? quota.resetCreditDetails : [];
     resetCreditsRow.hidden = resetCredits <= 0;
+    // 权益消失后收起明细；自动刷新有权益时保留用户的展开选择。
+    if (resetCredits <= 0) resetCreditsExpanded = false;
+    renderResetCreditsExpansion();
+    resetCreditsList.replaceChildren();
     if (resetCredits > 0) {
       resetCreditsSummary.textContent = t("resetCreditsCount", { count: resetCredits });
-      resetCreditsInfo.setAttribute("aria-label", t("resetCreditsDescription"));
-      resetCreditsTooltip.replaceChildren();
-      const description = document.createElement("span");
-      description.className = "reset-credits-tooltip-description";
-      description.textContent = t("resetCreditsDescription");
-      resetCreditsTooltip.append(description);
       for (let index = 0; index < resetCredits; index += 1) {
         const expiresAt = resetCreditDetails[index]?.expiresAt;
         const expiryText = expiresAt
           ? t("resetCreditExpires", { value: formatResetAt(expiresAt) })
           : t("resetCreditExpiresUnknown");
-        const item = document.createElement("span");
+        const item = document.createElement("li");
         // 每次重置都单独呈现，避免多次权益被合并成一个无法判断到期日的数字。
-        item.textContent = t("resetCreditTooltipItem", {
-          index: index + 1,
-          title: t("resetCreditsFullReset"),
-          expires: expiryText,
-        });
-        resetCreditsTooltip.append(item);
+        const number = document.createElement("span");
+        number.className = "reset-credit-number";
+        number.textContent = String(index + 1).padStart(2, "0");
+        number.setAttribute("aria-hidden", "true");
+        const details = document.createElement("div");
+        const title = document.createElement("span");
+        title.className = "reset-credit-title";
+        title.textContent = t("resetCreditsFullReset");
+        const expiry = document.createElement("span");
+        expiry.className = "reset-credit-expiry";
+        expiry.textContent = expiryText;
+        details.append(title, expiry);
+        item.append(number, details);
+        resetCreditsList.append(item);
       }
     }
     quotaList.replaceChildren();

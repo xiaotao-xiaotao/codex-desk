@@ -160,6 +160,7 @@ const dialogView = createThreadDialogView({
 });
 const settingsView = createSettingsDialogView({
   t,
+  onReadStoragePath: () => invoke("read_settings_directory"),
   getSettings: settingsController.getSettings,
   onBrowseCli: () => invoke("choose_cli_path"),
   onSave: async (settings) => {

@@ -12,3 +12,27 @@
 @import './styles/settings-dialog.css';
 @import './styles/scrollbar.css';
 @import './styles/theme.css';
+
+/* 所有折叠入口复用标题栏箭头：14px、圆角端点、1.8px 描边，颜色随主题继承。 */
+:root {
+  --disclosure-chevron-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.disclosure-chevron,
+.reset-credits-toggle::after,
+.message-local-file-link::after,
+.message-activity-disclosure > summary::after {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  background: currentColor;
+  -webkit-mask: var(--disclosure-chevron-mask) center / contain no-repeat;
+  mask: var(--disclosure-chevron-mask) center / contain no-repeat;
+  transition: transform .15s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-chevron,
+  .reset-credits-toggle::after,
+  .message-local-file-link::after,
+  .message-activity-disclosure > summary::after { transition: none; }
+}

@@ -416,9 +416,8 @@ export function createThreadActivityView({ t, onViewFileChanges }) {
       toggle.className = "message-file-summary-toggle";
       const label = document.createElement("span");
       const arrow = document.createElement("span");
-      arrow.className = "message-file-summary-toggle-arrow";
+      arrow.className = "message-file-summary-toggle-arrow disclosure-chevron";
       arrow.setAttribute("aria-hidden", "true");
-      arrow.innerHTML = `<svg viewBox="0 0 12 12"><path d="m3 4.5 3 3 3-3"></path></svg>`;
       toggle.append(label, arrow);
       let expanded = false;
       const renderToggle = () => {

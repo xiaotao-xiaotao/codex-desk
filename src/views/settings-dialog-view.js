@@ -1,11 +1,30 @@
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
 import { READING_SETTINGS } from "../features/settings-controller.js";
 
-export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }) {
+export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, onReadStoragePath }) {
   const openButton = document.querySelector("#settings-button");
   const dialog = document.querySelector("#settings-dialog");
   const closeButton = document.querySelector("#settings-close");
   const form = document.querySelector("#settings-form");
+  const tabList = dialog.querySelector(".settings-tabs");
+  const panels = [...dialog.querySelectorAll("[data-settings-category]")];
+  // 面板是分类的唯一声明来源，新增分类无需同步维护导航或切页分支。
+  const tabs = panels.map((panel) => {
+    const tab = document.createElement("button");
+    tab.id = `settings-tab-${panel.dataset.settingsCategory}`;
+    tab.className = "settings-tab";
+    tab.type = "button";
+    tab.dataset.settingsTab = panel.dataset.settingsCategory;
+    tab.dataset.settingsLabel = panel.dataset.settingsLabel;
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-controls", panel.id);
+    panel.setAttribute("aria-labelledby", tab.id);
+    return tab;
+  });
+  tabList.replaceChildren(...tabs);
+  const body = dialog.querySelector(".settings-body");
+  // 与样式中的窄窗口断点保持一致，键盘方向和无障碍声明随布局切换。
+  const compactLayout = window.matchMedia("(max-width: 600px)");
   const cliPathInput = document.querySelector("#settings-cli-path");
   const browseButton = document.querySelector("#settings-cli-browse");
   const resetButton = document.querySelector("#settings-cli-reset");
@@ -19,12 +38,59 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   const cancelButton = document.querySelector("#settings-cancel");
   const saveButton = document.querySelector("#settings-save");
   const status = document.querySelector("#settings-status");
+  const storageHint = document.querySelector("#settings-storage-hint");
+  let storagePath = null;
+  let storageError = null;
+  let readingStoragePath = false;
   const readingPreview = document.querySelector("#settings-reading-preview");
   const readingResetButton = document.querySelector("#settings-reading-reset");
   const readingControls = Object.entries(READING_SETTINGS).map(([field, config]) => ({
     field, config, select: document.querySelector(`[data-reading-setting="${field}"]`),
   }));
   let saving = false;
+  let activeTab = tabs[0]?.dataset.settingsTab;
+  const disabledStates = new Map();
+
+  function selectTab(name, focus = false) {
+    const selected = tabs.find((tab) => tab.dataset.settingsTab === name);
+    if (!selected) return;
+    activeTab = name;
+    tabs.forEach((tab) => {
+      const active = tab === selected;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+    panels.forEach((panel) => { panel.hidden = panel.id !== selected.getAttribute("aria-controls"); });
+    // 分页只改变可见区域，不重填表单，未保存的修改在各页间保留。
+    body.scrollTop = 0;
+    if (focus) selected.focus();
+    revealTab(selected);
+  }
+
+  function revealTab(selected) {
+    if (!dialog.open || !selected) return;
+    // 只滚动分类栏，避免 scrollIntoView 连带移动内容区或整个弹窗。
+    const tabRect = selected.getBoundingClientRect();
+    const listRect = tabList.getBoundingClientRect();
+    if (compactLayout.matches) {
+      if (tabRect.left < listRect.left) tabList.scrollLeft += tabRect.left - listRect.left;
+      else if (tabRect.right > listRect.right) tabList.scrollLeft += tabRect.right - listRect.right;
+    } else {
+      if (tabRect.top < listRect.top) tabList.scrollTop += tabRect.top - listRect.top;
+      else if (tabRect.bottom > listRect.bottom) tabList.scrollTop += tabRect.bottom - listRect.bottom;
+    }
+  }
+
+  function updateNavigationLayout() {
+    tabList.setAttribute("aria-orientation", compactLayout.matches ? "horizontal" : "vertical");
+    revealTab(tabs.find((tab) => tab.dataset.settingsTab === activeTab));
+  }
+
+  function focusField(field) {
+    const panel = field.closest("[data-settings-category]");
+    if (panel) selectTab(panel.dataset.settingsCategory);
+    field.focus();
+  }
 
   function renderReadingPreview() {
     for (const { config, select } of readingControls) {
@@ -72,16 +138,18 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
 
   function setBusy(busy) {
     saving = busy;
-    cliPathInput.disabled = busy;
-    browseButton.disabled = busy;
-    resetButton.disabled = busy;
-    refreshInterval.disabled = busy;
-    emailVisibilityOptions.forEach((input) => { input.disabled = busy; });
-    thresholdInputs.forEach((input) => { input.disabled = busy; });
-    readingControls.forEach(({ select }) => { select.disabled = busy; });
-    readingResetButton.disabled = busy;
-    cancelButton.disabled = busy;
-    saveButton.disabled = busy;
+    form.setAttribute("aria-busy", String(busy));
+    if (busy) {
+      // 自动覆盖新增字段，并保留原先因业务条件禁用的控件状态。
+      dialog.querySelectorAll("input, select, textarea, button, fieldset").forEach((control) => {
+        if (control.matches("[data-settings-tab]")) return;
+        disabledStates.set(control, control.disabled);
+        control.disabled = true;
+      });
+    } else {
+      disabledStates.forEach((disabled, control) => { control.disabled = disabled; });
+      disabledStates.clear();
+    }
   }
 
   function showStatus(message = "", error = false) {
@@ -110,10 +178,34 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     return valid ? thresholds : null;
   }
 
+  function renderStorageHint() {
+    storageHint.textContent = storagePath
+      ? t("settingsStorageHint", { path: storagePath })
+      : storageError ? t("settingsStorageReadFailed") : t("settingsStorageLoading");
+    storageHint.title = storagePath ?? storageError ?? "";
+  }
+
+  async function readStoragePath() {
+    if (storagePath || readingStoragePath) return;
+    readingStoragePath = true;
+    storageError = null;
+    renderStorageHint();
+    try {
+      storagePath = await onReadStoragePath();
+    } catch (error) {
+      storageError = String(error);
+    } finally {
+      readingStoragePath = false;
+      renderStorageHint();
+    }
+  }
+
   function open() {
     fillForm();
+    void readStoragePath();
     if (!dialog.open) dialog.showModal();
-    cliPathInput.focus();
+    selectTab(activeTab);
+    panels.find((panel) => !panel.hidden)?.querySelector("input, select")?.focus();
   }
 
   function updateLanguage() {
@@ -124,7 +216,11 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     openButton.title = openButton.ariaLabel = t("openSettings");
     renderCloseIconButton(closeButton, { label: t("closeSettings") });
     document.querySelector("#settings-title").textContent = t("settingsTitle");
-    document.querySelector("#settings-intro").textContent = t("settingsIntro");
+    document.querySelector("#settings-intro").textContent = t("settingsLayoutIntro");
+    tabList.setAttribute("aria-label", t("settingsCategoryLabel"));
+    tabs.forEach((tab) => { tab.textContent = t(tab.dataset.settingsLabel); });
+    dialog.querySelectorAll("[data-settings-layout-i18n]").forEach((element) => { element.textContent = t(element.dataset.settingsLayoutI18n); });
+    renderStorageHint();
     document.querySelector("#settings-cli-label").textContent = t("settingsCliPath");
     document.querySelector("#settings-cli-hint").textContent = t("settingsCliPathHint");
     cliPathInput.placeholder = t("settingsCliPathPlaceholder");
@@ -156,15 +252,28 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     cliPathInput.value = "";
     cliPathInput.focus();
   });
-  cancelButton.addEventListener("click", () => dialog.close());
-  closeButton.addEventListener("click", () => dialog.close());
+  cancelButton.addEventListener("click", () => { if (!saving) dialog.close(); });
+  closeButton.addEventListener("click", () => { if (!saving) dialog.close(); });
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectTab(tab.dataset.settingsTab));
+    tab.addEventListener("keydown", (event) => {
+      let target;
+      if (event.key === (compactLayout.matches ? "ArrowRight" : "ArrowDown")) target = (index + 1) % tabs.length;
+      else if (event.key === (compactLayout.matches ? "ArrowLeft" : "ArrowUp")) target = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === "Home") target = 0;
+      else if (event.key === "End") target = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      selectTab(tabs[target].dataset.settingsTab, true);
+    });
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (saving) return;
     const quotaAlertThresholds = readQuotaAlertThresholds();
     if (!quotaAlertThresholds) {
       showStatus(t("settingsQuotaAlertThresholdInvalid"), true);
-      (thresholdInputs.find((input) => !input.checkValidity()) ?? thresholdInputs[0]).focus();
+      focusField(thresholdInputs.find((input) => !input.checkValidity()) ?? thresholdInputs[0]);
       return;
     }
     setBusy(true);
@@ -185,8 +294,9 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
     }
   });
   dialog.addEventListener("click", (event) => {
-    if (event.target === dialog) dialog.close();
+    if (event.target === dialog && !saving) dialog.close();
   });
+  dialog.addEventListener("cancel", (event) => { if (saving) event.preventDefault(); });
 
   readingResetButton.addEventListener("click", () => {
     if (saving) return;
@@ -197,5 +307,8 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave }
   });
   readingControls.forEach(({ select }) => select.addEventListener("change", renderReadingPreview));
   updateLanguage();
+  compactLayout.addEventListener("change", updateNavigationLayout);
+  updateNavigationLayout();
+  selectTab(activeTab);
   return { open, updateLanguage };
 }

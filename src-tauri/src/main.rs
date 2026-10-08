@@ -63,6 +63,12 @@ async fn read_account(
 }
 
 #[tauri::command]
+fn read_settings_directory() -> Result<String, String> {
+    // 与账户库和 WebView 偏好复用同一目录规则，兼容系统差异及自定义 CODEX_HOME。
+    account_store::data_directory().map(|path| path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 async fn start_account_login(
     app: AppHandle,
     state: State<'_, account_login::AccountLoginState>,
@@ -581,6 +587,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             read_quota,
             read_account,
+            read_settings_directory,
             list_saved_accounts,
             save_current_account,
             start_account_login,

@@ -25,7 +25,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   const trigger = document.querySelector("#account-switch-open");
   const triggers = [...document.querySelectorAll("[data-open-account-switch]")];
   let returnFocus = trigger;
-  const pageNotice = document.querySelector("#account-switch-notice");
   const dialog = document.createElement("dialog");
   dialog.className = "account-switch-dialog";
   dialog.id = "accounts-dialog";
@@ -85,11 +84,12 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   pageHeader.append(headerActions);
   page.append(dialog.querySelector(".accounts-feedback"), dialog.querySelector(".accounts-list-pane"), dialog.querySelector(".accounts-footer"));
   page.querySelector(".accounts-list-heading h3").after(page.querySelector(".accounts-footer"));
-  const flow = document.createElement("section");
+  const flow = document.createElement("details");
   flow.className = "accounts-flow";
   flow.setAttribute("aria-labelledby", "accounts-flow-title");
   flow.innerHTML = `
-    <div class="accounts-flow-heading"><p id="accounts-flow-title" class="accounts-flow-kicker" data-account-flow-i18n="accountsFlowKicker"></p><span data-account-flow-i18n="accountsFlowLocal"></span></div>
+    <summary class="accounts-flow-heading"><span id="accounts-flow-title" class="accounts-flow-kicker" data-account-flow-i18n="accountsFlowKicker"></span><span class="accounts-flow-local" data-account-flow-i18n="accountsFlowLocal"></span><span class="accounts-flow-toggle disclosure-chevron" aria-hidden="true"></span></summary>
+    <div class="accounts-flow-body">
     <div class="accounts-flow-scene" aria-hidden="true">
       <div class="accounts-scene-line"></div>
       <div class="accounts-scene-card accounts-scene-source">${icon("account")}<strong data-account-flow-i18n="accountsFlowSaved"></strong><small class="accounts-flow-current-label"></small></div>
@@ -105,7 +105,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       <li><b aria-hidden="true">${icon("codex")}</b><div><strong>Codex</strong><small data-account-flow-i18n="accountsFlowApplyHint"></small></div></li>
     </ol>
     <details class="accounts-flow-details">
-      <summary><span class="accounts-flow-privacy" data-account-flow-i18n="accountsFlowPrivacy"></span><span class="accounts-flow-details-link"><span data-account-flow-i18n="accountsFlowDetails"></span><span class="accounts-flow-chevron" aria-hidden="true">⌄</span></span></summary>
+      <summary><span class="accounts-flow-privacy" data-account-flow-i18n="accountsFlowPrivacy"></span><span class="accounts-flow-details-link"><span data-account-flow-i18n="accountsFlowDetails"></span><span class="accounts-flow-chevron disclosure-chevron" aria-hidden="true"></span></span></summary>
       <div class="accounts-flow-expanded">
       <p class="accounts-flow-read">${icon("switch")}<span data-account-flow-i18n="accountsFlowRead"></span></p>
       <div class="accounts-flow-branches">
@@ -114,7 +114,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       </div>
       <p class="accounts-flow-note" data-account-flow-i18n="accountsFlowNote"></p>
       </div>
-    </details>`;
+    </details>
+    </div>`;
   page.querySelector(".accounts-list-heading").before(flow);
   const dialogFeedback = document.createElement("div");
   dialogFeedback.className = "accounts-feedback";
@@ -134,7 +135,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   let busy = false;
   let loading = false;
   let notice = null;
-  let pageNoticeKey = null;
   let requestVersion = 0;
   let feedbackTimer = null;
   let checking = false;
@@ -244,8 +244,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-target").hidden = !account;
     find(".accounts-restart").hidden = kind !== "switch";
     find(".accounts-editor-title").textContent = t(`accounts${kind[0].toUpperCase() + kind.slice(1)}Title`);
-    // 简单保存和登录由正文说明即可；保留隐藏标题供弹窗的无障碍名称引用。
-    find(".accounts-editor-title").hidden = kind === "save" || kind === "login";
+    // 常规账户操作由正文说明即可；隐藏标题仅作为弹窗的无障碍名称。
+    find(".accounts-editor-title").hidden = kind !== "enable";
     find(".accounts-editor-description").textContent = t(`accounts${kind[0].toUpperCase() + kind.slice(1)}Hint`);
     if (kind === "login" && selectedLoginMethod() === "device") find(".accounts-editor-description").textContent = t("accountsLoginDeviceHint");
     if (kind === "save" && snapshot?.currentCredentialsChanged) {
@@ -355,13 +355,9 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
         const result = await invoke("switch_saved_account", { id: account.id, restart });
         changed = true;
         snapshot = result.snapshot ?? snapshot;
-        const key = result.restart === "restarted" ? "accountsRestarted" : result.restart === "startFailed" ? "accountsRestartFailed" : "accountsSwitched";
-        pageNoticeKey = key;
-        pageNotice.hidden = false;
-        pageNotice.textContent = t(key);
-        pageNotice.dataset.kind = result.restart === "restarted" ? "success" : "pending";
         showList();
-        setFeedback(key, {}, result.restart === "restarted" ? "success" : "pending");
+        // 正常切换由账户信息变化体现，仅在服务未启动时提示异常。
+        if (result.restart === "startFailed") setFeedback("accountsRestartFailed", {}, "pending");
         // 服务同步失败不能把已经完成的凭据切换报告成失败。
         try { await onAfterSwitch({ changed: true, restarted: result.restart === "restarted" }); }
         catch { setFeedback("accountsSyncFailed", {}, "pending"); }
@@ -474,6 +470,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   function updateLanguage() {
     flow.querySelectorAll("[data-account-flow-i18n]").forEach((element) => {
       element.textContent = t(element.dataset.accountFlowI18n);
+      if (element.classList.contains("accounts-flow-note")) element.title = element.textContent;
     });
     triggers.forEach((button) => { button.querySelector("span").textContent = t("accountsManage"); });
     find(".accounts-intro").textContent = t("accountsIntro");
@@ -496,7 +493,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-restart div > span").textContent = t("accountsRestartHint");
     renderCloseIconButton(find(".accounts-close"), { label: t("accountsClose") });
     if (notice) setFeedback(notice.key, notice.values, notice.kind);
-    if (pageNoticeKey) pageNotice.textContent = t(pageNoticeKey);
     renderList(); renderEditor();
   }
 

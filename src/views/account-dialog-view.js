@@ -12,6 +12,7 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
   const message = document.querySelector("#account-message");
   let profile = null;
   let loading = false;
+  let readFailed = false;
   let error = null;
   let requestVersion = 0;
 
@@ -23,11 +24,10 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
     }
 
     const hasEmail = Boolean(profile?.email);
-    const accountReadFailed = error?.key === "accountReadFailed";
-    email.textContent = displayEmail(profile?.email, getHideEmails()) ?? t(accountReadFailed ? "accountDataReadFailed" : "accountEmailUnavailable");
+    email.textContent = displayEmail(profile?.email, getHideEmails()) ?? t(readFailed ? "accountDataReadFailed" : "accountEmailUnavailable");
     // 脱敏状态下不保留完整邮箱的悬浮提示，避免看似隐藏但仍可直接读到原文。
     email.title = hasEmail && !getHideEmails() ? profile.email : "";
-    plan.textContent = profile?.planType ?? t(accountReadFailed ? "accountDataReadFailed" : "accountPlanUnavailable");
+    plan.textContent = profile?.planType ?? t(readFailed ? "accountDataReadFailed" : "accountPlanUnavailable");
     message.hidden = !error;
     message.textContent = error ? t(error.key, { error: error.detail }) : "";
   }
@@ -35,6 +35,7 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
   async function refresh() {
     if (loading) return;
     loading = true;
+    readFailed = false;
     const version = ++requestVersion;
     error = null;
     render();
@@ -42,10 +43,10 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
       const result = await invoke("read_account");
       if (version !== requestVersion) return;
       profile = result;
-    } catch (readError) {
+    } catch {
       if (version !== requestVersion) return;
       profile = null;
-      error = { key: "accountReadFailed", detail: String(readError) };
+      readFailed = true;
     } finally {
       if (version === requestVersion) { loading = false; render(); }
     }
@@ -79,7 +80,7 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
   return {
     refresh,
     getAccountScope: () => profile?.email ?? "unknown",
-    invalidate: () => { ++requestVersion; loading = false; profile = null; error = null; render(); },
+    invalidate: () => { ++requestVersion; loading = false; readFailed = false; profile = null; error = null; render(); },
     updateLanguage: render,
   };
 }
