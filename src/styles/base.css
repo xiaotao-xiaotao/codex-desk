@@ -101,7 +101,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .dashboard-nav { display: flex; flex-direction: column; gap: 8px; }
 .dashboard-nav-button { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; min-height: 44px; padding: 10px 5px; border: 1px solid transparent; border-radius: 10px; color: #5f7189; background: transparent; text-align: left; font-size: var(--font-body); font-weight: 600; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease; }
 .dashboard-nav-button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dashboard-nav .dashboard-nav-button { height: 44px; line-height: 20px; }
+.dashboard-nav .dashboard-nav-button { height: 44px; gap: 10px; line-height: 20px; }
 .dashboard-nav-button svg { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .dashboard-nav-button:hover { color: #1668c6; background: #eaf3ff; }
 .dashboard-nav-button.is-active { border-color: #d7e7ff; color: #1668c6; background: #e6f1ff; }

@@ -7,7 +7,6 @@ const ICONS = {
   login: '<path d="M14 4h6v16h-6M3 12h12m-4-4 4 4-4 4"/>',
   edit: '<path d="m15 4 5 5M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15v5Z"/>',
   remove: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>',
-  shield: '<path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/>',
   back: '<path d="m14 6-6 6 6 6"/>',
   account: '<circle cx="12" cy="8" r="3"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/>',
   file: '<path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/>',
@@ -37,7 +36,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       <p class="accounts-intro"></p>
       <div class="accounts-feedback" role="status" hidden></div>
       <div class="accounts-list-pane">
-        <div class="accounts-current"><span class="accounts-current-icon">${icon("shield")}</span><div><span class="accounts-current-caption"></span><strong class="accounts-current-email"></strong></div><button class="accounts-button accounts-save" type="button">${icon("save")}<span></span></button></div>
+        <div class="accounts-current"><div><span class="accounts-current-caption"></span><strong class="accounts-current-email"></strong></div><button class="accounts-button accounts-save" type="button">${icon("save")}<span></span></button></div>
         <div class="accounts-list-heading"><h3></h3><span class="accounts-count"></span><button class="accounts-row-button accounts-reload" type="button">${icon("switch")}</button></div>
         <div class="accounts-list" aria-busy="false"></div>
         <div class="accounts-storage" hidden><p></p><button class="accounts-button accounts-enable" type="button"></button></div>
@@ -55,7 +54,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
           <input id="accounts-name" class="accounts-name-input" maxlength="48" autocomplete="off" required />
         </div>
         <section class="accounts-login-panel" hidden aria-live="polite">
-          <div class="accounts-login-emblem">${icon("shield")}</div>
           <strong class="accounts-login-status"></strong><p class="accounts-login-detail"></p>
           <div class="accounts-device-code" hidden><span></span><div><code></code><button class="accounts-button accounts-device-copy" type="button"></button></div></div>
           <ol class="accounts-login-steps"><li></li><li></li><li></li></ol>
@@ -66,7 +64,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
         <div class="accounts-editor-actions"><button class="cancel-button accounts-cancel" type="button"></button><button class="thread-action-button thread-action-button-primary accounts-submit" type="submit"></button></div>
       </form>
     </div>
-    <footer class="accounts-footer">${icon("shield")}<span></span></footer>`;
+    <footer class="accounts-footer"><span></span></footer>`;
   document.body.append(dialog);
   // 列表常驻独立栏目，只有会修改凭据或账户的操作进入确认弹窗。
   page.innerHTML = `<header class="accounts-page-header"><div class="accounts-page-context"></div></header>`;
