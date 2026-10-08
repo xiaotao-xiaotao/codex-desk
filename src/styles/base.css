@@ -86,20 +86,21 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 /* 导航与内容共享固定窗口；滚动留在各栏目内部，侧栏和全局操作始终可用。 */
 /* 中文菜单更短，收紧侧栏；其他语言保留完整名称的单行空间。 */
 :root:lang(en), :root:lang(ja), :root:lang(ko) { --dashboard-sidebar-width: 156px; }
-.dashboard-layout { display: grid; grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
-.dashboard-sidebar { display: flex; min-height: 0; flex-direction: column; gap: 18px; padding: 24px 6px 18px; border-right: 1px solid #e4ecf7; background: linear-gradient(165deg, #f1f7ff, #f8faff 70%); }
-.sidebar-brand { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 0; color: #526780; font-size: 12px; letter-spacing: -.025em; }
-.sidebar-brand-name { display: flex; min-width: 0; align-items: center; gap: 4px; margin-left: 6px; white-space: nowrap; }
+.dashboard-layout { display: grid; grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr); flex: 1 1 auto; min-height: 0; transition: grid-template-columns .18s ease; }
+.dashboard-sidebar { position: relative; display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 18px; padding: 24px 6px 18px; border-right: 1px solid #e4ecf7; background: linear-gradient(165deg, #f1f7ff, #f8faff 70%); }
+.sidebar-brand { display: flex; width: 100%; min-height: 32px; align-items: center; gap: 8px; padding: 0; color: #526780; font-size: 12px; letter-spacing: -.025em; }
+.sidebar-brand-name { display: flex; min-width: 0; align-items: center; gap: 6px; margin-left: 6px; overflow: hidden; white-space: nowrap; }
 .sidebar-brand-icon { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: #1677ff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sidebar-brand strong { color: #172f51; font-weight: 750; }
-.sidebar-toggle { display: grid; width: 24px; height: 28px; flex: 0 0 auto; padding: 3px; place-items: center; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
-.sidebar-toggle:hover { color: #1668c6; background: #e4efff; }
+.sidebar-toggle { position: absolute; z-index: 2; top: 24px; right: -11px; display: grid; width: 22px; height: 32px; padding: 0; place-items: center; border: 1px solid #dce7f5; border-radius: 8px; color: #7b8ea8; background: #fff; box-shadow: 0 2px 6px #2347730a; cursor: pointer; transition: color .15s, background .15s, border-color .15s, box-shadow .15s; }
+.sidebar-toggle:hover { border-color: #91caff; color: #1668c6; background: #f0f7ff; box-shadow: 0 2px 8px #1677ff14; }
+.sidebar-toggle:active { border-color: #69b1ff; background: #e6f1ff; box-shadow: none; }
 .sidebar-toggle:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; }
-.sidebar-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-toggle svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform .18s ease; }
 /* 菜单通过侧栏内边距获取文字空间，不使用负边距向左偏移。 */
 .dashboard-nav { display: flex; flex-direction: column; gap: 8px; }
 .dashboard-nav-button { position: relative; display: flex; align-items: center; gap: 4px; width: 100%; min-height: 44px; padding: 10px 5px; border: 1px solid transparent; border-radius: 10px; color: #5f7189; background: transparent; text-align: left; font-size: var(--font-body); font-weight: 600; cursor: pointer; transition: color .18s ease, background .18s ease, border-color .18s ease; }
-.dashboard-nav-button > span { white-space: nowrap; }
+.dashboard-nav-button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard-nav .dashboard-nav-button { height: 44px; line-height: 20px; }
 .dashboard-nav-button svg { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .dashboard-nav-button:hover { color: #1668c6; background: #eaf3ff; }
@@ -122,10 +123,11 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 
 /* 收起只隐藏栏目文字，保留导航、设置和恢复入口；内容区自动获得剩余宽度。 */
 .dashboard-layout.is-sidebar-collapsed { grid-template-columns: 62px minmax(0, 1fr); }
-.is-sidebar-collapsed .dashboard-sidebar { align-items: center; gap: 30px; padding-left: 8px; padding-right: 8px; }
+.is-sidebar-collapsed .dashboard-sidebar { align-items: center; padding-left: 8px; padding-right: 8px; }
 .is-sidebar-collapsed .sidebar-brand { justify-content: center; padding: 0; }
-.is-sidebar-collapsed .sidebar-brand > span { display: none; }
-.is-sidebar-collapsed .sidebar-toggle-chevron { transform: rotate(180deg); transform-origin: 14.5px 12px; }
+.is-sidebar-collapsed .sidebar-brand-name { margin-left: 0; }
+.is-sidebar-collapsed .sidebar-brand-name > span { display: none; }
+.is-sidebar-collapsed .sidebar-toggle svg { transform: rotate(180deg); }
 .is-sidebar-collapsed .dashboard-nav { width: 100%; margin-inline: 0; }
 .is-sidebar-collapsed .dashboard-nav-button { justify-content: center; padding-left: 0; padding-right: 0; }
 .is-sidebar-collapsed .dashboard-nav-button > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -141,7 +143,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
   .dashboard-loading-overlay { --loading-overlay-inset: 75px 0 0 var(--dashboard-sidebar-width); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .panel, .dashboard-nav-button, .progress-track span { transition: none; }
+  .panel, .dashboard-layout, .sidebar-toggle, .sidebar-toggle svg, .dashboard-nav-button, .progress-track span { transition: none; }
   .dashboard-page { animation: none; }
 }
 

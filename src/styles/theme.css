@@ -282,13 +282,17 @@
 :root[data-theme="dark"] .settings-threshold-item { border-color: #344456; color: #9aa9ba; background: #111820; }
 :root[data-theme="dark"] .settings-refresh-select { color-scheme: dark; }
 :root[data-theme="dark"] .settings-secondary-button:hover:not(:disabled) { border-color: #4096ff; color: #9ecbff; background: #182b42; }
+:root[data-theme="dark"] .cancel-button { color: #b7c5d6; background: #233044; }
+:root[data-theme="dark"] .cancel-button:hover:not(:disabled) { border-color: #365b87; color: #add2ff; background: #294262; }
+:root[data-theme="dark"] .cancel-button:active:not(:disabled) { border-color: #4773a6; background: #304d72; }
 
 /* 蓝白导航体系在深色模式中保持同样的层级和对比度。 */
 :root[data-theme="dark"] .dashboard-sidebar { border-color: #29384c; background: linear-gradient(165deg, #142136, #131c29 70%); }
 :root[data-theme="dark"] .sidebar-brand { color: #9eafc5; }
 :root[data-theme="dark"] .sidebar-brand strong { color: #e0edff; }
-:root[data-theme="dark"] .sidebar-toggle { color: #9eafc5; }
-:root[data-theme="dark"] .sidebar-toggle:hover { color: #a6d2ff; background: #1a304b; }
+:root[data-theme="dark"] .sidebar-toggle { border-color: #34475f; color: #9eafc5; background: #1b293b; box-shadow: 0 2px 6px #0003; }
+:root[data-theme="dark"] .sidebar-toggle:hover { border-color: #456d9b; color: #a6d2ff; background: #233b58; }
+:root[data-theme="dark"] .sidebar-toggle:active { border-color: #5b88bd; background: #294564; box-shadow: none; }
 :root[data-theme="dark"] .dashboard-nav-button { color: #a0b0c5; }
 :root[data-theme="dark"] .dashboard-nav-button:hover { color: #a6d2ff; background: #1a304b; }
 :root[data-theme="dark"] .dashboard-nav-button.is-active { border-color: #294b74; color: #9eccff; background: #1b3555; }

@@ -101,7 +101,9 @@ impl AccountStore {
     pub fn snapshot(&self) -> Result<AccountStoreSnapshot, String> {
         let mode = self.storage_mode()?;
         let current_auth = if mode == "file" {
-            self.read_current().ok().and_then(|auth| normalized_auth(&auth).ok())
+            self.read_current()
+                .ok()
+                .and_then(|auth| normalized_auth(&auth).ok())
         } else {
             None
         };
@@ -109,15 +111,23 @@ impl AccountStore {
         let store = self.load()?;
         // 只比较令牌，忽略 last_refresh 等元数据，避免时间变化误报凭据更新。
         let current_credentials_changed = store.accounts.iter().any(|account| {
-            current.as_ref().is_some_and(|id| same_identity(id, &account.identity))
+            current
+                .as_ref()
+                .is_some_and(|id| same_identity(id, &account.identity))
                 && current_auth.as_ref().is_some_and(|auth| {
-                    ["id_token", "access_token", "refresh_token"].iter().any(|field| {
-                        auth.get("tokens").and_then(|tokens| tokens.get(*field))
-                            != account.auth.get("tokens").and_then(|tokens| tokens.get(*field))
-                    })
+                    ["id_token", "access_token", "refresh_token"]
+                        .iter()
+                        .any(|field| {
+                            auth.get("tokens").and_then(|tokens| tokens.get(*field))
+                                != account
+                                    .auth
+                                    .get("tokens")
+                                    .and_then(|tokens| tokens.get(*field))
+                        })
                 })
         });
-        let mut accounts = store.accounts
+        let mut accounts = store
+            .accounts
             .into_iter()
             .map(|a| AccountSummary {
                 selected: current
@@ -146,8 +156,31 @@ impl AccountStore {
     pub fn save_current(&self, label: &str) -> Result<AccountStoreSnapshot, String> {
         self.ensure_file_mode()?;
         let label = checked_label(label)?;
-        let auth = normalized_auth(&self.read_current()?)?;
+        self.save_login(&self.read_current()?, &label)?;
+        self.snapshot()
+    }
+
+    /// 独立登录只收录凭据，当前 auth.json 与运行中服务保持原身份。
+    pub fn save_login(&self, auth: &Value, label: &str) -> Result<(), String> {
+        let auth = normalized_auth(auth)?;
         let id = identity(&auth)?;
+        // 授权前无法获知新账户邮箱；在拿到凭据后命名，避免借用当前账户邮箱。
+        let label = if label.trim().is_empty() {
+            let prefix = id
+                .email
+                .as_deref()
+                .and_then(|email| email.split_once('@'))
+                .map(|(prefix, _)| prefix.trim())
+                .filter(|prefix| !prefix.is_empty() && !prefix.chars().any(char::is_control));
+            // 邮箱前缀可能超过账户名称长度上限；缺少邮箱时仍保存授权结果，之后可重命名。
+            prefix
+                .unwrap_or("ChatGPT 账户")
+                .chars()
+                .take(MAX_LABEL_CHARS)
+                .collect()
+        } else {
+            checked_label(label)?
+        };
         let mut store = self.load()?;
         if let Some(account) = store
             .accounts
@@ -171,8 +204,7 @@ impl AccountStore {
                 updated_at: now(),
             });
         }
-        self.persist(&store)?;
-        self.snapshot()
+        self.persist(&store)
     }
 
     pub fn rename(&self, id: &str, label: &str) -> Result<AccountStoreSnapshot, String> {
@@ -418,7 +450,7 @@ fn normalized_auth(auth: &Value) -> Result<Value, String> {
     Ok(result)
 }
 
-fn checked_label(label: &str) -> Result<String, String> {
+pub(crate) fn checked_label(label: &str) -> Result<String, String> {
     let label = label.trim();
     if label.is_empty()
         || label.chars().count() > MAX_LABEL_CHARS
@@ -500,6 +532,65 @@ mod tests {
     }
     fn auth(id: &str, refresh: &str) -> Value {
         json!({"auth_mode":"chatgpt","tokens":{"account_id":id,"access_token":"test-access","refresh_token":refresh}})
+    }
+
+    #[test]
+    fn login_name_defaults_to_authorized_email_prefix_and_allows_custom_names() {
+        let (_dir, store) = setup();
+        let mut login = auth("new", "refresh");
+        let payload = URL_SAFE_NO_PAD
+            .encode(serde_json::to_vec(&json!({"email":"peter@example.com"})).unwrap());
+        login["tokens"]["id_token"] = format!("test.{payload}.test").into();
+        store.save_login(&login, "   ").unwrap();
+        assert_eq!(store.snapshot().unwrap().accounts[0].label, "peter");
+        store.save_login(&login, " 工作账户 ").unwrap();
+        assert_eq!(store.snapshot().unwrap().accounts[0].label, "工作账户");
+        assert!(store.save_login(&login, "bad\nname").is_err());
+        store.save_login(&auth("no-email", "refresh"), "").unwrap();
+        assert!(store
+            .snapshot()
+            .unwrap()
+            .accounts
+            .iter()
+            .any(|a| a.label == "ChatGPT 账户"));
+        assert!(store.save_current("").is_err());
+    }
+
+    #[test]
+    fn automatic_login_name_respects_the_character_limit() {
+        let (_dir, store) = setup();
+        let mut login = auth("new", "refresh");
+        let payload = URL_SAFE_NO_PAD.encode(
+            serde_json::to_vec(&json!({"email":format!("{}@example.com", "名".repeat(60))}))
+                .unwrap(),
+        );
+        login["tokens"]["id_token"] = format!("test.{payload}.test").into();
+        store.save_login(&login, "").unwrap();
+        assert_eq!(
+            store.snapshot().unwrap().accounts[0].label.chars().count(),
+            MAX_LABEL_CHARS
+        );
+    }
+
+    #[test]
+    fn independent_login_saves_without_replacing_current_credentials() {
+        let (_dir, store) = setup();
+        write_json(&store.home.join("auth.json"), &auth("current", "original")).unwrap();
+        store
+            .save_login(&auth("new", "new-refresh"), "新账户")
+            .unwrap();
+        assert_eq!(
+            store.read_current().unwrap()["tokens"]["account_id"],
+            "current"
+        );
+        assert_eq!(store.snapshot().unwrap().accounts.len(), 1);
+        store
+            .save_login(&auth("new", "rotated"), "更新账户")
+            .unwrap();
+        assert_eq!(store.snapshot().unwrap().accounts.len(), 1);
+        assert!(store
+            .save_login(&json!({"auth_mode":"apikey"}), "错误")
+            .is_err());
     }
 
     #[test]

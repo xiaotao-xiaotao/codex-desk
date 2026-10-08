@@ -4,6 +4,7 @@
 )]
 
 mod account;
+mod account_login;
 mod account_store;
 mod app_server;
 mod local_usage;
@@ -59,6 +60,40 @@ async fn read_account(
     state: State<'_, app_server::AppServerState>,
 ) -> Result<account::AccountProfile, String> {
     account::read_account(&state).await
+}
+
+#[tauri::command]
+async fn start_account_login(
+    app: AppHandle,
+    state: State<'_, account_login::AccountLoginState>,
+    label: String,
+    method: Option<account_login::LoginMethod>,
+) -> Result<account_login::LoginStatus, String> {
+    state.start(app, label, method.unwrap_or_default()).await
+}
+
+#[tauri::command]
+async fn read_account_login(
+    state: State<'_, account_login::AccountLoginState>,
+    session_id: String,
+) -> Result<account_login::LoginStatus, String> {
+    state.status(&session_id).await
+}
+
+#[tauri::command]
+async fn cancel_account_login(
+    state: State<'_, account_login::AccountLoginState>,
+    session_id: String,
+) -> Result<(), String> {
+    state.cancel(&session_id).await
+}
+
+#[tauri::command]
+async fn open_account_login_page(
+    state: State<'_, account_login::AccountLoginState>,
+    session_id: String,
+) -> Result<(), String> {
+    state.reopen(&session_id).await
 }
 
 #[tauri::command]
@@ -351,8 +386,9 @@ fn open_update_page() -> Result<(), String> {
 fn open_external_url(url: &str, label: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let mut command = {
-        let mut command = Command::new("cmd");
-        command.args(["/C", "start", "", url]);
+        // OAuth URL 带有 & 等查询分隔符，直接交给系统 URL handler，避免 shell 解释。
+        let mut command = Command::new("rundll32.exe");
+        command.arg("url.dll,FileProtocolHandler").arg(url);
         command
     };
     #[cfg(target_os = "macos")]
@@ -504,6 +540,7 @@ fn main() {
     tauri::Builder::default()
         .manage(app_server::AppServerState::default())
         .manage(account_store::AccountStoreState::default())
+        .manage(account_login::AccountLoginState::default())
         .manage(local_usage::LocalUsageState::default())
         .manage(threads::ThreadTrendState::default())
         .plugin(tauri_plugin_notification::init())
@@ -546,6 +583,10 @@ fn main() {
             read_account,
             list_saved_accounts,
             save_current_account,
+            start_account_login,
+            read_account_login,
+            cancel_account_login,
+            open_account_login_page,
             switch_saved_account,
             rename_saved_account,
             remove_saved_account,

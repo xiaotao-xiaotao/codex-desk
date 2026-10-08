@@ -3,7 +3,8 @@ import { displayEmail } from "../utils/email-privacy.js";
 
 const ICONS = {
   switch: '<path d="M4 8h15l-3-3M20 16H5l3 3"/>',
-  plus: '<path d="M12 5v14M5 12h14"/>',
+  save: '<path d="M5 3h12l4 4v14H3V3h2Z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/>',
+  login: '<path d="M14 4h6v16h-6M3 12h12m-4-4 4 4-4 4"/>',
   edit: '<path d="m15 4 5 5M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15v5Z"/>',
   remove: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>',
   shield: '<path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/>',
@@ -14,6 +15,7 @@ const ICONS = {
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 const SUCCESS_NOTICE_DURATION_MS = 4000;
+const LOGIN_POLL_INTERVAL_MS = 1000;
 
 /** 只接收账户摘要；所有名称/邮箱通过 textContent 渲染，凭据不进入 DOM。 */
 export function createAccountSwitchView({ t, invoke, getHideEmails = () => false, onOpen, onBeforeSwitch, onAfterSwitch }) {
@@ -36,7 +38,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       <p class="accounts-intro"></p>
       <div class="accounts-feedback" role="status" hidden></div>
       <div class="accounts-list-pane">
-        <div class="accounts-current"><span class="accounts-current-icon">${icon("shield")}</span><div><span class="accounts-current-caption"></span><strong class="accounts-current-email"></strong></div><button class="accounts-button accounts-save" type="button">${icon("plus")}<span></span></button></div>
+        <div class="accounts-current"><span class="accounts-current-icon">${icon("shield")}</span><div><span class="accounts-current-caption"></span><strong class="accounts-current-email"></strong></div><button class="accounts-button accounts-save" type="button">${icon("save")}<span></span></button></div>
         <div class="accounts-list-heading"><h3></h3><span class="accounts-count"></span><button class="accounts-row-button accounts-reload" type="button">${icon("switch")}</button></div>
         <div class="accounts-list" aria-busy="false"></div>
         <div class="accounts-storage" hidden><p></p><button class="accounts-button accounts-enable" type="button"></button></div>
@@ -44,11 +46,25 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       <form class="accounts-editor" hidden>
         <button class="accounts-back" type="button">${icon("back")}<span></span></button>
         <h3 id="accounts-editor-title" class="accounts-editor-title"></h3><p class="accounts-editor-description"></p>
-        <label class="accounts-name-label" for="accounts-name"></label>
-        <input id="accounts-name" class="accounts-name-input" maxlength="48" autocomplete="off" required />
+        <fieldset class="accounts-login-methods" hidden>
+          <legend></legend>
+          <label><input type="radio" name="accounts-login-method" value="browser" checked /><span data-login-method="browser"></span></label>
+          <label><input type="radio" name="accounts-login-method" value="device" /><span data-login-method="device"></span></label>
+        </fieldset>
+        <div class="accounts-name-field">
+          <label class="accounts-name-label" for="accounts-name"></label>
+          <input id="accounts-name" class="accounts-name-input" maxlength="48" autocomplete="off" required />
+        </div>
+        <section class="accounts-login-panel" hidden aria-live="polite">
+          <div class="accounts-login-emblem">${icon("shield")}</div>
+          <strong class="accounts-login-status"></strong><p class="accounts-login-detail"></p>
+          <div class="accounts-device-code" hidden><span></span><div><code></code><button class="accounts-button accounts-device-copy" type="button"></button></div></div>
+          <ol class="accounts-login-steps"><li></li><li></li><li></li></ol>
+          <button class="accounts-button accounts-login-browser" type="button"></button>
+        </section>
         <div class="accounts-target" hidden><span class="accounts-avatar"></span><div><strong></strong><span></span></div></div>
         <label class="accounts-restart" hidden><input type="checkbox" /><div><strong></strong><span></span></div></label>
-        <div class="accounts-editor-actions"><button class="thread-action-button accounts-cancel" type="button"></button><button class="thread-action-button thread-action-button-primary accounts-submit" type="submit"></button></div>
+        <div class="accounts-editor-actions"><button class="cancel-button accounts-cancel" type="button"></button><button class="thread-action-button thread-action-button-primary accounts-submit" type="submit"></button></div>
       </form>
     </div>
     <footer class="accounts-footer">${icon("shield")}<span></span></footer>`;
@@ -59,6 +75,14 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   pageHeader.querySelector(".accounts-page-context").append(dialog.querySelector(".accounts-intro"), dialog.querySelector(".accounts-current"));
   pageHeader.querySelector(".accounts-intro").hidden = true;
   pageHeader.append(page.querySelector(".accounts-save"));
+  const headerActions = document.createElement("div");
+  headerActions.className = "accounts-header-actions";
+  const loginButton = document.createElement("button");
+  loginButton.type = "button";
+  loginButton.className = "accounts-button accounts-login";
+  loginButton.innerHTML = `${icon("login")}<span></span>`;
+  headerActions.append(page.querySelector(".accounts-save"), loginButton);
+  pageHeader.append(headerActions);
   page.append(dialog.querySelector(".accounts-feedback"), dialog.querySelector(".accounts-list-pane"), dialog.querySelector(".accounts-footer"));
   page.querySelector(".accounts-list-heading h3").after(page.querySelector(".accounts-footer"));
   const flow = document.createElement("section");
@@ -96,7 +120,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   dialogFeedback.className = "accounts-feedback";
   dialogFeedback.setAttribute("role", "status");
   dialogFeedback.hidden = true;
-  dialog.querySelector(".accounts-content").prepend(dialogFeedback);
+  // 提示留在标题说明之后，避免新增错误内容占用右上角关闭按钮所在的标题区域。
+  dialog.querySelector(".accounts-editor-description").after(dialogFeedback);
   const find = (selector) => dialog.querySelector(selector) ?? page.querySelector(selector);
   const listPane = find(".accounts-list-pane");
   const editor = find(".accounts-editor");
@@ -113,6 +138,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   let requestVersion = 0;
   let feedbackTimer = null;
   let checking = false;
+  let loginSession = null;
+  let loginTimer = null;
 
   function renderAccountHint() {
     const unsaved = Boolean(snapshot?.canSaveCurrent && !snapshot.accounts.some((account) => account.selected));
@@ -181,6 +208,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   function showEditor(kind, account = null) {
     if (busy || loading || dialog.open) return;
     action = { kind, account };
+    if (kind === "login") find('[name="accounts-login-method"][value="browser"]').checked = true;
     returnFocus = document.activeElement;
     editor.hidden = false;
     setFeedback(null);
@@ -188,13 +216,15 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     restartCheckbox.checked = true;
     renderEditor();
     dialog.showModal();
-    (kind === "save" || kind === "rename" ? input : find(".accounts-submit")).focus();
+    (kind === "save" || kind === "rename" || kind === "login" ? input : find(".accounts-submit")).focus();
     if (kind === "rename") input.select();
   }
 
   function showList() {
     action = null;
     editor.hidden = true;
+    find(".accounts-device-code code").textContent = "";
+    find(".accounts-device-code").hidden = true;
     listPane.hidden = false;
     renderList();
     if (dialog.open) dialog.close();
@@ -203,13 +233,21 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   function renderEditor() {
     if (!action) return;
     const { kind, account } = action;
-    const named = kind === "save" || kind === "rename";
+    editor.classList.toggle("is-login", kind === "login");
+    find(".accounts-login-methods").hidden = kind !== "login" || Boolean(loginSession);
+    const named = kind === "save" || kind === "rename" || (kind === "login" && !loginSession);
+    find(".accounts-name-field").hidden = !named;
     input.hidden = find(".accounts-name-label").hidden = !named;
-    input.required = named;
+    input.required = named && kind !== "login";
+    find(".accounts-name-label").textContent = t(kind === "login" ? "accountsLoginNameLabel" : "accountsNameLabel");
+    input.placeholder = t(kind === "login" ? "accountsLoginNamePlaceholder" : "accountsNamePlaceholder");
     find(".accounts-target").hidden = !account;
     find(".accounts-restart").hidden = kind !== "switch";
     find(".accounts-editor-title").textContent = t(`accounts${kind[0].toUpperCase() + kind.slice(1)}Title`);
+    // 简单保存和登录由正文说明即可；保留隐藏标题供弹窗的无障碍名称引用。
+    find(".accounts-editor-title").hidden = kind === "save" || kind === "login";
     find(".accounts-editor-description").textContent = t(`accounts${kind[0].toUpperCase() + kind.slice(1)}Hint`);
+    if (kind === "login" && selectedLoginMethod() === "device") find(".accounts-editor-description").textContent = t("accountsLoginDeviceHint");
     if (kind === "save" && snapshot?.currentCredentialsChanged) {
       find(".accounts-editor-title").textContent = t("accountsUpdateSave");
       find(".accounts-editor-description").textContent = t("accountsCredentialsUpdateHint");
@@ -220,7 +258,10 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       find(".accounts-target .accounts-avatar").textContent = [...account.label][0]?.toUpperCase() ?? "C";
     }
     const submit = find(".accounts-submit");
-    submit.textContent = t(busy ? "accountsWorking" : kind === "switch" && restartCheckbox.checked ? "accountsSwitchRestart" : `accounts${kind[0].toUpperCase() + kind.slice(1)}Confirm`);
+    submit.hidden = kind === "login" && Boolean(loginSession);
+    find(".accounts-login-panel").hidden = kind !== "login";
+    if (kind === "login") renderLogin();
+    submit.textContent = t(busy ? "accountsWorking" : kind === "login" && selectedLoginMethod() === "device" ? "accountsLoginDeviceConfirm" : kind === "switch" && restartCheckbox.checked ? "accountsSwitchRestart" : `accounts${kind[0].toUpperCase() + kind.slice(1)}Confirm`);
   }
 
   function button(labelKey, iconName, handler, className = "") {
@@ -240,6 +281,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     flow.querySelector(".accounts-flow-saved-count").textContent = t("accountsCount", { count: snapshot?.accounts.length ?? 0 });
     find(".accounts-current-email").textContent = loading ? t("accountsLoading") : displayEmail(snapshot?.currentEmail, getHideEmails()) ?? t("accountsCurrentUnknown");
     find(".accounts-save").disabled = busy || loading || !snapshot?.canSaveCurrent;
+    loginButton.disabled = busy || loading || Boolean(loginSession);
     find(".accounts-reload").disabled = busy || loading;
     find(".accounts-enable").disabled = busy || loading;
     find(".accounts-count").textContent = t("accountsCount", { count: snapshot?.accounts?.length ?? 0 });
@@ -295,17 +337,20 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
 
   async function submit(event) {
     event.preventDefault();
-    if (busy || !action) return;
+    if (busy || !action || (action.kind === "login" && loginSession)) return;
     const { kind, account } = action;
     const label = input.value.trim();
-    if ((kind === "save" || kind === "rename") && (!label || [...label].length > 48 || /[\u0000-\u001f\u007f]/.test(label))) {
+    if ((kind === "save" || kind === "rename" || kind === "login") && ((!label && kind !== "login") || [...label].length > 48 || /[\u0000-\u001f\u007f]/.test(label))) {
       setFeedback("accountsNameInvalid", {}, "error"); input.focus(); return;
     }
     const restart = restartCheckbox.checked;
     setFeedback(null); setBusy(true);
     let changed = false;
     try {
-      if (kind === "switch") {
+      if (kind === "login") {
+        loginSession = await invoke("start_account_login", { label, method: selectedLoginMethod() });
+        scheduleLoginPoll();
+      } else if (kind === "switch") {
         await onBeforeSwitch();
         const result = await invoke("switch_saved_account", { id: account.id, restart });
         changed = true;
@@ -330,9 +375,100 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       if (kind === "switch" && !changed) await onAfterSwitch({ changed: false, restarted: false });
     } finally {
       setBusy(false);
-      if (action) (action.kind === "save" || action.kind === "rename" ? input : find(".accounts-submit")).focus();
+      if (action) (action.kind === "login" ? loginSession ? find(".accounts-cancel") : input : action.kind === "save" || action.kind === "rename" ? input : find(".accounts-submit")).focus();
       else find(".accounts-save").focus();
     }
+  }
+
+  function selectedLoginMethod() {
+    return loginSession?.method ?? find('[name="accounts-login-method"]:checked')?.value ?? "browser";
+  }
+
+  function renderLogin() {
+    const phase = loginSession?.phase ?? "ready";
+    const waiting = phase === "waiting";
+    const saving = phase === "saving";
+    const device = selectedLoginMethod() === "device";
+    const panel = find(".accounts-login-panel");
+    panel.dataset.phase = phase;
+    find(".accounts-login-status").textContent = t(saving ? "accountsLoginSaving" : waiting ? device ? "accountsDeviceWaiting" : "accountsLoginWaiting" : loginSession ? "accountsLoginPreparing" : device ? "accountsDeviceReady" : "accountsLoginReady");
+    find(".accounts-login-detail").textContent = t(waiting ? device ? "accountsDeviceWaitingHint" : "accountsLoginWaitingHint" : "accountsLoginLocalHint");
+    const codePanel = find(".accounts-device-code");
+    codePanel.hidden = !device || !waiting || !loginSession?.userCode;
+    codePanel.querySelector("code").textContent = codePanel.hidden ? "" : loginSession.userCode;
+    codePanel.querySelector("span").textContent = t("accountsDeviceCodeLabel");
+    find(".accounts-device-copy").textContent = t("copy");
+    find(".accounts-device-copy").ariaLabel = t("accountsDeviceCopyLabel");
+    find(".accounts-device-copy").disabled = busy;
+    const steps = [device ? "accountsDeviceStepCode" : "accountsLoginStepName", "accountsLoginStepBrowser", "accountsLoginStepSave"];
+    panel.querySelectorAll("li").forEach((step, index) => {
+      step.textContent = t(steps[index]);
+      const currentStep = saving ? 2 : waiting ? 1 : 0;
+      step.classList.toggle("is-current", index === currentStep);
+      step.classList.toggle("is-done", index < currentStep);
+      if (index === currentStep) step.setAttribute("aria-current", "step");
+      else step.removeAttribute("aria-current");
+    });
+    const browser = find(".accounts-login-browser");
+    browser.hidden = !waiting;
+    browser.textContent = t(device ? "accountsDeviceOpen" : "accountsLoginReopen");
+    browser.disabled = busy;
+    find(".accounts-cancel").textContent = t(loginSession ? "accountsLoginCancel" : "accountsCancel");
+  }
+
+  function scheduleLoginPoll() {
+    window.clearTimeout(loginTimer);
+    if (loginSession) loginTimer = window.setTimeout(pollLogin, LOGIN_POLL_INTERVAL_MS);
+  }
+
+  async function pollLogin() {
+    const sessionId = loginSession?.sessionId;
+    if (!sessionId) return;
+    try {
+      const status = await invoke("read_account_login", { sessionId });
+      if (loginSession?.sessionId !== sessionId || busy) return;
+      const phaseChanged = loginSession.phase !== status.phase;
+      loginSession = status;
+      if (status.phase === "waiting" && status.error) setFeedback("accountsFailed", { error: status.error }, "error");
+      if (["completed", "failed", "cancelled"].includes(status.phase)) {
+        loginSession = null;
+        if (status.phase === "completed") {
+          await refresh();
+          showList();
+          setFeedback(status.error ? "accountsLoginCleanup" : "accountsLoginSaved", {}, status.error ? "pending" : "success");
+        } else if (status.phase === "failed") {
+          setFeedback("accountsFailed", { error: status.error }, "error");
+        }
+      }
+      // 阶段不变时避免反复重绘 aria-live 与列表，减少读屏重复播报和焦点干扰。
+      if (phaseChanged) renderEditor();
+      if (!loginSession) renderList();
+    } catch {
+      if (loginSession?.sessionId === sessionId) setFeedback("accountsLoginStatusFailed", {}, "error");
+    } finally {
+      scheduleLoginPoll();
+    }
+  }
+
+  async function closeEditor() {
+    if (busy) return;
+    if (loginSession) {
+      const sessionId = loginSession.sessionId;
+      setBusy(true);
+      window.clearTimeout(loginTimer);
+      try {
+        await invoke("cancel_account_login", { sessionId });
+        // 若取消与保存同时发生，仍以服务端结果为准，保留已完成的账户。
+        const status = await invoke("read_account_login", { sessionId });
+        loginSession = null;
+        await refresh();
+        showList();
+        if (status.phase === "completed") setFeedback("accountsLoginSaved");
+      } catch (error) {
+        setFeedback("accountsFailed", { error: String(error) }, "error");
+        scheduleLoginPoll();
+      } finally { setBusy(false); }
+    } else showList();
   }
 
   function updateLanguage() {
@@ -343,6 +479,10 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-intro").textContent = t("accountsIntro");
     find(".accounts-current-caption").textContent = t("accountsCurrentCaption");
     find(".accounts-save span").textContent = t("accountsSave");
+    loginButton.querySelector("span").textContent = t("accountsLoginTitle");
+    find(".accounts-login-methods legend").textContent = t("accountsLoginMethodLabel");
+    find('[data-login-method="browser"]').textContent = t("accountsLoginMethodBrowser");
+    find('[data-login-method="device"]').textContent = t("accountsLoginMethodDevice");
     find(".accounts-list-heading h3").textContent = t("accountsListTitle");
     find(".accounts-reload").title = find(".accounts-reload").ariaLabel = t("refresh");
     find(".accounts-footer span").textContent = t("accountsLocalHint");
@@ -367,8 +507,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       page.focus();
     });
   });
-  find(".accounts-close").addEventListener("click", () => { if (!busy) dialog.close(); });
-  dialog.addEventListener("cancel", (event) => { if (busy) event.preventDefault(); });
+  find(".accounts-close").addEventListener("click", () => { void closeEditor(); });
+  dialog.addEventListener("cancel", (event) => { event.preventDefault(); void closeEditor(); });
   dialog.addEventListener("close", () => {
     action = null;
     editor.hidden = true;
@@ -376,10 +516,34 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     if (!target.disabled) target.focus();
   });
   find(".accounts-save").addEventListener("click", () => showEditor("save"));
+  loginButton.addEventListener("click", () => {
+    showEditor("login");
+    input.value = "";
+    input.focus();
+  });
+  find(".accounts-login-browser").addEventListener("click", async () => {
+    if (!loginSession || busy) return;
+    const browser = find(".accounts-login-browser");
+    browser.disabled = true;
+    try { await invoke("open_account_login_page", { sessionId: loginSession.sessionId }); setFeedback("accountsLoginOpened"); }
+    catch (error) { setFeedback("accountsFailed", { error: String(error) }, "error"); }
+    finally { browser.disabled = false; }
+  });
+  find(".accounts-login-methods").addEventListener("change", () => { setFeedback(null); renderEditor(); });
+  find(".accounts-device-copy").addEventListener("click", async () => {
+    if (!loginSession?.userCode || busy) return;
+    const sessionId = loginSession.sessionId;
+    try {
+      await navigator.clipboard.writeText(loginSession.userCode);
+      if (loginSession?.sessionId === sessionId) setFeedback("accountsDeviceCopied");
+    } catch {
+      if (loginSession?.sessionId === sessionId) setFeedback("copyFailedLong", {}, "error");
+    }
+  });
   find(".accounts-reload").addEventListener("click", () => { setFeedback(null); void refresh(); });
   find(".accounts-enable").addEventListener("click", () => showEditor("enable"));
-  find(".accounts-cancel").addEventListener("click", showList);
-  find(".accounts-back").addEventListener("click", showList);
+  find(".accounts-cancel").addEventListener("click", () => { void closeEditor(); });
+  find(".accounts-back").addEventListener("click", () => { void closeEditor(); });
   restartCheckbox.addEventListener("change", renderEditor);
   editor.addEventListener("submit", submit);
   updateLanguage();

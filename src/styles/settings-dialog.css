@@ -28,6 +28,12 @@
 .settings-threshold-input input { width: 100%; height: var(--control-size); padding: 0 6px; text-align: center; font-variant-numeric: tabular-nums; }
 .settings-secondary-button { min-height: var(--control-size); padding: 0 9px; border: 1px solid #dbe2ea; border-radius: var(--control-radius); color: #526173; background: #fff; cursor: pointer; font-size: var(--font-caption); font-weight: 680; }
 .settings-secondary-button:hover:not(:disabled) { border-color: #91caff; color: #1668c6; background: #f5f9ff; }
+.cancel-button { display: inline-flex; align-items: center; justify-content: center; min-width: 64px; min-height: var(--control-size); padding: 4px 14px; border: 1px solid transparent; border-radius: 8px; color: #526173; background: #f1f5f9; font-family: inherit; font-size: var(--font-caption); font-weight: 550; line-height: 1.4; white-space: nowrap; cursor: pointer; transition: background .16s ease, color .16s ease, border-color .16s ease; }
+.cancel-button:hover:not(:disabled) { border-color: #c7ddfa; color: #1668c6; background: #e8f2ff; }
+.cancel-button:active:not(:disabled) { border-color: #adcdf5; background: #dcecff; }
+.cancel-button:focus-visible { outline: 2px solid #91caff; outline-offset: 3px; }
+:is(.settings-actions, .account-switch-dialog) .cancel-button:disabled { opacity: .5; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .cancel-button { transition: none; } }
 .settings-status { margin: 0; color: #13795b; font-size: var(--font-caption); line-height: 1.45; }
 .settings-status[data-kind="error"] { color: #cf1322; }
 .settings-actions { display: flex; justify-content: flex-end; gap: 6px; }

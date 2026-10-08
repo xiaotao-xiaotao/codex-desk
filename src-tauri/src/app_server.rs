@@ -59,6 +59,46 @@ impl Default for AppServerState {
 }
 
 impl AppServerState {
+    /// 登录独立于共享 daemon，临时目录避免授权覆盖用户正在使用的凭据。
+    pub async fn login_process(&self, home: &Path) -> Result<Child, String> {
+        let cli_path = self.cli_path.read().await;
+        let mut command = cli_command(
+            cli_path.as_deref(),
+            &[
+                "app-server",
+                "--listen",
+                "stdio://",
+                "-c",
+                "cli_auth_credentials_store=\"file\"",
+                "-c",
+                "analytics.enabled=false",
+                "-c",
+                "otel.exporter=\"none\"",
+            ],
+        );
+        command.env("CODEX_HOME", home).current_dir(home);
+        for key in [
+            "OPENAI_API_KEY",
+            "CODEX_API_KEY",
+            "CODEX_ACCESS_TOKEN",
+            "OPENAI_BASE_URL",
+        ] {
+            command.env_remove(key);
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            command.as_std_mut().process_group(0);
+        }
+        command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .kill_on_drop(true)
+            .spawn()
+            .map_err(|_| "无法启动登录，请检查设置中的 Codex CLI 路径".into())
+    }
+
     /// 先预热首页账户通道，其他通道在首次请求时按需连接。
     pub async fn warm_up(&self) -> Result<(), String> {
         let cli_path = self.cli_path.read().await;
@@ -546,7 +586,7 @@ impl CodexAppServer {
 }
 
 /// 仅回收本函数直接启动的 proxy 进程树，不按 codex 进程名清理，也不执行 daemon stop。
-async fn close_proxy(mut child: Child) {
+pub(crate) async fn close_proxy(mut child: Child) {
     let process_id = child.id();
     if timeout(GRACEFUL_SHUTDOWN_TIMEOUT, child.wait())
         .await

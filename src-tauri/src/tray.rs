@@ -76,6 +76,10 @@ pub fn close_app_server_and_exit(app: AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {
         app_handle
+            .state::<crate::account_login::AccountLoginState>()
+            .shutdown()
+            .await;
+        app_handle
             .state::<app_server::AppServerState>()
             .shutdown()
             .await;
@@ -87,6 +91,10 @@ pub fn close_app_server_and_exit(app: AppHandle) {
 pub fn restart_app(app: AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {
+        app_handle
+            .state::<crate::account_login::AccountLoginState>()
+            .shutdown()
+            .await;
         app_handle
             .state::<app_server::AppServerState>()
             .shutdown()

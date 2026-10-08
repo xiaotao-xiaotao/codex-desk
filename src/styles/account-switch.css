@@ -19,6 +19,53 @@
 .accounts-page { --accounts-ink: #30445f; --accounts-muted: #64748b; --accounts-line: #e5edf6; --accounts-surface: #f7faff; --accounts-bg: #fff; overflow-y: auto; color: var(--accounts-ink); }
 .accounts-page-header { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
 .accounts-page-header .accounts-save { margin: 0; }
+.accounts-page { container: accounts-page / inline-size; }
+.accounts-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.accounts-button.accounts-login { border-color: #1677ff; color: #fff; background: #1677ff; box-shadow: 0 2px 5px #1677ff1a; }
+.accounts-button.accounts-login:hover { border-color: #4096ff; color: #fff; background: #4096ff; box-shadow: 0 3px 9px #1677ff26; }
+.accounts-login:active { transform: translateY(1px); }
+.accounts-login-panel { display: grid; justify-items: center; gap: 10px; margin-top: 20px; padding: 22px 18px; border: 1px solid var(--accounts-line); border-radius: 12px; background: var(--accounts-surface); text-align: center; }
+.accounts-login-emblem { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid #c4dcff; border-radius: 14px; color: #1677ff; background: var(--accounts-bg); }
+.accounts-login-emblem svg { width: 24px; height: 24px; }
+.accounts-login-status { color: var(--accounts-ink); font-size: 14px; font-weight: 650; }
+.accounts-login-detail { width: 100%; max-width: 360px; margin: 0; color: var(--accounts-muted); font-size: 12px; line-height: 1.8; text-align: left; text-wrap: pretty; }
+.accounts-login-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 12px; margin: 10px 0 0; padding: 0; list-style: none; counter-reset: login-step; }
+.accounts-login-steps li { display: grid; justify-items: center; align-content: start; gap: 8px; color: var(--accounts-muted); font-size: 11px; line-height: 1.5; counter-increment: login-step; }
+.accounts-login-steps li::before { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid var(--accounts-line); border-radius: 50%; color: var(--accounts-muted); background: var(--accounts-bg); content: counter(login-step); }
+.accounts-login-steps .is-current { color: #1668dc; font-weight: 600; }
+.accounts-login-steps .is-current::before { border-color: #1677ff; color: #fff; background: #1677ff; box-shadow: 0 0 0 4px #1677ff12; }
+.accounts-login-steps .is-done::before { border-color: #91caff; color: #1668dc; background: #e6f4ff; content: "✓"; }
+.accounts-login-panel[data-phase="preparing"] .accounts-login-emblem,
+.accounts-login-panel[data-phase="waiting"] .accounts-login-emblem { animation: accounts-login-breathe 2.4s ease-in-out infinite; }
+.accounts-login-browser { margin-top: 6px; }
+.accounts-login-methods { display: flex; flex-wrap: wrap; gap: 6px; width: fit-content; max-width: 100%; margin: 0 0 12px; padding: 0; border: 0; }
+.accounts-login-methods legend { margin-bottom: 6px; color: var(--accounts-muted); font-size: 11px; }
+.accounts-login-methods label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--accounts-line); border-radius: 7px; color: var(--accounts-muted); background: var(--accounts-bg); font-size: 12px; cursor: pointer; transition: border-color .15s, background .15s; }
+.accounts-login-methods label:has(input:checked) { border-color: #91caff; color: #1668dc; background: #eff6ff; }
+.accounts-login-methods label:hover { border-color: #91caff; }
+.accounts-login-methods input { width: 13px; height: 13px; margin: 0; accent-color: #1677ff; }
+.accounts-login-methods label:has(input:focus-visible) { outline: 2px solid #91caff; outline-offset: 3px; }
+.accounts-device-code { display: grid; gap: 8px; width: 100%; max-width: 320px; margin: 4px 0; padding: 12px 14px; border: 1px solid #d5e5fc; border-radius: 10px; background: var(--accounts-bg); text-align: left; }
+.accounts-device-code > span { color: var(--accounts-muted); font-size: 11px; }
+.accounts-device-code > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.accounts-device-code code { min-width: 0; color: #1668dc; font-size: 19px; font-weight: 650; letter-spacing: .08em; overflow-wrap: anywhere; user-select: text; }
+.accounts-device-copy { flex-shrink: 0; }
+:root[data-theme="dark"] .accounts-login-methods label:has(input:checked) { border-color: #456d9b; color: #a8ceff; background: #233b58; }
+:root[data-theme="dark"] .accounts-device-code { border-color: #36516f; }
+:root[data-theme="dark"] .accounts-device-code code { color: #a8ceff; }
+@keyframes accounts-login-breathe { 50% { box-shadow: 0 0 0 6px #1677ff0d; } }
+@media (max-width: 480px) {
+  .accounts-header-actions { width: 100%; }
+  .accounts-header-actions .accounts-button { flex: 1; margin: 0; }
+  .accounts-login-panel { padding: 18px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .accounts-login-panel[data-phase] .accounts-login-emblem { animation: none; } .accounts-login:active { transform: none; } }
+:root[data-theme="dark"] .accounts-login-steps .is-current { color: #91caff; }
+@container accounts-page (max-width: 540px) {
+  .accounts-page-header { flex-wrap: wrap; }
+  .accounts-header-actions { width: 100%; }
+  .accounts-header-actions .accounts-button { flex: 1; margin: 0; }
+}
 .accounts-page-context { display: grid; flex: 1; min-width: 0; gap: 6px; }
 .accounts-page .accounts-intro { flex: 1; max-width: 640px; margin: 0; }
 .accounts-page .accounts-list-pane { margin-bottom: 10px; }
@@ -99,9 +146,15 @@
 .accounts-back svg { width: 13px; height: 13px; }
 .accounts-editor h3 { margin: 0 0 7px; padding-right: 32px; font-size: 15px; font-weight: 650; }
 .accounts-editor-description { margin: 0 0 20px; color: var(--accounts-muted); font-size: 12px; line-height: 1.7; }
+.accounts-editor-title[hidden] + .accounts-editor-description { padding-right: 32px; }
 .accounts-name-label { display: block; margin: 0 0 7px; font-size: 12px; }
 .accounts-name-input { width: 100%; height: 38px; padding: 8px 11px; border: 1px solid #d7e2f0; border-radius: 8px; color: var(--accounts-ink); background: var(--accounts-bg); font-size: 13px; }
 .accounts-name-input::placeholder { color: #95a4b8; }
+.accounts-editor.is-login .accounts-editor-description { margin-bottom: 12px; }
+.accounts-editor.is-login .accounts-name-field { display: flex; align-items: center; gap: 10px; width: min(100%, 400px); }
+.accounts-editor.is-login .accounts-name-label { flex-shrink: 0; margin: 0; color: var(--accounts-muted); font-size: 11px; }
+.accounts-editor.is-login .accounts-name-input { flex: 1; min-width: 0; height: 30px; padding: 5px 9px; border-radius: 6px; font-size: 12px; text-overflow: ellipsis; }
+.accounts-editor.is-login .accounts-login-panel { margin-top: 12px; }
 .accounts-target { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 15px; border: 1px solid #dce9fc; border-radius: 11px; background: var(--accounts-surface); }
 .accounts-target > div { display: grid; min-width: 0; gap: 5px; }
 .accounts-target strong, .accounts-target div > span { overflow-wrap: anywhere; }
@@ -233,3 +286,5 @@
 :root[data-theme="dark"] .accounts-feedback, :root[data-theme="dark"] .account-switch-notice { border-color: #2a4465; color: #a9c9f1; background: #1b2d45; }
 :root[data-theme="dark"] .accounts-feedback[data-kind="error"] { border-color: #673b42; color: #efaaaa; background: #34232c; }
 :root[data-theme="dark"] .account-switch-trigger { border-color: #2a4465; color: #8ebcff; background: #1b2d45; }
+:root[data-theme="dark"] .accounts-login { color: #fff; background: #1668dc; border-color: #4096ff; }
+:root[data-theme="dark"] .accounts-login:hover { color: #fff; background: #1677ff; }
