@@ -271,6 +271,18 @@
             <span class="tab-number" aria-hidden="true">05</span
             ><span data-i18n="topics">Session topics</span>
           </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-codex-config-http"
+            data-workspace="codex-config-http"
+            aria-selected="false"
+            aria-controls="workspace-panel"
+            tabindex="-1"
+          >
+            <span class="tab-number" aria-hidden="true">06</span>
+            <span data-i18n="codexConfig">Codex config</span>
+          </button>
         </div>
         <div
           id="workspace-panel"
@@ -349,6 +361,24 @@
           </h2>
         </div>
         <div class="detail-grid">
+          <article class="detail-card" data-reveal>
+            <figure class="app-frame" data-zoomable>
+              <img
+                data-shot="codex-config-preferences"
+                data-alt="codexConfig"
+                src="screenshots/codex-config-preferences-en.png"
+                width="900"
+                height="700"
+                alt="Codex config"
+                loading="lazy"
+              />
+              <figcaption><span data-i18n="codexConfig">Codex config</span></figcaption>
+            </figure>
+            <div class="card-copy">
+              <h3><span data-i18n="codexConfig">Codex config</span></h3>
+              <p><span data-i18n="configBody">File credentials, direct HTTP connections, and common preferences with copyable TOML examples. Merge only what you need; the app does not edit your configuration.</span></p>
+            </div>
+          </article>
           <article class="detail-card" data-reveal>
             <figure class="app-frame" data-zoomable>
               <img
