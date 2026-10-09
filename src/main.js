@@ -13,6 +13,7 @@ import { createRefreshController } from "./features/refresh-controller.js";
 import { createSettingsController, READING_SETTINGS } from "./features/settings-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createAccountSwitchView } from "./views/account-switch-view.js";
+import { createCodexConfigView } from "./views/codex-config-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createSettingsDialogView } from "./views/settings-dialog-view.js";
 import { createThreadDialogView } from "./views/thread-dialog-view.js";
@@ -60,6 +61,7 @@ const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-secti
 const dashboardSections = {
   account: document.querySelector("#account-section"),
   accounts: document.querySelector("#accounts-section"),
+  config: document.querySelector("#config-section"),
   insights: document.querySelector("#insights-section"),
   topics: document.querySelector("#topics-section"),
   sessions: document.querySelector("#sessions-section"),
@@ -73,6 +75,7 @@ const dashboardRetry = document.querySelector("#dashboard-retry");
 const i18n = createI18n();
 const theme = createThemeController();
 const { t } = i18n;
+const codexConfigView = createCodexConfigView({ t, invoke, onOpenAccounts: () => setDashboardSection("accounts") });
 const dashboardLoadingOverlay = createLoadingOverlay({
   container: panel,
   className: "dashboard-loading-overlay",
@@ -235,7 +238,7 @@ async function loadAppVersion() {
 
 function renderDashboardAvailability() {
   panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
-  dashboardError.hidden = !dashboardUnavailable || activeDashboardSection === "accounts";
+  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config"].includes(activeDashboardSection);
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
   const details = [t("dashboardUnavailableDescription")];
   if (dashboardRetryStatus?.error) {
@@ -340,7 +343,8 @@ function setDashboardSection(nextSection) {
     dialogView.close(false);
   }
   activeDashboardSection = nextSection;
-  dashboardError.hidden = !dashboardUnavailable || nextSection === "accounts";
+  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config"].includes(nextSection);
+  if (changed && nextSection === "config") void codexConfigView.activate();
   if (changed && nextSection === "accounts") accountSwitchView.activate();
   // 离开历史页后使未完成的搜索失效，避免旧请求覆盖下一次进入时的结果。
   if (changed) searchRequestVersion += 1;
@@ -613,6 +617,7 @@ function applyLanguage() {
   settingsView.updateLanguage();
   accountView.updateLanguage();
   accountSwitchView.updateLanguage();
+  codexConfigView.updateLanguage();
   updateView.updateLanguage();
   renderAppVersion();
   if (dashboardLoadingOverlay.isVisible()) {

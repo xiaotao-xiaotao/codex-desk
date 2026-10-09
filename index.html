@@ -99,6 +99,10 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="13" height="15" rx="2" /><path d="M4 7v12a2 2 0 0 0 2 2h10M11 8h5M11 12h5" /></svg>
                 <span data-i18n="localHistory">本地历史</span>
               </button>
+              <button id="nav-config" class="dashboard-nav-button" type="button" role="tab" aria-selected="false" aria-controls="config-section" tabindex="-1" data-dashboard-section="config">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3M11 7h9M4 17h9M17 17h3" /><circle cx="9" cy="7" r="2" /><circle cx="15" cy="17" r="2" /></svg>
+                <span data-i18n="configTitle">Codex 配置</span>
+              </button>
             </nav>
             <div class="sidebar-bottom">
               <div class="sidebar-utilities">
@@ -128,6 +132,7 @@
             </section>
 
             <section id="accounts-section" class="dashboard-section dashboard-page accounts-page app-scrollable" role="tabpanel" aria-labelledby="nav-accounts" tabindex="0" hidden></section>
+            <section id="config-section" class="dashboard-section dashboard-page config-page app-scrollable" role="tabpanel" aria-labelledby="nav-config" tabindex="0" hidden></section>
             <section id="account-section" class="dashboard-section dashboard-page quota-section" role="tabpanel" aria-labelledby="nav-account" tabindex="0">
               <div class="account-details">
                 <div class="account-detail-item account-email-item">

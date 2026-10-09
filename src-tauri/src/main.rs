@@ -35,6 +35,7 @@ const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/settings/billing";
 const CODEX_USAGE_URL: &str = "https://chatgpt.com/settings/usage";
 const GITHUB_RELEASES_URL: &str = "https://github.com/xiaotao-xiaotao/codex-desk/releases";
+const CODEX_CONFIG_DOCS_URL: &str = "https://developers.openai.com/codex/config-reference/";
 // 文件链接只预览开头 512 KiB，避免大型日志或 JSONL 一次性占满 WebView 内存。
 const LOCAL_TEXT_PREVIEW_MAX_BYTES: usize = 512 * 1024;
 
@@ -389,6 +390,11 @@ fn open_update_page() -> Result<(), String> {
     open_external_url(GITHUB_RELEASES_URL, "GitHub 更新页面")
 }
 
+#[tauri::command]
+fn open_codex_config_docs() -> Result<(), String> {
+    open_external_url(CODEX_CONFIG_DOCS_URL, "Codex 配置参考")
+}
+
 fn open_external_url(url: &str, label: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let mut command = {
@@ -599,6 +605,7 @@ fn main() {
             remove_saved_account,
             enable_account_file_storage,
             open_update_page,
+            open_codex_config_docs,
             configure_cli_path,
             choose_cli_path,
             read_local_text_preview,

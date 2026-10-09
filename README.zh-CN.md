@@ -23,6 +23,7 @@
 - **数据洞察**：Token 活跃日历、用量趋势、会话分布与主题词云。
 - **本地会话**：标题搜索、固定、消息记录、文件对比与 `codex resume` 命令；消息搜索覆盖已加载历史。
 - **分类设置**：连接、提醒、隐私与阅读偏好，支持阅读预览。
+- **Codex 配置**：文件凭据、HTTP 直连与常用偏好说明，支持复制 TOML 示例。
 - **桌面功能**：可收起侧栏、明暗主题、系统托盘与五种界面语言。
 
 需要 **Codex CLI ≥ 0.157.0**（[安装说明](https://github.com/openai/codex)）。
@@ -92,6 +93,21 @@
 ![额度提醒阈值与邮箱脱敏设置](docs/screenshots/settings-alerts-zh.png)
 
 ![阅读字体、字号、行距与实时预览](docs/screenshots/settings-reading-zh.png)
+
+</details>
+
+### Codex 配置
+
+提供账户切换所需的文件存储说明、HTTP 直连及常用偏好示例。按需复制到 `config.toml`，不会自动修改配置。
+
+![Codex 配置：HTTP 直连说明与可复制示例](docs/screenshots/codex-config-http-zh.png)
+
+<details>
+<summary>查看文件凭据与常用偏好</summary>
+
+![文件凭据存储与当前模式检测](docs/screenshots/codex-config-accounts-zh.png)
+
+![推理强度、联网搜索、回答详略与终端提醒](docs/screenshots/codex-config-preferences-zh.png)
 
 </details>
 

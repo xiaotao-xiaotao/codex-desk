@@ -1,4 +1,5 @@
 import { readStoredEnum, writeStoredValue } from "./utils/browser-storage.js";
+import { CODEX_CONFIG_TRANSLATIONS } from "./views/codex-config-translations.js";
 
 const LANGUAGE_STORAGE_KEY = "codex-desk-language";
 const SUPPORTED_LANGUAGES = ["system", "zh-CN", "zh-TW", "en", "ja", "ko"];
@@ -692,6 +693,7 @@ const SETTINGS_LAYOUT_TRANSLATIONS = {
 
 // 低优先级文案先合并，后面的业务分组覆盖同名键，保持原有查询优先级。
 const TRANSLATION_SOURCES = [
+  CODEX_CONFIG_TRANSLATIONS,
   SETTINGS_LAYOUT_TRANSLATIONS,
   ACCOUNT_SWITCH_TRANSLATIONS,
   NAVIGATION_TRANSLATIONS,

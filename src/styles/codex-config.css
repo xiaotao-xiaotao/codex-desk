@@ -1,0 +1,47 @@
+.config-page { --config-ink: #243247; --config-muted: #64748b; --config-line: #e1e8f1; --config-surface: #fff; --config-code: #f6f8fc; --config-accent: #1668c6; padding-right: 4px; overflow-y: auto; color: var(--config-ink); }
+.config-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.config-header p { margin: 0; color: var(--config-muted); font-size: 12px; }
+.config-docs, .config-accounts-link { border: 0; background: transparent; color: var(--config-accent); font-size: 12px; cursor: pointer; }
+.config-docs { flex-shrink: 0; padding: 7px 0; }
+.config-docs:hover, .config-accounts-link:hover { text-decoration: underline; }
+.config-location { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 1px solid var(--config-line); border-radius: 8px; background: var(--config-surface); }
+.config-location svg { flex: 0 0 16px; width: 16px; height: 16px; margin-top: 2px; fill: none; stroke: var(--config-muted); stroke-width: 1.6; stroke-linejoin: round; }
+.config-location p { margin: 0; color: var(--config-muted); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.config-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 14px 0 12px; }
+.config-tabs { display: flex; max-width: 100%; min-width: 0; gap: 3px; padding: 3px; overflow-x: auto; border-radius: 8px; background: var(--config-code); }
+.config-tabs button { flex-shrink: 0; padding: 7px 12px; border: 0; border-radius: 6px; color: var(--config-muted); background: transparent; font-size: 12px; cursor: pointer; transition: color .15s, background .15s; }
+.config-tabs button:hover { color: var(--config-accent); }
+.config-tabs button[aria-selected="true"] { color: var(--config-accent); background: var(--config-surface); box-shadow: 0 1px 4px #1f354512; font-weight: 600; }
+.config-mode { padding: 5px 7px; border: 0; border-radius: 5px; background: transparent; color: var(--config-muted); font-size: 11px; cursor: pointer; }
+.config-mode::before { display: inline-block; width: 5px; height: 5px; margin: 0 6px 1px 0; border-radius: 50%; background: #c69045; content: ""; }
+.config-mode.is-ready::before { background: #34a375; }
+.config-mode:hover { background: var(--config-code); }
+.config-tab-panel[hidden] { display: none; }
+.config-card { min-width: 0; padding: 16px; border: 1px solid var(--config-line); border-radius: 10px; background: var(--config-surface); }
+.config-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.config-card h3 { margin: 0; font-size: 14px; line-height: 1.5; }
+.config-required { padding: 2px 7px; border-radius: 4px; color: var(--config-accent); background: var(--config-code); font-size: 10px; }
+.config-description, .config-note { margin: 8px 0 0; color: var(--config-muted); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.config-note { font-size: 11px; }
+.config-description:first-child { margin-top: 0; }
+.config-code { margin-top: 12px; overflow: hidden; border: 1px solid var(--config-line); border-radius: 7px; background: var(--config-code); }
+.config-code-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px; border-bottom: 1px solid var(--config-line); color: var(--config-muted); font: 10px/1.6 Consolas, monospace; }
+.config-code pre { margin: 0; padding: 12px; overflow-x: auto; color: var(--config-ink); font: 12px/1.8 Consolas, "Cascadia Code", monospace; tab-size: 2; }
+.config-code code { font: inherit; }
+.config-accounts-link { margin: 8px 0 0; padding: 8px 0; }
+.config-field-details { margin-top: 12px; padding: 12px 16px; border: 1px solid var(--config-line); border-radius: 8px; background: var(--config-surface); }
+.config-field-details summary { color: var(--config-muted); font-size: 12px; cursor: pointer; }
+.config-field-details dl { margin: 10px 0 0; }
+.config-field-details dl>div { display: grid; grid-template-columns: 185px 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--config-line); }
+.config-field-details dt { font-size: 11px; overflow-wrap: anywhere; }
+.config-field-details dd { margin: 0; color: var(--config-muted); font-size: 11px; line-height: 1.6; }
+.config-preferences { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.config-merge-note { margin: 14px 0 0; padding-left: 10px; border-left: 2px solid var(--config-line); color: var(--config-muted); font-size: 11px; line-height: 1.7; }
+.config-feedback { min-height: 16px; margin: 8px 0 0; color: var(--config-accent); font-size: 11px; }
+.config-feedback.is-error { color: #bb3b36; }
+:root[data-theme="dark"] .config-feedback.is-error { color: #ffaaa4; }
+.config-page button:focus-visible, .config-page summary:focus-visible, .config-tab-panel:focus-visible { outline: 2px solid #69b1ff; outline-offset: 3px; }
+.config-page button:disabled { cursor: default; }
+:root[data-theme="dark"] .config-page { --config-ink: #e0e9f5; --config-muted: #a4b2c4; --config-line: #2a394d; --config-surface: #151d28; --config-code: #101720; --config-accent: #83baff; }
+@media (max-width: 600px) { .config-header { flex-wrap: wrap; gap: 4px; } .config-tabs button { padding: 7px 9px; } .config-card { padding: 12px; } .config-field-details dl>div { grid-template-columns: 1fr; gap: 4px; } }
+@media (prefers-reduced-motion: reduce) { .config-page button { transition: none; } }

@@ -27,6 +27,7 @@
 - **Insights**: Token activity calendar, usage trends, session distribution, and topic cloud.
 - **Sessions**: title search, pinning, message history, file diffs, and `codex resume` commands. Message search covers loaded history.
 - **Settings**: connection, alerts, privacy, and reading preferences with a live preview.
+- **Codex config**: file credentials, direct HTTP connections, and common preferences with copyable TOML examples.
 - **Desktop**: collapsible sidebar, light/dark themes, tray controls, and five interface languages.
 
 Requires **Codex CLI ≥ 0.157.0** ([installation guide](https://github.com/openai/codex)).
@@ -104,6 +105,21 @@ Screenshots use sample data and masked emails. The animation demonstrates naviga
 ![Quota alert thresholds and email masking settings](docs/screenshots/settings-alerts-en.png)
 
 ![Reading preferences with a live preview](docs/screenshots/settings-reading-en.png)
+
+</details>
+
+### Codex config
+
+Reference settings for file-based account switching, direct HTTP connections, and common preferences. Copy examples into `config.toml` as needed; the app does not edit your configuration.
+
+![Codex config: direct HTTP connection and copyable example](docs/screenshots/codex-config-http-en.png)
+
+<details>
+<summary>File credentials and common preferences</summary>
+
+![File credential storage and current mode detection](docs/screenshots/codex-config-accounts-en.png)
+
+![Reasoning effort, web search, response detail, and terminal notifications](docs/screenshots/codex-config-preferences-en.png)
 
 </details>
 
