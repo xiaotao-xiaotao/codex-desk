@@ -17,6 +17,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/screenshots/social-preview-1280x640.jpg" alt="Codex Desk 2.0：额度、账户、会话与数据洞察" width="100%" />
+</p>
+
+<p align="center">
   <img src="docs/screenshots/desktop-tour-zh.gif" alt="Codex Desk v2.0 账户用量、账户管理、切换链路及设置演示" width="100%" />
 </p>
 
