@@ -1,8 +1,8 @@
 # Codex Desk
 
 <p align="center">
-  <strong>See your Codex CLI quota at a glance. Resume local sessions in seconds.</strong><br />
-  A privacy-first desktop companion for Codex CLI on Windows, macOS, and Linux.
+  <strong>Monitor quota, switch accounts, and return to local Codex sessions.</strong><br />
+  A local desktop console for Codex CLI on Windows, macOS, and Linux.
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/social-preview-1280x640.jpg" alt="Codex Desk quota monitoring and local session dashboard" width="100%" />
+  <img src="docs/screenshots/social-preview-1280x640.jpg" alt="Codex Desk 2.0 — your local companion for Codex CLI: quota, accounts, sessions, and insights" width="100%" />
 </p>
 
 ## Why Codex Desk?
@@ -25,7 +25,7 @@
 - **Never lose track of your quota** — keep a floating desktop indicator visible, with optional alerts at 80%, 90%, and 100% usage.
 - **Return to useful work faster** — search local Codex sessions, inspect messages and file changes, then copy the exact `codex resume <session ID>` command.
 - **Understand how you use Codex** — explore activity trends, recurring topics, and Token usage by day or session.
-- **Keep everyday accounts ready** — open Your accounts in the sidebar to save, rename, remove, and switch local ChatGPT sign-ins, with an optional shared-service restart. The account usage page also provides a shortcut.
+- **Keep everyday accounts ready** — use Account management to sign in through a browser or device code, save and rename accounts, update credentials, and switch between everyday accounts. Account usage also provides a shortcut; an optional shared-service restart is available when switching.
 - **Keep your data on your machine** — quota and session data come from the local shared Codex daemon and local files. Account management reads and stores credentials locally, never uploads them, and never exposes tokens to the frontend or logs. Saved credentials are plaintext in `.codex-desk/saved-accounts.json`, alongside the Codex directory (under your user directory by default). The old app data directory is not read or migrated; treat saved credentials like passwords.
 
 Requires an installed and signed-in **Codex CLI ≥ 0.157.0** ([installation guide](https://github.com/openai/codex)). If Codex Desk saves you time, a **Star** or an [Issue](https://github.com/xiaotao-xiaotao/codex-desk/issues) helps the project reach more Codex users.
@@ -56,40 +56,91 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 ## Features
 
-- **Account and usage overview**: view a masked sign-in email, current plan, quota windows, usage percentage, reset time, available rate-limit resets, and a link to the official billing portal.
+- **Account and usage overview**: view a masked sign-in email, subscription plan, quota windows, reset times, and shortcuts to official billing and usage-limit reset pages. A monthly Token activity calendar and summary metrics show lifetime usage, daily peak, longest task duration, and activity streaks.
+- **Multi-account sign-in and switching**: sign in through a browser or device code, save accounts locally, edit names, update credentials, and switch without repeating the full sign-in flow.
 - **Quota alerts**: after you explicitly enable native notifications, get one alert per reset window at three configurable usage thresholds (80%, 90%, and 100% by default).
 - **Activity trends**: view the last 3, 7, or 30 days and independently show or hide messages, tool calls, file changes, and errors in a code-drawn line chart.
 - **Keyword cloud**: summarize recurring topics from user prompts over the selected range while filtering code blocks, URLs, and common technical noise.
 - **Token insights**: derive daily increments from Token snapshots using event timestamps in the local time zone, covering resumed older sessions and filtering duplicate cumulative snapshots. Trends and session distributions cover the selected 3, 7, or 30 days; events without valid timestamps are excluded from daily buckets. Session details retain the final cumulative total, input, output, cached-input, and reasoning-output usage.
-- **Local sessions**: browse non-archived local sessions, pin frequently used sessions above the rest, search titles without case sensitivity, and view creation and update times. Expanding the section adapts pagination to the available window height.
+- **Local sessions**: browse non-archived local sessions, pin frequently used sessions above the rest, search titles without case sensitivity, and view creation and update times. The dedicated history page adapts pagination to the available window height.
 - When the installed Codex CLI does not support native pin metadata, Codex Desk stores pin choices in its local app data; they do not sync to other Codex clients.
-- **Focused dashboard layout**: expand Data insights or Local history to fill the window, and keep the window above other apps when needed.
+- **Sidebar navigation**: switch between Account usage, Account management, Data insights, Session topics, and Local history. Collapse the sidebar for more content space, or keep the window above other apps.
 - **Session details and insights**: inspect recent turns first and load older history on demand, with intermediate replies from the same turn collapsed under elapsed time while the final reply stays expanded. Expand the overview sidebar to load full-history counts and records, enlarge images in a dedicated preview, and copy messages with images when the system clipboard supports rich content. Message search covers loaded history.
 - **File change comparison**: aggregate file and tool activity below the relevant reply. File cards show filenames and added/removed line counts, and can be expanded before opening side-by-side or inline diffs. Historical diffs are shown from the session record and are not read from the current workspace.
 - **Resume quickly**: copy `codex resume <session ID>` from session details and continue the session in your terminal.
 - **Session import and export**: export selected sessions as portable Codex Desk bundles and import them as new sessions on another signed-in device.
 - **Single-instance behavior**: launching the app again brings the existing window to the front, avoiding duplicate daemon connections and floating-orb instances.
-- **Local settings**: choose a Codex CLI executable or launcher path, an auto-refresh interval from 30 seconds to 10 minutes, and three ascending quota alert thresholds from 1% to 100%. Custom paths are validated with `codex --version` before saving.
+- **Organized settings**: Connection & refresh, Alerts & privacy, and Reading categories group CLI paths, refresh intervals, quota thresholds, email masking, fonts, text sizes, and line spacing. Reading changes have a live preview; custom CLI paths are validated with `codex --version` before saving.
 - **Connection recovery**: if the initial read fails, the dashboard shows a full-page connection state with a retry action. Repeated failures use bounded exponential backoff and return to the normal refresh schedule after recovery.
 - **Update notifications**: manually check the public version file from the dashboard; when a newer version is available, show its Release notes and provide a download link.
-- **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Authentication data is never read or stored, and no local data is uploaded; update checks request only public version and Release information from GitHub.
+- **Local data boundary**: account, quota, and session data are obtained through the local Codex app server. Token usage is read only from cumulative snapshots in local Codex session files. Account management reads and saves credentials locally, without sending them to the frontend, logs, or remote services. Update checks request only public version and Release information from GitHub.
 
 ## Screenshots
 
+The v2.0 interface below is rendered from the current frontend with fixed demonstration data. All example emails are masked; the animation illustrates navigation and the switching flow, not a real sign-in or account switch.
+
+### A quick tour
+
+![Codex Desk v2.0: account usage, account management, switching flow, and settings](docs/screenshots/desktop-tour-en.gif)
+
+### Account usage
+
+![Account usage with quota cards and a monthly Token activity calendar](docs/screenshots/dashboard-light-en.png)
+
+<details>
+<summary>Dark theme and floating usage orb</summary>
+
+![Codex Desk dark account usage page](docs/screenshots/dashboard-dark-en.png)
+
 <p align="center">
-  <img src="docs/screenshots/quota-orb-light-en.png" alt="Codex Desk light floating usage orb" width="120" />
-  <img src="docs/screenshots/quota-orb-dark-en.png" alt="Codex Desk dark floating usage orb" width="120" />
+  <img src="docs/screenshots/quota-orb-light-en.png" alt="Light floating usage orb" width="56" />
+  <img src="docs/screenshots/quota-orb-dark-en.png" alt="Dark floating usage orb" width="56" />
 </p>
 
-### Dashboard
+</details>
 
-![Codex Desk light dashboard](docs/screenshots/dashboard-light-en.png)
+### Multi-account management
 
-![Codex Desk dark dashboard](docs/screenshots/dashboard-dark-en.png)
+![Saved accounts with masked emails and quick switch actions](docs/screenshots/accounts-en.png)
 
-### Session details
+<details>
+<summary>Sign-in, switch confirmation, and the local switching flow</summary>
 
-![Codex Desk session details](docs/screenshots/session-details-en.png)
+![Browser and device-code sign-in options](docs/screenshots/account-login-en.png)
+
+![Account switching confirmation with an optional service restart](docs/screenshots/account-switch-en.png)
+
+![Local credential switching flow](docs/screenshots/account-switch-flow-en.png)
+
+</details>
+
+### Settings
+
+![Settings organized into connection, alerts, and reading categories](docs/screenshots/settings-connection-en.png)
+
+<details>
+<summary>Quota alerts, privacy, and reading preview</summary>
+
+![Quota alert thresholds and email masking settings](docs/screenshots/settings-alerts-en.png)
+
+![Reading preferences with a live preview](docs/screenshots/settings-reading-en.png)
+
+</details>
+
+<details>
+<summary>Data insights, session topics, local history, and file comparisons</summary>
+
+![Activity trends and Token insights](docs/screenshots/insights-en.png)
+
+![Session topic cloud](docs/screenshots/topics-en.png)
+
+![Searchable local session history](docs/screenshots/history-en.png)
+
+![Session details with messages and recorded file activity](docs/screenshots/session-details-en.png)
+
+![Recorded file changes in a side-by-side comparison](docs/screenshots/file-changes-en.png)
+
+</details>
 
 ## Multilingual support
 
@@ -151,8 +202,9 @@ Build artifacts are generated under `src-tauri/target/release/bundle/`. Windows 
 
 - Click the floating usage orb to expand the dashboard; use **Collapse to floating orb** in the title bar to return to the orb.
 - Optionally enable system quota alerts at 80% / 90% / 100% usage from the dashboard.
-- Choose a 3-, 7-, or 30-day range for activity trends, the keyword cloud, and Token insights; switch Token insights between the trend and session-distribution views.
-- Expand Data insights or Local history for a focused full-window view, or pin the window above other apps from the title bar.
+- Use the sidebar to open Data insights or Session topics and select a 3-, 7-, or 30-day range. Data insights shows both Token trends and session distributions; Account usage has an independent monthly activity calendar.
+- Open Account management to sign in, save, or switch accounts. Restart your client after switching to verify the active account; the optional shared-service restart can affect other connected clients.
+- Collapse the sidebar to gain content space, or pin the window above other apps from the title bar. Settings are available at the bottom of the sidebar.
 - Search, inspect, import, or export local sessions from the session list. In session details, open recorded file diffs, or double-click an image to enlarge it.
 - Copy `codex resume <session ID>` from a session detail page to continue it in the terminal.
 - Drag the title area to reposition the floating window.
