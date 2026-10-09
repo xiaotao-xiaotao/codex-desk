@@ -252,7 +252,7 @@ function renderDashboardAvailability() {
 async function retryDashboard() {
   dashboardLoadingOverlay.show(t("readingLocalData"));
   try {
-    await refreshController.refreshQuota(true);
+    await refreshController.refreshQuota(true, { manual: true });
   } finally {
     dashboardLoadingOverlay.hide();
   }
@@ -916,7 +916,7 @@ async function bootstrap() {
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   alwaysOnTopButton.addEventListener("click", () => void toggleAlwaysOnTop());
   collapseButton.addEventListener("click", () => setExpanded(false));
-  refreshButton.addEventListener("click", () => refreshController.refreshQuota(true));
+  refreshButton.addEventListener("click", () => refreshController.refreshQuota(true, { manual: true }));
   dashboardRetry.addEventListener("click", () => void retryDashboard());
   quotaAlertToggle.addEventListener("click", () => void toggleQuotaAlerts());
   quitButton.addEventListener("click", () => invoke("quit_app"));

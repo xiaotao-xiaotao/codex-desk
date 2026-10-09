@@ -29,8 +29,9 @@ export function createRefreshController({
 }) {
   const INSIGHTS_CACHE_KEY = "codex-desk-insights-cache-v1";
   const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v3";
-  // 退避持续进行但设置上限，避免长期离线时把下一次重试推到不合理的未来。
-  const MAX_AUTO_REFRESH_BACKOFF_MS = 24 * 60 * 60 * 1_000;
+  // 温和增加重试间隔；上限不能短于用户选择的正常刷新间隔。
+  const MAX_AUTO_REFRESH_BACKOFF_MS = 5 * 60 * 1_000;
+  const AUTO_REFRESH_RETRY_MULTIPLIERS = [1, 1.5, 2, 3, 5];
   // Token 账号汇总优先占用 App Server；趋势缓存已可即时展示，后台更新下一任务再启动。
   const BACKGROUND_INSIGHTS_START_DELAY_MS = 0;
   // 启动时 CLI 的认证与 app-server 可能仍在初始化，先快速重连，避免瞬时失败直接占满页面。
@@ -100,7 +101,9 @@ export function createRefreshController({
 
   function retryDelayMs() {
     const baseDelay = Math.max(1_000, Number(getAutoRefreshIntervalMs()) || 60_000);
-    return Math.min(baseDelay * (2 ** consecutiveRefreshFailures), MAX_AUTO_REFRESH_BACKOFF_MS);
+    const retryIndex = Math.min(Math.max(0, consecutiveRefreshFailures - 1), AUTO_REFRESH_RETRY_MULTIPLIERS.length - 1);
+    const maximumDelay = Math.max(baseDelay, MAX_AUTO_REFRESH_BACKOFF_MS);
+    return Math.min(baseDelay * AUTO_REFRESH_RETRY_MULTIPLIERS[retryIndex], maximumDelay);
   }
 
   function wait(delayMs) {
@@ -196,8 +199,13 @@ export function createRefreshController({
     }
   }
 
-  async function refreshQuota(forceTrendRefresh = false) {
+  async function refreshQuota(forceTrendRefresh = false, { manual = false } = {}) {
     if (refreshing || accountChangePaused) return;
+    // 手动请求跳过旧退避历史；失败后从第一档重试，自动刷新继续累积失败次数。
+    if (manual) {
+      consecutiveRefreshFailures = 0;
+      latestRefreshError = "";
+    }
     const version = accountVersion;
     let finish;
     refreshFinished = new Promise((resolve) => { finish = resolve; });
