@@ -37,7 +37,7 @@ Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao
 
 - **Windows**: download the `.exe` installer for a standard Windows 10/11 installation, or the `.msi` package for enterprise or managed deployment.
 - **macOS**: download the `.dmg` installer that matches your Mac's chip.
-- **Linux**: download the `.deb` package for Debian/Ubuntu, or the `.AppImage` package for most other desktop distributions.
+- **Linux**: download `.deb` for Debian/Ubuntu, `.rpm` for Fedora and other compatible RPM-based distributions, or `.AppImage` for other desktop distributions.
 
 Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) **version 0.157.0 or later** separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
 

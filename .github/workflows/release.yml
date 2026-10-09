@@ -126,7 +126,7 @@ jobs:
         run: npm ci
 
       - name: 构建 Linux 安装包
-        run: npm run tauri build -- --bundles deb,appimage
+        run: npm run tauri build -- --bundles deb,rpm,appimage
 
       - name: 保存 Linux 安装包
         uses: actions/upload-artifact@v7
@@ -134,6 +134,7 @@ jobs:
           name: Linux
           path: |
             src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
             src-tauri/target/release/bundle/appimage/*.AppImage
           if-no-files-found: error
           retention-days: 1
@@ -188,9 +189,13 @@ jobs:
         with:
           name: ${{ github.ref_name }}
           body_path: release-notes.md
+          # 同一版本重新构建时替换同名安装包，缺少任一格式则终止发布。
+          overwrite_files: true
+          fail_on_unmatched_files: true
           files: |
             release-assets/**/*.dmg
             release-assets/**/*.msi
             release-assets/**/*.exe
             release-assets/**/*.deb
+            release-assets/**/*.rpm
             release-assets/**/*.AppImage

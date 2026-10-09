@@ -8,7 +8,8 @@
       "重构设置页面：按连接、提醒与阅读分类整理配置，优化选项说明和操作布局，让常用设置更易查找和调整",
       "升级账户用量页：新增按月查看的每日 Token 活跃日历，以及累计 Token、单日峰值、最长任务用时和连续活跃天数统计",
       "新增使用限额重置入口，可跳转官方页面进行操作；优化订阅信息与额度重置时间展示",
-      "自动刷新改为温和退避，默认最长等待 5 分钟，手动刷新重置退避计数；改进账户读取与刷新反馈，延长元数据请求等待时间；修复侧栏初始收起状态，优化图标、会话详情、趋势文案与多语言界面"
+      "自动刷新改为温和退避，默认最长等待 5 分钟，手动刷新重置退避计数；改进账户读取与刷新反馈，延长元数据请求等待时间；修复侧栏初始收起状态，优化图标、会话详情、趋势文案与多语言界面",
+      "新增 Linux RPM 安装包，方便 Fedora 等兼容 RPM 的发行版安装"
     ],
     "zh-TW": [
       "全新桌面控制台版面：加入可收合的側欄導覽，帳號用量、帳號管理、資料洞察、工作階段主題與本機歷史分頁呈現，重新整理排版與操作入口",
@@ -16,7 +17,8 @@
       "重新設計設定頁面：依連線、提醒與閱讀分類整理設定，改善選項說明與操作版面，讓常用設定更容易尋找與調整",
       "升級帳號用量頁：新增按月查看的每日 Token 活躍日曆，以及累計 Token、單日峰值、最長任務耗時與連續活躍天數統計",
       "新增使用限額重設入口，可前往官方頁面操作；改善訂閱資訊與額度重設時間顯示",
-      "自動重新整理改為溫和退避，預設最長等待 5 分鐘，手動重新整理會重設退避次數；改善帳號讀取與重新整理回饋，延長中繼資料請求等待時間；修正側欄初始收合狀態，改善圖示、工作階段詳情、趨勢文案與多語言介面"
+      "自動重新整理改為溫和退避，預設最長等待 5 分鐘，手動重新整理會重設退避次數；改善帳號讀取與重新整理回饋，延長中繼資料請求等待時間；修正側欄初始收合狀態，改善圖示、工作階段詳情、趨勢文案與多語言介面",
+      "新增 Linux RPM 安裝套件，方便 Fedora 等相容 RPM 的發行版安裝"
     ],
     "en": [
       "Redesigned the desktop console with collapsible sidebar navigation and dedicated pages for account usage, account management, data insights, session topics, and local history",
@@ -24,7 +26,8 @@
       "Redesigned settings with Connection, Alerts, and Reading categories, clearer option descriptions, and an improved layout to make common settings easier to find and adjust",
       "Upgraded the account usage page with a monthly daily Token activity calendar and statistics for total Tokens, daily peak, longest task duration, and activity streaks",
       "Added a usage-limit reset shortcut to the official page, and improved subscription information and quota reset-time presentation",
-      "Automatic refresh now uses gradual backoff, capped at 5 minutes by default; manual refresh resets the backoff count. Improved account reads and refresh feedback with a longer metadata request timeout; fixed the initial collapsed sidebar state and refined icons, session details, trend text, and localized interfaces"
+      "Automatic refresh now uses gradual backoff, capped at 5 minutes by default; manual refresh resets the backoff count. Improved account reads and refresh feedback with a longer metadata request timeout; fixed the initial collapsed sidebar state and refined icons, session details, trend text, and localized interfaces",
+      "Added a Linux RPM package for Fedora and other compatible RPM-based distributions"
     ],
     "ja": [
       "デスクトップ画面を刷新。折りたたみ可能なサイドバーを導入し、アカウント使用量、アカウント管理、データ分析、セッショントピック、ローカル履歴を個別ページに整理",
@@ -32,7 +35,8 @@
       "設定画面を刷新。接続、通知、読みやすさのカテゴリに整理し、項目の説明と操作レイアウトを改善。よく使う設定を見つけて調整しやすくしました",
       "アカウント使用量ページに月別の日次 Token 活動カレンダーを追加。累計 Token、1 日の最大使用量、最長タスク時間、連続活動日数も表示",
       "使用上限のリセット用に公式ページへのショートカットを追加し、サブスクリプション情報とクォータのリセット時刻の表示を改善",
-      "自動更新の再試行間隔を緩やかに延長し、既定では最大 5 分に制限。手動更新で再試行回数をリセットします。 アカウント読み込みと更新時の表示を改善し、メタデータ取得の待機時間を延長。サイドバーの初期折りたたみ状態を修正し、アイコン、セッション詳細、推移の文言、多言語画面を改善"
+      "自動更新の再試行間隔を緩やかに延長し、既定では最大 5 分に制限。手動更新で再試行回数をリセットします。 アカウント読み込みと更新時の表示を改善し、メタデータ取得の待機時間を延長。サイドバーの初期折りたたみ状態を修正し、アイコン、セッション詳細、推移の文言、多言語画面を改善",
+      "Fedora などの RPM 対応ディストリビューション向けに Linux RPM パッケージを追加"
     ],
     "ko": [
       "데스크톱 화면을 새롭게 구성했습니다. 접을 수 있는 사이드바와 계정 사용량, 계정 관리, 데이터 분석, 세션 주제, 로컬 기록 전용 페이지를 도입했습니다",
@@ -40,7 +44,8 @@
       "설정 화면을 새롭게 구성했습니다. 연결, 알림, 읽기 항목으로 분류하고 옵션 설명과 배치를 개선해 자주 쓰는 설정을 더 쉽게 찾고 조정할 수 있습니다",
       "계정 사용량 페이지에 월별 일일 Token 활동 달력과 누적 Token, 일일 최대 사용량, 최장 작업 시간, 연속 활동 일수 통계를 추가했습니다",
       "공식 페이지로 이동하는 사용 한도 초기화 바로가기를 추가하고 구독 정보와 할당량 초기화 시간 표시를 개선했습니다",
-      "자동 새로고침 재시도 간격을 완만하게 늘리고 기본 최대 대기를 5분으로 제한했습니다. 수동 새로고침은 재시도 횟수를 초기화합니다. 계정 조회 및 새로고침 피드백을 개선하고 메타데이터 요청 대기 시간을 늘렸습니다. 사이드바의 초기 접힘 상태를 수정하고 아이콘, 세션 상세, 추이 문구 및 다국어 화면을 개선했습니다"
+      "자동 새로고침 재시도 간격을 완만하게 늘리고 기본 최대 대기를 5분으로 제한했습니다. 수동 새로고침은 재시도 횟수를 초기화합니다. 계정 조회 및 새로고침 피드백을 개선하고 메타데이터 요청 대기 시간을 늘렸습니다. 사이드바의 초기 접힘 상태를 수정하고 아이콘, 세션 상세, 추이 문구 및 다국어 화면을 개선했습니다",
+      "Fedora 등 RPM 호환 배포판을 위한 Linux RPM 설치 패키지를 추가했습니다"
     ]
   }
 }

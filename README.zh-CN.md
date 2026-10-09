@@ -33,7 +33,7 @@
 
 - Windows：普通用户下载 `.exe` 安装包（Windows 10/11）；企业或集中部署可选择 `.msi` 安装包。
 - macOS：下载与芯片匹配的 `.dmg` 安装包。
-- Linux：Debian/Ubuntu 下载 `.deb`；其他常见桌面发行版可下载 `.AppImage`。
+- Linux：Debian/Ubuntu 下载 `.deb`；Fedora 等兼容 RPM 的发行版下载 `.rpm`；其他桌面发行版可下载 `.AppImage`。
 
 首次启动前，请确保已单独安装并登录 [Codex CLI](https://github.com/openai/codex)，版本需 **≥ 0.157.0**。
 
