@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/social-preview-1280x640.jpg" alt="Codex Desk 2.0 — your local companion for Codex CLI: quota, accounts, sessions, and insights" width="100%" />
+  <img src="docs/screenshots/desktop-tour-en.gif" alt="Codex Desk v2.0: account usage, account management, switching flow, and settings" width="100%" />
 </p>
 
 ## Features
@@ -60,9 +60,12 @@ After installation, you still need to install and sign in to Codex CLI separatel
 
 Screenshots use sample data and masked emails. The animation demonstrates navigation, without performing a real account switch.
 
-### Demo
+<details>
+<summary>Brand preview</summary>
 
-![Codex Desk v2.0: account usage, account management, switching flow, and settings](docs/screenshots/desktop-tour-en.gif)
+![Codex Desk 2.0 — your local companion for Codex CLI: quota, accounts, sessions, and insights](docs/screenshots/social-preview-1280x640.jpg)
+
+</details>
 
 ### Account usage
 

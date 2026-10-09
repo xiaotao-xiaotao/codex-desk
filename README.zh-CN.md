@@ -16,6 +16,10 @@
   <a href="https://github.com/xiaotao-xiaotao/codex-desk/stargazers"><img src="https://img.shields.io/github/stars/xiaotao-xiaotao/codex-desk?style=flat" alt="GitHub Stars" /></a>
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/desktop-tour-zh.gif" alt="Codex Desk v2.0 账户用量、账户管理、切换链路及设置演示" width="100%" />
+</p>
+
 ## 主要功能
 
 - **额度查看**：剩余额度、重置时间、悬浮球与自定义提醒。
@@ -55,10 +59,6 @@
 ## 界面预览
 
 截图使用示例数据，邮箱已脱敏；动态图展示页面导航，不执行真实账户切换。
-
-### 动态演示
-
-![Codex Desk v2.0 账户用量、账户管理、切换链路及设置演示](docs/screenshots/desktop-tour-zh.gif)
 
 ### 账户用量
 
