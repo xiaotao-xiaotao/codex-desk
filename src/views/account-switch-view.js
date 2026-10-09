@@ -86,7 +86,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   flow.className = "accounts-flow";
   flow.setAttribute("aria-labelledby", "accounts-flow-title");
   flow.innerHTML = `
-    <summary class="accounts-flow-heading"><span id="accounts-flow-title" class="accounts-flow-kicker" data-account-flow-i18n="accountsFlowKicker"></span><span class="accounts-flow-local" data-account-flow-i18n="accountsFlowLocal"></span><span class="accounts-flow-toggle disclosure-chevron" aria-hidden="true"></span></summary>
+    <summary class="accounts-flow-heading"><span id="accounts-flow-title" class="accounts-flow-kicker">${icon("switch")}<span data-account-flow-i18n="accountsFlowKicker"></span></span><span class="accounts-flow-local" data-account-flow-i18n="accountsFlowLocal"></span><span class="accounts-flow-toggle disclosure-chevron" aria-hidden="true"></span></summary>
     <div class="accounts-flow-body">
     <div class="accounts-flow-scene" aria-hidden="true">
       <div class="accounts-scene-line"></div>
@@ -114,7 +114,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       </div>
     </details>
     </div>`;
-  page.querySelector(".accounts-list-heading").before(flow);
+  page.querySelector(".accounts-list-pane").append(flow);
   const dialogFeedback = document.createElement("div");
   dialogFeedback.className = "accounts-feedback";
   dialogFeedback.setAttribute("role", "status");

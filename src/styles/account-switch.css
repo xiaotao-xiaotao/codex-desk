@@ -72,12 +72,12 @@
 .accounts-page .accounts-current-caption { flex-shrink: 0; font-size: 12px; }
 .accounts-page .accounts-current-email { min-width: 0; max-width: 100%; font-size: 13px; font-weight: 600; }
 :root[data-theme="dark"] .accounts-page-header .accounts-current { background: transparent; }
-/* 标题和操作同排，凭据说明独占下一排，避免与账户数量争抢空间。 */
-.accounts-page .accounts-list-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 10px; margin: 18px 0 10px; }
+/* 凭据说明紧跟标题，允许说明换行，同时为右侧数量和刷新操作留出空间。 */
+.accounts-page .accounts-list-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 4px 10px; margin: 18px 0 10px; }
 .accounts-page .accounts-list-heading h3 { grid-column: 1; grid-row: 1; }
-.accounts-page .accounts-list-heading .accounts-count { grid-column: 2; grid-row: 1; margin: 0; }
-.accounts-page .accounts-list-heading .accounts-reload { grid-column: 3; grid-row: 1; }
-.accounts-page .accounts-list-heading .accounts-footer { grid-column: 1 / -1; grid-row: 2; }
+.accounts-page .accounts-list-heading .accounts-count { grid-column: 3; grid-row: 1; margin: 0; }
+.accounts-page .accounts-list-heading .accounts-reload { grid-column: 4; grid-row: 1; }
+.accounts-page .accounts-list-heading .accounts-footer { grid-column: 2; grid-row: 1; margin-left: 2px; padding-left: 12px; border-left: 1px solid var(--accounts-line); font-size: 11px; line-height: 1.7; }
 .accounts-page .accounts-list { gap: 8px; }
 .accounts-page .accounts-row { padding: 10px 12px; border-color: #edf1f5; border-radius: 8px; }
 .accounts-page .accounts-row:hover { border-color: #dce4ee; background: #fafbfd; }
@@ -184,14 +184,17 @@
 .account-switch-dialog[aria-busy="true"] .accounts-submit { cursor: wait; animation: accounts-working 1.2s ease-in-out infinite alternate; }
 @keyframes accounts-enter { from { opacity: 0; transform: translateY(7px) scale(.985); } to { opacity: 1; transform: none; } }
 @keyframes accounts-working { to { opacity: .75; } }
-.accounts-flow { container-type: inline-size; margin-top: 16px; padding: 18px; border: 1px solid var(--accounts-line); border-radius: 18px; background: var(--accounts-bg); box-shadow: 0 6px 24px #23477305; }
-.accounts-flow-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; cursor: pointer; list-style: none; }
+.accounts-flow { container-type: inline-size; margin-top: 20px; padding: 14px 0 0; border-top: 1px solid var(--accounts-line); }
+.accounts-flow-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) 24px; align-items: center; gap: 14px; min-height: 32px; margin: 0; cursor: pointer; list-style: none; }
 .accounts-flow-heading::-webkit-details-marker { display: none; }
 .accounts-flow-heading:focus-visible { outline: 2px solid #91caff; outline-offset: 5px; border-radius: 3px; }
 .accounts-flow-heading:hover .accounts-flow-kicker { color: #1677ff; }
-.accounts-flow-heading .accounts-flow-kicker { flex: 1; }
+.accounts-flow-heading .accounts-flow-kicker { display: inline-flex; align-items: center; gap: 7px; color: var(--accounts-ink); font-size: 12px; font-weight: 600; letter-spacing: 0; }
+.accounts-page .accounts-flow-kicker svg { width: 14px; height: 14px; color: var(--accounts-muted); }
+.accounts-flow-local { min-width: 0; }
+.accounts-flow-toggle { justify-self: center; transition: transform .18s ease, color .18s ease; }
+.accounts-flow-heading:hover .accounts-flow-toggle { color: #1677ff; }
 .accounts-flow[open] > .accounts-flow-heading .accounts-flow-toggle { transform: rotate(180deg); }
-.accounts-flow:not([open]) { padding-block: 12px; }
 .accounts-flow-body { margin-top: 10px; }
 .accounts-flow-kicker { margin: 0; color: var(--accounts-muted); font-size: 12px; font-weight: 650; letter-spacing: .04em; }
 .accounts-flow-heading > span { color: var(--accounts-muted); font-size: 11px; line-height: 1.6; }
@@ -261,7 +264,9 @@
 :root[data-theme="dark"] .accounts-scene-hub { color: #8ebcff; }
 :root[data-theme="dark"] .accounts-flow-details summary:hover .accounts-flow-details-link { background: #223b5b; }
 @container (max-width: 540px) {
-  .accounts-flow-heading { flex-wrap: wrap; gap: 6px; }
+  .accounts-flow-heading { grid-template-columns: minmax(0, 1fr) 24px; gap: 4px 12px; }
+  .accounts-flow-local { grid-column: 1; grid-row: 2; padding-left: 21px; }
+  .accounts-flow-toggle { grid-column: 2; grid-row: 1 / 3; }
   .accounts-flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 26px; }
   .accounts-flow-steps li:nth-child(2)::after { display: none; }
   .accounts-flow-branches { grid-template-columns: 1fr; }
@@ -272,6 +277,12 @@
 @container accounts-page (max-width: 540px) {
   .accounts-page .accounts-current > div { flex-wrap: wrap; gap: 4px 8px; }
 }
+@container accounts-page (max-width: 420px) {
+  .accounts-page .accounts-list-heading { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .accounts-page .accounts-list-heading .accounts-count { grid-column: 2; }
+  .accounts-page .accounts-list-heading .accounts-reload { grid-column: 3; }
+  .accounts-page .accounts-list-heading .accounts-footer { grid-column: 1 / -1; grid-row: 2; margin-left: 0; padding-left: 0; border-left: 0; }
+}
 @container (max-width: 320px) {
   .accounts-flow-steps { grid-template-columns: 1fr; gap: 24px; }
   .accounts-flow-steps li { flex-direction: row; text-align: left; gap: 14px; }
@@ -279,8 +290,6 @@
   .accounts-scene-progress span { font-size: 11px; line-height: 1.5; }
 }
 @media (max-width: 480px) {
-  .accounts-flow { padding: 14px; }
-  .accounts-flow-heading { flex-wrap: wrap; gap: 6px; }
   .accounts-flow-scene { padding: 14px 8px; }
   .accounts-scene-card { width: 32%; padding: 8px 4px; }
   .accounts-scene-card small { white-space: normal; text-align: center; font-size: 11px; }

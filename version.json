@@ -1,46 +1,46 @@
 {
-  "version": "1.2.2",
-  "publishedAt": "2026-10-06",
+  "version": "2.0.0",
+  "publishedAt": "2026-10-09",
   "releaseNotes": {
     "zh-CN": [
-      "接入本机 Codex 共享 daemon，要求 Codex CLI ≥ 0.157.0；退出或重启 Desk 不停止共享服务",
-      "新增会话固定与历史回合分页，概览侧栏按需汇总完整会话；会话内搜索仅覆盖已加载消息",
-      "按本机自然日计算 Token 消耗增量，覆盖跨天续聊并过滤重复快照；会话分布仅统计所选区间用量",
-      "修复缺失或异常额度误显示为剩余 100% 的问题，避免无效数据触发提醒，并改进账号读取与刷新",
-      "统一界面排版与间距，优化窗口收起行为，并更新多语言文案",
-      "会话列表搜索调整为按标题包含匹配、忽略大小写，不再支持会话 ID 或字符子序列模糊匹配"
+      "全新桌面控制台布局：引入可收起的侧栏导航，账户用量、账户管理、数据洞察、会话主题与本地历史独立展示，重整界面排版与操作入口",
+      "新增多账户登录与管理：支持浏览器登录、设备码登录及账户保存，集中管理常用账户，支持编辑名称、更新凭据与快速切换，减少重复登录，让多账户使用更便捷；凭据仅保存在本机，切换后请重启客户端核对",
+      "重构设置页面：按连接、提醒与阅读分类整理配置，优化选项说明和操作布局，让常用设置更易查找和调整",
+      "升级账户用量页：新增按月查看的每日 Token 活跃日历，以及累计 Token、单日峰值、最长任务用时和连续活跃天数统计",
+      "新增使用限额重置入口，可跳转官方页面进行操作；优化订阅信息与额度重置时间展示",
+      "改进账户读取与刷新反馈，延长元数据请求等待时间；修复侧栏初始收起状态，优化图标、会话详情、趋势文案与多语言界面"
     ],
     "zh-TW": [
-      "接入本機 Codex 共用 daemon，需要 Codex CLI ≥ 0.157.0；退出或重新啟動 Desk 不會停止共用服務",
-      "新增工作階段釘選與歷史回合分頁，概覽側欄按需彙整完整工作階段；階段內搜尋僅涵蓋已載入訊息",
-      "依本機自然日計算 Token 消耗增量，涵蓋跨日續聊並過濾重複快照；工作階段分佈僅統計所選區間用量",
-      "修正缺失或異常額度誤顯示為剩餘 100% 的問題，避免無效資料觸發提醒，並改善帳號讀取與重新整理",
-      "統一介面排版與間距，改善視窗收合行為，並更新多語言文案",
-      "工作階段列表搜尋改為標題包含比對、不區分大小寫，不再支援工作階段 ID 或字元子序列模糊比對"
+      "全新桌面控制台版面：加入可收合的側欄導覽，帳號用量、帳號管理、資料洞察、工作階段主題與本機歷史分頁呈現，重新整理排版與操作入口",
+      "新增多帳號登入與管理：支援瀏覽器登入、裝置碼登入與帳號儲存，集中管理常用帳號，支援編輯名稱、更新憑證與快速切換，減少重複登入，讓多帳號使用更方便；憑證僅儲存在本機，切換後請重新啟動客戶端確認",
+      "重新設計設定頁面：依連線、提醒與閱讀分類整理設定，改善選項說明與操作版面，讓常用設定更容易尋找與調整",
+      "升級帳號用量頁：新增按月查看的每日 Token 活躍日曆，以及累計 Token、單日峰值、最長任務耗時與連續活躍天數統計",
+      "新增使用限額重設入口，可前往官方頁面操作；改善訂閱資訊與額度重設時間顯示",
+      "改善帳號讀取與重新整理回饋，延長中繼資料請求等待時間；修正側欄初始收合狀態，改善圖示、工作階段詳情、趨勢文案與多語言介面"
     ],
     "en": [
-      "Connected to the local shared Codex daemon; requires Codex CLI ≥ 0.157.0. Quitting or restarting Desk leaves the shared service running",
-      "Added session pinning and turn pagination, with full-session summaries loaded on demand; in-session search covers loaded messages only",
-      "Calculate daily Token increments in the local time zone, covering resumed sessions across days and filtering duplicate snapshots; session distributions count only the selected range",
-      "Fixed missing or invalid quota appearing as 100% remaining, prevented alerts from invalid data, and improved account reads and refreshes",
-      "Standardized layout and spacing, improved window collapsing, and updated localized text",
-      "Session list search now uses case-insensitive title substring matching; session ID and character-subsequence fuzzy matching are no longer supported"
+      "Redesigned the desktop console with collapsible sidebar navigation and dedicated pages for account usage, account management, data insights, session topics, and local history",
+      "Added multi-account sign-in and management: sign in through a browser or device code, save frequently used accounts in one place, edit names, update credentials, and switch quickly with less repeated sign-in. Credentials stay on this device; restart your client after switching to verify the active account",
+      "Redesigned settings with Connection, Alerts, and Reading categories, clearer option descriptions, and an improved layout to make common settings easier to find and adjust",
+      "Upgraded the account usage page with a monthly daily Token activity calendar and statistics for total Tokens, daily peak, longest task duration, and activity streaks",
+      "Added a usage-limit reset shortcut to the official page, and improved subscription information and quota reset-time presentation",
+      "Improved account reads and refresh feedback with a longer metadata request timeout; fixed the initial collapsed sidebar state and refined icons, session details, trend text, and localized interfaces"
     ],
     "ja": [
-      "ローカルの Codex 共有 daemon に接続。Codex CLI ≥ 0.157.0 が必要です。Desk の終了や再起動時も共有サービスは継続します",
-      "セッションの固定と過去のターンのページ読み込みを追加。全履歴の概要は必要に応じて取得し、セッション内検索は読み込み済みのメッセージのみを対象とします",
-      "ローカル時間の暦日ごとに Token 消費の増分を計算し、日をまたぐ再開と重複スナップショットに対応。セッション別集計は選択期間の使用量のみを対象とします",
-      "未取得または無効なクォータが残り 100% と表示される問題を修正。無効なデータによる通知を防ぎ、アカウントの読み込みと更新を改善",
-      "画面のレイアウトと間隔を統一し、ウィンドウの折りたたみ動作と多言語の文言を改善",
-      "セッション一覧の検索を大文字・小文字を区別しないタイトルの部分一致に変更。セッション ID と文字の部分列によるあいまい一致は対象外になりました"
+      "デスクトップ画面を刷新。折りたたみ可能なサイドバーを導入し、アカウント使用量、アカウント管理、データ分析、セッショントピック、ローカル履歴を個別ページに整理",
+      "複数アカウントのログインと管理を追加。ブラウザーまたはデバイスコードでログインし、よく使うアカウントをまとめて保存・管理できます。名前の編集、認証情報の更新、素早い切り替えに対応し、繰り返しのログインを減らします。認証情報はこの端末にのみ保存されます。切り替え後はクライアントを再起動して確認してください",
+      "設定画面を刷新。接続、通知、読みやすさのカテゴリに整理し、項目の説明と操作レイアウトを改善。よく使う設定を見つけて調整しやすくしました",
+      "アカウント使用量ページに月別の日次 Token 活動カレンダーを追加。累計 Token、1 日の最大使用量、最長タスク時間、連続活動日数も表示",
+      "使用上限のリセット用に公式ページへのショートカットを追加し、サブスクリプション情報とクォータのリセット時刻の表示を改善",
+      "アカウント読み込みと更新時の表示を改善し、メタデータ取得の待機時間を延長。サイドバーの初期折りたたみ状態を修正し、アイコン、セッション詳細、推移の文言、多言語画面を改善"
     ],
     "ko": [
-      "로컬 Codex 공유 daemon에 연결하며 Codex CLI ≥ 0.157.0이 필요합니다. Desk를 종료하거나 재시작해도 공유 서비스는 계속 실행됩니다",
-      "세션 고정과 이전 턴 페이지 로딩을 추가하고 전체 세션 요약을 필요할 때 불러옵니다. 세션 내 검색은 로딩된 메시지만 대상으로 합니다",
-      "로컬 시간대의 날짜별 Token 소비 증분을 계산해 날짜를 넘긴 세션 재개를 반영하고 중복 스냅샷을 제외합니다. 세션별 분포는 선택 기간의 사용량만 집계합니다",
-      "누락되거나 잘못된 할당량이 잔여 100%로 표시되는 문제를 수정하고 잘못된 데이터의 알림을 방지했으며 계정 조회와 새로고침을 개선했습니다",
-      "화면 배치와 간격을 통일하고 창 접기 동작 및 다국어 문구를 개선했습니다",
-      "세션 목록 검색을 대소문자를 구분하지 않는 제목 부분 일치로 변경했습니다. 세션 ID 및 문자 부분 수열의 퍼지 검색은 더 이상 지원하지 않습니다"
+      "데스크톱 화면을 새롭게 구성했습니다. 접을 수 있는 사이드바와 계정 사용량, 계정 관리, 데이터 분석, 세션 주제, 로컬 기록 전용 페이지를 도입했습니다",
+      "다중 계정 로그인과 관리를 추가했습니다. 브라우저 또는 기기 코드로 로그인하고 자주 사용하는 계정을 한곳에서 저장·관리할 수 있습니다. 이름 편집, 인증 정보 갱신 및 빠른 전환을 지원해 반복 로그인을 줄이고 여러 계정을 더 편리하게 사용할 수 있습니다. 인증 정보는 이 기기에만 저장되며 전환 후 클라이언트를 다시 시작해 활성 계정을 확인하세요",
+      "설정 화면을 새롭게 구성했습니다. 연결, 알림, 읽기 항목으로 분류하고 옵션 설명과 배치를 개선해 자주 쓰는 설정을 더 쉽게 찾고 조정할 수 있습니다",
+      "계정 사용량 페이지에 월별 일일 Token 활동 달력과 누적 Token, 일일 최대 사용량, 최장 작업 시간, 연속 활동 일수 통계를 추가했습니다",
+      "공식 페이지로 이동하는 사용 한도 초기화 바로가기를 추가하고 구독 정보와 할당량 초기화 시간 표시를 개선했습니다",
+      "계정 조회 및 새로고침 피드백을 개선하고 메타데이터 요청 대기 시간을 늘렸습니다. 사이드바의 초기 접힘 상태를 수정하고 아이콘, 세션 상세, 추이 문구 및 다국어 화면을 개선했습니다"
     ]
   }
 }
