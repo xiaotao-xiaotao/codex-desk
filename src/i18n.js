@@ -691,10 +691,19 @@ const SETTINGS_LAYOUT_TRANSLATIONS = {
   ko: { settingsLayoutIntro: "이 기기의 설정을 변경한 후 저장하면 적용됩니다.", settingsStorageHint: "이 기기의 설정 저장 위치: {path}", settingsStorageLoading: "설정 저장 위치를 읽는 중…", settingsStorageReadFailed: "설정 저장 위치를 읽을 수 없습니다", settingsCategoryLabel: "설정 분류", settingsConnectionTab: "연결 및 새로 고침", settingsAlertsTab: "알림 및 개인정보", settingsReadingTab: "읽기 설정", settingsPreviewLabel: "실시간 미리보기" },
 };
 
+const ABOUT_TRANSLATIONS = {
+  "zh-CN": { settingsAboutTab: "关于", settingsAboutDescription: "在桌面掌握账户额度与本地会话。", settingsAboutVersion: "当前版本" },
+  "zh-TW": { settingsAboutTab: "關於", settingsAboutDescription: "在桌面掌握帳戶額度與本機對話。", settingsAboutVersion: "目前版本" },
+  en: { settingsAboutTab: "About", settingsAboutDescription: "Account usage and local conversations, at your desk.", settingsAboutVersion: "Current version" },
+  ja: { settingsAboutTab: "このアプリについて", settingsAboutDescription: "アカウントの使用量とローカルの会話をデスクトップで確認。", settingsAboutVersion: "現在のバージョン" },
+  ko: { settingsAboutTab: "정보", settingsAboutDescription: "데스크톱에서 계정 사용량과 로컬 대화를 확인하세요.", settingsAboutVersion: "현재 버전" },
+};
+
 // 低优先级文案先合并，后面的业务分组覆盖同名键，保持原有查询优先级。
 const TRANSLATION_SOURCES = [
   CODEX_CONFIG_TRANSLATIONS,
   SETTINGS_LAYOUT_TRANSLATIONS,
+  ABOUT_TRANSLATIONS,
   ACCOUNT_SWITCH_TRANSLATIONS,
   NAVIGATION_TRANSLATIONS,
   TOPIC_TRANSLATIONS,

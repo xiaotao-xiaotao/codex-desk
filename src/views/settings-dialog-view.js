@@ -205,7 +205,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     void readStoragePath();
     if (!dialog.open) dialog.showModal();
     selectTab(activeTab);
-    panels.find((panel) => !panel.hidden)?.querySelector("input, select")?.focus();
+    panels.find((panel) => !panel.hidden)?.querySelector("input, select, button")?.focus();
   }
 
   function updateLanguage() {

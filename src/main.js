@@ -24,7 +24,6 @@ import { createUpdateBannerView } from "./views/update-banner-view.js";
 import { createWordCloudView } from "./views/word-cloud-view.js";
 
 const DRAG_THRESHOLD_PX = 4;
-const AUTO_DISMISS_DURATION_MS = 4_000;
 const THREAD_PAGE_SIZE = 10;
 
 const app = document.querySelector("#app");
@@ -62,6 +61,7 @@ const dashboardSections = {
   account: document.querySelector("#account-section"),
   accounts: document.querySelector("#accounts-section"),
   config: document.querySelector("#config-section"),
+  about: document.querySelector("#about-section"),
   insights: document.querySelector("#insights-section"),
   topics: document.querySelector("#topics-section"),
   sessions: document.querySelector("#sessions-section"),
@@ -140,7 +140,6 @@ const updateView = createUpdateBannerView({
   triggerButton: updateCheckButton,
   getLanguage: i18n.getLanguage,
   getCurrentVersion: getVersion,
-  autoDismissDurationMs: AUTO_DISMISS_DURATION_MS,
 });
 const dialogView = createThreadDialogView({
   t,
@@ -221,10 +220,9 @@ function setStatus(text, kind = "normal") {
 }
 
 function renderAppVersion() {
-  appVersionElement.hidden = !currentAppVersion;
-  if (!currentAppVersion) return;
-  appVersionElement.textContent = `v${currentAppVersion}`;
-  appVersionElement.title = t("currentVersionLabel", { version: currentAppVersion });
+  appVersionElement.hidden = false;
+  appVersionElement.textContent = currentAppVersion ? `v${currentAppVersion}` : "—";
+  appVersionElement.title = currentAppVersion ? t("currentVersionLabel", { version: currentAppVersion }) : "";
 }
 
 async function loadAppVersion() {
@@ -238,7 +236,7 @@ async function loadAppVersion() {
 
 function renderDashboardAvailability() {
   panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
-  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config"].includes(activeDashboardSection);
+  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config", "about"].includes(activeDashboardSection);
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
   const details = [t("dashboardUnavailableDescription")];
   if (dashboardRetryStatus?.error) {
@@ -343,7 +341,7 @@ function setDashboardSection(nextSection) {
     dialogView.close(false);
   }
   activeDashboardSection = nextSection;
-  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config"].includes(nextSection);
+  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config", "about"].includes(nextSection);
   if (changed && nextSection === "config") void codexConfigView.activate();
   if (changed && nextSection === "accounts") accountSwitchView.activate();
   // 离开历史页后使未完成的搜索失效，避免旧请求覆盖下一次进入时的结果。

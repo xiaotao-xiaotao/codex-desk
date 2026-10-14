@@ -433,7 +433,7 @@ fn identity(auth: &Value) -> Result<Identity, String> {
     })
 }
 
-fn normalized_auth(auth: &Value) -> Result<Value, String> {
+pub(crate) fn normalized_auth(auth: &Value) -> Result<Value, String> {
     let id = identity(auth)?;
     let mut tokens = serde_json::Map::new();
     for field in ["id_token", "access_token", "refresh_token"] {

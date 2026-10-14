@@ -70,7 +70,6 @@ export function createUpdateBannerView({
   triggerButton,
   getLanguage,
   getCurrentVersion,
-  autoDismissDurationMs,
 }) {
   const banner = document.querySelector("#update-banner");
   const icon = document.querySelector(".update-banner-icon");
@@ -82,27 +81,10 @@ export function createUpdateBannerView({
   const dismissButton = document.querySelector("#update-banner-dismiss");
   let result = null;
   let state = "idle";
-  let currentVersionDismissTimer = null;
-
-  function clearCurrentVersionDismissTimer() {
-    if (currentVersionDismissTimer === null) return;
-    window.clearTimeout(currentVersionDismissTimer);
-    currentVersionDismissTimer = null;
-  }
-
-  function scheduleCurrentVersionDismiss() {
-    clearCurrentVersionDismissTimer();
-    currentVersionDismissTimer = window.setTimeout(() => {
-      currentVersionDismissTimer = null;
-      if (state !== "current") return;
-      state = "idle";
-      render();
-    }, autoDismissDurationMs);
-  }
 
   function render() {
-    if (state !== "current") clearCurrentVersionDismissTimer();
     triggerButton.title = triggerButton.ariaLabel = t("checkForUpdates");
+    triggerButton.querySelector("[data-update-check-label]").textContent = t(state === "checking" ? "checkingUpdatesTitle" : "checkForUpdates");
     triggerButton.disabled = state === "checking";
     triggerButton.classList.toggle("is-loading", state === "checking");
     triggerButton.setAttribute("aria-busy", String(state === "checking"));
@@ -112,7 +94,7 @@ export function createUpdateBannerView({
     notes.hidden = state !== "available";
     openButton.hidden = state !== "available";
     dismissButton.hidden = state === "checking";
-    // 当前版本既支持“我知道了”立即关闭，也保留 4 秒自动关闭作为兜底。
+    banner.dataset.state = state;
     actions.hidden = state === "checking";
     dismissButton.textContent = state === "available" ? t("updateLater") : t("updateDismiss");
     icon.textContent = { checking: "…", current: "✓", error: "!", available: "↑" }[state];
@@ -130,7 +112,7 @@ export function createUpdateBannerView({
     if (state === "current") {
       title.textContent = t("upToDateTitle");
       version.textContent = t("upToDateSummary", { current: result.currentVersion });
-      scheduleCurrentVersionDismiss();
+      // 关于页保留检查结果，让用户自行阅读或关闭，不再按浮层规则自动消失。
       return;
     }
 
@@ -198,7 +180,6 @@ export function createUpdateBannerView({
     }
   });
   dismissButton.addEventListener("click", () => {
-    clearCurrentVersionDismissTimer();
     state = "idle";
     render();
   });

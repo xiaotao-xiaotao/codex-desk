@@ -13,6 +13,7 @@ use tokio::{
 const LOGIN_TIMEOUT: Duration = Duration::from_secs(600);
 const RPC_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_MESSAGE_BYTES: u64 = 1024 * 1024;
+const WORKSPACE_DISCOVERY_FAILED: &str = "workspace routing discovery failed";
 
 #[derive(Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -148,7 +149,7 @@ impl AccountLoginState {
                             Some("未能打开浏览器，请点击重新打开授权页面".into());
                     }
                 }
-                wait_for_login(&mut reader, &login_id).await
+                wait_for_login(&mut reader, &login_id, &home.path().join("auth.json")).await
             };
             let result = tokio::select! {
                 result = timeout(LOGIN_TIMEOUT, authorization) => result.unwrap_or_else(|_| Err("登录超过 10 分钟，请重新发起".into())),
@@ -306,6 +307,7 @@ fn login_prompt(
 async fn wait_for_login(
     reader: &mut (impl AsyncBufRead + Unpin),
     login_id: &str,
+    auth_path: &std::path::Path,
 ) -> Result<(), String> {
     loop {
         let message = read_message(reader).await?;
@@ -316,10 +318,45 @@ async fn wait_for_login(
         }
         return if message["params"]["success"].as_bool() == Some(true) {
             Ok(())
+        } else if message["params"]["error"].as_str() == Some(WORKSPACE_DISCOVERY_FAILED) {
+            // CLI 0.162.1 在凭据落盘后仍会检查工作区路由，并可能把已完成的授权报告为失败。
+            // Desk 此处只收录当前独立会话的完整凭据；工作区权限和连接仍由 CLI 校验。
+            read_auth(auth_path)
+                .and_then(|auth| account_store::normalized_auth(&auth))
+                .map(|_| ())
+                .map_err(|_| {
+                    "工作区连接检查失败，且未找到完整登录凭据，请检查网络后重新授权".into()
+                })
         } else {
-            Err("授权未成功，请检查授权页面和设备码有效期后重试".into())
+            Err(login_failure_message(
+                message["params"]["error"].as_str(),
+                "授权未成功，请检查授权页面、网络及登录会话有效期后重试",
+            ))
         };
     }
+}
+
+fn login_failure_message(error: Option<&str>, fallback: &str) -> String {
+    // 只识别已知错误类别，不能透传可能包含令牌或认证响应正文的 CLI 错误。
+    let error = error.unwrap_or_default().to_ascii_lowercase();
+    let message = if error.contains("error sending request") {
+        if error.contains("/deviceauth/token") {
+            "设备授权结果领取失败：Codex CLI 无法连接认证服务器。网页授权可能已完成，但尚未生成登录凭据，请检查 CLI 的代理和网络后重试"
+        } else if error.contains("/oauth/token") {
+            "登录令牌交换失败：Codex CLI 无法连接认证服务器，请检查 CLI 的代理和网络后重新授权"
+        } else {
+            "无法连接认证服务器，请检查 Codex CLI 的代理和网络后重试"
+        }
+    } else if error.contains("timed out") || error.contains("timeout") {
+        "登录等待超时，请检查网络后重新发起授权"
+    } else if error.contains("workspace routing discovery unauthorized") {
+        "工作区权限检查失败，请核对所选账户的权限后重新授权"
+    } else if error.contains("device auth failed with status") {
+        "认证服务器拒绝了设备授权结果领取请求，请检查网络及设备码有效期后重试"
+    } else {
+        fallback
+    };
+    message.into()
 }
 
 async fn send(
@@ -354,10 +391,12 @@ async fn response(reader: &mut (impl AsyncBufRead + Unpin), id: u64) -> Result<V
             if message["id"].as_u64() != Some(id) {
                 continue;
             }
-            return message
-                .get("result")
-                .cloned()
-                .ok_or_else(|| "无法启动授权，请检查 CLI 版本、网络及本地回调端口后重试".into());
+            return message.get("result").cloned().ok_or_else(|| {
+                login_failure_message(
+                    message["error"]["message"].as_str(),
+                    "无法启动授权，请检查 CLI 版本、网络及本地回调端口后重试",
+                )
+            });
         }
     })
     .await
@@ -408,18 +447,85 @@ mod tests {
     #[test]
     fn completion_ignores_other_logins_and_sanitizes_rejections() {
         tauri::async_runtime::block_on(async {
+            let home = tempfile::tempdir().unwrap();
+            let auth_path = home.path().join("auth.json");
             let messages = concat!(
                 "{\"method\":\"account/login/completed\",\"params\":{\"loginId\":\"old\",\"success\":false}}\n",
                 "{\"method\":\"account/updated\",\"params\":{}}\n",
                 "{\"method\":\"account/login/completed\",\"params\":{\"loginId\":\"device\",\"success\":true}}\n");
-            wait_for_login(&mut BufReader::new(messages.as_bytes()), "device")
-                .await
-                .unwrap();
+            wait_for_login(
+                &mut BufReader::new(messages.as_bytes()),
+                "device",
+                &auth_path,
+            )
+            .await
+            .unwrap();
             let failure = b"{\"method\":\"account/login/completed\",\"params\":{\"loginId\":\"device\",\"success\":false,\"error\":\"secret-token\"}}\n";
-            assert!(!wait_for_login(&mut BufReader::new(&failure[..]), "device")
+            assert!(
+                !wait_for_login(&mut BufReader::new(&failure[..]), "device", &auth_path)
+                    .await
+                    .unwrap_err()
+                    .contains("secret-token")
+            );
+        });
+    }
+
+    #[test]
+    fn workspace_discovery_failure_requires_complete_session_credentials() {
+        tauri::async_runtime::block_on(async {
+            let home = tempfile::tempdir().unwrap();
+            let auth_path = home.path().join("auth.json");
+            let mut notification = json!({"method":"account/login/completed","params":{
+                "loginId":"browser", "success":false, "error":WORKSPACE_DISCOVERY_FAILED
+            }});
+            let message = format!("{notification}\n");
+            assert!(wait_for_login(
+                &mut BufReader::new(message.as_bytes()),
+                "browser",
+                &auth_path
+            )
+            .await
+            .is_err());
+            for auth in [
+                json!({}),
+                json!({"auth_mode":"chatgpt","tokens":{"access_token":"access","account_id":"account"}}),
+            ] {
+                std::fs::write(&auth_path, auth.to_string()).unwrap();
+                assert!(wait_for_login(
+                    &mut BufReader::new(message.as_bytes()),
+                    "browser",
+                    &auth_path
+                )
                 .await
-                .unwrap_err()
-                .contains("secret-token"));
+                .is_err());
+            }
+            let auth = json!({"auth_mode":"chatgpt","tokens":{
+                "access_token":"access", "refresh_token":"refresh", "account_id":"account"
+            }});
+            std::fs::write(&auth_path, auth.to_string()).unwrap();
+            wait_for_login(
+                &mut BufReader::new(message.as_bytes()),
+                "browser",
+                &auth_path,
+            )
+            .await
+            .unwrap();
+            // 已存在凭据不能覆盖权限拒绝、取消或其他未知失败。
+            for error in [
+                "workspace routing discovery unauthorized (401)",
+                "Login was not completed",
+                "secret-token",
+            ] {
+                notification["params"]["error"] = error.into();
+                let message = format!("{notification}\n");
+                assert!(wait_for_login(
+                    &mut BufReader::new(message.as_bytes()),
+                    "browser",
+                    &auth_path
+                )
+                .await
+                .is_err());
+            }
         });
     }
 
@@ -503,5 +609,22 @@ mod tests {
                 .unwrap_err()
                 .contains("secret-token"));
         });
+    }
+
+    #[test]
+    fn login_errors_distinguish_network_stages_without_echoing_secrets() {
+        for (error, expected) in [
+            ("error sending request for url (https://auth.openai.com/api/accounts/deviceauth/token?secret-token)", "设备授权结果领取失败"),
+            ("error sending request for url (https://auth.openai.com/oauth/token?secret-token)", "登录令牌交换失败"),
+            ("error sending request: secret-token", "无法连接认证服务器"),
+            ("timed out: secret-token", "登录等待超时"),
+            ("workspace routing discovery unauthorized (401): secret-token", "工作区权限检查失败"),
+            ("device auth failed with status 500: secret-token", "认证服务器拒绝"),
+            ("secret-token", "未知错误"),
+        ] {
+            let message = login_failure_message(Some(error), "未知错误");
+            assert!(message.contains(expected));
+            assert!(!message.contains("secret-token"));
+        }
     }
 }

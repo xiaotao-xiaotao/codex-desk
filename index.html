@@ -20,7 +20,6 @@
           <div>
             <div class="title-row">
               <h1 data-i18n="appTitle">Codex 桌面控制台</h1>
-              <span id="app-version" class="app-version" hidden></span>
               <p class="eyebrow"><span class="status-dot"></span><span data-i18n="secureAccess">本机安全访问</span></p>
             </div>
           </div>
@@ -36,11 +35,6 @@
             <button id="always-on-top-button" class="icon-button always-on-top-button" type="button" title="置顶窗口" aria-label="置顶窗口" aria-pressed="false">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1 6 3 3v2H6v-2l3-3-1-6Zm4 11v7" /></svg>
             </button>
-            <button id="update-check-button" class="icon-button update-check-button" type="button" title="检查版本更新" aria-label="检查版本更新">
-              <svg class="update-check-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 16V3m-5 5 5-5 5 5M4 16v4h16v-4" />
-              </svg>
-            </button>
             <label class="language-picker">
               <svg class="language-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2M7 5c0 5-2 8-4 10M5 11c1.5 1.8 3.3 3.1 5.5 4M14 20l4-11 4 11M15.2 16h5.6" /></svg>
               <select id="language-select" title="语言：跟随系统" aria-label="语言：跟随系统">
@@ -55,19 +49,6 @@
             <button id="quit-button" class="close-icon-button" type="button" title="退出程序" aria-label="退出程序"></button>
           </div>
         </header>
-
-        <aside id="update-banner" class="update-banner" aria-live="polite" hidden>
-          <div class="update-banner-icon" aria-hidden="true">↑</div>
-          <div class="update-banner-content">
-            <h2 id="update-banner-title"></h2>
-            <p id="update-banner-version" class="update-banner-version"></p>
-            <div id="update-banner-notes" class="update-banner-notes app-scrollable"></div>
-            <div class="update-banner-actions">
-              <button id="update-banner-open" class="update-banner-primary" type="button"></button>
-              <button id="update-banner-dismiss" type="button"></button>
-            </div>
-          </div>
-        </aside>
 
         <div class="dashboard-layout is-sidebar-collapsed">
           <aside class="dashboard-sidebar">
@@ -103,6 +84,10 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3M11 7h9M4 17h9M17 17h3" /><circle cx="9" cy="7" r="2" /><circle cx="15" cy="17" r="2" /></svg>
                 <span data-i18n="configTitle">Codex 配置</span>
               </button>
+              <button id="nav-about" class="dashboard-nav-button" data-dashboard-section="about" type="button" role="tab" aria-selected="false" aria-controls="about-section" tabindex="-1">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.2 5.1 3.9 7.8 9 9-5.1 1.2-7.8 3.9-9 9-1.2-5.1-3.9-7.8-9-9 5.1-1.2 7.8-3.9 9-9Z"/></svg>
+                <span data-i18n="settingsAboutTab">关于</span>
+              </button>
             </nav>
             <div class="sidebar-bottom">
               <div class="sidebar-utilities">
@@ -131,6 +116,30 @@
               </div>
             </section>
 
+          <section id="about-section" class="dashboard-section dashboard-page settings-about app-scrollable" role="tabpanel" aria-labelledby="nav-about" tabindex="0" hidden>
+            <div class="about-identity">
+              <div class="about-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" opacity=".22"/><path d="M12 3a9 9 0 1 1-8.6 6.3M12 7.5V12l3.5 2"/></svg></div>
+              <div><h2>Codex Desk</h2><p class="settings-hint" data-i18n="settingsAboutDescription">在桌面掌握账户额度与本地会话。</p></div>
+            </div>
+            <section class="about-version-card" aria-labelledby="about-version-label">
+              <div class="about-version-info"><span id="about-version-label" data-i18n="settingsAboutVersion">当前版本</span><strong id="app-version" hidden></strong></div>
+              <button id="update-check-button" class="settings-secondary-button update-check-button" type="button">
+                <svg class="update-check-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v5h-5M4 20v-5h5M4.5 9a8 8 0 0 1 13.2-3.7L20 9M4 15l2.3 3.7A8 8 0 0 0 19.5 15"/></svg><span data-update-check-label>检查更新</span>
+              </button>
+            </section>
+            <aside id="update-banner" class="update-banner" aria-live="polite" hidden>
+              <div class="update-banner-icon" aria-hidden="true">↑</div>
+              <div class="update-banner-content">
+                <h2 id="update-banner-title"></h2>
+                <p id="update-banner-version" class="update-banner-version"></p>
+                <div id="update-banner-notes" class="update-banner-notes app-scrollable"></div>
+                <div class="update-banner-actions">
+                  <button id="update-banner-open" class="update-banner-primary" type="button"></button>
+                  <button id="update-banner-dismiss" type="button"></button>
+                </div>
+              </div>
+            </aside>
+          </section>
             <section id="accounts-section" class="dashboard-section dashboard-page accounts-page app-scrollable" role="tabpanel" aria-labelledby="nav-accounts" tabindex="0" hidden></section>
             <section id="config-section" class="dashboard-section dashboard-page config-page app-scrollable" role="tabpanel" aria-labelledby="nav-config" tabindex="0" hidden></section>
             <section id="account-section" class="dashboard-section dashboard-page quota-section" role="tabpanel" aria-labelledby="nav-account" tabindex="0">
@@ -459,6 +468,8 @@
               <div class="settings-preview-pane"><span class="settings-preview-caption" data-settings-layout-i18n="settingsPreviewLabel">实时预览</span><p id="settings-reading-preview" class="settings-reading-preview">这是会话正文预览。调整字体、字号和行距，找到适合你的阅读方式。</p></div>
             </section>
           </section>
+
+
         </div>
         <footer class="settings-actions">
           <div class="settings-footer-info">

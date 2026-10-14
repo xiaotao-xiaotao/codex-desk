@@ -71,6 +71,9 @@ impl AppServerState {
                 "-c",
                 "cli_auth_credentials_store=\"file\"",
                 "-c",
+                // 独立登录目录不继承用户配置；认证请求应沿用浏览器使用的系统代理。
+                "features.respect_system_proxy=true",
+                "-c",
                 "analytics.enabled=false",
                 "-c",
                 "otel.exporter=\"none\"",

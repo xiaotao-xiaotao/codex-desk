@@ -124,7 +124,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   const find = (selector) => dialog.querySelector(selector) ?? page.querySelector(selector);
   const listPane = find(".accounts-list-pane");
   const editor = find(".accounts-editor");
-  const feedbacks = [dialogFeedback, page.querySelector(".accounts-feedback")];
+  const pageFeedback = page.querySelector(".accounts-feedback");
+  const feedbacks = [dialogFeedback, pageFeedback];
   const input = find(".accounts-name-input");
   const restartCheckbox = find(".accounts-restart input");
   const list = find(".accounts-list");
@@ -178,14 +179,16 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     }
   }
 
-  function setFeedback(key, values = {}, kind = "success") {
+  function setFeedback(key, values = {}, kind = "success", target = action ? dialogFeedback : pageFeedback) {
     window.clearTimeout(feedbackTimer);
     feedbackTimer = null;
-    notice = key ? { key, values, kind } : null;
+    // 弹窗操作的提示只属于当前弹窗，不同步到背后的账户列表。
+    notice = key ? { key, values, kind, target } : null;
     feedbacks.forEach((feedback) => {
-      feedback.hidden = !notice;
+      const visible = notice && feedback === target;
+      feedback.hidden = !visible;
       feedback.dataset.kind = kind;
-      feedback.textContent = notice ? t(key, values) : "";
+      feedback.textContent = visible ? t(key, values) : "";
     });
     // 常规成功提示自动收起；错误和待处理的服务状态保留，方便用户处理。
     if (notice && kind === "success" && !action) {
@@ -219,6 +222,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   }
 
   function showList() {
+    if (notice?.target === dialogFeedback) setFeedback(null);
     action = null;
     editor.hidden = true;
     find(".accounts-device-code code").textContent = "";
@@ -490,7 +494,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-restart strong").textContent = t("accountsRestartLabel");
     find(".accounts-restart div > span").textContent = t("accountsRestartHint");
     renderCloseIconButton(find(".accounts-close"), { label: t("accountsClose") });
-    if (notice) setFeedback(notice.key, notice.values, notice.kind);
+    if (notice) setFeedback(notice.key, notice.values, notice.kind, notice.target);
     renderList(); renderEditor();
   }
 
@@ -504,6 +508,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   find(".accounts-close").addEventListener("click", () => { void closeEditor(); });
   dialog.addEventListener("cancel", (event) => { event.preventDefault(); void closeEditor(); });
   dialog.addEventListener("close", () => {
+    if (notice?.target === dialogFeedback) setFeedback(null);
     action = null;
     editor.hidden = true;
     const target = returnFocus?.isConnected ? returnFocus : find(".accounts-save");
