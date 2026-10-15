@@ -1,6 +1,6 @@
 .thread-dialog { position: relative; display: flex; width: 100%; min-width: 0; min-height: 0; flex: 1 1 auto; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid #e1e9f3; border-radius: 14px; color: #1f2329; background: #fff; }
 .thread-dialog[hidden] { display: none; }
-.thread-dialog-toolbar { display: flex; min-height: 64px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #e7edf5; background: #fff; }
+.thread-dialog-toolbar { display: flex; min-height: 54px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #e7edf5; background: #fff; }
 .thread-back-button { display: inline-grid; width: var(--control-size); height: var(--control-size); flex: 0 0 auto; place-items: center; padding: 0; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; }
 .thread-back-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .thread-back-button:hover { color: #1677ff; background: #edf5ff; }
@@ -30,6 +30,9 @@
 .dialog-search input::placeholder { color: #9ba6b2; }
 .dialog-search input:focus { border-color: #1677ff; background: #fff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .12); }
 .dialog-search-result { min-width: 44px; overflow: hidden; color: #788697; font-size: var(--font-caption); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.dialog-search[hidden] { display: none; }
+.dialog-search-result:empty { display: none; }
+.thread-toolbar-action[aria-expanded="true"] { color: #1668c6; background: #edf5ff; }
 /* 标题下只展示轻量统计；Token 明细通过悬停查看，保留正文阅读空间。 */
 .insight-list { display: grid; gap: var(--space-sm); }
 .insight-summary-primary { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; color: #7f8a97; font-size: var(--font-caption); }
@@ -65,15 +68,20 @@
 .close-icon-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .close-icon-button:hover { color: #4d5a69; background: #eef1f4; }
 .close-icon-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
-.message-list { display: grid; grid-template-columns: minmax(0, 1fr); flex: 1 1 auto; min-width: 0; min-height: 0; align-content: start; gap: 20px; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; padding: 14px 16px 20px; background: #f8f9fb; }
-.message-entry { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; gap: 6px; }
+.message-list { display: grid; grid-template-columns: minmax(0, 1fr); flex: 1 1 auto; min-width: 0; min-height: 0; align-content: start; gap: 18px; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; padding: 16px clamp(14px, 3vw, 32px) 28px; background: #f8f9fb; }
+.message-entry { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 960px; min-width: 0; gap: 4px; margin-inline: auto; }
 /* 问题与紧随其后的回答保持关联；下一轮问题用更大的间隔区分。 */
-.message-entry-user + .message-entry-assistant { margin-top: -10px; }
+.message-entry-user + .message-entry-assistant { margin-top: -6px; }
 .message-entry-user { justify-self: end; justify-items: end; }
 .message-entry-assistant { justify-self: start; justify-items: start; }
 /* 消息行保留全宽用于左右对齐，气泡本身按内容伸缩；长文本最多使用整行宽度。 */
 .message { position: relative; min-width: 0; width: fit-content; max-width: min(100%, 680px); padding: 10px 12px; border: 1px solid #e4e8ed; border-radius: 9px; color: #2c333a; background: #fff; font-family: var(--reading-font-family, inherit); font-size: var(--reading-font-size, 14px); line-height: var(--reading-line-height, 1.65); overflow-wrap: anywhere; transition: border-color .15s, box-shadow .15s; }
 .message.has-code-block { box-sizing: border-box; width: 100%; max-width: 680px; }
+/* 回复按文档阅读，问题保留气泡；正文宽度上限兼顾桌面空间与长行可读性。 */
+.message-entry-assistant > .message { width: 100%; max-width: 100%; padding: 4px 0; border-color: transparent; border-radius: 5px; background: transparent; }
+.message-entry-user > .message { max-width: min(88%, 760px); }
+.message-entry-assistant > .message.is-search-match { padding-inline: 8px; border-color: #d6b868; }
+.message-entry-assistant > .message.is-active-search-match { border-color: #1677ff; }
 .message p { margin: 0; }
 .message-markdown { min-width: 0; text-align: left; overflow-wrap: anywhere; }
 .message-markdown > :first-child { margin-top: 0; }
@@ -121,7 +129,7 @@
 .message-markdown th:last-child, .message-markdown td:last-child { border-right: 0; }
 .message-markdown tr:last-child td { border-bottom: 0; }
 .message-markdown th { color: #465365; background: #f2f4f6; font-weight: 700; }
-.message-duration { box-sizing: border-box; display: flex; width: 100%; min-height: var(--control-size); align-items: center; padding-bottom: 6px; border-bottom: 1px solid #e6eaf0; color: #7f8a97; font-size: var(--font-caption); font-weight: 650; line-height: 1.2; }
+.message-duration { box-sizing: border-box; display: flex; width: 100%; min-height: 22px; align-items: center; padding-bottom: 3px; border-bottom: 1px solid #e6eaf0; color: #7f8a97; font-size: var(--font-caption); font-weight: 500; line-height: 1.2; }
 .message-duration-disclosure { width: 100%; color: #7f8a97; font-size: var(--font-caption); font-weight: 650; }
 .message-duration-disclosure summary { display: flex; min-height: var(--control-size); align-items: center; gap: var(--space-xs); padding-bottom: 6px; border-bottom: 1px solid #e6eaf0; cursor: default; list-style: none; user-select: none; }
 .message-duration-disclosure summary::-webkit-details-marker { display: none; }
@@ -141,7 +149,7 @@
 .turn-id-badge.is-copied::after { width: 10px; opacity: 1; }
 .turn-id-badge.is-failed { color: #bf3340; background: #fff5f5; }
 .turn-id-badge span { flex: 0 0 auto; color: #9aa4b0; font-size: var(--font-caption); font-weight: 500; }
-.turn-id-badge code { min-width: 0; overflow: hidden; color: inherit; font-family: "Cascadia Code", Consolas, monospace; font-size: var(--font-caption); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.turn-id-badge code { min-width: 0; color: inherit; font-family: "Cascadia Code", Consolas, monospace; font-size: var(--font-caption); font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
 .message-collapsed-content { display: grid; gap: 10px; margin-top: 8px; padding: 0; color: #526173; background: transparent; font-family: var(--reading-font-family, inherit); font-size: var(--reading-font-size, 14px); font-weight: 500; line-height: var(--reading-line-height, 1.65); }
 .message-collapsed-content p { margin: 0; white-space: pre-wrap; }
 .message-image-strip { display: grid; max-width: 100%; gap: var(--space-sm); overflow: hidden; }
@@ -151,7 +159,7 @@
 .message mark { padding: 0 1px; border-radius: 2px; color: inherit; background: #ffe58f; }
 .message.is-search-match { border-color: #d6b868; }
 .message.is-active-search-match { border-color: #1677ff; box-shadow: 0 0 0 3px rgba(22, 119, 255, .16); }
-.message-actions { display: flex; min-height: 24px; align-items: center; gap: 6px; color: #8a96a4; font-size: var(--font-caption); line-height: 1; opacity: 0; pointer-events: none; transition: opacity .15s; }
+.message-actions { display: flex; height: 20px; align-items: center; gap: 6px; color: #8a96a4; font-size: var(--font-caption); line-height: 1; opacity: 0; pointer-events: none; transition: opacity .15s; }
 .message-entry:hover .message-actions, .message-entry:focus-within .message-actions { opacity: 1; pointer-events: auto; }
 .message-time { white-space: nowrap; }
 .message-actions .copy-icon-button { width: 22px; height: 22px; }
@@ -291,9 +299,12 @@
 .file-diff-side-by-side-line.is-removed { color: #a83e38; background: #fff0ef; }
 
 @media (max-width: 560px) {
-  .thread-dialog-toolbar { gap: 6px; padding: 10px 8px; }
+  .thread-dialog-toolbar { gap: 6px; padding: 6px 8px; }
   .dialog-search { padding: 8px 10px; }
   .message-list { padding: 12px 10px 16px; }
+  .message-entry-user > .message { max-width: 95%; }
+  .turn-id-badge span { display: none; }
+  .insight-summary-scope { display: none; }
 }
 
 @media (hover: none) {

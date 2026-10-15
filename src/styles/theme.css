@@ -167,6 +167,8 @@
 :root[data-theme="dark"] .thread-load-older:hover:not(:disabled) { background: #1c3855; }
 :root[data-theme="dark"] .thread-history-error { color: #ff9191; }
 :root[data-theme="dark"] .message { border-color: #2c3948; color: #d9e2ec; background: #18212c; }
+:root[data-theme="dark"] .message-entry-assistant > .message { border-color: transparent; background: transparent; }
+:root[data-theme="dark"] .thread-toolbar-action[aria-expanded="true"] { color: #98c9ff; background: #183653; }
 :root[data-theme="dark"] .message-markdown blockquote { border-left-color: #526274; color: #b4c0ce; background: #151d27; }
 :root[data-theme="dark"] .message-markdown a { color: #79b8ff; text-decoration-color: rgba(121, 184, 255, .42); }
 :root[data-theme="dark"] .message-markdown code { color: #d8e2ee; background: #273341; }
@@ -197,6 +199,8 @@
 :root[data-theme="dark"] .message mark { color: #fff2c2; background: #5a4516; }
 :root[data-theme="dark"] .message.is-search-match { border-color: #74602b; }
 :root[data-theme="dark"] .message.is-active-search-match { border-color: #4096ff; box-shadow: 0 0 0 3px rgba(64, 150, 255, .18); }
+:root[data-theme="dark"] .message-entry-assistant > .message.is-search-match { border-color: #74602b; }
+:root[data-theme="dark"] .message-entry-assistant > .message.is-active-search-match { border-color: #4096ff; }
 :root[data-theme="dark"] .message-user { border-color: #245a96; background: #122b47; }
 :root[data-theme="dark"] .message-image-frame { border-color: #3a4758; background: #111820; }
 :root[data-theme="dark"] .message-activity-disclosure { background: transparent; }

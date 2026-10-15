@@ -333,6 +333,9 @@
                   </div>
                 </div>
                 <div class="thread-dialog-actions">
+                  <button id="thread-search-toggle" class="thread-toolbar-action" type="button" aria-expanded="false" aria-controls="dialog-search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+                  </button>
                   <button id="thread-refresh" class="icon-button refresh-icon-button" type="button"></button>
                   <button id="thread-export" class="thread-toolbar-action thread-export-button" type="button">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"></path></svg>
@@ -341,7 +344,7 @@
               </header>
               <section class="dialog-content">
                 <section class="dialog-messages-pane" aria-label="聊天消息">
-                  <div class="dialog-search" role="search">
+                  <div id="dialog-search" class="dialog-search" role="search" hidden>
                     <label class="visually-hidden" for="dialog-search-input" data-i18n="searchThreadMessages">搜索当前会话</label>
                     <input id="dialog-search-input" type="search" autocomplete="off" placeholder="搜索当前会话内容" data-i18n-placeholder="searchThreadMessagesPlaceholder" />
                     <span id="dialog-search-result" class="dialog-search-result" aria-live="polite"></span>

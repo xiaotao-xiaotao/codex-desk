@@ -174,6 +174,8 @@ export function createThreadDialogView({
   const dialogCloseButton = document.querySelector("#dialog-close");
   const searchInput = document.querySelector("#dialog-search-input");
   const searchResult = document.querySelector("#dialog-search-result");
+  const searchBar = document.querySelector("#dialog-search");
+  const searchToggle = document.querySelector("#thread-search-toggle");
   const exportButton = document.querySelector("#thread-export");
   const copyIdButton = document.querySelector("#thread-copy-id");
   const refreshButton = document.querySelector("#thread-refresh");
@@ -204,6 +206,19 @@ export function createThreadDialogView({
     },
   });
 
+  function setSearchOpen(open, focus = false) {
+    searchBar.hidden = !open;
+    searchToggle.setAttribute("aria-expanded", String(open));
+    if (open && focus) searchInput.focus();
+    if (!open && searchInput.value) {
+      // 收起时清除高亮，同时保留当前阅读位置，不让搜索状态影响后续浏览。
+      const scrollTop = messageList.scrollTop;
+      searchInput.value = "";
+      searchInput.dispatchEvent(new Event("input"));
+      messageList.scrollTop = scrollTop;
+    }
+  }
+
   function showStatus(message, error = false) {
     if (error) statusOverlay.showError(message);
     else statusOverlay.show(message);
@@ -218,10 +233,13 @@ export function createThreadDialogView({
   }
 
   function renderActions() {
+    searchToggle.title = `${t("searchThreadMessages")} (Ctrl/Cmd+F)`;
+    searchToggle.ariaLabel = t("searchThreadMessages");
     exportButton.title = exportButton.ariaLabel = t("threadExport");
     renderCopyIdButton();
     renderRefreshIconButton(refreshButton, { label: t("threadRefresh") });
     const disabled = !currentDetail;
+    searchToggle.disabled = disabled;
     exportButton.disabled = disabled;
     copyIdButton.disabled = disabled;
     refreshButton.disabled = disabled;
@@ -491,6 +509,7 @@ export function createThreadDialogView({
     loadingFullOverview = false;
     setRefreshIconButtonLoading(refreshButton, false);
     messageSearch.reset();
+    setSearchOpen(false);
     setDialogTitle(thread.title, thread.updatedAt);
     messageList.replaceChildren();
     insightsView.clear();
@@ -622,16 +641,25 @@ export function createThreadDialogView({
     }
   });
   threadDialog.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      setSearchOpen(true, true);
+      return;
+    }
     if (event.key !== "Escape" || event.repeat || document.querySelector("dialog[open]")) return;
     event.preventDefault();
     if (imagePreviewView.isOpen() || imagePreviewView.handlingEscape()) {
       if (imagePreviewView.isOpen()) imagePreviewView.close();
     } else if (fileDiffView.isOpen()) {
       fileDiffView.close();
+    } else if (!searchBar.hidden) {
+      setSearchOpen(false);
+      searchToggle.focus();
     } else {
       close();
     }
   });
+  searchToggle.addEventListener("click", () => setSearchOpen(searchBar.hidden, searchBar.hidden));
   renderActions();
   // 多语言摘要在窄窗口可能换行，浮层始终从真实工具栏底部开始。
   const toolbarObserver = new ResizeObserver(([entry]) => {
