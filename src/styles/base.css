@@ -157,5 +157,8 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .sidebar-utilities #settings-button > svg { display: none; }
 .is-sidebar-collapsed .sidebar-bottom { width: 100%; }
 .is-sidebar-collapsed .sidebar-utilities { flex-direction: column; padding: 0; }
-.is-sidebar-collapsed .sidebar-utilities #settings-button { flex: 0 0 auto; width: 100%; justify-content: center; }
+.is-sidebar-collapsed .sidebar-utilities #theme-button,
+.is-sidebar-collapsed .sidebar-utilities #settings-button { flex: 0 0 32px; width: 32px; height: 32px; min-height: 32px; padding: 6px; justify-content: center; }
+.sidebar-utilities #theme-button > svg,
+.sidebar-utilities #settings-button > svg { width: 16px; height: 16px; }
 .is-sidebar-collapsed .sidebar-utilities #settings-button > svg { display: block; }
