@@ -698,7 +698,7 @@ mod tests {
                     "@echo off\r\nif \"%1\"==\"--version\" (\r\n echo codex-cli 0.160.1\r\n exit /b 0\r\n)\r\nif \"%3\"==\"{fail}\" exit /b 1\r\nexit /b 0\r\n"
                 )).unwrap();
                 let server = crate::app_server::AppServerState::default();
-                server.configure_cli_path(Some(executable)).await;
+                server.configure_cli_path(Some(executable), &crate::app_server::ProxySettings::default(), false).await.unwrap();
                 let result = server.apply_auth_change(store.clone(), target, true).await;
                 if fail == "stop" {
                     assert!(result.is_err());
@@ -720,8 +720,8 @@ mod tests {
             write_json(&store.home.join("auth.json"), &auth("b", "refresh-b")).unwrap();
             let server = crate::app_server::AppServerState::default();
             server
-                .configure_cli_path(Some(dir.path().join("does-not-exist.exe")))
-                .await;
+                .configure_cli_path(Some(dir.path().join("does-not-exist.exe")), &crate::app_server::ProxySettings::default(), false)
+                .await.unwrap();
             assert_eq!(
                 server
                     .apply_auth_change(store.clone(), target, false)

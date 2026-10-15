@@ -85,7 +85,7 @@
                 <span data-i18n="configTitle">Codex 配置</span>
               </button>
               <button id="nav-about" class="dashboard-nav-button" data-dashboard-section="about" type="button" role="tab" aria-selected="false" aria-controls="about-section" tabindex="-1">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.2 5.1 3.9 7.8 9 9-5.1 1.2-7.8 3.9-9 9-1.2-5.1-3.9-7.8-9-9 5.1-1.2 7.8-3.9 9-9Z"/></svg>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>
                 <span data-i18n="settingsAboutTab">关于</span>
               </button>
             </nav>
@@ -96,7 +96,7 @@
               <span id="theme-label"></span>
             </button>
             <button id="settings-button" class="dashboard-nav-button sidebar-utility-button" type="button" title="设置" aria-label="打开设置">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-3v-.09a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7 14.7a1.7 1.7 0 0 0-1.55-1.03H5v-3h.45A1.7 1.7 0 0 0 7 9.64a1.7 1.7 0 0 0-.34-1.88L6.6 7.7l2.12-2.12.06.06A1.7 1.7 0 0 0 10.66 6a1.7 1.7 0 0 0 1.03-1.55V4h3v.45A1.7 1.7 0 0 0 15.72 6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v3h-.07A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3-.6 2.3-2 .9-2.2-.7-2.5 4.3 1.7 1.6v2.3l-1.7 1.6 2.5 4.3 2.2-.7 2 .9.6 2.2h5l.6-2.2 2-.9 2.2.7 2.5-4.3-1.7-1.6v-2.3l1.7-1.6-2.5-4.3-2.2.7-2-.9L14.5 3Z"/><circle cx="12" cy="12" r="3"/></svg>
               <span data-i18n="settingsTitle">设置</span>
             </button>
               </div>
@@ -414,6 +414,26 @@
                 <option value="300">5 分钟</option>
                 <option value="600">10 分钟</option>
               </select>
+            </section>
+          </section>
+          <section id="settings-panel-proxy" class="settings-panel" data-settings-category="proxy" data-settings-label="settingsProxyTitle" role="tabpanel" hidden>
+            <section class="settings-group settings-proxy-group" aria-labelledby="settings-proxy-title">
+              <span id="settings-proxy-title" class="settings-group-label" data-settings-layout-i18n="settingsProxyTitle">网络代理</span>
+              <div class="settings-proxy-modes" role="radiogroup" aria-labelledby="settings-proxy-title">
+                <label><input type="radio" name="proxyMode" value="off" /><span data-settings-layout-i18n="settingsProxyOff">关闭</span></label>
+                <label><input type="radio" name="proxyMode" value="system" checked /><span data-settings-layout-i18n="settingsProxyToggle">系统代理</span></label>
+                <label><input type="radio" name="proxyMode" value="custom" /><span data-settings-layout-i18n="settingsProxyCustom">自定义代理</span></label>
+              </div>
+              <div id="settings-proxy-address" class="settings-proxy-address" hidden>
+                <label for="settings-proxy-url" data-settings-layout-i18n="settingsProxyAddress">代理地址</label>
+                <input id="settings-proxy-url" type="url" autocomplete="off" spellcheck="false" placeholder="http://host:port" aria-describedby="settings-proxy-address-hint settings-proxy-error" />
+                <p id="settings-proxy-address-hint" class="settings-hint" data-settings-layout-i18n="settingsProxyAddressHint">支持 HTTP / HTTPS，填写主机与端口即可。</p>
+                <p id="settings-proxy-error" class="settings-proxy-error" role="status" hidden></p>
+              </div>
+              <div class="settings-proxy-restart">
+                <label class="settings-proxy-option"><input id="settings-restart-service" type="checkbox" aria-describedby="settings-proxy-restart-hint" /><span data-settings-layout-i18n="settingsProxyRestart">保存时重启 Codex 服务</span></label>
+                <p id="settings-proxy-restart-hint" class="settings-hint" data-settings-layout-i18n="settingsProxyRestartHint">勾选后立即应用，会中断共享服务的任务；否则下次服务启动时生效。</p>
+              </div>
             </section>
           </section>
           <section id="settings-panel-alerts" class="settings-panel" data-settings-category="alerts" data-settings-label="settingsAlertsTab" role="tabpanel" hidden>

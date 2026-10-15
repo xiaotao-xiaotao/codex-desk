@@ -76,6 +76,9 @@ function normalizeSettings(value) {
   const refreshIntervalSeconds = Number(value?.refreshIntervalSeconds);
   return {
     hideEmails: value?.hideEmails === true,
+    // 未配置有效代理模式时默认使用系统代理。
+    proxyMode: ["off", "system", "custom"].includes(value?.proxyMode) ? value.proxyMode : "system",
+    proxyUrl: typeof value?.proxyUrl === "string" ? value.proxyUrl.trim() : "",
     cliPath: typeof value?.cliPath === "string" ? value.cliPath.trim() : "",
     refreshIntervalSeconds: REFRESH_INTERVAL_OPTIONS.has(refreshIntervalSeconds)
       ? refreshIntervalSeconds
@@ -103,13 +106,17 @@ export function createSettingsController({ invoke, onSettingsChanged }) {
   let settings = normalizeSettings(readStoredJson(SETTINGS_STORAGE_KEY, {}));
 
   async function initialize() {
-    if (!settings.cliPath) return null;
-    return invoke("configure_cli_path", { cliPath: settings.cliPath });
+    return invoke("configure_cli_path", { cliPath: settings.cliPath, proxyMode: settings.proxyMode, proxyUrl: settings.proxyUrl });
   }
 
   async function save(nextSettings) {
     const normalized = normalizeSettings(nextSettings);
-    const cliVersion = await invoke("configure_cli_path", { cliPath: normalized.cliPath });
+    const cliVersion = await invoke("configure_cli_path", {
+      cliPath: normalized.cliPath,
+      proxyMode: normalized.proxyMode,
+      proxyUrl: normalized.proxyUrl,
+      restartService: nextSettings.restartService === true,
+    });
     settings = normalized;
     writeStoredValue(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     onSettingsChanged?.(cloneSettings(settings));

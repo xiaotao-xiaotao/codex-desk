@@ -190,10 +190,14 @@ async fn switch_saved_account(
 async fn configure_cli_path(
     state: State<'_, app_server::AppServerState>,
     cli_path: String,
+    proxy_mode: Option<String>,
+    proxy_url: Option<String>,
+    restart_service: Option<bool>,
 ) -> Result<String, String> {
     let cli_path = app_server::normalize_cli_path(&cli_path)?;
     let version = app_server::read_cli_version_from(cli_path.as_deref()).await?;
-    state.configure_cli_path(cli_path).await;
+    let proxy_settings = app_server::ProxySettings::new(proxy_mode.as_deref().unwrap_or("off"), proxy_url.as_deref().unwrap_or(""))?;
+    state.configure_cli_path(cli_path, &proxy_settings, restart_service.unwrap_or(false)).await?;
     Ok(version)
 }
 
@@ -578,16 +582,7 @@ fn main() {
                 }
             }
             tray::show_main_window(app.handle());
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(error) = app_handle
-                    .state::<app_server::AppServerState>()
-                    .warm_up()
-                    .await
-                {
-                    eprintln!("Codex app-server 预热失败，将在读取数据时重试：{error}");
-                }
-            });
+            // 前端恢复 CLI 与代理偏好后再按需连接，避免预热以默认网络设置抢先启动服务。
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

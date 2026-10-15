@@ -45,7 +45,7 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
       profile = result;
     } catch {
       if (version !== requestVersion) return;
-      profile = null;
+      // 短暂失败保留上次成功的显示，但不使用过期身份发送账户额度提醒。
       readFailed = true;
     } finally {
       if (version === requestVersion) { loading = false; render(); }
@@ -79,7 +79,7 @@ export function createAccountOverviewView({ t, invoke, getHideEmails = () => fal
 
   return {
     refresh,
-    getAccountScope: () => profile?.email ?? "unknown",
+    getAccountScope: () => readFailed ? "unknown" : profile?.email ?? "unknown",
     invalidate: () => { ++requestVersion; loading = false; readFailed = false; profile = null; error = null; render(); },
     updateLanguage: render,
   };

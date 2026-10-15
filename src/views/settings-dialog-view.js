@@ -26,6 +26,11 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   // 与样式中的窄窗口断点保持一致，键盘方向和无障碍声明随布局切换。
   const compactLayout = window.matchMedia("(max-width: 600px)");
   const cliPathInput = document.querySelector("#settings-cli-path");
+  const proxyModes = [...document.querySelectorAll('input[name="proxyMode"]')];
+  const proxyUrl = document.querySelector("#settings-proxy-url");
+  const proxyAddress = document.querySelector("#settings-proxy-address");
+  const proxyError = document.querySelector("#settings-proxy-error");
+  const restartService = document.querySelector("#settings-restart-service");
   const browseButton = document.querySelector("#settings-cli-browse");
   const resetButton = document.querySelector("#settings-cli-reset");
   const refreshInterval = document.querySelector("#settings-refresh-interval");
@@ -50,6 +55,27 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   let saving = false;
   let activeTab = tabs[0]?.dataset.settingsTab;
   const disabledStates = new Map();
+
+  function selectedProxyMode() {
+    return proxyModes.find((input) => input.checked)?.value ?? "system";
+  }
+
+  function validProxyAddress() {
+    try {
+      const url = new URL(proxyUrl.value.trim());
+      return ["http:", "https:"].includes(url.protocol) && Boolean(url.hostname)
+        && !url.username && !url.password && (!url.pathname || url.pathname === "/")
+        && !url.search && !url.hash;
+    } catch { return false; }
+  }
+
+  function renderProxyMode() {
+    const mode = selectedProxyMode();
+    proxyAddress.hidden = mode !== "custom";
+    proxyUrl.disabled = mode !== "custom" || saving;
+    proxyError.hidden = true;
+    proxyUrl.removeAttribute("aria-invalid");
+  }
 
   function selectTab(name, focus = false) {
     const selected = tabs.find((tab) => tab.dataset.settingsTab === name);
@@ -161,6 +187,10 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   function fillForm() {
     const settings = getSettings();
     cliPathInput.value = settings.cliPath;
+    proxyModes.forEach((input) => { input.checked = input.value === settings.proxyMode; });
+    proxyUrl.value = settings.proxyUrl;
+    renderProxyMode();
+    restartService.checked = false;
     refreshInterval.value = String(settings.refreshIntervalSeconds);
     emailVisibilityOptions.forEach((input) => { input.checked = input.value === (settings.hideEmails ? "hide" : "show"); });
     thresholdInputs.forEach((input, index) => {
@@ -237,6 +267,7 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     saveButton.textContent = t("settingsSave");
     renderIntervalOptions();
     renderReadingOptions();
+    renderProxyMode();
   }
 
   browseButton.addEventListener("click", async () => {
@@ -248,6 +279,11 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     }
   });
   openButton.addEventListener("click", open);
+  proxyModes.forEach((input) => input.addEventListener("change", renderProxyMode));
+  proxyUrl.addEventListener("input", () => {
+    proxyError.hidden = true;
+    proxyUrl.removeAttribute("aria-invalid");
+  });
   resetButton.addEventListener("click", () => {
     cliPathInput.value = "";
     cliPathInput.focus();
@@ -270,6 +306,13 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (saving) return;
+    if (selectedProxyMode() === "custom" && !validProxyAddress()) {
+      proxyError.textContent = t("settingsProxyInvalid");
+      proxyError.hidden = false;
+      proxyUrl.setAttribute("aria-invalid", "true");
+      focusField(proxyUrl);
+      return;
+    }
     const quotaAlertThresholds = readQuotaAlertThresholds();
     if (!quotaAlertThresholds) {
       showStatus(t("settingsQuotaAlertThresholdInvalid"), true);
@@ -282,6 +325,9 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
       const version = await onSave({
         hideEmails: emailVisibilityOptions.some((input) => input.checked && input.value === "hide"),
         cliPath: cliPathInput.value,
+        proxyMode: selectedProxyMode(),
+        proxyUrl: proxyUrl.value.trim(),
+        restartService: restartService.checked,
         refreshIntervalSeconds: Number(refreshInterval.value),
         quotaAlertThresholds,
         ...Object.fromEntries(readingControls.map(({ field, select }) => [field, select.value])),

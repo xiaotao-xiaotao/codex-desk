@@ -691,6 +691,64 @@ const SETTINGS_LAYOUT_TRANSLATIONS = {
   ko: { settingsLayoutIntro: "이 기기의 설정을 변경한 후 저장하면 적용됩니다.", settingsStorageHint: "이 기기의 설정 저장 위치: {path}", settingsStorageLoading: "설정 저장 위치를 읽는 중…", settingsStorageReadFailed: "설정 저장 위치를 읽을 수 없습니다", settingsCategoryLabel: "설정 분류", settingsConnectionTab: "연결 및 새로 고침", settingsAlertsTab: "알림 및 개인정보", settingsReadingTab: "읽기 설정", settingsPreviewLabel: "실시간 미리보기" },
 };
 
+const PROXY_SETTINGS_TRANSLATIONS = {
+  "zh-CN": {
+    "settingsProxyTitle": "网络代理",
+    "settingsProxyOff": "关闭",
+    "settingsProxyToggle": "系统代理",
+    "settingsProxyCustom": "自定义代理",
+    "settingsProxyAddress": "代理地址",
+    "settingsProxyAddressHint": "支持 HTTP / HTTPS，不填写账号密码或路径。",
+    "settingsProxyInvalid": "请输入有效的 HTTP/HTTPS 代理地址，仅包含主机与端口。",
+    "settingsProxyRestart": "保存时重启 Codex 服务",
+    "settingsProxyRestartHint": "立即生效，会中断共享任务。"
+  },
+  "zh-TW": {
+    "settingsProxyTitle": "網路代理",
+    "settingsProxyOff": "關閉",
+    "settingsProxyToggle": "系統代理",
+    "settingsProxyCustom": "自訂代理",
+    "settingsProxyAddress": "代理位址",
+    "settingsProxyAddressHint": "支援 HTTP / HTTPS，請勿填寫帳號密碼或路徑。",
+    "settingsProxyInvalid": "請輸入有效的 HTTP/HTTPS 代理位址，僅包含主機與連接埠。",
+    "settingsProxyRestart": "儲存時重新啟動 Codex 服務",
+    "settingsProxyRestartHint": "立即生效，會中斷共用工作。"
+  },
+  "en": {
+    "settingsProxyTitle": "Network proxy",
+    "settingsProxyOff": "Off",
+    "settingsProxyToggle": "System proxy",
+    "settingsProxyCustom": "Custom proxy",
+    "settingsProxyAddress": "Proxy address",
+    "settingsProxyAddressHint": "HTTP / HTTPS only. Do not include credentials or a path.",
+    "settingsProxyInvalid": "Enter a valid HTTP/HTTPS proxy URL with a host and optional port.",
+    "settingsProxyRestart": "Restart Codex service when saving",
+    "settingsProxyRestartHint": "Applies now; interrupts shared tasks."
+  },
+  "ja": {
+    "settingsProxyTitle": "ネットワークプロキシ",
+    "settingsProxyOff": "オフ",
+    "settingsProxyToggle": "システム",
+    "settingsProxyCustom": "カスタム",
+    "settingsProxyAddress": "プロキシアドレス",
+    "settingsProxyAddressHint": "HTTP / HTTPS 対応。認証情報やパスは含めないでください。",
+    "settingsProxyInvalid": "ホストとポートを含む有効な HTTP/HTTPS アドレスを入力してください。",
+    "settingsProxyRestart": "保存時に Codex サービスを再起動",
+    "settingsProxyRestartHint": "すぐに反映し、共有タスクを中断します。"
+  },
+  "ko": {
+    "settingsProxyTitle": "네트워크 프록시",
+    "settingsProxyOff": "꺼짐",
+    "settingsProxyToggle": "시스템",
+    "settingsProxyCustom": "사용자 지정",
+    "settingsProxyAddress": "프록시 주소",
+    "settingsProxyAddressHint": "HTTP / HTTPS 지원. 인증 정보나 경로는 넣지 마세요.",
+    "settingsProxyInvalid": "호스트와 포트를 포함한 유효한 HTTP/HTTPS 주소를 입력하세요.",
+    "settingsProxyRestart": "저장할 때 Codex 서비스 재시작",
+    "settingsProxyRestartHint": "즉시 적용하며 공유 작업이 중단됩니다."
+  }
+};
+
 const ABOUT_TRANSLATIONS = {
   "zh-CN": { settingsAboutTab: "关于", settingsAboutDescription: "在桌面掌握账户额度与本地会话。", settingsAboutVersion: "当前版本" },
   "zh-TW": { settingsAboutTab: "關於", settingsAboutDescription: "在桌面掌握帳戶額度與本機對話。", settingsAboutVersion: "目前版本" },
@@ -703,6 +761,7 @@ const ABOUT_TRANSLATIONS = {
 const TRANSLATION_SOURCES = [
   CODEX_CONFIG_TRANSLATIONS,
   SETTINGS_LAYOUT_TRANSLATIONS,
+  PROXY_SETTINGS_TRANSLATIONS,
   ABOUT_TRANSLATIONS,
   ACCOUNT_SWITCH_TRANSLATIONS,
   NAVIGATION_TRANSLATIONS,

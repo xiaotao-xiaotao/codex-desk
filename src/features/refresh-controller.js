@@ -32,10 +32,11 @@ export function createRefreshController({
   // 温和增加重试间隔；上限不能短于用户选择的正常刷新间隔。
   const MAX_AUTO_REFRESH_BACKOFF_MS = 5 * 60 * 1_000;
   const AUTO_REFRESH_RETRY_MULTIPLIERS = [1, 1.5, 2, 3, 5];
-  // Token 账号汇总优先占用 App Server；趋势缓存已可即时展示，后台更新下一任务再启动。
-  const BACKGROUND_INSIGHTS_START_DELAY_MS = 0;
+  // 历史统计变化较慢，不必随每次额度轮询重复扫描；手动刷新仍可立即更新。
+  const BACKGROUND_INSIGHTS_INTERVAL_MS = 5 * 60 * 1_000;
   // 启动时 CLI 的认证与 app-server 可能仍在初始化，先快速重连，避免瞬时失败直接占满页面。
   const INITIAL_QUOTA_RETRY_DELAYS_MS = [500, 1_500];
+  const TRANSIENT_QUOTA_RETRY_DELAY_MS = 1_500;
   let latestQuota = null;
   let latestQuotaSyncedAt = null;
   let refreshing = false;
@@ -50,6 +51,8 @@ export function createRefreshController({
   let accountChangePaused = false;
   let accountVersion = 0;
   let refreshFinished = null;
+  let backgroundRefreshRunning = false;
+  let nextBackgroundRefreshAt = 0;
 
   function currentUtcDay() {
     return new Date().toISOString().slice(0, 10);
@@ -111,14 +114,18 @@ export function createRefreshController({
   }
 
   async function readQuotaWithStartupRetry() {
-    const retryDelays = initialQuotaRead ? INITIAL_QUOTA_RETRY_DELAYS_MS : [];
+    const startup = initialQuotaRead;
+    const retryDelays = startup ? INITIAL_QUOTA_RETRY_DELAYS_MS : [TRANSIENT_QUOTA_RETRY_DELAY_MS];
     initialQuotaRead = false;
     for (let attempt = 0; ; attempt += 1) {
       try {
         return await invoke("read_quota");
       } catch (error) {
-        if (attempt >= retryDelays.length) throw error;
+        // 常规轮询只缓冲明确的网络发送失败；认证、限流与慢响应仍交给原有退避处理。
+        const transientNetworkFailure = String(error).includes("failed to fetch codex rate limits: error sending request");
+        if (attempt >= retryDelays.length || (!startup && !transientNetworkFailure) || accountChangePaused) throw error;
         await wait(retryDelays[attempt]);
+        if (accountChangePaused) throw error;
       }
     }
   }
@@ -130,6 +137,7 @@ export function createRefreshController({
     countdown.className = "status-refresh-countdown";
     countdown.textContent = String(seconds);
     if (consecutiveRefreshFailures > 0) {
+      statusElement.title = latestRefreshError;
       onRetryStatusChange?.({
         error: latestRefreshError,
         seconds,
@@ -145,6 +153,7 @@ export function createRefreshController({
     }
 
     onRetryStatusChange?.(null);
+    statusElement.removeAttribute("title");
 
     if (!latestQuota) return;
 
@@ -214,7 +223,11 @@ export function createRefreshController({
     setStatus(t("readingLocalData"));
     try {
       // 提醒使用本轮运行中账户的归属，不能沿用切换前的邮箱。
-      const [result] = await Promise.all([readQuotaWithStartupRetry(), refreshAccount()]);
+      // 账户摘要读取失败不能否定已成功获取的额度；等待其完成后再判断提醒归属。
+      const [quotaResult, accountResult] = await Promise.allSettled([readQuotaWithStartupRetry(), refreshAccount()]);
+      if (quotaResult.status === "rejected") throw quotaResult.reason;
+      if (accountResult.status === "rejected") console.warn("账户摘要刷新失败", accountResult.reason);
+      const result = quotaResult.value;
       if (version !== accountVersion) return;
       latestQuota = result;
       // 仅成功读取额度时更新，失败重试保留上次成功时间，避免误导数据新鲜度。
@@ -224,17 +237,31 @@ export function createRefreshController({
       scheduleNextAutoRefresh(getAutoRefreshIntervalMs());
       onAvailabilityChange(true);
       quotaView.render(latestQuota);
-      await quotaAlerts.notify(latestQuota);
+      // 提醒与历史数据属于辅助任务，错误单独记录，不计入额度重试次数。
+      try {
+        if (accountResult.status === "fulfilled") await quotaAlerts.notify(latestQuota);
+      } catch (error) {
+        console.warn("额度提醒失败", error);
+      }
       if (version !== accountVersion) return;
       if (getExpanded()) {
-        if (getSessionsExpanded()) await refreshThreadList(forceTrendRefresh);
-        // 先提交 Token 请求，使 App Server 的交互优先级在趋势批量读取前生效。
-        void refreshTokenUsage();
-        void refreshTopics(forceTrendRefresh);
-        window.setTimeout(
-          () => void refreshThreadTrends(forceTrendRefresh),
-          BACKGROUND_INSIGHTS_START_DELAY_MS,
-        );
+        if (getSessionsExpanded()) {
+          try { await refreshThreadList(forceTrendRefresh); }
+          catch (error) { console.warn("历史列表刷新失败", error); }
+        }
+        if (!backgroundRefreshRunning && (forceTrendRefresh || Date.now() >= nextBackgroundRefreshAt)) {
+          backgroundRefreshRunning = true;
+          nextBackgroundRefreshAt = Date.now() + BACKGROUND_INSIGHTS_INTERVAL_MS;
+          void Promise.allSettled([
+            Promise.resolve().then(() => refreshTokenUsage()),
+            Promise.resolve().then(() => refreshTopics(forceTrendRefresh)),
+            Promise.resolve().then(() => refreshThreadTrends(forceTrendRefresh)),
+          ]).then((results) => {
+            results.forEach((result) => {
+              if (result.status === "rejected") console.warn("后台统计刷新失败", result.reason);
+            });
+          }).finally(() => { backgroundRefreshRunning = false; });
+        }
       }
     } catch (error) {
       if (version !== accountVersion) return;
@@ -262,12 +289,14 @@ export function createRefreshController({
     pauseForAccountChange: async () => {
       accountChangePaused = true;
       ++accountVersion;
+      ++trendRequestVersion;
       ++tokenUsageRequestVersion;
       // 等待旧刷新退出，防止 finally 与新账户刷新争用同一个状态。
       if (refreshFinished) await refreshFinished;
     },
     resumeAfterAccountChange: (changed) => {
       if (changed) {
+        nextBackgroundRefreshAt = 0;
         latestQuota = null; latestQuotaSyncedAt = null;
         tokenUsageCache = null;
         writeStoredValue(TOKEN_USAGE_CACHE_KEY, "null");

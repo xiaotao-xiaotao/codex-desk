@@ -4,7 +4,10 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
     process::Stdio,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        RwLock as StdRwLock,
+    },
 };
 use tokio::{
     io::{AsyncRead, AsyncWrite},
@@ -32,6 +35,44 @@ struct CodexAppServer {
     socket: ProxySocket,
 }
 
+/// 网络路由属于 Desk 启动的 CLI 子进程，不修改操作系统或用户全局配置。
+#[derive(Clone, Default)]
+pub struct ProxySettings {
+    use_system_proxy: bool,
+    custom_url: Option<String>,
+}
+
+impl ProxySettings {
+    pub fn new(mode: &str, address: &str) -> Result<Self, String> {
+        match mode {
+            "off" => Ok(Self::default()),
+            "system" => Ok(Self {
+                use_system_proxy: true,
+                custom_url: None,
+            }),
+            "custom" => {
+                let url = tauri::Url::parse(address.trim())
+                    .map_err(|_| "请输入完整的 HTTP 或 HTTPS 代理地址".to_owned())?;
+                if !matches!(url.scheme(), "http" | "https")
+                    || url.host_str().is_none()
+                    || !url.username().is_empty()
+                    || url.password().is_some()
+                    || !matches!(url.path(), "" | "/")
+                    || url.query().is_some()
+                    || url.fragment().is_some()
+                {
+                    return Err("代理地址仅支持 HTTP/HTTPS 主机与端口，不支持账号密码或路径".into());
+                }
+                Ok(Self {
+                    use_system_proxy: false,
+                    custom_url: Some(url.to_string()),
+                })
+            }
+            _ => Err("无效的代理模式".into()),
+        }
+    }
+}
+
 /// 账户、会话交互和后台统计分别使用一条连接，避免后台读取阻塞首页刷新。
 /// 每条连接内按 ID 收集响应；三条连接共享同一个本机 daemon。
 pub struct AppServerState {
@@ -43,6 +84,8 @@ pub struct AppServerState {
     /// 多条连接首次启动或重连时，串行执行 daemon start，避免同时安装/启动。
     daemon_start: Mutex<()>,
     next_request_id: AtomicU64,
+    /// 用户显式启用后才读取系统代理；生命周期写锁保护配置变更。
+    proxy_settings: StdRwLock<ProxySettings>,
 }
 
 impl Default for AppServerState {
@@ -54,11 +97,19 @@ impl Default for AppServerState {
             cli_path: RwLock::new(None),
             daemon_start: Mutex::new(()),
             next_request_id: AtomicU64::new(2),
+            proxy_settings: StdRwLock::new(ProxySettings::default()),
         }
     }
 }
 
 impl AppServerState {
+    fn proxy_settings(&self) -> ProxySettings {
+        self.proxy_settings
+            .read()
+            .expect("代理配置锁不可用")
+            .clone()
+    }
+
     /// 登录独立于共享 daemon，临时目录避免授权覆盖用户正在使用的凭据。
     pub async fn login_process(&self, home: &Path) -> Result<Child, String> {
         let cli_path = self.cli_path.read().await;
@@ -71,14 +122,12 @@ impl AppServerState {
                 "-c",
                 "cli_auth_credentials_store=\"file\"",
                 "-c",
-                // 独立登录目录不继承用户配置；认证请求应沿用浏览器使用的系统代理。
-                "features.respect_system_proxy=true",
-                "-c",
                 "analytics.enabled=false",
                 "-c",
                 "otel.exporter=\"none\"",
             ],
         );
+        apply_proxy_settings(&mut command, &self.proxy_settings());
         command.env("CODEX_HOME", home).current_dir(home);
         for key in [
             "OPENAI_API_KEY",
@@ -194,7 +243,7 @@ impl AppServerState {
         if connection.is_none() {
             {
                 let _start_guard = self.daemon_start.lock().await;
-                start_daemon(cli_path).await?;
+                start_daemon(cli_path, &self.proxy_settings()).await?;
             }
             *connection = Some(CodexAppServer::connect(cli_path).await?);
         }
@@ -209,20 +258,31 @@ impl AppServerState {
         params: Value,
         response_timeout: Duration,
     ) -> Result<Value, String> {
-        self.ensure_connection(connection, cli_path).await?;
-        let id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
-        let result = connection
-            .as_mut()
-            .expect("已建立 daemon 连接")
-            .request(id, method, params, response_timeout)
-            .await;
-        // 业务错误（例如会话不存在）不破坏连接；超时或传输错误才触发下次重连。
-        if matches!(&result, Err(RpcError::Transport(_))) {
-            if let Some(server) = connection.take() {
-                server.close().await;
+        for attempt in 0..=1 {
+            self.ensure_connection(connection, cli_path).await?;
+            let id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
+            let result = connection
+                .as_mut()
+                .expect("已建立 daemon 连接")
+                .request(id, method, params.clone(), response_timeout)
+                .await;
+            let reconnect = attempt == 0
+                && result
+                    .as_ref()
+                    .err()
+                    .is_some_and(|error| should_reconnect_read(method, error));
+            // 失活连接及时回收；只读账户请求允许重连一次，写操作和慢响应不自动重放。
+            if matches!(&result, Err(RpcError::Transport(_) | RpcError::Timeout(_))) {
+                if let Some(server) = connection.take() {
+                    server.close().await;
+                }
             }
+            if !reconnect {
+                return result.map_err(RpcError::into_message);
+            }
+            eprintln!("Codex Desk：{method} 连接失效，重新连接后读取一次");
         }
-        result.map_err(RpcError::into_message)
+        unreachable!("重连最多一次")
     }
 
     /// 只断开 Desk 的 WebSocket 并回收自己的 proxy，绝不停止共享 daemon。
@@ -231,11 +291,30 @@ impl AppServerState {
         self.close_connections().await;
     }
 
-    pub async fn configure_cli_path(&self, cli_path: Option<PathBuf>) {
+    pub async fn configure_cli_path(
+        &self,
+        cli_path: Option<PathBuf>,
+        proxy_settings: &ProxySettings,
+        restart_service: bool,
+    ) -> Result<(), String> {
         let mut configured = self.cli_path.write().await;
         self.close_connections().await;
-        // 切换可执行文件不重启 daemon，避免中断其他客户端正在进行的工作。
+        // 只有设置页显式勾选时才重启共享服务，不能在保存偏好时中断其他客户端。
+        if restart_service {
+            run_auth_daemon_command(configured.as_deref(), "stop", &self.proxy_settings()).await?;
+            if let Err(error) = start_daemon(cli_path.as_deref(), proxy_settings).await {
+                // 新配置启动失败时恢复原配置的服务，前端继续保留原先的设置。
+                let restored = start_daemon(configured.as_deref(), &self.proxy_settings()).await;
+                return Err(if restored.is_ok() {
+                    format!("新网络配置启动失败，已恢复原服务：{error}")
+                } else {
+                    format!("新网络配置启动失败，请手动启动 Codex 服务：{error}")
+                });
+            }
+        }
         *configured = cli_path;
+        *self.proxy_settings.write().expect("代理配置锁不可用") = proxy_settings.clone();
+        Ok(())
     }
 
     /// 切换持有生命周期写锁：等待所有在途 RPC 完成，再替换凭据。
@@ -255,7 +334,7 @@ impl AppServerState {
         }
         self.close_connections().await;
         if restart {
-            run_auth_daemon_command(cli_path.as_deref(), "stop")
+            run_auth_daemon_command(cli_path.as_deref(), "stop", &self.proxy_settings())
                 .await
                 .map_err(|_| "Codex 服务未能退出，登录信息未切换；请结束任务后重试")?;
         }
@@ -265,7 +344,7 @@ impl AppServerState {
         if let Err(error) = committed {
             if restart {
                 // 替换失败时尝试恢复原服务；不回滚可能已经轮换的凭据。
-                if run_auth_daemon_command(cli_path.as_deref(), "start")
+                if run_auth_daemon_command(cli_path.as_deref(), "start", &self.proxy_settings())
                     .await
                     .is_err()
                 {
@@ -278,15 +357,17 @@ impl AppServerState {
             return Ok("notRequested".into());
         }
         // 写入已经完成，启动失败属于部分成功，不能报告成凭据未切换。
-        Ok(if run_auth_daemon_command(cli_path.as_deref(), "start")
-            .await
-            .is_ok()
-        {
-            "restarted"
-        } else {
-            "startFailed"
-        }
-        .into())
+        Ok(
+            if run_auth_daemon_command(cli_path.as_deref(), "start", &self.proxy_settings())
+                .await
+                .is_ok()
+            {
+                "restarted"
+            } else {
+                "startFailed"
+            }
+            .into(),
+        )
     }
 
     async fn close_connections(&self) {
@@ -298,8 +379,13 @@ impl AppServerState {
     }
 }
 
-async fn run_auth_daemon_command(cli_path: Option<&Path>, operation: &str) -> Result<(), String> {
+async fn run_auth_daemon_command(
+    cli_path: Option<&Path>,
+    operation: &str,
+    proxy_settings: &ProxySettings,
+) -> Result<(), String> {
     let mut command = cli_command(cli_path, &["app-server", "daemon", operation]);
+    apply_proxy_settings(&mut command, proxy_settings);
     let status = timeout(
         DAEMON_START_TIMEOUT,
         command
@@ -319,9 +405,13 @@ async fn run_auth_daemon_command(cli_path: Option<&Path>, operation: &str) -> Re
 }
 
 /// daemon start 自身负责复用已运行的服务；不启用远程访问，也不更改用户配置。
-async fn start_daemon(cli_path: Option<&Path>) -> Result<(), String> {
+async fn start_daemon(
+    cli_path: Option<&Path>,
+    proxy_settings: &ProxySettings,
+) -> Result<(), String> {
     read_cli_version_from(cli_path).await?;
     let mut command = cli_command(cli_path, &["app-server", "daemon", "start"]);
+    apply_proxy_settings(&mut command, proxy_settings);
     let output = timeout(
         DAEMON_START_TIMEOUT,
         command.stdin(Stdio::null()).kill_on_drop(true).output(),
@@ -341,6 +431,29 @@ async fn start_daemon(cli_path: Option<&Path>) -> Result<(), String> {
         ));
     }
     Ok(())
+}
+
+fn apply_proxy_settings(command: &mut Command, settings: &ProxySettings) {
+    command.arg("-c").arg(format!(
+        "features.respect_system_proxy={}",
+        settings.use_system_proxy
+    ));
+    // 每种模式先清除继承路由，再仅为自定义模式注入经过校验的地址。
+    for key in [
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "ALL_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "all_proxy",
+        "NO_PROXY",
+        "no_proxy",
+    ] {
+        command.env_remove(key);
+    }
+    if let Some(url) = &settings.custom_url {
+        command.env("HTTP_PROXY", url).env("HTTPS_PROXY", url);
+    }
 }
 
 fn validate_cli_version(version: &str) -> Result<(), String> {
@@ -541,7 +654,7 @@ impl CodexAppServer {
         })
         .await
         .map_err(|_| {
-            RpcError::Transport(format!(
+            RpcError::Timeout(format!(
                 "Codex daemon 在 {} 秒内未响应",
                 response_timeout.as_secs()
             ))
@@ -624,14 +737,20 @@ pub(crate) async fn close_proxy(mut child: Child) {
 enum RpcError {
     Remote(String),
     Transport(String),
+    Timeout(String),
 }
 
 impl RpcError {
     fn into_message(self) -> String {
         match self {
-            Self::Remote(message) | Self::Transport(message) => message,
+            Self::Remote(message) | Self::Transport(message) | Self::Timeout(message) => message,
         }
     }
+}
+
+fn should_reconnect_read(method: &str, error: &RpcError) -> bool {
+    matches!(method, "account/read" | "account/rateLimits/read")
+        && matches!(error, RpcError::Transport(_))
 }
 
 fn response_result(message: &Value) -> Result<Value, RpcError> {
@@ -707,7 +826,7 @@ where
         responses[index] = Some(match response_result(&message) {
             Ok(value) => Ok(value),
             Err(RpcError::Remote(error)) => Err(error),
-            Err(RpcError::Transport(error)) => return Err(error),
+            Err(RpcError::Transport(error) | RpcError::Timeout(error)) => return Err(error),
         });
         remaining -= 1;
     }
@@ -721,6 +840,119 @@ where
 mod tests {
     use super::*;
     use tokio_tungstenite::tungstenite::protocol::Role;
+
+    #[test]
+    fn reconnect_only_replays_disconnected_account_reads() {
+        let disconnected = RpcError::Transport("connection closed".into());
+        assert!(should_reconnect_read("account/read", &disconnected));
+        assert!(should_reconnect_read(
+            "account/rateLimits/read",
+            &disconnected
+        ));
+        assert!(!should_reconnect_read("account/login/start", &disconnected));
+        assert!(!should_reconnect_read("thread/start", &disconnected));
+        assert!(!should_reconnect_read(
+            "account/rateLimits/read",
+            &RpcError::Timeout("timeout".into())
+        ));
+        assert!(!should_reconnect_read(
+            "account/rateLimits/read",
+            &RpcError::Remote("unauthorized".into())
+        ));
+    }
+
+    #[test]
+    fn proxy_is_explicit_and_does_not_inherit_environment_routes() {
+        for enabled in [false, true] {
+            let mut command = Command::new("codex");
+            apply_proxy_settings(
+                &mut command,
+                &ProxySettings {
+                    use_system_proxy: enabled,
+                    custom_url: None,
+                },
+            );
+            let arguments = command.as_std().get_args().collect::<Vec<_>>();
+            assert_eq!(arguments[0], "-c");
+            assert_eq!(
+                arguments[1],
+                format!("features.respect_system_proxy={enabled}").as_str()
+            );
+            let environment = command.as_std().get_envs().collect::<Vec<_>>();
+            for key in [
+                "HTTP_PROXY",
+                "HTTPS_PROXY",
+                "ALL_PROXY",
+                "http_proxy",
+                "https_proxy",
+                "all_proxy",
+            ] {
+                assert!(environment.iter().any(|(name, value)| name
+                    .to_string_lossy()
+                    .eq_ignore_ascii_case(key)
+                    && value.is_none()));
+            }
+        }
+    }
+
+    #[test]
+    fn saving_proxy_preference_without_restart_does_not_start_cli() {
+        tauri::async_runtime::block_on(async {
+            let state = AppServerState::default();
+            assert!(!state.proxy_settings().use_system_proxy);
+            state
+                .configure_cli_path(
+                    Some(PathBuf::from("nonexistent-cli")),
+                    &ProxySettings::new("system", "").unwrap(),
+                    false,
+                )
+                .await
+                .unwrap();
+            assert!(state.proxy_settings().use_system_proxy);
+            state
+                .configure_cli_path(None, &ProxySettings::default(), false)
+                .await
+                .unwrap();
+            assert!(!state.proxy_settings().use_system_proxy);
+        });
+    }
+
+    #[test]
+    fn custom_proxy_routes_both_http_and_https_without_system_proxy() {
+        let settings = ProxySettings::new("custom", " http://localhost:8080 ").unwrap();
+        let mut command = Command::new("codex");
+        apply_proxy_settings(&mut command, &settings);
+        assert!(!settings.use_system_proxy);
+        let environment = command.as_std().get_envs().collect::<Vec<_>>();
+        for key in ["HTTP_PROXY", "HTTPS_PROXY"] {
+            assert!(environment.iter().any(|(name, value)| name
+                .to_string_lossy()
+                .eq_ignore_ascii_case(key)
+                && value.is_some_and(|value| value == "http://localhost:8080/")));
+        }
+        assert!(command
+            .as_std()
+            .get_args()
+            .any(|arg| arg == "features.respect_system_proxy=false"));
+    }
+
+    #[test]
+    fn invalid_custom_proxy_never_reaches_cli() {
+        for address in [
+            "",
+            "localhost:8080",
+            "file:///tmp/proxy",
+            "socks5://localhost:1080",
+            "http://user:password@localhost:8080",
+            "http://localhost:8080/path",
+            "http://localhost:8080?token=secret",
+        ] {
+            assert!(ProxySettings::new("custom", address).is_err());
+        }
+        assert!(ProxySettings::new("custom", "https://proxy.example.com:8443").is_ok());
+        assert!(ProxySettings::new("invalid", "").is_err());
+        assert!(ProxySettings::new("off", "invalid old address").is_ok());
+    }
 
     #[test]
     fn empty_cli_path_keeps_system_default() {
