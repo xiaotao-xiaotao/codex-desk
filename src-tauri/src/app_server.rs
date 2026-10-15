@@ -151,7 +151,8 @@ impl AppServerState {
             .map_err(|_| "无法启动登录，请检查设置中的 Codex CLI 路径".into())
     }
 
-    /// 先预热首页账户通道，其他通道在首次请求时按需连接。
+    /// 仅供集成冒烟测试预建账户连接；应用在恢复 CLI 与代理偏好后按需连接。
+    #[cfg(test)]
     pub async fn warm_up(&self) -> Result<(), String> {
         let cli_path = self.cli_path.read().await;
         let mut connection = self.account.lock().await;
