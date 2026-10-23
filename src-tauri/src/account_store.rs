@@ -11,7 +11,7 @@ use std::{
 use toml_edit::{value, DocumentMut};
 
 const STORE_VERSION: u32 = 1;
-const STORE_NAME: &str = "saved-accounts.json";
+const STORE_NAME: &str = "config.json";
 const DATA_DIRECTORY: &str = ".codex-desk";
 const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_LABEL_CHARS: usize = 48;
@@ -698,7 +698,14 @@ mod tests {
                     "@echo off\r\nif \"%1\"==\"--version\" (\r\n echo codex-cli 0.160.1\r\n exit /b 0\r\n)\r\nif \"%3\"==\"{fail}\" exit /b 1\r\nexit /b 0\r\n"
                 )).unwrap();
                 let server = crate::app_server::AppServerState::default();
-                server.configure_cli_path(Some(executable), &crate::app_server::ProxySettings::default(), false).await.unwrap();
+                server
+                    .configure_cli_path(
+                        Some(executable),
+                        &crate::app_server::ProxySettings::default(),
+                        false,
+                    )
+                    .await
+                    .unwrap();
                 let result = server.apply_auth_change(store.clone(), target, true).await;
                 if fail == "stop" {
                     assert!(result.is_err());
@@ -720,8 +727,13 @@ mod tests {
             write_json(&store.home.join("auth.json"), &auth("b", "refresh-b")).unwrap();
             let server = crate::app_server::AppServerState::default();
             server
-                .configure_cli_path(Some(dir.path().join("does-not-exist.exe")), &crate::app_server::ProxySettings::default(), false)
-                .await.unwrap();
+                .configure_cli_path(
+                    Some(dir.path().join("does-not-exist.exe")),
+                    &crate::app_server::ProxySettings::default(),
+                    false,
+                )
+                .await
+                .unwrap();
             assert_eq!(
                 server
                     .apply_auth_change(store.clone(), target, false)

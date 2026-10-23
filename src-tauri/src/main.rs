@@ -196,8 +196,13 @@ async fn configure_cli_path(
 ) -> Result<String, String> {
     let cli_path = app_server::normalize_cli_path(&cli_path)?;
     let version = app_server::read_cli_version_from(cli_path.as_deref()).await?;
-    let proxy_settings = app_server::ProxySettings::new(proxy_mode.as_deref().unwrap_or("off"), proxy_url.as_deref().unwrap_or(""))?;
-    state.configure_cli_path(cli_path, &proxy_settings, restart_service.unwrap_or(false)).await?;
+    let proxy_settings = app_server::ProxySettings::new(
+        proxy_mode.as_deref().unwrap_or("off"),
+        proxy_url.as_deref().unwrap_or(""),
+    )?;
+    state
+        .configure_cli_path(cli_path, &proxy_settings, restart_service.unwrap_or(false))
+        .await?;
     Ok(version)
 }
 
