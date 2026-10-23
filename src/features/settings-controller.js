@@ -110,7 +110,8 @@ export function createSettingsController({ invoke, onSettingsChanged }) {
   }
 
   async function save(nextSettings) {
-    const normalized = normalizeSettings(nextSettings);
+    // 精简版设置弹窗不再编辑会话阅读偏好，保存时沿用原值，避免无关设置被重置。
+    const normalized = normalizeSettings({ ...settings, ...nextSettings });
     const cliVersion = await invoke("configure_cli_path", {
       cliPath: normalized.cliPath,
       proxyMode: normalized.proxyMode,

@@ -13,6 +13,7 @@ import { createRefreshController } from "./features/refresh-controller.js";
 import { createSettingsController, READING_SETTINGS } from "./features/settings-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createAccountSwitchView } from "./views/account-switch-view.js";
+import { createAccountQuotaMonitorView } from "./views/account-quota-monitor-view.js";
 import { createCodexConfigView } from "./views/codex-config-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createSettingsDialogView } from "./views/settings-dialog-view.js";
@@ -53,7 +54,7 @@ const selectedThreadCount = document.querySelector("#selected-thread-count");
 const dashboardLayout = document.querySelector(".dashboard-layout");
 const sidebarToggle = document.querySelector("#sidebar-toggle");
 const sidebarMediaQuery = window.matchMedia("(max-width: 760px)");
-// 首次打开默认收起；手动切换后尊重用户选择，避免尺寸变化反复覆盖状态。
+// 精简版只有两个业务入口，桌面端首次打开保留菜单文字；窄屏仍默认收起以保留内容空间。
 let sidebarCollapsedPreference = null;
 const dashboardNav = document.querySelector(".dashboard-nav");
 const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-section]")];
@@ -66,7 +67,6 @@ const dashboardSections = {
   topics: document.querySelector("#topics-section"),
   sessions: document.querySelector("#sessions-section"),
 };
-const quotaAlertToggle = document.querySelector("#quota-alert-toggle");
 const dashboardError = document.querySelector("#dashboard-error");
 const dashboardErrorTitle = document.querySelector("#dashboard-error-title");
 const dashboardErrorDescription = document.querySelector("#dashboard-error-description");
@@ -95,6 +95,7 @@ const settingsController = createSettingsController({
     applyReadingSettings(settings);
     accountView.updateLanguage();
     accountSwitchView.updateLanguage();
+    accountQuotaMonitorView?.updateLanguage();
     restartAutoRefreshTimer();
     renderQuotaAlertStatus();
   },
@@ -115,6 +116,16 @@ const quotaAlerts = createQuotaAlertController({
   getAccountScope: () => accountView.getAccountScope(),
 });
 const accountView = createAccountOverviewView({ t, invoke, getHideEmails: () => settingsController.getSettings().hideEmails });
+const accountQuotaMonitorView = createAccountQuotaMonitorView({
+  t,
+  invoke,
+  formatQuotaWindow,
+  formatResetAt,
+  formatResetCountdown,
+  getHideEmails: () => settingsController.getSettings().hideEmails,
+  onToggleAlerts: () => toggleQuotaAlerts(),
+  getAlertsEnabled: () => quotaAlerts.isEnabled(),
+});
 const accountSwitchView = createAccountSwitchView({
   t,
   invoke,
@@ -126,11 +137,13 @@ const accountSwitchView = createAccountSwitchView({
     await refreshController.pauseForAccountChange();
     accountView.invalidate();
   },
+  onAccountsChanged: () => accountQuotaMonitorView.refresh(),
   onAfterSwitch: async ({ changed, restarted }) => {
     refreshController.resumeAfterAccountChange(changed);
     // 没有重启时账户区展示服务实际身份，绝不把保存的目标摘要当作生效状态。
     if (changed && restarted) await refreshController.refreshQuota();
     else await accountView.refresh();
+    await accountQuotaMonitorView?.refresh();
     restartAutoRefreshTimer();
   },
 });
@@ -274,7 +287,7 @@ refreshController = createRefreshController({
     forceRefresh,
   ),
   // 新账户识别共用已有刷新周期，手动刷新也同步检查，不额外启动轮询。
-  refreshAccount: () => Promise.all([accountView.refresh(), accountSwitchView.checkCurrentAccount()]),
+  refreshAccount: () => Promise.all([accountView.refresh(), accountSwitchView.checkCurrentAccount(), accountQuotaMonitorView.refresh()]),
   getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
   onRefreshingChange: (isRefreshing) => {
@@ -311,13 +324,7 @@ function renderAccountSyncTime() {
 }
 
 function renderQuotaAlertStatus() {
-  const enabled = quotaAlerts.isEnabled();
-  const thresholds = quotaAlerts.getThresholds().map((threshold) => `${threshold}%`).join("/");
-  quotaAlertToggle.title = t(enabled ? "quotaAlertStatusEnabled" : "quotaAlertStatusDisabled", { thresholds });
-  quotaAlertToggle.querySelector(".quota-alert-toggle-label").textContent = t(enabled ? "quotaAlertEnabledLabel" : "quotaAlertEnableLabel");
-  quotaAlertToggle.classList.toggle("is-enabled", enabled);
-  quotaAlertToggle.setAttribute("aria-pressed", String(enabled));
-  quotaAlertToggle.ariaLabel = `${t(enabled ? "quotaAlertToggleDisable" : "quotaAlertToggleEnable")} · ${quotaAlertToggle.title}`;
+  accountQuotaMonitorView?.updateAlertStatus();
 }
 
 async function toggleQuotaAlerts() {
@@ -343,7 +350,10 @@ function setDashboardSection(nextSection) {
   activeDashboardSection = nextSection;
   dashboardError.hidden = !dashboardUnavailable || ["accounts", "config", "about"].includes(nextSection);
   if (changed && nextSection === "config") void codexConfigView.activate();
-  if (changed && nextSection === "accounts") accountSwitchView.activate();
+  if (changed && nextSection === "accounts") {
+    accountSwitchView.activate();
+  }
+  if (changed && nextSection === "account") accountQuotaMonitorView.activate();
   // 离开历史页后使未完成的搜索失效，避免旧请求覆盖下一次进入时的结果。
   if (changed) searchRequestVersion += 1;
   Object.entries(dashboardSections).forEach(([name, section]) => {
@@ -371,7 +381,7 @@ function setDashboardSection(nextSection) {
 }
 
 function renderSidebar() {
-  const collapsed = sidebarCollapsedPreference ?? true;
+  const collapsed = sidebarCollapsedPreference ?? sidebarMediaQuery.matches;
   dashboardLayout.classList.toggle("is-sidebar-collapsed", collapsed);
   sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
   sidebarToggle.title = sidebarToggle.ariaLabel = t(collapsed ? "expandSidebar" : "collapseSidebar");
@@ -615,6 +625,7 @@ function applyLanguage() {
   settingsView.updateLanguage();
   accountView.updateLanguage();
   accountSwitchView.updateLanguage();
+  accountQuotaMonitorView.updateLanguage();
   codexConfigView.updateLanguage();
   updateView.updateLanguage();
   renderAppVersion();
@@ -649,6 +660,7 @@ function applyLanguage() {
     setStatus(t("readingLocalData"));
   }
   setDashboardSection(activeDashboardSection);
+  if (activeDashboardSection === "account") accountQuotaMonitorView.activate();
   if (expanded && activeDashboardSection === "sessions") void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
 
@@ -921,7 +933,6 @@ async function bootstrap() {
   collapseButton.addEventListener("click", () => setExpanded(false));
   refreshButton.addEventListener("click", () => refreshController.refreshQuota(true, { manual: true }));
   dashboardRetry.addEventListener("click", () => void retryDashboard());
-  quotaAlertToggle.addEventListener("click", () => void toggleQuotaAlerts());
   quitButton.addEventListener("click", () => invoke("quit_app"));
   importThreadsButton.addEventListener("click", () => importFileInput.click());
   exportThreadsButton.addEventListener("click", exportSelectedThreads);

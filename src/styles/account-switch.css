@@ -67,6 +67,22 @@
 .accounts-page-context { display: grid; flex: 1; min-width: 0; gap: 6px; }
 .accounts-page .accounts-intro { flex: 1; max-width: 640px; margin: 0; }
 .accounts-page .accounts-list-pane { margin-bottom: 10px; }
+.accounts-switch-guide { margin-top: 22px; padding: 18px 20px; border: 1px solid var(--accounts-line); border-radius: 14px; background: var(--accounts-surface); }
+.accounts-switch-guide-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.accounts-switch-guide-kicker { display: block; margin-bottom: 5px; color: #3979c9; font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.accounts-switch-guide h3 { margin: 0; color: var(--accounts-ink); font-size: 16px; }
+.accounts-switch-guide-heading p { margin: 0; color: var(--accounts-muted); font-size: 12px; }
+.accounts-switch-guide-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+.accounts-switch-guide-steps li { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.accounts-switch-guide-steps b { display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border-radius: 8px; color: #fff; background: #1677ff; font-size: 11px; }
+.accounts-switch-guide-steps div { display: grid; gap: 3px; min-width: 0; }
+.accounts-switch-guide-steps strong { color: var(--accounts-ink); font-size: 12px; }
+.accounts-switch-guide-steps span { color: var(--accounts-muted); font-size: 11px; line-height: 1.5; }
+:root[data-theme="dark"] .accounts-switch-guide { background: #1b293b; }
+@container accounts-page (max-width: 620px) {
+  .accounts-switch-guide-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .accounts-switch-guide-steps { grid-template-columns: 1fr; gap: 12px; }
+}
 .accounts-page .accounts-current { min-width: 0; padding: 0; gap: 6px; border: 0; border-radius: 0; background: transparent; }
 .accounts-page .accounts-current > div { display: flex; align-items: baseline; flex-wrap: nowrap; gap: 8px; }
 .accounts-page .accounts-current-caption { flex-shrink: 0; font-size: 12px; }

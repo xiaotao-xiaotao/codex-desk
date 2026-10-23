@@ -23,11 +23,11 @@ use tauri::{
 use tokio::io::AsyncReadExt;
 
 // 900px 为右侧词云留出更舒展的排版空间，同时仍保持为紧凑悬浮看板。
-const EXPANDED_WINDOW_WIDTH: f64 = 900.0;
+const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
 // 保留旧版独立展开会话模式的尺寸兼容。
-const EXPANDED_WINDOW_HEIGHT: f64 = 830.0;
+const EXPANDED_WINDOW_HEIGHT: f64 = 900.0;
 // 统一看板高度容纳十条紧凑历史记录和分页，避免栏目切换或刷新时调整窗口。
-const DASHBOARD_WINDOW_HEIGHT: f64 = 700.0;
+const DASHBOARD_WINDOW_HEIGHT: f64 = 820.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
@@ -54,6 +54,22 @@ async fn read_quota(
     state: State<'_, app_server::AppServerState>,
 ) -> Result<quota::QuotaSnapshot, String> {
     quota::read_quota(&state).await
+}
+
+#[tauri::command]
+async fn read_account_quotas(
+    app: AppHandle,
+    state: State<'_, account_store::AccountStoreState>,
+) -> Result<Vec<quota::AccountQuotaSnapshot>, String> {
+    // 只在读取账户快照时持锁，远端查询期间允许保存、删除和切换账户。
+    let targets = {
+        let _guard = state.0.lock().await;
+        let store = account_store::AccountStore::from_app(&app)?;
+        tauri::async_runtime::spawn_blocking(move || store.quota_targets())
+            .await
+            .map_err(|_| "账户读取任务中断")??
+    };
+    Ok(quota::read_account_quotas(targets).await)
 }
 
 #[tauri::command]
@@ -592,6 +608,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             read_quota,
+            read_account_quotas,
             read_account,
             read_settings_directory,
             list_saved_accounts,

@@ -1,7 +1,7 @@
 @import './styles/base.css';
 @import './styles/quota-overview.css';
-@import './styles/account-overview.css';
 @import './styles/account-switch.css';
+@import './styles/account-quota-monitor.css';
 @import './styles/codex-config.css';
 @import './styles/trend.css';
 @import './styles/word-cloud.css';
@@ -36,4 +36,134 @@
   .reset-credits-toggle::after,
   .message-local-file-link::after,
   .message-activity-disclosure > summary::after { transition: none; }
+}
+
+/* 精简版工作区：把账户用量与账户管理放在清晰的双入口骨架里。 */
+:root {
+  --lite-ground: #f4f7fb;
+  --lite-surface: #ffffff;
+  --lite-surface-muted: #edf3f9;
+  --lite-ink: #172b46;
+  --lite-muted: #71839a;
+  --lite-accent: #1266d6;
+  --lite-accent-soft: #e1efff;
+  --lite-border: #dce6f1;
+}
+
+.panel {
+  border-color: var(--lite-border);
+  border-radius: 22px;
+  background: var(--lite-ground);
+  box-shadow: none;
+}
+
+.panel-header {
+  min-height: 54px;
+  padding: 9px 18px;
+  border-bottom: 0;
+  background: var(--lite-surface);
+}
+
+.dashboard-layout { grid-template-columns: 188px minmax(0, 1fr); }
+.dashboard-sidebar {
+  gap: 28px;
+  padding: 28px 14px 20px;
+  border-right: 0;
+  background: var(--lite-surface);
+}
+.sidebar-brand { min-height: 38px; padding-inline: 8px; color: var(--lite-muted); font-size: 13px; }
+.sidebar-brand-name { margin-left: 0; gap: 8px; }
+.sidebar-brand strong { color: var(--lite-ink); }
+.sidebar-brand-icon { width: 20px; height: 20px; color: var(--lite-accent); stroke: currentColor; }
+.sidebar-toggle { top: 30px; right: -12px; width: 24px; height: 34px; border-color: var(--lite-border); border-radius: 9px; color: var(--lite-muted); box-shadow: none; }
+.sidebar-toggle:hover { border-color: #9fc3ee; color: var(--lite-accent); background: var(--lite-accent-soft); box-shadow: none; }
+.dashboard-nav { gap: 6px; }
+.dashboard-nav .dashboard-nav-button {
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  color: #64778f;
+  font-size: 14px;
+  font-weight: 650;
+}
+.dashboard-nav .dashboard-nav-button svg { width: 19px; height: 19px; }
+.dashboard-nav-button:hover { color: var(--lite-accent); background: #f0f6fd; }
+.dashboard-nav-button.is-active { color: var(--lite-accent); background: var(--lite-accent-soft); }
+.dashboard-nav-button.is-active::before { top: 12px; bottom: 12px; left: 0; width: 4px; border-radius: 0 4px 4px 0; background: var(--lite-accent); }
+.sidebar-bottom { gap: 12px; }
+.sidebar-utilities { gap: 8px; padding: 0; }
+.sidebar-utility-button { min-height: 42px; border-radius: 11px; }
+.sidebar-utilities #theme-button { width: 42px; flex-basis: 42px; }
+.sidebar-utilities #settings-button { padding-inline: 10px; }
+.sidebar-utilities #settings-button > svg { display: block; }
+.sidebar-utilities #theme-label { display: none; }
+
+.dashboard-workspace { padding: 26px 30px 18px; }
+.dashboard-page.quota-section { gap: 18px; }
+.dashboard-page .account-details,
+.dashboard-page .quota-card {
+  border: 0;
+  border-radius: 18px;
+  background: var(--lite-surface);
+  box-shadow: none;
+}
+.dashboard-page .account-details { gap: 20px; padding: 22px; }
+.dashboard-page .account-detail-item strong { color: var(--lite-ink); font-size: 14px; }
+.dashboard-page .account-detail-label { color: var(--lite-muted); font-size: 12px; letter-spacing: .01em; }
+.dashboard-page .quota-list { gap: 16px; }
+.dashboard-page .quota-card { min-height: 188px; padding: 22px; border-left: 4px solid var(--lite-accent); border-radius: 18px; background: var(--lite-surface); }
+.dashboard-page .quota-card h3 { color: var(--lite-muted); font-size: 14px; }
+.dashboard-page .quota-value strong { color: var(--lite-accent); font-size: 48px; }
+.dashboard-page .quota-value > span:not(.quota-alert) { color: var(--lite-muted); }
+.dashboard-page .progress-track { height: 7px; background: #e5edf7; }
+.dashboard-page .quota-reset-time { color: var(--lite-muted); }
+.dashboard-page .quota-reset-countdown { color: var(--lite-accent); }
+.dashboard-status { margin-top: 16px; padding-top: 10px; border-top: 0; }
+
+/* 设置弹窗也使用相同的留白和色阶，减少精简版里的视觉噪声。 */
+.settings-dialog { border: 0; border-radius: 20px; background: var(--lite-surface); box-shadow: 0 24px 80px rgba(27, 55, 89, .2); }
+.settings-header { min-height: 62px; padding: 16px 22px; border-bottom-color: var(--lite-border); }
+.settings-tabs { gap: 6px; padding: 14px 10px; background: var(--lite-ground); }
+.settings-tab { padding: 11px 14px; border-radius: 10px; color: var(--lite-muted); }
+.settings-tab:hover, .settings-tab[aria-selected="true"] { color: var(--lite-accent); background: var(--lite-accent-soft); }
+.settings-body { padding: 24px; }
+.settings-group { padding: 18px; border: 0; border-radius: 14px; background: var(--lite-ground); }
+
+.dashboard-layout.is-sidebar-collapsed { grid-template-columns: 72px minmax(0, 1fr); }
+.panel:has(.is-sidebar-collapsed) { --dashboard-sidebar-width: 72px; }
+.is-sidebar-collapsed .dashboard-sidebar { padding-inline: 12px; }
+.is-sidebar-collapsed .dashboard-nav .dashboard-nav-button { padding-inline: 0; }
+
+:root[data-theme="dark"] {
+  --lite-ground: #101923;
+  --lite-surface: #172331;
+  --lite-surface-muted: #1d2d40;
+  --lite-ink: #e7f0fa;
+  --lite-muted: #9aacc0;
+  --lite-accent: #8dc5ff;
+  --lite-accent-soft: #1d3b5d;
+  --lite-border: #2b3e54;
+}
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .dashboard-sidebar { background: var(--lite-ground); }
+:root[data-theme="dark"] .panel-header,
+:root[data-theme="dark"] .dashboard-sidebar,
+:root[data-theme="dark"] .dashboard-page .account-details,
+:root[data-theme="dark"] .dashboard-page .quota-card,
+:root[data-theme="dark"] .settings-dialog { background: var(--lite-surface); }
+:root[data-theme="dark"] .dashboard-nav-button:hover { color: var(--lite-accent); background: #1a314b; }
+:root[data-theme="dark"] .dashboard-nav-button.is-active { color: var(--lite-accent); background: var(--lite-accent-soft); }
+:root[data-theme="dark"] .dashboard-page .quota-value strong,
+:root[data-theme="dark"] .dashboard-page .account-detail-item strong { color: var(--lite-ink); }
+:root[data-theme="dark"] .dashboard-page .progress-track { background: #2a3d52; }
+:root[data-theme="dark"] .settings-tabs,
+:root[data-theme="dark"] .settings-group { background: var(--lite-ground); }
+
+@media (max-width: 760px) {
+  .dashboard-workspace { padding: 18px 16px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .dashboard-nav-button, .sidebar-toggle { transition: none; }
 }

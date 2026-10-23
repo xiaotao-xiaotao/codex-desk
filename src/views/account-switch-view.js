@@ -17,7 +17,7 @@ const SUCCESS_NOTICE_DURATION_MS = 4000;
 const LOGIN_POLL_INTERVAL_MS = 1000;
 
 /** 只接收账户摘要；所有名称/邮箱通过 textContent 渲染，凭据不进入 DOM。 */
-export function createAccountSwitchView({ t, invoke, getHideEmails = () => false, onOpen, onBeforeSwitch, onAfterSwitch }) {
+export function createAccountSwitchView({ t, invoke, getHideEmails = () => false, onOpen, onBeforeSwitch, onAfterSwitch, onAccountsChanged = () => {} }) {
   const page = document.querySelector("#accounts-section");
   const navigation = document.querySelector("#nav-accounts");
   const newAccountBadge = navigation.querySelector(".accounts-new-badge");
@@ -66,9 +66,12 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     </div>
     <footer class="accounts-footer"><span></span></footer>`;
   document.body.append(dialog);
-  // 列表常驻独立栏目，只有会修改凭据或账户的操作进入确认弹窗。
-  page.innerHTML = `<header class="accounts-page-header"><div class="accounts-page-context"></div></header>`;
-  const pageHeader = page.querySelector(".accounts-page-header");
+  // 列表常驻独立栏目，额度监控与账户管理共享入口但互不覆盖 DOM。
+  const management = document.createElement("div");
+  management.className = "accounts-management-panel";
+  management.innerHTML = `<header class="accounts-page-header"><div class="accounts-page-context"></div></header>`;
+  page.append(management);
+  const pageHeader = management.querySelector(".accounts-page-header");
   pageHeader.querySelector(".accounts-page-context").append(dialog.querySelector(".accounts-intro"), dialog.querySelector(".accounts-current"));
   pageHeader.querySelector(".accounts-intro").hidden = true;
   pageHeader.append(page.querySelector(".accounts-save"));
@@ -80,8 +83,18 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   loginButton.innerHTML = `${icon("login")}<span></span>`;
   headerActions.append(page.querySelector(".accounts-save"), loginButton);
   pageHeader.append(headerActions);
-  page.append(dialog.querySelector(".accounts-feedback"), dialog.querySelector(".accounts-list-pane"), dialog.querySelector(".accounts-footer"));
-  page.querySelector(".accounts-list-heading h3").after(page.querySelector(".accounts-footer"));
+  management.append(dialog.querySelector(".accounts-feedback"), dialog.querySelector(".accounts-list-pane"), dialog.querySelector(".accounts-footer"));
+  management.querySelector(".accounts-list-heading h3").after(management.querySelector(".accounts-footer"));
+  const guide = document.createElement("section");
+  guide.className = "accounts-switch-guide";
+  guide.innerHTML = `
+    <div class="accounts-switch-guide-heading"><div><span class="accounts-switch-guide-kicker"></span><h3></h3></div><p></p></div>
+    <ol class="accounts-switch-guide-steps">
+      <li><b>1</b><div><strong></strong><span></span></div></li>
+      <li><b>2</b><div><strong></strong><span></span></div></li>
+      <li><b>3</b><div><strong></strong><span></span></div></li>
+    </ol>`;
+  management.append(guide);
   const flow = document.createElement("details");
   flow.className = "accounts-flow";
   flow.setAttribute("aria-labelledby", "accounts-flow-title");
@@ -104,17 +117,11 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     </ol>
     <details class="accounts-flow-details">
       <summary><span class="accounts-flow-privacy" data-account-flow-i18n="accountsFlowPrivacy"></span><span class="accounts-flow-details-link"><span data-account-flow-i18n="accountsFlowDetails"></span><span class="accounts-flow-chevron disclosure-chevron" aria-hidden="true"></span></span></summary>
-      <div class="accounts-flow-expanded">
-      <p class="accounts-flow-read">${icon("switch")}<span data-account-flow-i18n="accountsFlowRead"></span></p>
-      <div class="accounts-flow-branches">
-        <div><b class="accounts-flow-marker">+1</b><strong data-account-flow-i18n="accountsFlowNew"></strong><p data-account-flow-i18n="accountsFlowNewHint"></p></div>
-        <div><b class="accounts-flow-marker accounts-flow-dot" aria-hidden="true"></b><strong data-account-flow-i18n="accountsFlowChanged"></strong><p data-account-flow-i18n="accountsFlowChangedHint"></p></div>
-      </div>
-      <p class="accounts-flow-note" data-account-flow-i18n="accountsFlowNote"></p>
-      </div>
-    </details>
-    </div>`;
-  page.querySelector(".accounts-list-pane").append(flow);
+      <div class="accounts-flow-expanded"><p class="accounts-flow-read">${icon("switch")}<span data-account-flow-i18n="accountsFlowRead"></span></p><div class="accounts-flow-branches"><div><b class="accounts-flow-marker">+1</b><strong data-account-flow-i18n="accountsFlowNew"></strong><p data-account-flow-i18n="accountsFlowNewHint"></p></div><div><b class="accounts-flow-marker accounts-flow-dot" aria-hidden="true"></b><strong data-account-flow-i18n="accountsFlowChanged"></strong><p data-account-flow-i18n="accountsFlowChangedHint"></p></div></div><p class="accounts-flow-note" data-account-flow-i18n="accountsFlowNote"></p></div>
+    </details></div>`;
+  management.append(flow);
+  // 账户管理保留 master 分支的原始流程图，紧凑说明只作为内部兼容节点，不重复展示。
+  guide.remove();
   const dialogFeedback = document.createElement("div");
   dialogFeedback.className = "accounts-feedback";
   dialogFeedback.setAttribute("role", "status");
@@ -278,8 +285,9 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
 
   function renderList() {
     renderAccountHint();
-    flow.querySelector(".accounts-flow-current-label").textContent = snapshot?.accounts.find((account) => account.selected)?.label ?? t("accountsFlowSelect");
-    flow.querySelector(".accounts-flow-current-label").title = flow.querySelector(".accounts-flow-current-label").textContent;
+    const currentLabel = snapshot?.accounts.find((account) => account.selected)?.label ?? t("accountsFlowSelect");
+    flow.querySelector(".accounts-flow-current-label").textContent = currentLabel;
+    flow.querySelector(".accounts-flow-current-label").title = currentLabel;
     flow.querySelector(".accounts-flow-saved-count").textContent = t("accountsCount", { count: snapshot?.accounts.length ?? 0 });
     find(".accounts-current-email").textContent = loading ? t("accountsLoading") : displayEmail(snapshot?.currentEmail, getHideEmails()) ?? t("accountsCurrentUnknown");
     find(".accounts-save").disabled = busy || loading || !snapshot?.canSaveCurrent;
@@ -366,6 +374,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       } else {
         const commands = { save: "save_current_account", rename: "rename_saved_account", remove: "remove_saved_account", enable: "enable_account_file_storage" };
         snapshot = await invoke(commands[kind], { ...(account ? { id: account.id } : {}), ...(kind === "save" || kind === "rename" ? { label } : {}) });
+        await onAccountsChanged();
         showList(); setFeedback(kind === "remove" ? "accountsRemoved" : kind === "enable" ? "accountsFileEnabled" : "accountsSaved");
       }
     } catch (error) {
@@ -432,6 +441,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
         loginSession = null;
         if (status.phase === "completed") {
           await refresh();
+          await onAccountsChanged();
           showList();
           setFeedback(status.error ? "accountsLoginCleanup" : "accountsLoginSaved", {}, status.error ? "pending" : "success");
         } else if (status.phase === "failed") {
@@ -486,6 +496,18 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-reload").title = find(".accounts-reload").ariaLabel = t("refresh");
     find(".accounts-footer span").textContent = t("accountsLocalHint");
     find(".accounts-storage p").textContent = t("accountsStorageHint");
+    guide.querySelector(".accounts-switch-guide-kicker").textContent = t("accountsSwitchGuideKicker");
+    guide.querySelector("h3").textContent = t("accountsSwitchGuideTitle");
+    guide.querySelector(".accounts-switch-guide-heading p").textContent = t("accountsSwitchGuideHint");
+    const guideSteps = [
+      ["accountsSwitchGuideStepOne", "accountsSwitchGuideStepOneHint"],
+      ["accountsSwitchGuideStepTwo", "accountsSwitchGuideStepTwoHint"],
+      ["accountsSwitchGuideStepThree", "accountsSwitchGuideStepThreeHint"],
+    ];
+    guide.querySelectorAll("li").forEach((item, index) => {
+      item.querySelector("strong").textContent = t(guideSteps[index][0]);
+      item.querySelector("span").textContent = t(guideSteps[index][1]);
+    });
     find(".accounts-enable").textContent = t("accountsEnable");
     find(".accounts-name-label").textContent = t("accountsNameLabel");
     input.placeholder = t("accountsNamePlaceholder");

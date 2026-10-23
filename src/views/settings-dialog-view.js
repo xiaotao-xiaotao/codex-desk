@@ -1,5 +1,4 @@
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
-import { READING_SETTINGS } from "../features/settings-controller.js";
 
 export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, onReadStoragePath }) {
   const openButton = document.querySelector("#settings-button");
@@ -47,11 +46,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   let storagePath = null;
   let storageError = null;
   let readingStoragePath = false;
-  const readingPreview = document.querySelector("#settings-reading-preview");
-  const readingResetButton = document.querySelector("#settings-reading-reset");
-  const readingControls = Object.entries(READING_SETTINGS).map(([field, config]) => ({
-    field, config, select: document.querySelector(`[data-reading-setting="${field}"]`),
-  }));
   let saving = false;
   let activeTab = tabs[0]?.dataset.settingsTab;
   const disabledStates = new Map();
@@ -118,32 +112,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     field.focus();
   }
 
-  function renderReadingPreview() {
-    for (const { config, select } of readingControls) {
-      const option = config.options.find((option) => option.value === select.value);
-      readingPreview.style.setProperty(config.cssProperty, option.cssValue);
-    }
-  }
-
-  function renderReadingOptions() {
-    document.querySelector("#settings-reading-title").textContent = t("settingsReadingTitle");
-    readingResetButton.textContent = t("settingsReadingReset");
-    document.querySelector("#settings-reading-hint").textContent = t("settingsReadingHint");
-    readingPreview.textContent = t("settingsReadingPreview");
-    for (const { field, config, select } of readingControls) {
-      const selected = select.value || getSettings()[field];
-      document.querySelector(`[data-reading-label="${field}"]`).textContent = t(config.labelKey);
-      select.replaceChildren(...config.options.map((option) => {
-        const element = document.createElement("option");
-        element.value = option.value;
-        element.textContent = option.label ?? t(option.labelKey);
-        return element;
-      }));
-      select.value = selected;
-    }
-    renderReadingPreview();
-  }
-
   function renderIntervalOptions() {
     const selected = refreshInterval.value;
     const options = [
@@ -196,8 +164,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     thresholdInputs.forEach((input, index) => {
       input.value = String(settings.quotaAlertThresholds[index]);
     });
-    readingControls.forEach(({ field, select }) => { select.value = settings[field]; });
-    renderReadingPreview();
     showStatus();
   }
 
@@ -266,7 +232,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     cancelButton.textContent = t("settingsCancel");
     saveButton.textContent = t("settingsSave");
     renderIntervalOptions();
-    renderReadingOptions();
     renderProxyMode();
   }
 
@@ -330,7 +295,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
         restartService: restartService.checked,
         refreshIntervalSeconds: Number(refreshInterval.value),
         quotaAlertThresholds,
-        ...Object.fromEntries(readingControls.map(({ field, select }) => [field, select.value])),
       });
       showStatus(t("settingsSaved", { version }));
     } catch (error) {
@@ -344,14 +308,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   });
   dialog.addEventListener("cancel", (event) => { if (saving) event.preventDefault(); });
 
-  readingResetButton.addEventListener("click", () => {
-    if (saving) return;
-    // 只恢复阅读选项，沿用表单的保存流程，取消时仍保留已保存的偏好。
-    readingControls.forEach(({ config, select }) => { select.value = config.defaultValue; });
-    renderReadingPreview();
-    showStatus();
-  });
-  readingControls.forEach(({ select }) => select.addEventListener("change", renderReadingPreview));
   updateLanguage();
   compactLayout.addEventListener("change", updateNavigationLayout);
   updateNavigationLayout();

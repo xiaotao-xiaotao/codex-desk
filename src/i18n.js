@@ -558,22 +558,6 @@ const NAVIGATION_TRANSLATIONS = {
   ko: { mainNavigation: "주 탐색", collapseSidebar: "사이드바 접기", expandSidebar: "사이드바 펼치기" },
 };
 
-const ACCOUNT_USAGE_TRANSLATIONS = {
-  "zh-CN": { accountLastSynced: "最近同步", accountUsageSummaryLabel: "历史使用概况", accountLifetimeTokens: "累计 Token", accountPeakTokens: "单日 Token 峰值", accountLongestTask: "最长任务用时", accountLongestStreak: "最长连续天数", accountCurrentStreak: "当前连续天数", accountUsageHoursMinutes: "{hours} 小时 {minutes} 分", accountUsageMinutes: "{minutes} 分钟", accountUsageSeconds: "{seconds} 秒", accountUsageDays: "{count} 天" },
-  "zh-TW": { accountLastSynced: "最近同步", accountUsageSummaryLabel: "歷史使用概況", accountLifetimeTokens: "累計 Token", accountPeakTokens: "單日 Token 峰值", accountLongestTask: "最長任務用時", accountLongestStreak: "最長連續天數", accountCurrentStreak: "目前連續天數", accountUsageHoursMinutes: "{hours} 小時 {minutes} 分", accountUsageMinutes: "{minutes} 分鐘", accountUsageSeconds: "{seconds} 秒", accountUsageDays: "{count} 天" },
-  en: { accountLastSynced: "Last synced", accountUsageSummaryLabel: "Usage history overview", accountLifetimeTokens: "Lifetime Tokens", accountPeakTokens: "Daily Token peak", accountLongestTask: "Longest task", accountLongestStreak: "Longest streak", accountCurrentStreak: "Current streak", accountUsageHoursMinutes: "{hours}h {minutes}m", accountUsageMinutes: "{minutes}m", accountUsageSeconds: "{seconds} seconds", accountUsageDays: "{count} days" },
-  ja: { accountLastSynced: "最終同期", accountUsageSummaryLabel: "利用履歴の概要", accountLifetimeTokens: "累計 Token", accountPeakTokens: "1日の Token ピーク", accountLongestTask: "最長タスク時間", accountLongestStreak: "最長連続日数", accountCurrentStreak: "現在の連続日数", accountUsageHoursMinutes: "{hours}時間{minutes}分", accountUsageMinutes: "{minutes}分", accountUsageSeconds: "{seconds}秒", accountUsageDays: "{count}日" },
-  ko: { accountLastSynced: "최근 동기화", accountUsageSummaryLabel: "사용 기록 개요", accountLifetimeTokens: "누적 Token", accountPeakTokens: "일일 Token 최대", accountLongestTask: "최장 작업 시간", accountLongestStreak: "최장 연속 일수", accountCurrentStreak: "현재 연속 일수", accountUsageHoursMinutes: "{hours}시간 {minutes}분", accountUsageMinutes: "{minutes}분", accountUsageSeconds: "{seconds}초", accountUsageDays: "{count}일" },
-};
-
-const TOKEN_HEATMAP_TRANSLATIONS = {
-  "zh-CN": { tokenHeatmapTitle: "每日 Token 活跃度", tokenHeatmapPrevious: "上个月", tokenHeatmapNext: "下个月", tokenHeatmapNoData: "所选月份暂无 Token 用量记录", tokenHeatmapLess: "少", tokenHeatmapMore: "多", tokenHeatmapSummary: "累计 {total} Token · 活跃 {active} 天" },
-  "zh-TW": { tokenHeatmapTitle: "每日 Token 活躍度", tokenHeatmapPrevious: "上個月", tokenHeatmapNext: "下個月", tokenHeatmapNoData: "所選月份暫無 Token 用量記錄", tokenHeatmapLess: "少", tokenHeatmapMore: "多", tokenHeatmapSummary: "累計 {total} Token · 活躍 {active} 天" },
-  en: { tokenHeatmapTitle: "Daily Token activity", tokenHeatmapPrevious: "Previous month", tokenHeatmapNext: "Next month", tokenHeatmapNoData: "No Token usage recorded in the selected month", tokenHeatmapLess: "Less", tokenHeatmapMore: "More", tokenHeatmapSummary: "{total} Tokens · {active} active days" },
-  ja: { tokenHeatmapTitle: "日別 Token アクティビティ", tokenHeatmapPrevious: "前の月", tokenHeatmapNext: "次の月", tokenHeatmapNoData: "選択した月の Token 使用記録はありません", tokenHeatmapLess: "少", tokenHeatmapMore: "多", tokenHeatmapSummary: "合計 {total} Token · {active}日間アクティブ" },
-  ko: { tokenHeatmapTitle: "일별 Token 활동", tokenHeatmapPrevious: "이전 달", tokenHeatmapNext: "다음 달", tokenHeatmapNoData: "선택한 달의 Token 사용 기록이 없습니다", tokenHeatmapLess: "적음", tokenHeatmapMore: "많음", tokenHeatmapSummary: "총 {total} Token · {active}일 활동" },
-};
-
 const TOPIC_TRANSLATIONS = {
   "zh-CN": { conversationTopics: "会话主题", topicsHint: "点击主题查看会话 · 最近 100 个会话，每个会话最多 500 条用户输入", topicFilterSummary: "{word} · 近 {days} 天 · 出现 {occurrences} 次 · 涉及 {count} 个会话", topicWordSummary: "{word} · 出现 {occurrences} 次 · 涉及 {count} 个会话", topicMatchCount: "出现 {count} 次" },
   "zh-TW": { conversationTopics: "工作階段主題", topicsHint: "點擊主題查看工作階段 · 最近 100 個工作階段，每個最多 500 則使用者輸入", topicFilterSummary: "{word} · 近 {days} 天 · 出現 {occurrences} 次 · 涉及 {count} 個工作階段", topicWordSummary: "{word} · 出現 {occurrences} 次 · 涉及 {count} 個工作階段", topicMatchCount: "出現 {count} 次" },
@@ -600,25 +584,12 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsLoginReopen: "重新打开授权页面", accountsLoginCancel: "取消登录", accountsLoginOpened: "已打开授权页面，请在浏览器继续。",
     accountsLoginSaved: "新登录已保存，可在列表中选择切换。", accountsLoginCleanup: "账户已保存，但临时目录未能清理，请检查系统文件权限。",
     accountsLoginStatusFailed: "暂时无法读取登录进度，正在重试。你也可以取消后重新登录。",
-    accountsManage: "切换账户", accountsTitle: "账户管理", accountsIntro: "保存常用账户，让工作与个人登录轻松切换。",
+    accountsManage: "切换账户", accountsTitle: "账户管理", accountsIntro: "保存常用账户，让工作与个人登录轻松切换。", accountsFlowKicker: "切换链路", accountsFlowLocal: "只替换本机凭据，不代理 Codex 请求", accountsFlowSaved: "已保存账户", accountsFlowSwitchLocal: "本地切换", accountsFlowSceneTarget: "重启后使用新凭据", accountsFlowStepOne: "1 选择账户", accountsFlowStepTwo: "2 替换凭据", accountsFlowStepThree: "3 重启后生效", accountsFlowValidate: "校验目标账户并执行切换", accountsFlowAuthLocation: "CODEX_HOME 中的当前凭据", accountsFlowApplyHint: "可勾选重启本机服务", accountsFlowPrivacy: "账户库与 auth.json 始终留在本机；此动画演示切换过程。", accountsFlowDetails: "查看账户识别与保存逻辑", accountsFlowRead: "自动刷新或手动刷新会读取 auth.json，并按账户身份匹配已保存账户", accountsFlowNew: "身份未匹配", accountsFlowNewHint: "保存当前账户后新增记录", accountsFlowChanged: "身份相同，Token 有变化", accountsFlowChangedHint: "更新保存记录，不会新增重复账户", accountsFlowNote: "切换前会更新账户记录，切换后可重启客户端核对。", accountsFlowSelect: "选择已保存账户", accountsSwitchGuideKicker: "切换说明", accountsSwitchGuideTitle: "账户如何切换", accountsSwitchGuideHint: "切换只修改本机登录凭据，不会上传账户信息。", accountsSwitchGuideStepOne: "选择账户", accountsSwitchGuideStepOneHint: "从已保存账户中选择目标", accountsSwitchGuideStepTwo: "替换本机凭据", accountsSwitchGuideStepTwoHint: "安全更新当前 auth.json", accountsSwitchGuideStepThree: "重启后生效", accountsSwitchGuideStepThreeHint: "可按需重启本机 Codex 服务",
     settingsEmailVisibility: "邮箱显示", settingsEmailVisibilityHint: "统一控制账户用量、账户管理及账户弹窗中的邮箱显示。账户名称不受影响。",
     settingsEmailShow: "显示完整邮箱", settingsEmailHide: "隐藏邮箱（脱敏显示）",
     accountsUnsavedHint: "识别到未保存的账户，点击保存当前账户", accountsUnsavedCaption: "当前登录 · 尚未保存",
     accountsCredentialsChangedHint: "登录凭据已更新，点击更新保存", accountsCredentialsChangedCaption: "当前登录 · 凭据待更新",
     accountsUpdateSave: "更新保存", accountsCredentialsUpdateHint: "当前账户的登录凭据有变化，将更新原保存记录，不会新增账户。",
-    accountsFlowTitle: "账户如何切换", accountsFlowLocal: "只替换本机凭据，不代理 Codex 请求",
-    accountsFlowKicker: "切换链路", accountsFlowSaved: "已保存账户", accountsFlowSwitchLocal: "本地切换", accountsFlowSceneTarget: "重启后使用新凭据",
-    accountsFlowStepOne: "1 选择账户", accountsFlowStepTwo: "2 替换凭据", accountsFlowStepThree: "3 重启后生效",
-    accountsFlowValidate: "校验目标账户并执行切换", accountsFlowAuthLocation: "CODEX_HOME 中的当前凭据",
-    accountsFlowPrivacy: "账户库与 auth.json 始终留在本机；此动画仅演示切换过程，不代表服务实际状态。",
-    accountsFlowSelect: "选择已保存账户", accountsFlowSelectHint: "从账户库读取凭据",
-    accountsFlowReplace: "替换当前登录", accountsFlowReplaceHint: "原子写入 auth.json",
-    accountsFlowApply: "重启后核对", accountsFlowApplyHint: "可勾选重启本机服务",
-    accountsFlowDetails: "查看账户识别与保存逻辑",
-    accountsFlowRead: "跟随自动刷新或手动刷新读取 auth.json → 按账户 ID 与用户标识对比已保存账户",
-    accountsFlowNew: "身份未匹配", accountsFlowNewHint: "显示 +1 → 保存当前账户 → 新增账户记录",
-    accountsFlowChanged: "身份相同，Token 有变化", accountsFlowChangedHint: "显示蓝色圆点 → 更新保存 → 更新原记录；仅刷新时间变化不提示。",
-    accountsFlowNote: "凭据保存在 .codex-desk/config.json；切换前自动更新，切换后请重启客户端核对。",
     accountsCurrentCaption: "当前登录", accountsCurrentUnknown: "暂无可保存的 ChatGPT 登录", accountsSave: "保存当前账户",
     accountsListTitle: "已保存账户", accountsCount: "{count} 个账户", accountsSelected: "已选凭据", accountsSwitch: "切换", accountsReconnect: "重新同步",
     accountsRename: "重命名", accountsRemove: "移除账户", accountsEmailUnknown: "邮箱信息不可用", accountsLoading: "正在读取账户…", accountsLoadingHint: "正在检查本机保存的登录信息。",
@@ -641,25 +612,12 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsSyncFailed: "登录信息已切换，账户数据尚未同步，请稍后刷新。", accountsFailed: "操作未完成：{error}",
   },
   en: {
-    accountsManage: "Switch account", accountsTitle: "Your accounts", accountsIntro: "Keep your everyday accounts ready for work and personal use.",
+    accountsManage: "Switch account", accountsTitle: "Your accounts", accountsIntro: "Keep your everyday accounts ready for work and personal use.", accountsFlowKicker: "SWITCHING FLOW", accountsFlowLocal: "Local credentials only; no Codex request proxy", accountsFlowSaved: "Saved accounts", accountsFlowSwitchLocal: "Local switch", accountsFlowSceneTarget: "New credentials after restart", accountsFlowStepOne: "1 Select account", accountsFlowStepTwo: "2 Replace credentials", accountsFlowStepThree: "3 Restart to apply", accountsFlowValidate: "Validate the target and switch", accountsFlowAuthLocation: "Current credentials in CODEX_HOME", accountsFlowApplyHint: "Optional local service restart", accountsFlowPrivacy: "Saved accounts and auth.json stay on this device. This animation illustrates the switch.", accountsFlowDetails: "How accounts are detected and saved", accountsFlowRead: "Automatic or manual refresh reads auth.json and matches saved account identity", accountsFlowNew: "No matching identity", accountsFlowNewHint: "Save the current account to add a record", accountsFlowChanged: "Same identity, changed tokens", accountsFlowChangedHint: "Update the saved record without adding a duplicate", accountsFlowNote: "Update the saved record before switching, then restart and verify.", accountsFlowSelect: "Choose a saved account", accountsSwitchGuideKicker: "SWITCH GUIDE", accountsSwitchGuideTitle: "How account switching works", accountsSwitchGuideHint: "Switching updates local credentials only. Account data is never uploaded.", accountsSwitchGuideStepOne: "Choose an account", accountsSwitchGuideStepOneHint: "Pick a saved target account", accountsSwitchGuideStepTwo: "Replace local credentials", accountsSwitchGuideStepTwoHint: "Update the current auth.json safely", accountsSwitchGuideStepThree: "Restart to apply", accountsSwitchGuideStepThreeHint: "Restart the local Codex service when needed",
     settingsEmailVisibility: "Email visibility", settingsEmailVisibilityHint: "Controls emails in account usage, account management, and account dialogs. Account labels stay unchanged.",
     settingsEmailShow: "Show full emails", settingsEmailHide: "Hide emails (masked)",
     accountsUnsavedHint: "An unsaved account was detected. Save your current account.", accountsUnsavedCaption: "Current sign-in · Not saved",
     accountsCredentialsChangedHint: "Sign-in credentials changed. Update the saved account.", accountsCredentialsChangedCaption: "Current sign-in · Update needed",
     accountsUpdateSave: "Update saved account", accountsCredentialsUpdateHint: "Your sign-in credentials changed. This updates the existing saved account without adding another account.",
-    accountsFlowTitle: "How switching works", accountsFlowLocal: "Local credentials only; no Codex request proxy",
-    accountsFlowKicker: "SWITCHING FLOW", accountsFlowSaved: "Saved accounts", accountsFlowSwitchLocal: "Local switch", accountsFlowSceneTarget: "New credentials after restart",
-    accountsFlowStepOne: "1 Select account", accountsFlowStepTwo: "2 Replace credentials", accountsFlowStepThree: "3 Restart to apply",
-    accountsFlowValidate: "Validate the target and switch", accountsFlowAuthLocation: "Current credentials in CODEX_HOME",
-    accountsFlowPrivacy: "Saved accounts and auth.json stay on this device. This animation illustrates the process, not the actual service state.",
-    accountsFlowSelect: "Choose a saved account", accountsFlowSelectHint: "Read saved credentials",
-    accountsFlowReplace: "Replace current sign-in", accountsFlowReplaceHint: "Write auth.json atomically",
-    accountsFlowApply: "Restart and verify", accountsFlowApplyHint: "Optional local service restart",
-    accountsFlowDetails: "How accounts are detected and saved",
-    accountsFlowRead: "Automatic or manual refresh reads auth.json → compares account ID and user identity with saved accounts",
-    accountsFlowNew: "No matching identity", accountsFlowNewHint: "Show +1 → save current account → add a saved account",
-    accountsFlowChanged: "Same identity, changed tokens", accountsFlowChangedHint: "Show a blue dot → update saved account → replace the existing record. Refresh timestamps alone do not trigger a hint.",
-    accountsFlowNote: "Credentials: .codex-desk/config.json. Updated before switching; restart clients and verify afterward.",
     accountsCurrentCaption: "Local sign-in credentials", accountsCurrentUnknown: "No ChatGPT sign-in available to save", accountsSave: "Save current account",
     accountsListTitle: "Saved accounts", accountsCount: "{count} accounts", accountsSelected: "Selected credentials", accountsSwitch: "Switch", accountsReconnect: "Sync again",
     accountsRename: "Rename", accountsRemove: "Remove account", accountsEmailUnknown: "Email unavailable", accountsLoading: "Reading accounts…", accountsLoadingHint: "Checking sign-in details saved on this device.",
@@ -680,6 +638,29 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsRestarted: "Credentials switched and the local service restarted. Check the current account; other Codex clients may still need a restart.",
     accountsRestartFailed: "Credentials switched, but the service could not start. Start Codex manually, then refresh.",
     accountsSyncFailed: "Credentials switched. Account data is not synced yet; refresh in a moment.", accountsFailed: "Could not complete this action: {error}",
+  },
+};
+
+const ACCOUNT_QUOTA_TRANSLATIONS = {
+  "zh-CN": {
+    accountServiceDetails: "当前服务详情与额度提醒", accountLastSynced: "最近同步",
+    accountQuotaKicker: "多账户监控", accountQuotaMonitorTitle: "账户额度监控", accountQuotaMonitorHint: "同时查看已保存账户的额度余量与重置时间，查询不会切换当前登录。", accountQuotaRefreshAll: "刷新全部", accountQuotaRefreshing: "正在查询账户额度…", accountQuotaLastSyncedMessage: "额度已更新", accountQuotaTotal: "账户总数", accountQuotaHealthy: "状态正常", accountQuotaAttention: "需要注意", accountQuotaLastSynced: "最近同步", accountQuotaPage: "第 {current} / {total} 页", accountQuotaPreview: "已选账户", accountQuotaRemaining: "剩余", accountQuotaNextReset: "下次重置：{value}", accountQuotaCurrent: "当前账户", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryItem: "第 {index} 张：{value}", accountQuotaCreditsExpiryUnknown: "暂无到期时间", accountQuotaCreditsExpiryUnknownItem: "第 {index} 张：到期时间未知", accountQuotaUnavailable: "额度暂不可用", accountQuotaNoAccounts: "还没有可监控的账户", accountQuotaNoAccountsHint: "先在账户管理中保存一个 ChatGPT 账户，再回来刷新额度。", accountQuotaQueryFailed: "额度查询失败：{error}",
+  },
+  "zh-TW": {
+    accountServiceDetails: "目前服務詳情與額度提醒", accountLastSynced: "最近同步",
+    accountQuotaKicker: "多帳戶監控", accountQuotaMonitorTitle: "帳戶額度監控", accountQuotaMonitorHint: "同時查看已保存帳戶的額度餘量與重設時間，查詢不會切換目前登入。", accountQuotaRefreshAll: "重新整理全部", accountQuotaRefreshing: "正在查詢帳戶額度…", accountQuotaLastSyncedMessage: "額度已更新", accountQuotaTotal: "帳戶總數", accountQuotaHealthy: "狀態正常", accountQuotaAttention: "需要注意", accountQuotaLastSynced: "最近同步", accountQuotaRemaining: "剩餘", accountQuotaNextReset: "下次重設：{value}", accountQuotaCurrent: "目前帳戶", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryUnknown: "暫無到期時間", accountQuotaUnavailable: "額度暫不可用", accountQuotaNoAccounts: "還沒有可監控的帳戶", accountQuotaNoAccountsHint: "先在帳戶管理中保存一個 ChatGPT 帳戶，再回來重新整理額度。", accountQuotaQueryFailed: "額度查詢失敗：{error}",
+  },
+  en: {
+    accountServiceDetails: "Current service details & quota alerts", accountLastSynced: "Last synced",
+    accountQuotaKicker: "MULTI-ACCOUNT MONITOR", accountQuotaMonitorTitle: "Account quota monitor", accountQuotaMonitorHint: "See saved account headroom and reset times together. Queries never switch the active sign-in.", accountQuotaRefreshAll: "Refresh all", accountQuotaRefreshing: "Querying account quotas…", accountQuotaLastSyncedMessage: "Quotas updated", accountQuotaTotal: "Accounts", accountQuotaHealthy: "Healthy", accountQuotaAttention: "Needs attention", accountQuotaLastSynced: "Last synced", accountQuotaRemaining: "Remaining", accountQuotaNextReset: "Next reset: {value}", accountQuotaCurrent: "Current", accountQuotaCreditsCount: "Recharge cards: {count}", accountQuotaCreditsExpiry: "Earliest expiry: {value}", accountQuotaCreditsExpiryItem: "Card {index}: {value}", accountQuotaCreditsExpiryUnknown: "Expiry unavailable", accountQuotaCreditsExpiryUnknownItem: "Card {index}: expiry unavailable", accountQuotaUnavailable: "Unavailable", accountQuotaNoAccounts: "No accounts to monitor", accountQuotaNoAccountsHint: "Save a ChatGPT account in account management, then refresh this view.", accountQuotaQueryFailed: "Quota query failed: {error}",
+  },
+  ja: {
+    accountServiceDetails: "現在のサービス詳細とクォータ通知", accountLastSynced: "最終同期",
+    accountQuotaKicker: "複数アカウント監視", accountQuotaMonitorTitle: "アカウントクォータ監視", accountQuotaMonitorHint: "保存済みアカウントの残量とリセット時刻をまとめて確認できます。現在のログインは切り替わりません。", accountQuotaRefreshAll: "すべて更新", accountQuotaRefreshing: "アカウントのクォータを確認中…", accountQuotaLastSyncedMessage: "クォータを更新しました", accountQuotaTotal: "アカウント", accountQuotaHealthy: "正常", accountQuotaAttention: "要確認", accountQuotaLastSynced: "最終同期", accountQuotaRemaining: "残り", accountQuotaNextReset: "次回リセット：{value}", accountQuotaCurrent: "現在", accountQuotaUnavailable: "利用不可", accountQuotaNoAccounts: "監視するアカウントがありません", accountQuotaNoAccountsHint: "アカウント管理で ChatGPT アカウントを保存してから更新してください。", accountQuotaQueryFailed: "クォータの確認に失敗：{error}",
+  },
+  ko: {
+    accountServiceDetails: "현재 서비스 상세 및 할당량 알림", accountLastSynced: "최근 동기화",
+    accountQuotaKicker: "다중 계정 모니터", accountQuotaMonitorTitle: "계정 할당량 모니터", accountQuotaMonitorHint: "저장된 계정의 잔여량과 재설정 시간을 함께 확인합니다. 현재 로그인은 전환되지 않습니다.", accountQuotaRefreshAll: "모두 새로 고침", accountQuotaRefreshing: "계정 할당량을 확인하는 중…", accountQuotaLastSyncedMessage: "할당량이 업데이트됨", accountQuotaTotal: "계정 수", accountQuotaHealthy: "정상", accountQuotaAttention: "확인 필요", accountQuotaLastSynced: "마지막 동기화", accountQuotaRemaining: "남은 할당량", accountQuotaNextReset: "다음 재설정: {value}", accountQuotaCurrent: "현재", accountQuotaUnavailable: "사용할 수 없음", accountQuotaNoAccounts: "모니터링할 계정이 없음", accountQuotaNoAccountsHint: "계정 관리에서 ChatGPT 계정을 저장한 후 새로 고침하세요.", accountQuotaQueryFailed: "할당량 조회 실패: {error}",
   },
 };
 
@@ -764,10 +745,9 @@ const TRANSLATION_SOURCES = [
   PROXY_SETTINGS_TRANSLATIONS,
   ABOUT_TRANSLATIONS,
   ACCOUNT_SWITCH_TRANSLATIONS,
+  ACCOUNT_QUOTA_TRANSLATIONS,
   NAVIGATION_TRANSLATIONS,
   TOPIC_TRANSLATIONS,
-  TOKEN_HEATMAP_TRANSLATIONS,
-  ACCOUNT_USAGE_TRANSLATIONS,
   TRANSLATIONS,
   IMAGE_PREVIEW_TRANSLATIONS,
   FILE_DIFF_TRANSLATIONS,

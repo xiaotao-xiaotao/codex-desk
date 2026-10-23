@@ -19,6 +19,16 @@ const MAX_LABEL_CHARS: usize = 48;
 #[derive(Default)]
 pub struct AccountStoreState(pub tokio::sync::Mutex<()>);
 
+/// 额度查询专用目标。访问令牌只在后端进程内流转，禁止序列化或返回 WebView。
+pub(crate) struct QuotaTarget {
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) email: Option<String>,
+    pub(crate) account_id: String,
+    pub(crate) access_token: String,
+    pub(crate) selected: bool,
+}
+
 #[derive(Clone)]
 pub struct AccountStore {
     home: PathBuf,
@@ -292,6 +302,36 @@ impl AccountStore {
             config.to_string().as_bytes(),
         )?;
         self.snapshot()
+    }
+
+    /// 读取额度监控所需的最小账户快照，不向前端暴露 access token。
+    pub fn quota_targets(&self) -> Result<Vec<QuotaTarget>, String> {
+        self.ensure_file_mode()?;
+        let current = self
+            .read_current()
+            .ok()
+            .and_then(|auth| normalized_auth(&auth).ok())
+            .and_then(|auth| identity(&auth).ok());
+        let store = self.load()?;
+        store
+            .accounts
+            .into_iter()
+            .map(|account| {
+                let access_token = nonempty(account.auth.pointer("/tokens/access_token"))
+                    .ok_or("保存的账户缺少访问凭据，请重新保存")?
+                    .to_owned();
+                Ok(QuotaTarget {
+                    selected: current
+                        .as_ref()
+                        .is_some_and(|id| same_identity(id, &account.identity)),
+                    id: account.id,
+                    label: account.label,
+                    email: account.identity.email,
+                    account_id: account.identity.account_id,
+                    access_token,
+                })
+            })
+            .collect()
     }
 
     fn ensure_file_mode(&self) -> Result<(), String> {

@@ -307,3 +307,9 @@
 :root[data-theme="dark"] .dashboard-page .account-details { background: #151b23; }
 :root[data-theme="dark"] .dashboard-page .account-detail-item strong { color: #d5e3f5; }
 :root[data-theme="dark"] .dashboard-page .thread-list { border-color: #29384c; background: #151b23; }
+
+/* 账户列表状态标签需要独立的深色底色，避免沿用浅色主题的低对比度配色。 */
+:root[data-theme="dark"] .account-quota-list-state.is-healthy { color: #8dc5ff; background: transparent; }
+:root[data-theme="dark"] .account-quota-list-state.is-attention { color: #ffd666; background: transparent; }
+:root[data-theme="dark"] .account-quota-list-state.is-unavailable { color: #aab7c7; background: transparent; }
+:root[data-theme="dark"] .account-quota-list-current-mark { border-color: var(--lite-surface); }

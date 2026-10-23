@@ -19,6 +19,7 @@ base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 # daemon 的本地 proxy 转发 WebSocket 字节；使用标准 WebSocket 库处理握手、掩码和控制帧。
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 tokio-tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
 # 中文词云使用词典分词替换字符 n-gram；默认词典随二进制打包，读取时不依赖网络或本机外部文件。
 jieba-rs = "0.10.4"
