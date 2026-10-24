@@ -198,7 +198,7 @@
 .account-switch-dialog[aria-busy="true"] .accounts-submit { cursor: wait; animation: accounts-working 1.2s ease-in-out infinite alternate; }
 @keyframes accounts-enter { from { opacity: 0; transform: translateY(7px) scale(.985); } to { opacity: 1; transform: none; } }
 @keyframes accounts-working { to { opacity: .75; } }
-.accounts-flow { container-type: inline-size; margin-top: 20px; padding: 14px 0 0; border-top: 1px solid var(--accounts-line); }
+.accounts-flow { container-type: inline-size; margin-top: 12px; padding: 8px 0 0; border-top: 1px solid var(--accounts-line); }
 .accounts-flow-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) 24px; align-items: center; gap: 14px; min-height: 32px; margin: 0; cursor: pointer; list-style: none; }
 .accounts-flow-heading::-webkit-details-marker { display: none; }
 .accounts-flow-heading:focus-visible { outline: 2px solid #91caff; outline-offset: 5px; border-radius: 3px; }
@@ -212,21 +212,21 @@
 .accounts-flow-body { margin-top: 10px; }
 .accounts-flow-kicker { margin: 0; color: var(--accounts-muted); font-size: 12px; font-weight: 650; letter-spacing: .04em; }
 .accounts-flow-heading > span { color: var(--accounts-muted); font-size: 11px; line-height: 1.6; }
-.accounts-flow-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; margin: 20px 0 0; padding: 0; list-style: none; counter-reset: flow-step; }
-.accounts-flow-steps li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; text-align: center; counter-increment: flow-step; }
-.accounts-flow-steps li:not(:last-child)::after { position: absolute; top: 23px; left: calc(50% + 32px); width: calc(100% - 42px); height: 1px; color: #4283d5; content: "›"; font-size: 22px; line-height: 0; background: #a5c6f0; text-align: right; }
-.accounts-flow-steps b { display: grid; position: relative; width: 46px; height: 46px; border: 1px solid #b8d3f7; border-radius: 13px; place-items: center; color: #246cc9; background: var(--accounts-surface); box-shadow: 0 0 0 3px #eaf2fd; }
+.accounts-flow-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; margin: 12px 0 0; padding: 0; list-style: none; counter-reset: flow-step; }
+.accounts-flow-steps li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; counter-increment: flow-step; }
+.accounts-flow-steps li:not(:last-child)::after { position: absolute; top: 18px; left: calc(50% + 27px); width: calc(100% - 32px); height: 1px; color: #4283d5; content: "›"; font-size: 22px; line-height: 0; background: #a5c6f0; text-align: right; }
+.accounts-flow-steps b { display: grid; position: relative; width: 36px; height: 36px; border: 1px solid #b8d3f7; border-radius: 10px; place-items: center; color: #246cc9; background: var(--accounts-surface); box-shadow: 0 0 0 3px #eaf2fd; }
 .accounts-flow-steps li > div { display: grid; min-width: 0; gap: 3px; }
 .accounts-flow-steps b::before { position: absolute; top: -6px; left: -6px; display: grid; width: 17px; height: 17px; place-items: center; border: 2px solid var(--accounts-bg); border-radius: 50%; color: #fff; background: #377fdd; content: counter(flow-step); font-size: 10px; font-weight: 600; }
-.accounts-page .accounts-flow-steps b svg { width: 23px; height: 23px; }
+.accounts-page .accounts-flow-steps b svg { width: 19px; height: 19px; }
 .accounts-flow-steps strong { font-size: 13px; line-height: 1.5; font-weight: 600; }
-.accounts-flow-steps small { color: var(--accounts-muted); font-size: 12px; line-height: 1.5; }
+.accounts-flow-steps small { color: var(--accounts-muted); font-size: 11px; line-height: 1.5; }
 .accounts-flow-steps [data-account-flow-i18n="accountsFlowAuthLocation"] { white-space: nowrap; }
 .accounts-flow-privacy { flex: 1 1 280px; color: var(--accounts-muted); font-size: 11px; line-height: 1.7; text-align: left; }
-.accounts-flow-scene { position: relative; display: flex; justify-content: space-between; align-items: flex-start; height: 158px; margin-top: 0; padding: 16px 20px; overflow: hidden; border: 1px solid var(--accounts-line); border-radius: 14px; background: linear-gradient(110deg, #edf5ff, var(--accounts-surface) 70%); }
+.accounts-flow-scene { position: relative; display: flex; justify-content: space-between; align-items: flex-start; height: 120px; margin-top: 0; padding: 12px 20px; overflow: hidden; border: 1px solid var(--accounts-line); border-radius: 14px; background: linear-gradient(110deg, #edf5ff, var(--accounts-surface) 70%); }
 .accounts-scene-line { position: absolute; top: 57px; left: 24%; right: 24%; height: 2px; background: #bfd6f3; }
 .accounts-scene-line::after { position: absolute; inset: 0; content: ""; background: #5b99eb; transform-origin: left; animation: accounts-route-fill 9s ease-in-out infinite; }
-.accounts-scene-card { position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; width: 28%; min-height: 82px; padding: 10px; border: 1px solid var(--accounts-line); border-radius: 12px; background: var(--accounts-bg); box-shadow: 0 5px 16px #2d538810; }
+.accounts-scene-card { position: relative; display: grid; justify-items: center; align-content: center; gap: 4px; width: 28%; min-height: 64px; padding: 8px; border: 1px solid var(--accounts-line); border-radius: 12px; background: var(--accounts-bg); box-shadow: 0 5px 16px #2d538810; }
 .accounts-scene-card strong { font-size: 13px; font-weight: 600; }
 .accounts-scene-card small { max-width: 100%; overflow: hidden; color: var(--accounts-muted); font-size: 11px; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis; }
 .accounts-page .accounts-scene-card svg { width: 22px; height: 22px; color: #246cc9; }
@@ -234,7 +234,7 @@
 .accounts-scene-hub small { position: absolute; top: 48px; width: 100px; text-align: center; color: var(--accounts-muted); font-size: 11px; }
 .accounts-page .accounts-scene-hub svg { width: 22px; height: 22px; }
 .accounts-scene-check { display: grid; width: 22px; height: 22px; border-radius: 50%; place-items: center; color: #508bbd; background: var(--accounts-surface); font-size: 12px; }
-.accounts-scene-route { position: absolute; top: 108px; left: 28%; right: 28%; height: 46px; }
+.accounts-scene-route { position: absolute; top: 90px; left: 28%; right: 28%; height: 46px; }
 .accounts-scene-runner { position: absolute; width: 44px; height: 44px; color: #1677ff; animation: accounts-brand-travel 9s ease-in-out infinite; }
 .accounts-page .accounts-scene-brand { width: 26px; height: 26px; margin: 5px; stroke-width: 1.7; }
 .accounts-scene-runner code { position: absolute; top: -5px; left: 31px; padding: 3px 6px; border: 1px solid var(--accounts-line); border-radius: 5px; color: #5680b7; background: var(--accounts-bg); font-size: 11px; box-shadow: 0 2px 5px #32568412; }
@@ -250,7 +250,7 @@
 :root[data-theme="dark"] .accounts-scene-progress { --accounts-progress-active-ink: #a8ceff; --accounts-progress-active-bg: #254365; }
 .accounts-flow:hover .accounts-scene-runner, .accounts-flow:hover .accounts-scene-line::after, .accounts-flow:hover .accounts-scene-progress span,
 .accounts-flow:focus-within .accounts-scene-runner, .accounts-flow:focus-within .accounts-scene-line::after, .accounts-flow:focus-within .accounts-scene-progress span { animation-play-state: paused; }
-.accounts-flow-details { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--accounts-line); }
+.accounts-flow-details { margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--accounts-line); }
 .accounts-flow-details summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 0; border-radius: 7px; color: #2869bd; font-size: 12px; cursor: pointer; list-style: none; }
 .accounts-flow-details-link { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 6px; background: var(--accounts-surface); }
 .accounts-flow-details summary::-webkit-details-marker { display: none; }

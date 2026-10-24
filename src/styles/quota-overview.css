@@ -10,6 +10,7 @@
 .is-expanded .quota-orb::before { animation-play-state: paused; }
 
 .quota-alert-toggle { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; min-height: var(--control-size); padding: 2px 6px; border: 1px solid #b7d4ff; border-radius: 4px; color: #1668c6; background: #f5f9ff; cursor: pointer; font-size: var(--font-caption); font-weight: 500; line-height: 1.2; white-space: nowrap; }
+.quota-alert-toggle-label { letter-spacing: 1px; }
 .quota-alert-toggle[hidden] { display: none; }
 .quota-alert-icon { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .quota-alert-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }

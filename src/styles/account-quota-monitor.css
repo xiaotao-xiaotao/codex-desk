@@ -54,7 +54,7 @@
 .account-quota-list-state.is-unavailable { background: transparent; }
 .account-quota-list-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; }
 .account-quota-list-mini-item { display: grid; grid-template-rows: auto 6px auto; gap: 4px; min-width: 0; }
-.account-quota-list-mini-item strong { overflow: hidden; color: var(--lite-accent); font-size: 12px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-list-mini-item strong { overflow: hidden; color: var(--lite-accent); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-mini-item i { display: block; height: 6px; overflow: hidden; border-radius: 5px; background: linear-gradient(to right, var(--lite-accent) var(--mini-progress), var(--lite-border) var(--mini-progress)); }
 .account-quota-list-mini-item small { overflow: hidden; color: var(--lite-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-credits { display: grid; gap: 2px; min-width: 0; }
