@@ -143,7 +143,7 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
   .dashboard-loading-overlay { --loading-overlay-inset: 75px 0 0 var(--dashboard-sidebar-width); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .panel, .dashboard-layout, .sidebar-toggle, .sidebar-toggle .disclosure-chevron, .dashboard-nav-button, .progress-track span { transition: none; }
+  .panel, .dashboard-layout, .sidebar-toggle, .sidebar-toggle .disclosure-chevron, .dashboard-nav-button { transition: none; }
   .dashboard-page { animation: none; }
 }
 

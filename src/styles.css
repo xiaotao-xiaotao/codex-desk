@@ -101,24 +101,6 @@
 
 .dashboard-workspace { padding: 26px 30px 18px; }
 .dashboard-page.quota-section { gap: 18px; }
-.dashboard-page .account-details,
-.dashboard-page .quota-card {
-  border: 0;
-  border-radius: 18px;
-  background: var(--lite-surface);
-  box-shadow: none;
-}
-.dashboard-page .account-details { gap: 20px; padding: 22px; }
-.dashboard-page .account-detail-item strong { color: var(--lite-ink); font-size: 14px; }
-.dashboard-page .account-detail-label { color: var(--lite-muted); font-size: 12px; letter-spacing: .01em; }
-.dashboard-page .quota-list { gap: 16px; }
-.dashboard-page .quota-card { min-height: 188px; padding: 22px; border-left: 4px solid var(--lite-accent); border-radius: 18px; background: var(--lite-surface); }
-.dashboard-page .quota-card h3 { color: var(--lite-muted); font-size: 14px; }
-.dashboard-page .quota-value strong { color: var(--lite-accent); font-size: 48px; }
-.dashboard-page .quota-value > span:not(.quota-alert) { color: var(--lite-muted); }
-.dashboard-page .progress-track { height: 7px; background: #e5edf7; }
-.dashboard-page .quota-reset-time { color: var(--lite-muted); }
-.dashboard-page .quota-reset-countdown { color: var(--lite-accent); }
 .dashboard-status { margin-top: 16px; padding-top: 10px; border-top: 0; }
 
 /* 设置弹窗也使用相同的留白和色阶，减少精简版里的视觉噪声。 */
@@ -149,14 +131,9 @@
 :root[data-theme="dark"] .dashboard-sidebar { background: var(--lite-ground); }
 :root[data-theme="dark"] .panel-header,
 :root[data-theme="dark"] .dashboard-sidebar,
-:root[data-theme="dark"] .dashboard-page .account-details,
-:root[data-theme="dark"] .dashboard-page .quota-card,
 :root[data-theme="dark"] .settings-dialog { background: var(--lite-surface); }
 :root[data-theme="dark"] .dashboard-nav-button:hover { color: var(--lite-accent); background: #1a314b; }
 :root[data-theme="dark"] .dashboard-nav-button.is-active { color: var(--lite-accent); background: var(--lite-accent-soft); }
-:root[data-theme="dark"] .dashboard-page .quota-value strong,
-:root[data-theme="dark"] .dashboard-page .account-detail-item strong { color: var(--lite-ink); }
-:root[data-theme="dark"] .dashboard-page .progress-track { background: #2a3d52; }
 :root[data-theme="dark"] .settings-tabs,
 :root[data-theme="dark"] .settings-group { background: var(--lite-ground); }
 

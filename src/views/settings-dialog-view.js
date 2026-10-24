@@ -115,19 +115,18 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   function renderIntervalOptions() {
     const selected = refreshInterval.value;
     const options = [
-      [30, "settingsRefresh30Seconds"],
-      [60, "settingsRefresh60Seconds"],
-      [120, "settingsRefresh2Minutes"],
-      [300, "settingsRefresh5Minutes"],
-      [600, "settingsRefresh10Minutes"],
+      [180, "3 分钟"],
+      [300, "5 分钟"],
+      [600, "10 分钟"],
+      [1200, "20 分钟"],
     ];
     refreshInterval.replaceChildren(...options.map(([value, labelKey]) => {
       const option = document.createElement("option");
       option.value = String(value);
-      option.textContent = t(labelKey);
+      option.textContent = labelKey;
       return option;
     }));
-    refreshInterval.value = selected || "60";
+    refreshInterval.value = selected || "180";
   }
 
   function setBusy(busy) {

@@ -123,10 +123,7 @@
 .accounts-page button:disabled:hover, .account-switch-dialog button:disabled:hover { transform: none; }
 .account-switch-dialog .accounts-back { display: none; }
 .accounts-header { height: 0; flex: 0 0 auto; }
-.accounts-brand-icon { display: grid; width: 42px; height: 42px; flex: 0 0 42px; border: 1px solid #d9e8ff; border-radius: 13px; place-items: center; color: #1677ff; background: #eff6ff; }
 .account-switch-dialog svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.accounts-brand-icon svg { width: 23px; height: 23px; }
-.accounts-kicker { margin: 0 0 3px; color: #8395ad; font-size: 9px; font-weight: 650; letter-spacing: .12em; }
 .accounts-header h2 { color: var(--accounts-ink); font-size: 18px; font-weight: 700; }
 .accounts-close { position: absolute; top: 20px; right: 20px; }
 .accounts-content { min-height: 0; padding: 24px 24px 22px; overflow-y: auto; }
@@ -144,7 +141,7 @@
 .accounts-count { color: var(--accounts-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .accounts-list-heading .accounts-count { margin-left: auto; }
 .accounts-list { display: grid; gap: 8px; }
-.accounts-row { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 13px 12px; border: 1px solid var(--accounts-line); border-radius: 11px; background: var(--accounts-bg); transition: border-color .16s, background .16s; }
+.accounts-row { position: relative; display: flex; align-items: center; gap: 11px; min-width: 0; padding: 13px 12px; border: 1px solid var(--accounts-line); border-radius: 11px; background: var(--accounts-bg); transition: border-color .16s, background .16s; }
 .accounts-row:hover { border-color: #c5dafa; background: var(--accounts-surface); }
 .accounts-row.is-selected { border-color: #c5ddff; background: #f6faff; }
 .accounts-avatar { display: grid; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 11px; place-items: center; color: #467ab9; background: #edf3fc; font-size: 14px; font-weight: 650; }
@@ -153,8 +150,9 @@
 .accounts-row-info > div { display: flex; min-width: 0; align-items: center; gap: 7px; margin-bottom: 5px; }
 .accounts-row-info strong { overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .accounts-row-email { display: block; overflow: hidden; color: var(--accounts-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.accounts-selected-badge { flex: 0 0 auto; padding: 2px 5px; border-radius: 4px; color: #245caa; background: #e6f0ff; font-size: 10px; }
-:root[data-theme="dark"] .accounts-selected-badge { color: #a3bddf; background: #2a3f59; }
+.accounts-selected-badge { position: absolute; z-index: 1; top: -7px; left: 0; display: grid; width: 14px; height: 14px; box-sizing: border-box; place-items: center; border: 3px solid var(--accounts-bg); border-radius: 50%; color: #1677ff; background: #1677ff; }
+.accounts-selected-badge[hidden] { display: none; }
+:root[data-theme="dark"] .accounts-selected-badge { border-color: var(--accounts-bg); color: #8ebcff; background: #8ebcff; }
 .accounts-row-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; }
 .accounts-row-switch { min-height: 28px; margin-right: 5px; padding: 4px 10px; color: #1668dc; font-size: 11px; }
 .accounts-row-button { display: grid; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 7px; place-items: center; color: #64748b; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
@@ -329,7 +327,7 @@
 :root[data-theme="dark"] .account-switch-dialog, :root[data-theme="dark"] .accounts-page { --accounts-ink: #d4e3f5; --accounts-muted: #94a6bc; --accounts-line: #2a3c53; --accounts-surface: #1b293b; --accounts-bg: #162232; border-color: #2a3c53; }
 :root[data-theme="dark"] .accounts-current { border-color: #2a4465; background: #1b2d45; }
 :root[data-theme="dark"] .accounts-row.is-selected { border-color: #355982; background: #1b2d45; }
-:root[data-theme="dark"] .accounts-avatar, :root[data-theme="dark"] .accounts-brand-icon, :root[data-theme="dark"] .accounts-empty-icon { border-color: #2a4465; color: #8ebcff; background: #243b5b; }
+:root[data-theme="dark"] .accounts-avatar, :root[data-theme="dark"] .accounts-empty-icon { border-color: #2a4465; color: #8ebcff; background: #243b5b; }
 :root[data-theme="dark"] .accounts-button { border-color: #36516f; color: #8ebcff; }
 :root[data-theme="dark"] .accounts-button:hover:not(:disabled) { background: #223b5b; }
 :root[data-theme="dark"] .accounts-row-button { color: var(--accounts-muted); }

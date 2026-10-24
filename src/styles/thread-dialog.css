@@ -40,7 +40,6 @@
 .insight-summary-item + .insight-summary-item::before { margin: 0 7px; color: #bcc4cd; content: "·"; }
 .insight-summary-item strong { color: #64748b; font-size: inherit; font-weight: 500; font-variant-numeric: tabular-nums; }
 .insight-summary-scope { margin-left: 8px; color: #8a96a4; font-size: var(--font-caption); white-space: nowrap; }
-.activity-summary-hint { overflow: hidden; color: #98a4b2; font-size: var(--font-caption); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .activity-list { display: grid; height: 100%; min-height: 0; align-content: start; gap: 0; overflow-x: hidden; overflow-y: scroll; padding: 2px 3px 2px 0; border: 1px solid #e7ebef; border-radius: 8px; background: #fff; scrollbar-gutter: stable; touch-action: pan-y; }
 /* 保持原有紧凑单行布局，列表只在纵向滚动，避免长路径破坏卡片层级。 */
 .activity-row { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 32px; padding: 5px 8px; border-bottom: 1px solid #edf1f5; background: transparent; }
@@ -62,7 +61,6 @@
 .activity-status-completed { color: #13795b; background: #e7f8f0; }
 .activity-status-failed, .activity-status-interrupted { color: #b54708; background: #fff0df; }
 .activity-status-inProgress { color: #3467aa; background: #ebf3ff; }
-.activity-empty { margin: 8px 0 0; color: #8a94a0; font-size: var(--font-body); }
 /* 所有关闭入口复用同一轻量图标：常态无边框，悬停时才提供操作反馈。 */
 .close-icon-button { display: grid; width: var(--control-size); height: var(--control-size); flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: var(--control-radius); color: #7b8794; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
 .close-icon-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
@@ -182,9 +180,6 @@
 .message-activity-disclosure summary:hover { color: #344154; }
 .message-activity-disclosure summary:focus-visible { outline: 2px solid #91caff; outline-offset: -2px; }
 .message-activity-disclosure summary strong { min-width: 0; overflow: hidden; color: inherit; font-size: var(--font-body); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.activity-summary-stats { display: flex; align-items: center; gap: 5px; font-family: "Cascadia Code", Consolas, monospace; font-size: var(--font-caption); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.activity-summary-stats .is-added { color: #169c68; }
-.activity-summary-stats .is-removed { color: #cf4b44; }
 .activity-summary-icon { display: grid; width: 15px; height: 15px; flex: 0 0 auto; place-items: center; color: #748296; }
 .activity-summary-icon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
 /* Chromium/WebView2 支持时，让 details 内容区随状态平滑展开与收缩；旧内核仍保持原生可用行为。 */
@@ -193,7 +188,7 @@
   .message-activity-disclosure[open]::details-content { block-size: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .activity-summary-icon, .activity-summary-icon-expand-line, .message-activity-disclosure::details-content { transition: none; }
+  .activity-summary-icon, .message-activity-disclosure::details-content { transition: none; }
 }
 .message-activity-list { height: auto; max-height: none; overflow: visible; padding: 2px 0 0 21px; border: 0; background: transparent; scrollbar-gutter: auto; }
 .message-activity-list .activity-row { min-height: 26px; grid-template-columns: 15px minmax(0, 1fr) auto; gap: 5px; padding: 3px 0; border-bottom: 0; }

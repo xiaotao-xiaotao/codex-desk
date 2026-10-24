@@ -318,7 +318,10 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       row.querySelector(".accounts-row-email").title = getHideEmails() ? "" : account.email ?? "";
       const badge = row.querySelector(".accounts-selected-badge");
       badge.hidden = !account.selected;
-      badge.textContent = t("accountsSelected");
+      badge.textContent = "";
+      badge.setAttribute("role", "img");
+      badge.setAttribute("aria-label", t("accountsSelected"));
+      badge.title = t("accountsSelected");
       const actions = row.querySelector(".accounts-row-actions");
       const switchButton = document.createElement("button");
       switchButton.type = "button";

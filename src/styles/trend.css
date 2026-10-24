@@ -5,7 +5,6 @@
 .trend-heading-actions { display: flex; min-width: 0; justify-content: flex-end; gap: var(--space-sm); }
 /* 标题栏统一使用 24px 对齐盒，避免原生下拉框与相邻文字出现视觉基线偏移。 */
 .trend-heading .section-kicker { display: inline-flex; min-height: 24px; align-items: center; line-height: 1; }
-.trend-range-summary { display: flex; min-width: 0; align-items: center; gap: var(--space-xs); }
 /* 合计与选择器使用相同的 28px 行盒，保证数字与下拉文案处于同一视觉基线。 */
 .trend-total { display: inline-flex; height: var(--control-size); align-items: center; color: #9aa5b2; font-size: var(--font-caption); font-variant-numeric: tabular-nums; line-height: var(--control-size); white-space: nowrap; }
 .trend-controls { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--space-xs); }

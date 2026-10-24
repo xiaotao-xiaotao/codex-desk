@@ -1,6 +1,4 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
-:root[data-theme="dark"] .quota-card.is-unavailable { border-color: #2a3544; background: #151b23; box-shadow: inset 3px 0 0 #718096; }
-:root[data-theme="dark"] .quota-card.is-unavailable .quota-value strong,
 :root[data-theme="dark"] .quota-orb.is-unavailable .orb-value { color: #9aa9ba; }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { --token-distribution-color: #69b1ff; --token-distribution-hover-color: #8dc5ff; color: #e6edf3; color-scheme: dark; }
@@ -16,7 +14,6 @@
 :root[data-theme="dark"] .thread-item,
 :root[data-theme="dark"] .thread-search input,
 :root[data-theme="dark"] .pagination-button,
-:root[data-theme="dark"] .dialog-header,
 :root[data-theme="dark"] .message,
 :root[data-theme="dark"] .dialog-hint { border-color: #2a3544; background: #151b23; }
 :root[data-theme="dark"] h1,
@@ -29,11 +26,7 @@
 :root[data-theme="dark"] .thread-id-label,
 :root[data-theme="dark"] .thread-meta time,
 :root[data-theme="dark"] .thread-meta code,
-:root[data-theme="dark"] .dialog-hint,
-:root[data-theme="dark"] .quota-value span { color: #9aa9ba; }
-:root[data-theme="dark"] .quota-reset-time { color: #8dc5ff; background: #152f4f; }
-:root[data-theme="dark"] .quota-reset-countdown { color: #8dc5ff; }
-:root[data-theme="dark"] .quota-reset-at { color: #aab7c7; }
+:root[data-theme="dark"] .dialog-hint { color: #9aa9ba; }
 :root[data-theme="dark"] .section-title-row .section-kicker { color: #e6edf3; }
 :root[data-theme="dark"] .section-title-row .section-kicker::after { color: #46576a; }
 :root[data-theme="dark"] .section-title-row h2 { color: #9aa9ba; }
@@ -54,13 +47,10 @@
 :root[data-theme="dark"] .pagination-button:hover,
 :root[data-theme="dark"] .close-icon-button { color: #aab7c7; }
 :root[data-theme="dark"] .close-icon-button:hover { color: #e6edf3; background: #2a3544; }
-:root[data-theme="dark"] .quota-window-name,
-:root[data-theme="dark"] .badge { border-color: #254d78; color: #69b1ff; background: #152b43; }
 :root[data-theme="dark"] .trend-total,
 :root[data-theme="dark"] .trend-empty { color: #9aa9ba; }
 :root[data-theme="dark"] .dashboard-error h2 { color: #edf2f7; }
 :root[data-theme="dark"] .dashboard-error p { color: #9aa9ba; }
-:root[data-theme="dark"] .trend-range-picker { color: #9aa9ba; }
 :root[data-theme="dark"] .trend-filter { color: #7f91a6; }
 :root[data-theme="dark"] .trend-filter:hover,
 :root[data-theme="dark"] .trend-filter.is-active { color: #8dc5ff; }
@@ -71,31 +61,14 @@
 :root[data-theme="dark"] .status-refresh-countdown { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .status[data-kind="warning"] { color: #ffd666; }
 :root[data-theme="dark"] .trend-section.is-chart-expanded { border-color: #2a3544; background: #151b23; box-shadow: 0 18px 44px rgba(0, 0, 0, .48); }
-:root[data-theme="dark"] .quota-card { border-color: #294362; background: linear-gradient(120deg, #17253a, #151b23 68%); box-shadow: inset 3px 0 0 #4096ff; }
-:root[data-theme="dark"] .quota-card h3 { color: #c0cddd; }
-:root[data-theme="dark"] .quota-value strong { color: #69b1ff; }
-:root[data-theme="dark"] .quota-card-placeholder .quota-value strong { color: #718096; }
-:root[data-theme="dark"] .quota-used { color: #9aa9ba; }
-:root[data-theme="dark"] .progress-track { background: #2a3544; }
-:root[data-theme="dark"] .progress-track span { background: #4096ff; }
 :root[data-theme="dark"] .quota-orb.is-warning { --orb-progress-color: #faad14; }
-:root[data-theme="dark"] .quota-card.is-warning { border-color: #7a5426; box-shadow: inset 3px 0 0 #faad14; }
-:root[data-theme="dark"] .quota-card.is-warning .quota-value strong,
 :root[data-theme="dark"] .quota-orb.is-warning .orb-value { color: #ffc53d; }
-:root[data-theme="dark"] .quota-card.is-warning .progress-track span { background: #faad14; }
-:root[data-theme="dark"] .quota-card.is-warning .quota-alert { color: #ffd666; background: #45320f; }
 :root[data-theme="dark"] .quota-orb.is-critical { --orb-progress-color: #ff7875; }
-:root[data-theme="dark"] .quota-card.is-critical { border-color: #73323a; box-shadow: inset 3px 0 0 #ff7875; }
-:root[data-theme="dark"] .quota-card.is-critical .quota-value strong,
 :root[data-theme="dark"] .quota-orb.is-critical .orb-value { color: #ff7875; }
-:root[data-theme="dark"] .quota-card.is-critical .progress-track span { background: #ff7875; }
-:root[data-theme="dark"] .quota-card.is-critical .quota-alert { color: #ffaaa7; background: #4a1f24; }
 :root[data-theme="dark"] .thread-item:hover,
 :root[data-theme="dark"] .thread-item:focus-visible,
 :root[data-theme="dark"] .thread-item.is-last-opened { border-color: #367dc6; background: #18263a; box-shadow: none; transform: none; }
 :root[data-theme="dark"] .thread-item:has(.thread-select input:checked) { border-color: #367dc6; background: #172b43; box-shadow: none; transform: none; }
-:root[data-theme="dark"] .section-collapse-button { color: #aab7c7; background: transparent; }
-:root[data-theme="dark"] .section-collapse-button:hover { color: #e6edf3; background: #2a3544; }
 :root[data-theme="dark"] .thread-select input { border-color: #607084; background-color: #111820; }
 :root[data-theme="dark"] .thread-select input:hover { border-color: #69b1ff; }
 :root[data-theme="dark"] .thread-select input:checked { border-color: #4096ff; background-color: #4096ff; }
@@ -145,8 +118,6 @@
 :root[data-theme="dark"] .insight-summary-primary { color: #9aa9ba; }
 :root[data-theme="dark"] .insight-summary-item strong { color: #d5dfeb; }
 :root[data-theme="dark"] .insight-summary-item + .insight-summary-item::before { color: #596777; }
-:root[data-theme="dark"] .activity-empty { color: #9aa9ba; }
-:root[data-theme="dark"] .activity-summary-hint,
 :root[data-theme="dark"] .activity-content span { color: #78889b; }
 :root[data-theme="dark"] .activity-list { border-color: #2c3948; background: #18212c; }
 :root[data-theme="dark"] .activity-row { border-bottom-color: #2c3948; background: transparent; }
@@ -262,24 +233,11 @@
 :root[data-theme="dark"] .file-diff-side-by-side-line.is-hunk-label { color: #8dc5ff; background: #152f4f; }
 :root[data-theme="dark"] .file-diff-side-by-side-line.is-added { color: #8adcb9; background: #143a2c; }
 :root[data-theme="dark"] .file-diff-side-by-side-line.is-removed { color: #ffaaa5; background: #442623; }
-:root[data-theme="dark"] .account-quota-divider { border-top-color: #2a3544; }
-:root[data-theme="dark"] .account-details { border-color: #2c3948; background: #18212c; }
-:root[data-theme="dark"] .account-detail-label { color: #9aa9ba; }
-:root[data-theme="dark"] .account-detail-item strong { color: #d5dfeb; }
-:root[data-theme="dark"] .email-visibility-button { color: #9aa9ba; }
-:root[data-theme="dark"] .email-visibility-button:hover { color: #9ecbff; background: #20354d; }
-:root[data-theme="dark"] .account-billing-button { color: #8dc5ff; background: transparent; }
-:root[data-theme="dark"] .account-billing-button:hover { color: #c7e2ff; }
-:root[data-theme="dark"] .account-email-item::after, :root[data-theme="dark"] .account-reset-credits::before { background: #3a4758; }
-:root[data-theme="dark"] .account-reset-credits strong { color: #d5dfeb; }
-:root[data-theme="dark"] .account-message { color: #ff7875; }
 :root[data-theme="dark"] .settings-dialog { --settings-line: #2c3948; --settings-muted: #9aa9ba; --settings-ink: #d5dfeb; --settings-surface: #1b293b; --settings-selected: #233b58; border-color: #2a3544; color: #e6edf3; background: #151b23; box-shadow: 0 24px 80px rgba(0, 0, 0, .52); }
 :root[data-theme="dark"] .settings-dialog::backdrop { background: rgba(0, 0, 0, .58); }
 :root[data-theme="dark"] .settings-intro, :root[data-theme="dark"] .settings-hint { color: #9aa9ba; }
 :root[data-theme="dark"] .settings-group { border-color: #2c3948; background: transparent; }
 :root[data-theme="dark"] .settings-group > label, :root[data-theme="dark"] .settings-group-label { color: #d5dfeb; }
-:root[data-theme="dark"] .settings-reading-grid label { color: #aab7c7; }
-:root[data-theme="dark"] .settings-reading-preview { color: #d9e2ec; background: transparent; }
 :root[data-theme="dark"] .settings-group input, :root[data-theme="dark"] .settings-secondary-button, :root[data-theme="dark"] .settings-refresh-select { border-color: #344456; color: #d5dfeb; background: #111820; }
 :root[data-theme="dark"] .settings-threshold-item { color: #9aa9ba; background: transparent; }
 :root[data-theme="dark"] .settings-refresh-select { color-scheme: dark; }
@@ -303,9 +261,6 @@
 :root[data-theme="dark"] .dashboard-nav-button.is-active::before { background: #69b1ff; }
 :root[data-theme="dark"] .dashboard-status { border-color: #29384c; color: #a0afc3; }
 :root[data-theme="dark"] .dashboard-page { background: transparent; }
-:root[data-theme="dark"] .dashboard-page .quota-reset-time { background: transparent; }
-:root[data-theme="dark"] .dashboard-page .account-details { background: #151b23; }
-:root[data-theme="dark"] .dashboard-page .account-detail-item strong { color: #d5e3f5; }
 :root[data-theme="dark"] .dashboard-page .thread-list { border-color: #29384c; background: #151b23; }
 
 /* 账户列表状态标签需要独立的深色底色，避免沿用浅色主题的低对比度配色。 */
@@ -313,3 +268,6 @@
 :root[data-theme="dark"] .account-quota-list-state.is-attention { color: #ffd666; background: transparent; }
 :root[data-theme="dark"] .account-quota-list-state.is-unavailable { color: #aab7c7; background: transparent; }
 :root[data-theme="dark"] .account-quota-list-current-mark { border-color: var(--lite-surface); }
+:root[data-theme="dark"] .account-quota-list-row.is-unavailable .account-quota-list-identity i { color: #9aaabe; background: #263241; }
+:root[data-theme="dark"] .account-quota-list-row.is-unavailable .account-quota-list-identity strong,
+:root[data-theme="dark"] .account-quota-list-row.is-unavailable .account-quota-list-identity small { color: #9aaabe; }

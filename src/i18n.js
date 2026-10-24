@@ -49,7 +49,6 @@ const ANALYTICS_TRANSLATIONS = {
   "zh-CN": {
     insightMessages: "消息",
     insightToolCalls: "工具",
-    activitySummaryHint: "点击查看",
     messageActivitySummary: "执行了 {count} 项操作",
     messageFileActivitySummary: "已编辑 {count} 个文件",
     messageShowMoreFiles: "再显示 {count} 个文件",
@@ -67,8 +66,6 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "中断",
     activityStatusUnknown: "未知",
     trendKicker: "活动洞察",
-    insightsOverview: "数据洞察",
-    insightsOverviewTitle: "趋势总览",
     trendTitle: "近 {days} 天趋势",
     trendRangeLabel: "趋势范围",
     trendRange3: "近3天趋势",
@@ -89,7 +86,6 @@ const ANALYTICS_TRANSLATIONS = {
   "zh-TW": {
     insightMessages: "訊息",
     insightToolCalls: "工具",
-    activitySummaryHint: "點擊查看",
     messageActivitySummary: "已執行 {count} 項操作",
     messageFileActivitySummary: "已編輯 {count} 個檔案",
     messageShowMoreFiles: "再顯示 {count} 個檔案",
@@ -107,8 +103,6 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "中斷",
     activityStatusUnknown: "未知",
     trendKicker: "活動洞察",
-    insightsOverview: "資料洞察",
-    insightsOverviewTitle: "趨勢總覽",
     trendTitle: "近 {days} 天趨勢",
     trendRangeLabel: "趨勢範圍",
     trendRange3: "近3天趨勢",
@@ -129,7 +123,6 @@ const ANALYTICS_TRANSLATIONS = {
   en: {
     insightMessages: "Messages",
     insightToolCalls: "Tools",
-    activitySummaryHint: "View details",
     messageActivitySummary: "Ran {count} operations",
     messageFileActivitySummary: "Edited {count} files",
     messageShowMoreFiles: "Show {count} more files",
@@ -147,8 +140,6 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "Interrupted",
     activityStatusUnknown: "Unknown",
     trendKicker: "ACTIVITY INSIGHTS",
-    insightsOverview: "Data insights",
-    insightsOverviewTitle: "Trend overview",
     trendTitle: "Last {days} days",
     trendRangeLabel: "Trend range",
     trendRange3: "Last 3 days",
@@ -169,7 +160,6 @@ const ANALYTICS_TRANSLATIONS = {
   ja: {
     insightMessages: "メッセージ",
     insightToolCalls: "ツール",
-    activitySummaryHint: "クリックして表示",
     messageActivitySummary: "{count} 件の操作を実行",
     messageFileActivitySummary: "{count} 個のファイルを編集",
     messageShowMoreFiles: "さらに {count} 個のファイルを表示",
@@ -187,8 +177,6 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "中断",
     activityStatusUnknown: "不明",
     trendKicker: "アクティビティ分析",
-    insightsOverview: "データインサイト",
-    insightsOverviewTitle: "トレンド概要",
     trendTitle: "過去 {days} 日間の推移",
     trendRangeLabel: "期間",
     trendRange3: "過去3日間",
@@ -209,7 +197,6 @@ const ANALYTICS_TRANSLATIONS = {
   ko: {
     insightMessages: "메시지",
     insightToolCalls: "도구",
-    activitySummaryHint: "클릭하여 보기",
     messageActivitySummary: "작업 {count}개 실행",
     messageFileActivitySummary: "파일 {count}개 편집",
     messageShowMoreFiles: "파일 {count}개 더 보기",
@@ -227,8 +214,6 @@ const ANALYTICS_TRANSLATIONS = {
     activityStatusInterrupted: "중단됨",
     activityStatusUnknown: "알 수 없음",
     trendKicker: "활동 인사이트",
-    insightsOverview: "데이터 인사이트",
-    insightsOverviewTitle: "추세 개요",
     trendTitle: "최근 {days}일 추이",
     trendRangeLabel: "추이 기간",
     trendRange3: "최근 3일",
@@ -266,27 +251,26 @@ const IMAGE_PREVIEW_TRANSLATIONS = {
 
 // 会话清单文案明确时间字段和消息总数，避免误读为会话数量。
 const TOKEN_USAGE_TRANSLATIONS = {
-  "zh-CN": { tokenUsageKicker: "Token洞察", tokenUsageTitle: "Token 使用趋势", tokenUsageTotal: "合计：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "会话数", tokenUsageTrendTab: "趋势", tokenUsageDistributionTab: "会话分布", tokenUsageDistributionTitle: "会话 Token 分布", tokenUsageDistributionSummary: "合计：{count} 个会话", tokenUsageDistributionNoData: "近 {days} 天暂无本机会话 Token 数据。", tokenUsageLoading: "正在读取 Token 使用数据…", tokenUsageUnavailable: "Token 使用数据暂时不可用。", tokenUsageNoData: "近 {days} 天暂无可展示的 Token 数据。" },
-  "zh-TW": { tokenUsageKicker: "Token 洞察", tokenUsageTitle: "Token 使用趨勢", tokenUsageTotal: "合計：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "工作階段數", tokenUsageTrendTab: "趨勢", tokenUsageDistributionTab: "工作階段分布", tokenUsageDistributionTitle: "工作階段 Token 分布", tokenUsageDistributionSummary: "合計：{count} 個工作階段", tokenUsageDistributionNoData: "近 {days} 天沒有本機工作階段 Token 資料。", tokenUsageLoading: "正在讀取 Token 使用資料…", tokenUsageUnavailable: "Token 使用資料暫時無法使用。", tokenUsageNoData: "近 {days} 天沒有可顯示的 Token 資料。" },
-  en: { tokenUsageKicker: "TOKEN INSIGHTS", tokenUsageTitle: "Token usage trend", tokenUsageTotal: "Total: {total} tokens", tokenUsageTooltipDate: "Date", tokenUsageTooltipTokens: "Tokens", tokenUsageTooltipSessions: "Sessions", tokenUsageTrendTab: "Trend", tokenUsageDistributionTab: "Sessions", tokenUsageDistributionTitle: "Session Token distribution", tokenUsageDistributionSummary: "Total: {count} sessions", tokenUsageDistributionNoData: "No local session Token data for the last {days} days.", tokenUsageLoading: "Reading token usage…", tokenUsageUnavailable: "Token usage is unavailable.", tokenUsageNoData: "No token data for the last {days} days." },
-  ja: { tokenUsageKicker: "Token インサイト", tokenUsageTitle: "Token 使用量の推移", tokenUsageTotal: "合計：{total} Token", tokenUsageTooltipDate: "日付", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "セッション数", tokenUsageTrendTab: "推移", tokenUsageDistributionTab: "セッション分布", tokenUsageDistributionTitle: "セッション Token 分布", tokenUsageDistributionSummary: "合計：{count} セッション", tokenUsageDistributionNoData: "過去 {days} 日のローカルセッション Token データはありません。", tokenUsageLoading: "Token 使用量を読み込み中…", tokenUsageUnavailable: "Token 使用量を取得できません。", tokenUsageNoData: "過去 {days} 日の Token データはありません。" },
-  ko: { tokenUsageKicker: "Token 인사이트", tokenUsageTitle: "Token 사용량 추세", tokenUsageTotal: "합계: {total} Token", tokenUsageTooltipDate: "날짜", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "세션 수", tokenUsageTrendTab: "추세", tokenUsageDistributionTab: "세션 분포", tokenUsageDistributionTitle: "세션 Token 분포", tokenUsageDistributionSummary: "합계: {count}개 세션", tokenUsageDistributionNoData: "최근 {days}일의 로컬 세션 Token 데이터가 없습니다.", tokenUsageLoading: "Token 사용량을 읽는 중…", tokenUsageUnavailable: "Token 사용량을 사용할 수 없습니다.", tokenUsageNoData: "최근 {days}일의 Token 데이터가 없습니다." },
+  "zh-CN": { tokenUsageKicker: "Token洞察", tokenUsageTitle: "Token 使用趋势", tokenUsageTotal: "合计：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "会话数", tokenUsageDistributionTitle: "会话 Token 分布", tokenUsageDistributionSummary: "合计：{count} 个会话", tokenUsageDistributionNoData: "近 {days} 天暂无本机会话 Token 数据。", tokenUsageLoading: "正在读取 Token 使用数据…", tokenUsageUnavailable: "Token 使用数据暂时不可用。", tokenUsageNoData: "近 {days} 天暂无可展示的 Token 数据。" },
+  "zh-TW": { tokenUsageKicker: "Token 洞察", tokenUsageTitle: "Token 使用趨勢", tokenUsageTotal: "合計：{total} Token", tokenUsageTooltipDate: "日期", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "工作階段數", tokenUsageDistributionTitle: "工作階段 Token 分布", tokenUsageDistributionSummary: "合計：{count} 個工作階段", tokenUsageDistributionNoData: "近 {days} 天沒有本機工作階段 Token 資料。", tokenUsageLoading: "正在讀取 Token 使用資料…", tokenUsageUnavailable: "Token 使用資料暫時無法使用。", tokenUsageNoData: "近 {days} 天沒有可顯示的 Token 資料。" },
+  en: { tokenUsageKicker: "TOKEN INSIGHTS", tokenUsageTitle: "Token usage trend", tokenUsageTotal: "Total: {total} tokens", tokenUsageTooltipDate: "Date", tokenUsageTooltipTokens: "Tokens", tokenUsageTooltipSessions: "Sessions", tokenUsageDistributionTitle: "Session Token distribution", tokenUsageDistributionSummary: "Total: {count} sessions", tokenUsageDistributionNoData: "No local session Token data for the last {days} days.", tokenUsageLoading: "Reading token usage…", tokenUsageUnavailable: "Token usage is unavailable.", tokenUsageNoData: "No token data for the last {days} days." },
+  ja: { tokenUsageKicker: "Token インサイト", tokenUsageTitle: "Token 使用量の推移", tokenUsageTotal: "合計：{total} Token", tokenUsageTooltipDate: "日付", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "セッション数", tokenUsageDistributionTitle: "セッション Token 分布", tokenUsageDistributionSummary: "合計：{count} セッション", tokenUsageDistributionNoData: "過去 {days} 日のローカルセッション Token データはありません。", tokenUsageLoading: "Token 使用量を読み込み中…", tokenUsageUnavailable: "Token 使用量を取得できません。", tokenUsageNoData: "過去 {days} 日の Token データはありません。" },
+  ko: { tokenUsageKicker: "Token 인사이트", tokenUsageTitle: "Token 사용량 추세", tokenUsageTotal: "합계: {total} Token", tokenUsageTooltipDate: "날짜", tokenUsageTooltipTokens: "Token", tokenUsageTooltipSessions: "세션 수", tokenUsageDistributionTitle: "세션 Token 분포", tokenUsageDistributionSummary: "합계: {count}개 세션", tokenUsageDistributionNoData: "최근 {days}일의 로컬 세션 Token 데이터가 없습니다.", tokenUsageLoading: "Token 사용량을 읽는 중…", tokenUsageUnavailable: "Token 사용량을 사용할 수 없습니다.", tokenUsageNoData: "최근 {days}일의 Token 데이터가 없습니다." },
 };
 
 // 三张洞察图共用同一时间范围；词云文案独立维护以保持卡片足够紧凑。
 const WORD_CLOUD_TRANSLATIONS = {
-  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudWordCount: "{word}：出现 {count} 次", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
-  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudWordCount: "{word}：出現 {count} 次", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
-  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudWordCount: "{word}: {count} occurrences", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
-  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudWordCount: "{word}：{count} 回", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
-  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudWordCount: "{word}: {count}회", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
+  "zh-CN": { wordCloudKicker: "关键词词云", wordCloudSummary: "{messages} 条输入 · {unique} 个主题", wordCloudLoading: "正在聚合输入主题…", wordCloudUnavailable: "输入主题暂时不可用。", wordCloudNoData: "暂无可展示的输入主题。" },
+  "zh-TW": { wordCloudKicker: "關鍵詞詞雲", wordCloudSummary: "{messages} 則輸入 · {unique} 個主題", wordCloudLoading: "正在彙整輸入主題…", wordCloudUnavailable: "輸入主題暫時無法使用。", wordCloudNoData: "暫無可顯示的輸入主題。" },
+  en: { wordCloudKicker: "KEYWORD CLOUD", wordCloudSummary: "{messages} inputs · {unique} topics", wordCloudLoading: "Collecting input topics…", wordCloudUnavailable: "Input topics are unavailable.", wordCloudNoData: "No input topics to display." },
+  ja: { wordCloudKicker: "キーワードクラウド", wordCloudSummary: "{messages} 件の入力 · {unique} 件のテーマ", wordCloudLoading: "入力テーマを集計中…", wordCloudUnavailable: "入力テーマを利用できません。", wordCloudNoData: "表示できる入力テーマはありません。" },
+  ko: { wordCloudKicker: "키워드 워드클라우드", wordCloudSummary: "입력 {messages}개 · 주제 {unique}개", wordCloudLoading: "입력 주제를 집계하는 중…", wordCloudUnavailable: "입력 주제를 사용할 수 없습니다.", wordCloudNoData: "표시할 입력 주제가 없습니다." },
 };
 
 const SESSION_ANALYTICS_TRANSLATIONS = {
   "zh-CN": {
     threadExpandSidebar: "展开会话概览",
     threadCollapseSidebar: "收起会话概览",
-    recentThreads: "最近更新的会话",
     searchThreads: "搜索最近更新的会话",
     searchTotal: "共 {total} 个本机会话",
     threadIdLabel: "会话ID：",
@@ -298,7 +282,6 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
   "zh-TW": {
     threadExpandSidebar: "展開工作階段總覽",
     threadCollapseSidebar: "收合工作階段總覽",
-    recentThreads: "最近更新的工作階段",
     searchThreads: "搜尋最近更新的工作階段",
     searchTotal: "共 {total} 個本機工作階段",
     threadIdLabel: "工作階段 ID：",
@@ -310,7 +293,6 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
   en: {
     threadExpandSidebar: "Expand session overview",
     threadCollapseSidebar: "Collapse session overview",
-    recentThreads: "Recently updated sessions",
     searchThreads: "Search recently updated sessions",
     searchTotal: "{total} local sessions",
     updated: "Last updated: {value}",
@@ -322,7 +304,6 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
   ja: {
     threadExpandSidebar: "セッション概要を展開",
     threadCollapseSidebar: "セッション概要を折りたたむ",
-    recentThreads: "最近更新したセッション",
     searchThreads: "最近更新したセッションを検索",
     searchTotal: "ローカルセッション：{total} 件",
     updated: "最終更新：{value}",
@@ -335,7 +316,6 @@ const SESSION_ANALYTICS_TRANSLATIONS = {
     threadIdLabel: "세션 ID:",
     threadExpandSidebar: "세션 개요 펼치기",
     threadCollapseSidebar: "세션 개요 접기",
-    recentThreads: "최근 업데이트된 세션",
     searchThreads: "최근 업데이트된 세션 검색",
     searchTotal: "로컬 세션 {total}개",
     updated: "마지막 업데이트: {value}",
@@ -394,19 +374,19 @@ const PRODUCT_TRANSLATIONS = {
 
 const ACCOUNT_TRANSLATIONS = {
   "zh-CN": {
-    accountEmail: "登录邮箱", hideAccountEmail: "隐藏登录邮箱", showAccountEmail: "显示登录邮箱", accountPlan: "订阅方案", resetCreditsTitle: "使用限额重置", resetCreditsExpand: "展开", resetCreditsCollapse: "收起", resetCreditsDescription: "使用重置功能可恢复 5 小时限额或每周限额。", resetCreditsFullReset: "完全重置（每周 + 5 小时）", resetCreditsCount: "{count} 次", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期时间", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "读取失败", openBilling: "查看订阅到期时间", accountBillingOpenFailed: "无法打开账单页面：{error}",
+    hideAccountEmail: "隐藏登录邮箱", showAccountEmail: "显示登录邮箱", accountPlan: "订阅方案", resetCreditsTitle: "使用限额重置", resetCreditsExpand: "展开", resetCreditsCollapse: "收起", resetCreditsDescription: "使用重置功能可恢复 5 小时限额或每周限额。", resetCreditsFullReset: "完全重置（每周 + 5 小时）", resetCreditsCount: "{count} 次", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期时间", accountLoading: "正在读取账号信息…", accountEmailUnavailable: "当前登录方式未提供邮箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "读取失败", openBilling: "查看订阅到期时间", accountBillingOpenFailed: "无法打开账单页面：{error}",
   },
   "zh-TW": {
-    accountEmail: "登入信箱", hideAccountEmail: "隱藏登入信箱", showAccountEmail: "顯示登入信箱", accountPlan: "訂閱方案", resetCreditsTitle: "使用限額重設", resetCreditsExpand: "展開", resetCreditsCollapse: "收合", resetCreditsDescription: "使用重設功能可恢復 5 小時限額、每週限額或兩者。", resetCreditsFullReset: "完全重設（每週 + 5 小時）", resetCreditsCount: "{count} 次", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期時間", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "讀取失敗", openBilling: "查看訂閱到期時間", accountBillingOpenFailed: "無法開啟帳單頁面：{error}",
+    hideAccountEmail: "隱藏登入信箱", showAccountEmail: "顯示登入信箱", accountPlan: "訂閱方案", resetCreditsTitle: "使用限額重設", resetCreditsExpand: "展開", resetCreditsCollapse: "收合", resetCreditsDescription: "使用重設功能可恢復 5 小時限額、每週限額或兩者。", resetCreditsFullReset: "完全重設（每週 + 5 小時）", resetCreditsCount: "{count} 次", resetCreditExpires: "到期：{value}", resetCreditExpiresUnknown: "未提供到期時間", accountLoading: "正在讀取帳號資訊…", accountEmailUnavailable: "目前登入方式未提供信箱", accountPlanUnavailable: "未提供", accountDataReadFailed: "讀取失敗", openBilling: "查看訂閱到期時間", accountBillingOpenFailed: "無法開啟帳單頁面：{error}",
   },
   en: {
-    accountEmail: "Email", hideAccountEmail: "Hide email", showAccountEmail: "Show email", accountPlan: "Plan", resetCreditsTitle: "Rate limit resets", resetCreditsExpand: "Expand", resetCreditsCollapse: "Collapse", resetCreditsDescription: "A reset can restore your 5-hour limit, weekly limit, or both.", resetCreditsFullReset: "Full reset (Weekly + 5 hr)", resetCreditsCount: "{count}", resetCreditExpires: "Expires {value}", resetCreditExpiresUnknown: "No expiry provided", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountDataReadFailed: "Read failed", openBilling: "View subscription expiry", accountBillingOpenFailed: "Could not open the billing page: {error}",
+    hideAccountEmail: "Hide email", showAccountEmail: "Show email", accountPlan: "Plan", resetCreditsTitle: "Rate limit resets", resetCreditsExpand: "Expand", resetCreditsCollapse: "Collapse", resetCreditsDescription: "A reset can restore your 5-hour limit, weekly limit, or both.", resetCreditsFullReset: "Full reset (Weekly + 5 hr)", resetCreditsCount: "{count}", resetCreditExpires: "Expires {value}", resetCreditExpiresUnknown: "No expiry provided", accountLoading: "Reading account…", accountEmailUnavailable: "No email is available for this sign-in method", accountPlanUnavailable: "Unavailable", accountDataReadFailed: "Read failed", openBilling: "View subscription expiry", accountBillingOpenFailed: "Could not open the billing page: {error}",
   },
   ja: {
-    accountEmail: "メールアドレス", hideAccountEmail: "メールアドレスを隠す", showAccountEmail: "メールアドレスを表示", accountPlan: "プラン", resetCreditsTitle: "レート制限のリセット", resetCreditsExpand: "展開", resetCreditsCollapse: "折りたたむ", resetCreditsDescription: "リセットすると、5 時間枠、週次枠、または両方を回復できます。", resetCreditsFullReset: "完全リセット（週次 + 5 時間）", resetCreditsCount: "{count} 回", resetCreditExpires: "有効期限：{value}", resetCreditExpiresUnknown: "有効期限は未提供", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountDataReadFailed: "読み込み失敗", openBilling: "契約の有効期限を確認", accountBillingOpenFailed: "請求ページを開けませんでした：{error}",
+    hideAccountEmail: "メールアドレスを隠す", showAccountEmail: "メールアドレスを表示", accountPlan: "プラン", resetCreditsTitle: "レート制限のリセット", resetCreditsExpand: "展開", resetCreditsCollapse: "折りたたむ", resetCreditsDescription: "リセットすると、5 時間枠、週次枠、または両方を回復できます。", resetCreditsFullReset: "完全リセット（週次 + 5 時間）", resetCreditsCount: "{count} 回", resetCreditExpires: "有効期限：{value}", resetCreditExpiresUnknown: "有効期限は未提供", accountLoading: "アカウント情報を読み込み中…", accountEmailUnavailable: "このログイン方法ではメールアドレスを取得できません", accountPlanUnavailable: "利用不可", accountDataReadFailed: "読み込み失敗", openBilling: "契約の有効期限を確認", accountBillingOpenFailed: "請求ページを開けませんでした：{error}",
   },
   ko: {
-    accountEmail: "로그인 이메일", hideAccountEmail: "이메일 숨기기", showAccountEmail: "이메일 표시", accountPlan: "구독 플랜", resetCreditsTitle: "사용 한도 재설정", resetCreditsExpand: "펼치기", resetCreditsCollapse: "접기", resetCreditsDescription: "재설정으로 5시간 한도, 주간 한도 또는 둘 다를 복원할 수 있습니다.", resetCreditsFullReset: "전체 재설정(주간 + 5시간)", resetCreditsCount: "{count}회", resetCreditExpires: "만료: {value}", resetCreditExpiresUnknown: "만료 시간이 제공되지 않음", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountDataReadFailed: "읽기 실패", openBilling: "구독 만료일 보기", accountBillingOpenFailed: "청구 페이지를 열 수 없습니다: {error}",
+    hideAccountEmail: "이메일 숨기기", showAccountEmail: "이메일 표시", accountPlan: "구독 플랜", resetCreditsTitle: "사용 한도 재설정", resetCreditsExpand: "펼치기", resetCreditsCollapse: "접기", resetCreditsDescription: "재설정으로 5시간 한도, 주간 한도 또는 둘 다를 복원할 수 있습니다.", resetCreditsFullReset: "전체 재설정(주간 + 5시간)", resetCreditsCount: "{count}회", resetCreditExpires: "만료: {value}", resetCreditExpiresUnknown: "만료 시간이 제공되지 않음", accountLoading: "계정 정보를 읽는 중…", accountEmailUnavailable: "현재 로그인 방식은 이메일을 제공하지 않습니다", accountPlanUnavailable: "제공되지 않음", accountDataReadFailed: "읽기 실패", openBilling: "구독 만료일 보기", accountBillingOpenFailed: "청구 페이지를 열 수 없습니다: {error}",
   },
 };
 
@@ -428,69 +408,11 @@ const MODULE_EXPAND_TRANSLATIONS = {
 };
 
 const SETTINGS_TRANSLATIONS = {
-  "zh-CN": { settingsTitle: "设置", settingsKicker: "本机偏好", openSettings: "打开设置", closeSettings: "关闭设置", settingsIntro: "配置 Codex CLI、数据刷新和额度提醒，所有设置仅保存在本机。", settingsCliPath: "Codex CLI 路径", settingsCliPathHint: "留空时使用系统 PATH 中的 codex；支持可执行文件及 .cmd/.bat 启动脚本。", settingsCliPathPlaceholder: "使用系统 PATH", settingsBrowse: "浏览", settingsBrowseFailed: "无法选择 CLI 文件：{error}", settingsUsePath: "使用系统 PATH", settingsRefreshInterval: "自动刷新间隔", settingsRefreshIntervalHint: "影响额度、趋势和已展开的会话列表。", settingsRefresh30Seconds: "30 秒", settingsRefresh60Seconds: "1 分钟", settingsRefresh2Minutes: "2 分钟", settingsRefresh5Minutes: "5 分钟", settingsRefresh10Minutes: "10 分钟", settingsQuotaAlertThresholds: "额度提醒阈值", settingsQuotaAlertThresholdsHint: "固定三个提醒档次，数值需依次递增。", settingsQuotaAlertThresholdLow: "第一档", settingsQuotaAlertThresholdMedium: "第二档", settingsQuotaAlertThresholdHigh: "第三档", settingsQuotaAlertThresholdInvalid: "请输入 1–100 的整数，且三个档次需依次递增。", settingsCancel: "取消", settingsSave: "保存并验证", settingsSaving: "正在验证 Codex CLI…", settingsSaved: "设置已保存，CLI {version}", settingsSaveFailed: "保存失败：{error}" },
-  "zh-TW": { settingsTitle: "設定", settingsKicker: "本機偏好", openSettings: "開啟設定", closeSettings: "關閉設定", settingsIntro: "設定 Codex CLI、資料重新整理與額度提醒，所有設定只保存在本機。", settingsCliPath: "Codex CLI 路徑", settingsCliPathHint: "留空時使用系統 PATH 中的 codex；支援執行檔及 .cmd/.bat 啟動指令碼。", settingsCliPathPlaceholder: "使用系統 PATH", settingsBrowse: "瀏覽", settingsBrowseFailed: "無法選擇 CLI 檔案：{error}", settingsUsePath: "使用系統 PATH", settingsRefreshInterval: "自動重新整理間隔", settingsRefreshIntervalHint: "影響額度、趨勢與已展開的工作階段清單。", settingsRefresh30Seconds: "30 秒", settingsRefresh60Seconds: "1 分鐘", settingsRefresh2Minutes: "2 分鐘", settingsRefresh5Minutes: "5 分鐘", settingsRefresh10Minutes: "10 分鐘", settingsQuotaAlertThresholds: "額度提醒門檻", settingsQuotaAlertThresholdsHint: "固定三個提醒級別，數值需依序遞增。", settingsQuotaAlertThresholdLow: "第一級", settingsQuotaAlertThresholdMedium: "第二級", settingsQuotaAlertThresholdHigh: "第三級", settingsQuotaAlertThresholdInvalid: "請輸入 1–100 的整數，且三個級別需依序遞增。", settingsCancel: "取消", settingsSave: "儲存並驗證", settingsSaving: "正在驗證 Codex CLI…", settingsSaved: "設定已儲存，CLI {version}", settingsSaveFailed: "儲存失敗：{error}" },
-  en: { settingsTitle: "Settings", settingsKicker: "LOCAL PREFERENCES", openSettings: "Open settings", closeSettings: "Close settings", settingsIntro: "Configure Codex CLI, data refresh, and quota alerts. All settings stay on this device.", settingsCliPath: "Codex CLI path", settingsCliPathHint: "Leave empty to use codex from PATH. Executables and .cmd/.bat launchers are supported.", settingsCliPathPlaceholder: "Use system PATH", settingsBrowse: "Browse", settingsBrowseFailed: "Could not choose a CLI file: {error}", settingsUsePath: "Use system PATH", settingsRefreshInterval: "Auto-refresh interval", settingsRefreshIntervalHint: "Applies to quota, trends, and the expanded session list.", settingsRefresh30Seconds: "30 seconds", settingsRefresh60Seconds: "1 minute", settingsRefresh2Minutes: "2 minutes", settingsRefresh5Minutes: "5 minutes", settingsRefresh10Minutes: "10 minutes", settingsQuotaAlertThresholds: "Quota alert thresholds", settingsQuotaAlertThresholdsHint: "Three fixed alert levels. Values must increase in order.", settingsQuotaAlertThresholdLow: "Level 1", settingsQuotaAlertThresholdMedium: "Level 2", settingsQuotaAlertThresholdHigh: "Level 3", settingsQuotaAlertThresholdInvalid: "Enter integers from 1–100 in strictly increasing order.", settingsCancel: "Cancel", settingsSave: "Save & validate", settingsSaving: "Validating Codex CLI…", settingsSaved: "Settings saved. CLI {version}", settingsSaveFailed: "Could not save: {error}" },
-  ja: { settingsTitle: "設定", settingsKicker: "ローカル設定", openSettings: "設定を開く", closeSettings: "設定を閉じる", settingsIntro: "Codex CLI、データ更新、クォータ通知を設定します。設定はこの端末にのみ保存されます。", settingsCliPath: "Codex CLI パス", settingsCliPathHint: "空欄の場合はシステム PATH の codex を使用します。.cmd/.bat も指定できます。", settingsCliPathPlaceholder: "システム PATH を使用", settingsBrowse: "参照", settingsBrowseFailed: "CLI ファイルを選択できませんでした：{error}", settingsUsePath: "システム PATH", settingsRefreshInterval: "自動更新間隔", settingsRefreshIntervalHint: "クォータ、トレンド、展開中のセッション一覧に適用されます。", settingsRefresh30Seconds: "30 秒", settingsRefresh60Seconds: "1 分", settingsRefresh2Minutes: "2 分", settingsRefresh5Minutes: "5 分", settingsRefresh10Minutes: "10 分", settingsQuotaAlertThresholds: "クォータ通知しきい値", settingsQuotaAlertThresholdsHint: "通知は3段階固定です。値を昇順に設定してください。", settingsQuotaAlertThresholdLow: "第1段階", settingsQuotaAlertThresholdMedium: "第2段階", settingsQuotaAlertThresholdHigh: "第3段階", settingsQuotaAlertThresholdInvalid: "1～100の整数を昇順で入力してください。", settingsCancel: "キャンセル", settingsSave: "保存して確認", settingsSaving: "Codex CLI を確認中…", settingsSaved: "設定を保存しました。CLI {version}", settingsSaveFailed: "保存できませんでした：{error}" },
-  ko: { settingsTitle: "설정", settingsKicker: "로컬 환경설정", openSettings: "설정 열기", closeSettings: "설정 닫기", settingsIntro: "Codex CLI, 데이터 새로 고침 및 할당량 알림을 설정합니다. 모든 설정은 이 기기에만 저장됩니다.", settingsCliPath: "Codex CLI 경로", settingsCliPathHint: "비워 두면 시스템 PATH의 codex를 사용합니다. .cmd/.bat 실행 파일도 지원합니다.", settingsCliPathPlaceholder: "시스템 PATH 사용", settingsBrowse: "찾아보기", settingsBrowseFailed: "CLI 파일을 선택할 수 없습니다: {error}", settingsUsePath: "시스템 PATH", settingsRefreshInterval: "자동 새로 고침 간격", settingsRefreshIntervalHint: "할당량, 추세 및 펼친 세션 목록에 적용됩니다.", settingsRefresh30Seconds: "30초", settingsRefresh60Seconds: "1분", settingsRefresh2Minutes: "2분", settingsRefresh5Minutes: "5분", settingsRefresh10Minutes: "10분", settingsQuotaAlertThresholds: "할당량 알림 임계값", settingsQuotaAlertThresholdsHint: "알림은 3단계로 고정되며 값은 오름차순이어야 합니다.", settingsQuotaAlertThresholdLow: "1단계", settingsQuotaAlertThresholdMedium: "2단계", settingsQuotaAlertThresholdHigh: "3단계", settingsQuotaAlertThresholdInvalid: "1–100 사이의 정수를 오름차순으로 입력하세요.", settingsCancel: "취소", settingsSave: "저장 및 확인", settingsSaving: "Codex CLI 확인 중…", settingsSaved: "설정이 저장되었습니다. CLI {version}", settingsSaveFailed: "저장 실패: {error}" },
-};
-
-const READING_TRANSLATIONS = {
-  "zh-CN": {
-    settingsReadingReset: "恢复默认",
-    settingsReadingTitle: "阅读设置", settingsReadingHint: "仅影响会话正文；代码块保留等宽字体，未安装的字体会自动回退。",
-    settingsReadingFont: "字体", settingsReadingFontSize: "字号", settingsReadingLineHeight: "行距",
-    settingsReadingFontSystem: "系统默认", settingsReadingFontYahei: "微软雅黑", settingsReadingFontSongti: "宋体",
-    settingsReadingFontSimhei: "黑体", settingsReadingFontKaiti: "楷体", settingsReadingFontFangsong: "仿宋", settingsReadingFontDengxian: "等线", settingsReadingFontPingfang: "苹方",
-    settingsReadingFontYaheiUI: "微软雅黑 UI", settingsReadingFontNSimsun: "新宋体", settingsReadingFontSTSong: "华文宋体", settingsReadingFontSTHeiti: "华文黑体", settingsReadingFontSTKaiti: "华文楷体", settingsReadingFontSTFangsong: "华文仿宋", settingsReadingFontSTZhongsong: "华文中宋", settingsReadingFontSTXihei: "华文细黑", settingsReadingFontSourceHanSans: "思源黑体", settingsReadingFontSourceHanSerif: "思源宋体",
-    settingsReadingSizeSmall: "小 · 13px", settingsReadingSizeNormal: "标准 · 14px", settingsReadingSizeLarge: "大 · 16px",
-    settingsReadingLineCompact: "紧凑", settingsReadingLineComfortable: "舒适", settingsReadingLineLoose: "宽松",
-    settingsReadingPreview: "这是会话正文预览。调整字体、字号和行距，找到适合你的阅读方式。",
-  },
-  "zh-TW": {
-    settingsReadingReset: "恢復預設",
-    settingsReadingTitle: "閱讀設定", settingsReadingHint: "僅影響工作階段正文；程式碼區塊保留等寬字體，未安裝的字體會自動替代。",
-    settingsReadingFont: "字體", settingsReadingFontSize: "字級", settingsReadingLineHeight: "行距",
-    settingsReadingFontSystem: "系統預設", settingsReadingFontYahei: "微軟雅黑", settingsReadingFontSongti: "宋體",
-    settingsReadingFontSimhei: "黑體", settingsReadingFontKaiti: "楷體", settingsReadingFontFangsong: "仿宋", settingsReadingFontDengxian: "等線", settingsReadingFontPingfang: "蘋方",
-    settingsReadingFontYaheiUI: "微軟雅黑 UI", settingsReadingFontNSimsun: "新宋體", settingsReadingFontSTSong: "華文宋體", settingsReadingFontSTHeiti: "華文黑體", settingsReadingFontSTKaiti: "華文楷體", settingsReadingFontSTFangsong: "華文仿宋", settingsReadingFontSTZhongsong: "華文中宋", settingsReadingFontSTXihei: "華文細黑", settingsReadingFontSourceHanSans: "思源黑體", settingsReadingFontSourceHanSerif: "思源宋體",
-    settingsReadingSizeSmall: "小 · 13px", settingsReadingSizeNormal: "標準 · 14px", settingsReadingSizeLarge: "大 · 16px",
-    settingsReadingLineCompact: "緊湊", settingsReadingLineComfortable: "舒適", settingsReadingLineLoose: "寬鬆",
-    settingsReadingPreview: "這是正文預覽。調整字體、字級與行距，找到適合你的閱讀方式。",
-  },
-  en: {
-    settingsReadingReset: "Restore defaults",
-    settingsReadingTitle: "Reading settings", settingsReadingHint: "Applies to message text only. Code blocks stay monospace; unavailable fonts use a fallback.",
-    settingsReadingFont: "Font", settingsReadingFontSize: "Text size", settingsReadingLineHeight: "Line spacing",
-    settingsReadingFontSystem: "System default", settingsReadingFontYahei: "Microsoft YaHei", settingsReadingFontSongti: "SimSun",
-    settingsReadingFontSimhei: "SimHei", settingsReadingFontKaiti: "KaiTi", settingsReadingFontFangsong: "FangSong", settingsReadingFontDengxian: "DengXian", settingsReadingFontPingfang: "PingFang SC",
-    settingsReadingFontYaheiUI: "Microsoft YaHei UI", settingsReadingFontNSimsun: "NSimSun", settingsReadingFontSTSong: "STSong", settingsReadingFontSTHeiti: "STHeiti", settingsReadingFontSTKaiti: "STKaiti", settingsReadingFontSTFangsong: "STFangsong", settingsReadingFontSTZhongsong: "STZhongsong", settingsReadingFontSTXihei: "STXihei", settingsReadingFontSourceHanSans: "Source Han Sans SC", settingsReadingFontSourceHanSerif: "Source Han Serif SC",
-    settingsReadingSizeSmall: "Small · 13px", settingsReadingSizeNormal: "Standard · 14px", settingsReadingSizeLarge: "Large · 16px",
-    settingsReadingLineCompact: "Compact", settingsReadingLineComfortable: "Comfortable", settingsReadingLineLoose: "Spacious",
-    settingsReadingPreview: "This is a message preview. Adjust the font, text size and line spacing to suit your reading preferences.",
-  },
-  ja: {
-    settingsReadingReset: "既定に戻す",
-    settingsReadingTitle: "読みやすさの設定", settingsReadingHint: "メッセージ本文のみ適用します。コードは等幅のままで、未インストールのフォントは代替されます。",
-    settingsReadingFont: "フォント", settingsReadingFontSize: "文字サイズ", settingsReadingLineHeight: "行間",
-    settingsReadingFontSystem: "システム既定", settingsReadingFontYahei: "Microsoft YaHei", settingsReadingFontSongti: "SimSun",
-    settingsReadingFontSimhei: "SimHei", settingsReadingFontKaiti: "KaiTi", settingsReadingFontFangsong: "FangSong", settingsReadingFontDengxian: "DengXian", settingsReadingFontPingfang: "PingFang SC",
-    settingsReadingFontYaheiUI: "Microsoft YaHei UI", settingsReadingFontNSimsun: "NSimSun", settingsReadingFontSTSong: "STSong", settingsReadingFontSTHeiti: "STHeiti", settingsReadingFontSTKaiti: "STKaiti", settingsReadingFontSTFangsong: "STFangsong", settingsReadingFontSTZhongsong: "STZhongsong", settingsReadingFontSTXihei: "STXihei", settingsReadingFontSourceHanSans: "Source Han Sans SC", settingsReadingFontSourceHanSerif: "Source Han Serif SC",
-    settingsReadingSizeSmall: "小 · 13px", settingsReadingSizeNormal: "標準 · 14px", settingsReadingSizeLarge: "大 · 16px",
-    settingsReadingLineCompact: "狭め", settingsReadingLineComfortable: "標準", settingsReadingLineLoose: "広め",
-    settingsReadingPreview: "本文のプレビューです。フォント、文字サイズ、行間を読みやすく調整できます。",
-  },
-  ko: {
-    settingsReadingReset: "기본값 복원",
-    settingsReadingTitle: "읽기 설정", settingsReadingHint: "메시지 본문에만 적용됩니다. 코드 블록은 고정폭 글꼴을 유지하며 없는 글꼴은 대체됩니다.",
-    settingsReadingFont: "글꼴", settingsReadingFontSize: "글자 크기", settingsReadingLineHeight: "줄 간격",
-    settingsReadingFontSystem: "시스템 기본", settingsReadingFontYahei: "Microsoft YaHei", settingsReadingFontSongti: "SimSun",
-    settingsReadingFontSimhei: "SimHei", settingsReadingFontKaiti: "KaiTi", settingsReadingFontFangsong: "FangSong", settingsReadingFontDengxian: "DengXian", settingsReadingFontPingfang: "PingFang SC",
-    settingsReadingFontYaheiUI: "Microsoft YaHei UI", settingsReadingFontNSimsun: "NSimSun", settingsReadingFontSTSong: "STSong", settingsReadingFontSTHeiti: "STHeiti", settingsReadingFontSTKaiti: "STKaiti", settingsReadingFontSTFangsong: "STFangsong", settingsReadingFontSTZhongsong: "STZhongsong", settingsReadingFontSTXihei: "STXihei", settingsReadingFontSourceHanSans: "Source Han Sans SC", settingsReadingFontSourceHanSerif: "Source Han Serif SC",
-    settingsReadingSizeSmall: "작게 · 13px", settingsReadingSizeNormal: "표준 · 14px", settingsReadingSizeLarge: "크게 · 16px",
-    settingsReadingLineCompact: "좁게", settingsReadingLineComfortable: "편안하게", settingsReadingLineLoose: "넓게",
-    settingsReadingPreview: "메시지 본문 미리보기입니다. 글꼴, 글자 크기와 줄 간격을 편하게 조절하세요.",
-  },
+  "zh-CN": { settingsTitle: "设置", openSettings: "打开设置", closeSettings: "关闭设置", settingsIntro: "配置 Codex CLI、数据刷新和额度提醒，所有设置仅保存在本机。", settingsCliPath: "Codex CLI 路径", settingsCliPathHint: "留空时使用系统 PATH 中的 codex；支持可执行文件及 .cmd/.bat 启动脚本。", settingsCliPathPlaceholder: "使用系统 PATH", settingsBrowse: "浏览", settingsBrowseFailed: "无法选择 CLI 文件：{error}", settingsUsePath: "使用系统 PATH", settingsRefreshInterval: "自动刷新间隔", settingsRefreshIntervalHint: "影响额度、趋势和已展开的会话列表。", settingsQuotaAlertThresholds: "额度提醒阈值", settingsQuotaAlertThresholdsHint: "固定三个提醒档次，数值需依次递增。", settingsQuotaAlertThresholdLow: "第一档", settingsQuotaAlertThresholdMedium: "第二档", settingsQuotaAlertThresholdHigh: "第三档", settingsQuotaAlertThresholdInvalid: "请输入 1–100 的整数，且三个档次需依次递增。", settingsCancel: "取消", settingsSave: "保存并验证", settingsSaving: "正在验证 Codex CLI…", settingsSaved: "设置已保存，CLI {version}", settingsSaveFailed: "保存失败：{error}" },
+  "zh-TW": { settingsTitle: "設定", openSettings: "開啟設定", closeSettings: "關閉設定", settingsIntro: "設定 Codex CLI、資料重新整理與額度提醒，所有設定只保存在本機。", settingsCliPath: "Codex CLI 路徑", settingsCliPathHint: "留空時使用系統 PATH 中的 codex；支援執行檔及 .cmd/.bat 啟動指令碼。", settingsCliPathPlaceholder: "使用系統 PATH", settingsBrowse: "瀏覽", settingsBrowseFailed: "無法選擇 CLI 檔案：{error}", settingsUsePath: "使用系統 PATH", settingsRefreshInterval: "自動重新整理間隔", settingsRefreshIntervalHint: "影響額度、趨勢與已展開的工作階段清單。", settingsQuotaAlertThresholds: "額度提醒門檻", settingsQuotaAlertThresholdsHint: "固定三個提醒級別，數值需依序遞增。", settingsQuotaAlertThresholdLow: "第一級", settingsQuotaAlertThresholdMedium: "第二級", settingsQuotaAlertThresholdHigh: "第三級", settingsQuotaAlertThresholdInvalid: "請輸入 1–100 的整數，且三個級別需依序遞增。", settingsCancel: "取消", settingsSave: "儲存並驗證", settingsSaving: "正在驗證 Codex CLI…", settingsSaved: "設定已儲存，CLI {version}", settingsSaveFailed: "儲存失敗：{error}" },
+  en: { settingsTitle: "Settings", openSettings: "Open settings", closeSettings: "Close settings", settingsIntro: "Configure Codex CLI, data refresh, and quota alerts. All settings stay on this device.", settingsCliPath: "Codex CLI path", settingsCliPathHint: "Leave empty to use codex from PATH. Executables and .cmd/.bat launchers are supported.", settingsCliPathPlaceholder: "Use system PATH", settingsBrowse: "Browse", settingsBrowseFailed: "Could not choose a CLI file: {error}", settingsUsePath: "Use system PATH", settingsRefreshInterval: "Auto-refresh interval", settingsRefreshIntervalHint: "Applies to quota, trends, and the expanded session list.", settingsQuotaAlertThresholds: "Quota alert thresholds", settingsQuotaAlertThresholdsHint: "Three fixed alert levels. Values must increase in order.", settingsQuotaAlertThresholdLow: "Level 1", settingsQuotaAlertThresholdMedium: "Level 2", settingsQuotaAlertThresholdHigh: "Level 3", settingsQuotaAlertThresholdInvalid: "Enter integers from 1–100 in strictly increasing order.", settingsCancel: "Cancel", settingsSave: "Save & validate", settingsSaving: "Validating Codex CLI…", settingsSaved: "Settings saved. CLI {version}", settingsSaveFailed: "Could not save: {error}" },
+  ja: { settingsTitle: "設定", openSettings: "設定を開く", closeSettings: "設定を閉じる", settingsIntro: "Codex CLI、データ更新、クォータ通知を設定します。設定はこの端末にのみ保存されます。", settingsCliPath: "Codex CLI パス", settingsCliPathHint: "空欄の場合はシステム PATH の codex を使用します。.cmd/.bat も指定できます。", settingsCliPathPlaceholder: "システム PATH を使用", settingsBrowse: "参照", settingsBrowseFailed: "CLI ファイルを選択できませんでした：{error}", settingsUsePath: "システム PATH", settingsRefreshInterval: "自動更新間隔", settingsRefreshIntervalHint: "クォータ、トレンド、展開中のセッション一覧に適用されます。", settingsQuotaAlertThresholds: "クォータ通知しきい値", settingsQuotaAlertThresholdsHint: "通知は3段階固定です。値を昇順に設定してください。", settingsQuotaAlertThresholdLow: "第1段階", settingsQuotaAlertThresholdMedium: "第2段階", settingsQuotaAlertThresholdHigh: "第3段階", settingsQuotaAlertThresholdInvalid: "1～100の整数を昇順で入力してください。", settingsCancel: "キャンセル", settingsSave: "保存して確認", settingsSaving: "Codex CLI を確認中…", settingsSaved: "設定を保存しました。CLI {version}", settingsSaveFailed: "保存できませんでした：{error}" },
+  ko: { settingsTitle: "설정", openSettings: "설정 열기", closeSettings: "설정 닫기", settingsIntro: "Codex CLI, 데이터 새로 고침 및 할당량 알림을 설정합니다. 모든 설정은 이 기기에만 저장됩니다.", settingsCliPath: "Codex CLI 경로", settingsCliPathHint: "비워 두면 시스템 PATH의 codex를 사용합니다. .cmd/.bat 실행 파일도 지원합니다.", settingsCliPathPlaceholder: "시스템 PATH 사용", settingsBrowse: "찾아보기", settingsBrowseFailed: "CLI 파일을 선택할 수 없습니다: {error}", settingsUsePath: "시스템 PATH", settingsRefreshInterval: "자동 새로 고침 간격", settingsRefreshIntervalHint: "할당량, 추세 및 펼친 세션 목록에 적용됩니다.", settingsQuotaAlertThresholds: "할당량 알림 임계값", settingsQuotaAlertThresholdsHint: "알림은 3단계로 고정되며 값은 오름차순이어야 합니다.", settingsQuotaAlertThresholdLow: "1단계", settingsQuotaAlertThresholdMedium: "2단계", settingsQuotaAlertThresholdHigh: "3단계", settingsQuotaAlertThresholdInvalid: "1–100 사이의 정수를 오름차순으로 입력하세요.", settingsCancel: "취소", settingsSave: "저장 및 확인", settingsSaving: "Codex CLI 확인 중…", settingsSaved: "설정이 저장되었습니다. CLI {version}", settingsSaveFailed: "저장 실패: {error}" },
 };
 
 const UPDATE_TRANSLATIONS = {
@@ -607,7 +529,6 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsRestartHint: "共享服务的重启可能中断其他客户端任务。取消勾选则仅更新登录信息，稍后手动重启。", accountsWorking: "正在处理…",
     accountsSaved: "账户已保存。", accountsRemoved: "已移除保存记录，当前登录保持不变。", accountsFileEnabled: "已启用文件管理，请重新登录 Codex 后保存账户。",
     accountsSwitched: "登录信息已切换。请重启正在使用的 Codex 客户端；运行中服务的账户可能尚未更新。",
-    accountsRestarted: "登录信息已切换，本机服务已重启。请核对当前账户，其他 Codex 客户端可能仍需重启。",
     accountsRestartFailed: "登录信息已切换，但服务未能启动。请手动启动 Codex 后再刷新。",
     accountsSyncFailed: "登录信息已切换，账户数据尚未同步，请稍后刷新。", accountsFailed: "操作未完成：{error}",
   },
@@ -635,7 +556,6 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
     accountsRestartHint: "Restarting the shared service may interrupt other clients. Uncheck to update credentials only and restart manually later.", accountsWorking: "Working…",
     accountsSaved: "Account saved.", accountsRemoved: "Saved record removed. Your current sign-in is unchanged.", accountsFileEnabled: "File storage enabled. Sign in to Codex again, then save your account.",
     accountsSwitched: "Credentials switched. Restart running Codex clients; the service may still use the previous account.",
-    accountsRestarted: "Credentials switched and the local service restarted. Check the current account; other Codex clients may still need a restart.",
     accountsRestartFailed: "Credentials switched, but the service could not start. Start Codex manually, then refresh.",
     accountsSyncFailed: "Credentials switched. Account data is not synced yet; refresh in a moment.", accountsFailed: "Could not complete this action: {error}",
   },
@@ -643,33 +563,28 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
 
 const ACCOUNT_QUOTA_TRANSLATIONS = {
   "zh-CN": {
-    accountServiceDetails: "当前服务详情与额度提醒", accountLastSynced: "最近同步",
-    accountQuotaKicker: "多账户监控", accountQuotaMonitorTitle: "账户额度监控", accountQuotaMonitorHint: "同时查看已保存账户的额度余量与重置时间，查询不会切换当前登录。", accountQuotaRefreshAll: "刷新全部", accountQuotaRefreshing: "正在查询账户额度…", accountQuotaLastSyncedMessage: "额度已更新", accountQuotaTotal: "账户总数", accountQuotaHealthy: "状态正常", accountQuotaAttention: "需要注意", accountQuotaLastSynced: "最近同步", accountQuotaPage: "第 {current} / {total} 页", accountQuotaPreview: "已选账户", accountQuotaRemaining: "剩余", accountQuotaNextReset: "下次重置：{value}", accountQuotaCurrent: "当前账户", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryItem: "第 {index} 张：{value}", accountQuotaCreditsExpiryUnknown: "暂无到期时间", accountQuotaCreditsExpiryUnknownItem: "第 {index} 张：到期时间未知", accountQuotaUnavailable: "额度暂不可用", accountQuotaNoAccounts: "还没有可监控的账户", accountQuotaNoAccountsHint: "先在账户管理中保存一个 ChatGPT 账户，再回来刷新额度。", accountQuotaQueryFailed: "额度查询失败：{error}",
+    accountQuotaMonitorHint: "同时查看已保存账户的额度余量与重置时间，查询不会切换当前登录。", accountQuotaRefreshing: "正在查询账户额度…", accountQuotaLastSyncedMessage: "额度已更新", accountQuotaHealthy: "状态正常", accountQuotaAttention: "需要注意", accountQuotaRemaining: "剩余", accountQuotaCurrent: "当前账户", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryItem: "第 {index} 张：{value}", accountQuotaCreditsExpiryUnknown: "暂无到期时间", accountQuotaUnavailable: "额度暂不可用", accountQuotaNoAccounts: "还没有可监控的账户", accountQuotaNoAccountsHint: "先在账户管理中保存一个 ChatGPT 账户，再回来刷新额度。", accountQuotaQueryFailed: "额度查询失败：{error}",
   },
   "zh-TW": {
-    accountServiceDetails: "目前服務詳情與額度提醒", accountLastSynced: "最近同步",
-    accountQuotaKicker: "多帳戶監控", accountQuotaMonitorTitle: "帳戶額度監控", accountQuotaMonitorHint: "同時查看已保存帳戶的額度餘量與重設時間，查詢不會切換目前登入。", accountQuotaRefreshAll: "重新整理全部", accountQuotaRefreshing: "正在查詢帳戶額度…", accountQuotaLastSyncedMessage: "額度已更新", accountQuotaTotal: "帳戶總數", accountQuotaHealthy: "狀態正常", accountQuotaAttention: "需要注意", accountQuotaLastSynced: "最近同步", accountQuotaRemaining: "剩餘", accountQuotaNextReset: "下次重設：{value}", accountQuotaCurrent: "目前帳戶", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryUnknown: "暫無到期時間", accountQuotaUnavailable: "額度暫不可用", accountQuotaNoAccounts: "還沒有可監控的帳戶", accountQuotaNoAccountsHint: "先在帳戶管理中保存一個 ChatGPT 帳戶，再回來重新整理額度。", accountQuotaQueryFailed: "額度查詢失敗：{error}",
+    accountQuotaMonitorHint: "同時查看已保存帳戶的額度餘量與重設時間，查詢不會切換目前登入。", accountQuotaRefreshing: "正在查詢帳戶額度…", accountQuotaLastSyncedMessage: "額度已更新", accountQuotaHealthy: "狀態正常", accountQuotaAttention: "需要注意", accountQuotaRemaining: "剩餘", accountQuotaCurrent: "目前帳戶", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryUnknown: "暫無到期時間", accountQuotaUnavailable: "額度暫不可用", accountQuotaNoAccounts: "還沒有可監控的帳戶", accountQuotaNoAccountsHint: "先在帳戶管理中保存一個 ChatGPT 帳戶，再回來重新整理額度。", accountQuotaQueryFailed: "額度查詢失敗：{error}",
   },
   en: {
-    accountServiceDetails: "Current service details & quota alerts", accountLastSynced: "Last synced",
-    accountQuotaKicker: "MULTI-ACCOUNT MONITOR", accountQuotaMonitorTitle: "Account quota monitor", accountQuotaMonitorHint: "See saved account headroom and reset times together. Queries never switch the active sign-in.", accountQuotaRefreshAll: "Refresh all", accountQuotaRefreshing: "Querying account quotas…", accountQuotaLastSyncedMessage: "Quotas updated", accountQuotaTotal: "Accounts", accountQuotaHealthy: "Healthy", accountQuotaAttention: "Needs attention", accountQuotaLastSynced: "Last synced", accountQuotaRemaining: "Remaining", accountQuotaNextReset: "Next reset: {value}", accountQuotaCurrent: "Current", accountQuotaCreditsCount: "Recharge cards: {count}", accountQuotaCreditsExpiry: "Earliest expiry: {value}", accountQuotaCreditsExpiryItem: "Card {index}: {value}", accountQuotaCreditsExpiryUnknown: "Expiry unavailable", accountQuotaCreditsExpiryUnknownItem: "Card {index}: expiry unavailable", accountQuotaUnavailable: "Unavailable", accountQuotaNoAccounts: "No accounts to monitor", accountQuotaNoAccountsHint: "Save a ChatGPT account in account management, then refresh this view.", accountQuotaQueryFailed: "Quota query failed: {error}",
+    accountQuotaMonitorHint: "See saved account headroom and reset times together. Queries never switch the active sign-in.", accountQuotaRefreshing: "Querying account quotas…", accountQuotaLastSyncedMessage: "Quotas updated", accountQuotaHealthy: "Healthy", accountQuotaAttention: "Needs attention", accountQuotaRemaining: "Remaining", accountQuotaCurrent: "Current", accountQuotaCreditsCount: "Recharge cards: {count}", accountQuotaCreditsExpiry: "Earliest expiry: {value}", accountQuotaCreditsExpiryItem: "Card {index}: {value}", accountQuotaCreditsExpiryUnknown: "Expiry unavailable", accountQuotaUnavailable: "Unavailable", accountQuotaNoAccounts: "No accounts to monitor", accountQuotaNoAccountsHint: "Save a ChatGPT account in account management, then refresh this view.", accountQuotaQueryFailed: "Quota query failed: {error}",
   },
   ja: {
-    accountServiceDetails: "現在のサービス詳細とクォータ通知", accountLastSynced: "最終同期",
-    accountQuotaKicker: "複数アカウント監視", accountQuotaMonitorTitle: "アカウントクォータ監視", accountQuotaMonitorHint: "保存済みアカウントの残量とリセット時刻をまとめて確認できます。現在のログインは切り替わりません。", accountQuotaRefreshAll: "すべて更新", accountQuotaRefreshing: "アカウントのクォータを確認中…", accountQuotaLastSyncedMessage: "クォータを更新しました", accountQuotaTotal: "アカウント", accountQuotaHealthy: "正常", accountQuotaAttention: "要確認", accountQuotaLastSynced: "最終同期", accountQuotaRemaining: "残り", accountQuotaNextReset: "次回リセット：{value}", accountQuotaCurrent: "現在", accountQuotaUnavailable: "利用不可", accountQuotaNoAccounts: "監視するアカウントがありません", accountQuotaNoAccountsHint: "アカウント管理で ChatGPT アカウントを保存してから更新してください。", accountQuotaQueryFailed: "クォータの確認に失敗：{error}",
+    accountQuotaMonitorHint: "保存済みアカウントの残量とリセット時刻をまとめて確認できます。現在のログインは切り替わりません。", accountQuotaRefreshing: "アカウントのクォータを確認中…", accountQuotaLastSyncedMessage: "クォータを更新しました", accountQuotaHealthy: "正常", accountQuotaAttention: "要確認", accountQuotaRemaining: "残り", accountQuotaCurrent: "現在", accountQuotaUnavailable: "利用不可", accountQuotaNoAccounts: "監視するアカウントがありません", accountQuotaNoAccountsHint: "アカウント管理で ChatGPT アカウントを保存してから更新してください。", accountQuotaQueryFailed: "クォータの確認に失敗：{error}",
   },
   ko: {
-    accountServiceDetails: "현재 서비스 상세 및 할당량 알림", accountLastSynced: "최근 동기화",
-    accountQuotaKicker: "다중 계정 모니터", accountQuotaMonitorTitle: "계정 할당량 모니터", accountQuotaMonitorHint: "저장된 계정의 잔여량과 재설정 시간을 함께 확인합니다. 현재 로그인은 전환되지 않습니다.", accountQuotaRefreshAll: "모두 새로 고침", accountQuotaRefreshing: "계정 할당량을 확인하는 중…", accountQuotaLastSyncedMessage: "할당량이 업데이트됨", accountQuotaTotal: "계정 수", accountQuotaHealthy: "정상", accountQuotaAttention: "확인 필요", accountQuotaLastSynced: "마지막 동기화", accountQuotaRemaining: "남은 할당량", accountQuotaNextReset: "다음 재설정: {value}", accountQuotaCurrent: "현재", accountQuotaUnavailable: "사용할 수 없음", accountQuotaNoAccounts: "모니터링할 계정이 없음", accountQuotaNoAccountsHint: "계정 관리에서 ChatGPT 계정을 저장한 후 새로 고침하세요.", accountQuotaQueryFailed: "할당량 조회 실패: {error}",
+    accountQuotaMonitorHint: "저장된 계정의 잔여량과 재설정 시간을 함께 확인합니다. 현재 로그인은 전환되지 않습니다.", accountQuotaRefreshing: "계정 할당량을 확인하는 중…", accountQuotaLastSyncedMessage: "할당량이 업데이트됨", accountQuotaHealthy: "정상", accountQuotaAttention: "확인 필요", accountQuotaRemaining: "남은 할당량", accountQuotaCurrent: "현재", accountQuotaUnavailable: "사용할 수 없음", accountQuotaNoAccounts: "모니터링할 계정이 없음", accountQuotaNoAccountsHint: "계정 관리에서 ChatGPT 계정을 저장한 후 새로 고침하세요.", accountQuotaQueryFailed: "할당량 조회 실패: {error}",
   },
 };
 
 const SETTINGS_LAYOUT_TRANSLATIONS = {
-  "zh-CN": { settingsLayoutIntro: "调整本机偏好，修改后点击保存生效。", settingsStorageHint: "所有设置均保存在本机：{path}", settingsStorageLoading: "正在读取设置保存目录…", settingsStorageReadFailed: "无法读取设置保存目录", settingsCategoryLabel: "设置分类", settingsConnectionTab: "连接与刷新", settingsAlertsTab: "提醒与隐私", settingsReadingTab: "阅读显示", settingsPreviewLabel: "实时预览" },
-  "zh-TW": { settingsLayoutIntro: "調整本機偏好，修改後點擊儲存生效。", settingsStorageHint: "所有設定均保存在本機：{path}", settingsStorageLoading: "正在讀取設定儲存目錄…", settingsStorageReadFailed: "無法讀取設定儲存目錄", settingsCategoryLabel: "設定分類", settingsConnectionTab: "連線與更新", settingsAlertsTab: "提醒與隱私", settingsReadingTab: "閱讀顯示", settingsPreviewLabel: "即時預覽" },
-  en: { settingsLayoutIntro: "Preferences stay on this device. Save to apply changes.", settingsStorageHint: "All settings are saved locally: {path}", settingsStorageLoading: "Reading settings directory…", settingsStorageReadFailed: "Could not read the settings directory", settingsCategoryLabel: "Settings categories", settingsConnectionTab: "Connection & refresh", settingsAlertsTab: "Alerts & privacy", settingsReadingTab: "Reading", settingsPreviewLabel: "Live preview" },
-  ja: { settingsLayoutIntro: "この端末の設定を変更し、保存すると反映されます。", settingsStorageHint: "設定の保存先（この端末）：{path}", settingsStorageLoading: "設定の保存先を読み込み中…", settingsStorageReadFailed: "設定の保存先を読み込めません", settingsCategoryLabel: "設定カテゴリ", settingsConnectionTab: "接続と更新", settingsAlertsTab: "通知とプライバシー", settingsReadingTab: "読みやすさ", settingsPreviewLabel: "プレビュー" },
-  ko: { settingsLayoutIntro: "이 기기의 설정을 변경한 후 저장하면 적용됩니다.", settingsStorageHint: "이 기기의 설정 저장 위치: {path}", settingsStorageLoading: "설정 저장 위치를 읽는 중…", settingsStorageReadFailed: "설정 저장 위치를 읽을 수 없습니다", settingsCategoryLabel: "설정 분류", settingsConnectionTab: "연결 및 새로 고침", settingsAlertsTab: "알림 및 개인정보", settingsReadingTab: "읽기 설정", settingsPreviewLabel: "실시간 미리보기" },
+  "zh-CN": { settingsLayoutIntro: "调整本机偏好，修改后点击保存生效。", settingsStorageHint: "所有设置均保存在本机：{path}", settingsStorageLoading: "正在读取设置保存目录…", settingsStorageReadFailed: "无法读取设置保存目录", settingsCategoryLabel: "设置分类", settingsConnectionTab: "连接与刷新", settingsAlertsTab: "提醒与隐私" },
+  "zh-TW": { settingsLayoutIntro: "調整本機偏好，修改後點擊儲存生效。", settingsStorageHint: "所有設定均保存在本機：{path}", settingsStorageLoading: "正在讀取設定儲存目錄…", settingsStorageReadFailed: "無法讀取設定儲存目錄", settingsCategoryLabel: "設定分類", settingsConnectionTab: "連線與更新", settingsAlertsTab: "提醒與隱私" },
+  en: { settingsLayoutIntro: "Preferences stay on this device. Save to apply changes.", settingsStorageHint: "All settings are saved locally: {path}", settingsStorageLoading: "Reading settings directory…", settingsStorageReadFailed: "Could not read the settings directory", settingsCategoryLabel: "Settings categories", settingsConnectionTab: "Connection & refresh", settingsAlertsTab: "Alerts & privacy" },
+  ja: { settingsLayoutIntro: "この端末の設定を変更し、保存すると反映されます。", settingsStorageHint: "設定の保存先（この端末）：{path}", settingsStorageLoading: "設定の保存先を読み込み中…", settingsStorageReadFailed: "設定の保存先を読み込めません", settingsCategoryLabel: "設定カテゴリ", settingsConnectionTab: "接続と更新", settingsAlertsTab: "通知とプライバシー" },
+  ko: { settingsLayoutIntro: "이 기기의 설정을 변경한 후 저장하면 적용됩니다.", settingsStorageHint: "이 기기의 설정 저장 위치: {path}", settingsStorageLoading: "설정 저장 위치를 읽는 중…", settingsStorageReadFailed: "설정 저장 위치를 읽을 수 없습니다", settingsCategoryLabel: "설정 분류", settingsConnectionTab: "연결 및 새로 고침", settingsAlertsTab: "알림 및 개인정보" },
 };
 
 const PROXY_SETTINGS_TRANSLATIONS = {
@@ -764,7 +679,6 @@ const TRANSLATION_SOURCES = [
   MODULE_EXPAND_TRANSLATIONS,
   SESSION_SECTION_TRANSLATIONS,
   SETTINGS_TRANSLATIONS,
-  READING_TRANSLATIONS,
   UPDATE_TRANSLATIONS,
   QUOTA_LABEL_TRANSLATIONS,
 ];
