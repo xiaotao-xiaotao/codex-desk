@@ -12,8 +12,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
-    "@tauri-apps/plugin-notification": "^2.3.3",
-    "marked": "^18.0.13"
+    "@tauri-apps/plugin-notification": "^2.3.3"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

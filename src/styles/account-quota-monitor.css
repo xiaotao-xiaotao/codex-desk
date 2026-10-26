@@ -1,7 +1,7 @@
 #account-section { overflow-y: auto; container: quota-page / inline-size; }
 .account-quota-monitor-inline { display: grid; flex: 0 0 auto; gap: 16px; width: 100%; max-width: 1180px; margin: 0 auto 4px; padding-top: 4px; }
 .account-quota-featured-heading { margin: 0; }
-.account-quota-featured-heading h2 { margin: 0; color: var(--lite-muted); font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.account-quota-featured-heading h2 { margin: 0; color: var(--lite-muted); font-size: 12px; font-weight: 400; letter-spacing: normal; }
 .account-quota-feedback { margin: 14px 0 0; color: var(--lite-muted); font-size: 12px; }
 .account-quota-feedback[data-kind="success"] { display: none; }
 .account-quota-feedback[data-kind="error"] { color: #d95d67; }
@@ -25,9 +25,9 @@
 .account-quota-featured-link { min-height: 26px; padding: 4px 8px; border: 1px solid var(--lite-border); border-radius: 7px; color: var(--lite-accent); background: var(--lite-surface); font-size: 11px; cursor: pointer; }
 .account-quota-featured-link:hover { border-color: var(--lite-accent); background: var(--lite-accent-soft); }
 .account-quota-featured-footer { position: absolute; top: -30px; right: 24px; display: flex; justify-content: flex-end; gap: 6px; margin: 0; padding: 0; }
-.account-quota-featured-footer .account-quota-featured-link { min-height: 22px; padding: 2px 7px; border-radius: 6px; font-size: 10px; }
+.account-quota-featured-footer .account-quota-featured-link { min-height: 22px; padding: 2px 7px; border-radius: 6px; font-size: 12px; line-height: 16px; }
 .account-quota-list { margin-top: 0; padding-top: 14px; border-top: 1px solid var(--lite-border); }
-.account-quota-list::before { color: var(--lite-muted); content: "账户列表"; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.account-quota-list::before { color: var(--lite-muted); content: "账户列表"; font-size: 12px; font-weight: 400; letter-spacing: normal; }
 .account-quota-list.is-empty { display: none; }
 .account-quota-list-row { position: relative; display: grid; grid-template-columns: minmax(190px, 1.25fr) minmax(80px, .6fr) 86px minmax(190px, 1.25fr) minmax(150px, .9fr); align-items: center; gap: 16px; width: 100%; padding: 13px 16px; border: 1px solid var(--lite-border); border-radius: 12px; color: var(--lite-ink); background: color-mix(in srgb, var(--lite-surface) 72%, var(--lite-ground)); text-align: left; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
 .account-quota-list-current-mark { position: absolute; z-index: 1; top: -7px; left: 0; display: grid; box-sizing: border-box; width: 14px; height: 14px; place-items: center; border: 3px solid var(--lite-ground); border-radius: 50%; color: var(--lite-accent); background: var(--lite-accent); }
@@ -43,7 +43,7 @@
 .account-quota-list-identity strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-identity small { overflow: hidden; color: var(--lite-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-plan { display: grid; gap: 2px; min-width: 0; }
-.account-quota-list-plan small { overflow: hidden; color: var(--lite-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-list-plan small { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-plan strong { overflow: hidden; color: var(--lite-accent); font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-state { justify-self: start; padding: 0; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .account-quota-list-state.is-healthy { color: #1668c6; }
@@ -56,10 +56,10 @@
 .account-quota-list-mini-item { display: grid; grid-template-rows: auto 6px auto; gap: 4px; min-width: 0; }
 .account-quota-list-mini-item strong { overflow: hidden; color: var(--lite-accent); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-mini-item i { display: block; height: 6px; overflow: hidden; border-radius: 5px; background: linear-gradient(to right, var(--lite-accent) var(--mini-progress), var(--lite-border) var(--mini-progress)); }
-.account-quota-list-mini-item small { overflow: hidden; color: var(--lite-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-list-mini-item small { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-credits { display: grid; gap: 2px; min-width: 0; }
 .account-quota-list-credits strong { overflow: hidden; color: var(--lite-ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-credits small { overflow: hidden; color: var(--lite-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-list-credits small { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .account-quota-avatar { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--lite-accent); background: var(--lite-accent-soft); font-size: 14px; font-weight: 800; }
 .account-quota-identity div { display: grid; gap: 3px; min-width: 0; }

@@ -5,14 +5,11 @@ use serde_json::{json, Value};
 /// 切换账户或服务重启后元数据可能返回较慢，最多等待 40 秒。
 const ACCOUNT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(40);
 
-/// 仅包含个人中心需要展示的账户元数据，不透传任何认证凭据。
+/// 当前账户标识仅供额度提醒按邮箱去重，不透传认证凭据。
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountProfile {
     email: Option<String>,
-    plan_type: Option<String>,
-    account_type: Option<String>,
-    requires_openai_auth: bool,
 }
 
 /// 通过已建立的本机 app-server 读取当前账户，不读取 auth.json，也不主动刷新令牌。
@@ -25,21 +22,12 @@ pub async fn read_account(state: &AppServerState) -> Result<AccountProfile, Stri
         )
         .await?;
     let account = result.get("account").filter(|value| !value.is_null());
-    let field = |name| {
-        account
-            .and_then(|value| value.get(name))
+    Ok(AccountProfile {
+        email: account
+            .and_then(|value| value.get("email"))
             .and_then(Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(str::to_owned)
-    };
-    Ok(AccountProfile {
-        email: field("email"),
-        plan_type: field("planType"),
-        account_type: field("type"),
-        requires_openai_auth: result
-            .get("requiresOpenaiAuth")
-            .and_then(Value::as_bool)
-            .unwrap_or(false),
+            .map(str::to_owned),
     })
 }

@@ -2,14 +2,8 @@
 @import './styles/quota-overview.css';
 @import './styles/account-switch.css';
 @import './styles/account-quota-monitor.css';
-@import './styles/codex-config.css';
-@import './styles/trend.css';
-@import './styles/word-cloud.css';
-@import './styles/thread-list.css';
 @import './styles/refresh-icon-button.css';
 @import './styles/loading-overlay.css';
-@import './styles/update-banner.css';
-@import './styles/thread-dialog.css';
 @import './styles/settings-dialog.css';
 @import './styles/scrollbar.css';
 @import './styles/theme.css';
@@ -18,10 +12,7 @@
 :root {
   --disclosure-chevron-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m7 10 5 5 5-5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
-.disclosure-chevron,
-.reset-credits-toggle::after,
-.message-local-file-link::after,
-.message-activity-disclosure > summary::after {
+.disclosure-chevron {
   display: inline-block;
   flex: 0 0 auto;
   width: 14px;
@@ -32,17 +23,13 @@
   transition: transform .15s ease;
 }
 @media (prefers-reduced-motion: reduce) {
-  .disclosure-chevron,
-  .reset-credits-toggle::after,
-  .message-local-file-link::after,
-  .message-activity-disclosure > summary::after { transition: none; }
+  .disclosure-chevron { transition: none; }
 }
 
 /* 精简版工作区：把账户用量与账户管理放在清晰的双入口骨架里。 */
 :root {
   --lite-ground: #f4f7fb;
   --lite-surface: #ffffff;
-  --lite-surface-muted: #edf3f9;
   --lite-ink: #172b46;
   --lite-muted: #71839a;
   --lite-accent: #1266d6;
@@ -120,7 +107,6 @@
 :root[data-theme="dark"] {
   --lite-ground: #101923;
   --lite-surface: #172331;
-  --lite-surface-muted: #1d2d40;
   --lite-ink: #e7f0fa;
   --lite-muted: #9aacc0;
   --lite-accent: #8dc5ff;

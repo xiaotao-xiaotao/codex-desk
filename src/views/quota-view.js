@@ -1,7 +1,7 @@
 /**
  * 悬浮额度球只展示当前主额度窗口；账户页的额度详情由多账户额度卡负责。
  */
-export function createQuotaView({ t, formatQuotaWindow }) {
+export function createQuotaView({ t }) {
   const orb = document.querySelector("#quota-orb");
   const orbValue = document.querySelector("#orb-value");
   const orbLabel = document.querySelector("#orb-label");
@@ -9,7 +9,9 @@ export function createQuotaView({ t, formatQuotaWindow }) {
   function formatOrbWindow(durationMinutes) {
     const minutes = Number(durationMinutes);
     if (!Number.isFinite(minutes) || minutes <= 0) return t("quotaWindow");
-    return formatQuotaWindow(durationMinutes);
+    if (minutes % 1_440 === 0) return t("compactQuotaWindowDays", { count: minutes / 1_440 });
+    if (minutes % 60 === 0) return t("compactQuotaWindowHours", { count: minutes / 60 });
+    return t("quotaWindowMinutes", { count: minutes });
   }
 
   function roundedPercent(value) {

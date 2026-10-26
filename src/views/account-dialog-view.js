@@ -23,6 +23,5 @@ export function createAccountOverviewView({ invoke }) {
     refresh,
     getAccountScope: () => readFailed ? "unknown" : profile?.email ?? "unknown",
     invalidate: () => { requestVersion += 1; profile = null; readFailed = false; },
-    updateLanguage: () => {},
   };
 }

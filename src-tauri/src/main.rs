@@ -7,26 +7,16 @@ mod account;
 mod account_login;
 mod account_store;
 mod app_server;
-mod local_usage;
 mod quota;
-mod threads;
 mod tray;
-mod usage;
 
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::process::Command;
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
-use tokio::io::AsyncReadExt;
 
-// 900px 为右侧词云留出更舒展的排版空间，同时仍保持为紧凑悬浮看板。
 const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
-// 保留旧版独立展开会话模式的尺寸兼容。
-const EXPANDED_WINDOW_HEIGHT: f64 = 900.0;
-// 统一看板高度容纳十条紧凑历史记录和分页，避免栏目切换或刷新时调整窗口。
+// 账户用量与账户列表共用固定窗口高度。
 const DASHBOARD_WINDOW_HEIGHT: f64 = 820.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
@@ -34,20 +24,6 @@ const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/settings/billing";
 const CODEX_USAGE_URL: &str = "https://chatgpt.com/settings/usage";
-const GITHUB_RELEASES_URL: &str = "https://github.com/xiaotao-xiaotao/codex-desk/releases";
-const CODEX_CONFIG_DOCS_URL: &str = "https://developers.openai.com/codex/config-reference/";
-// 文件链接只预览开头 512 KiB，避免大型日志或 JSONL 一次性占满 WebView 内存。
-const LOCAL_TEXT_PREVIEW_MAX_BYTES: usize = 512 * 1024;
-
-#[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct LocalTextPreview {
-    path: String,
-    name: String,
-    content: String,
-    size: u64,
-    truncated: bool,
-}
 
 #[tauri::command]
 async fn read_quota(
@@ -230,175 +206,6 @@ fn choose_cli_path(window: WebviewWindow) -> Option<String> {
         .map(|path| path.to_string_lossy().into_owned())
 }
 
-/// 用户点击历史消息中的本地文件链接后，按需读取一小段文本用于只读预览。
-#[tauri::command]
-async fn read_local_text_preview(path: String) -> Result<LocalTextPreview, String> {
-    let requested_path = PathBuf::from(path.trim());
-    if !requested_path.is_absolute() {
-        return Err("仅支持预览绝对路径文件".to_owned());
-    }
-    let canonical_path = tokio::fs::canonicalize(&requested_path)
-        .await
-        .map_err(|error| format!("无法找到文件：{error}"))?;
-    let metadata = tokio::fs::metadata(&canonical_path)
-        .await
-        .map_err(|error| format!("无法读取文件信息：{error}"))?;
-    if !metadata.is_file() {
-        return Err("该路径不是文件".to_owned());
-    }
-
-    let file = tokio::fs::File::open(&canonical_path)
-        .await
-        .map_err(|error| format!("无法打开文件：{error}"))?;
-    let mut bytes = Vec::with_capacity(LOCAL_TEXT_PREVIEW_MAX_BYTES + 1);
-    file.take((LOCAL_TEXT_PREVIEW_MAX_BYTES + 1) as u64)
-        .read_to_end(&mut bytes)
-        .await
-        .map_err(|error| format!("无法读取文件：{error}"))?;
-    let truncated = bytes.len() > LOCAL_TEXT_PREVIEW_MAX_BYTES
-        || metadata.len() > LOCAL_TEXT_PREVIEW_MAX_BYTES as u64;
-    bytes.truncate(LOCAL_TEXT_PREVIEW_MAX_BYTES);
-    if bytes.contains(&0) {
-        return Err("该文件不是可预览的文本文件".to_owned());
-    }
-
-    Ok(LocalTextPreview {
-        name: canonical_path
-            .file_name()
-            .map_or_else(String::new, |name| name.to_string_lossy().into_owned()),
-        path: canonical_path.to_string_lossy().into_owned(),
-        content: String::from_utf8_lossy(&bytes).into_owned(),
-        size: metadata.len(),
-        truncated,
-    })
-}
-
-#[tauri::command]
-async fn search_threads(
-    state: State<'_, app_server::AppServerState>,
-    list_state: State<'_, threads::ThreadListState>,
-    query: String,
-    page: u32,
-    page_size: u32,
-    force_refresh: bool,
-) -> Result<threads::ThreadSearchResult, String> {
-    threads::search_threads(&state, &list_state, &query, page, page_size, force_refresh).await
-}
-
-#[tauri::command]
-async fn set_thread_pinned(
-    state: State<'_, app_server::AppServerState>,
-    list_state: State<'_, threads::ThreadListState>,
-    thread_id: String,
-    is_pinned: bool,
-) -> Result<(), String> {
-    threads::set_thread_pinned(&state, &list_state, &thread_id, is_pinned).await
-}
-
-#[tauri::command]
-async fn list_threads_for_selection(
-    state: State<'_, app_server::AppServerState>,
-    list_state: State<'_, threads::ThreadListState>,
-    query: String,
-) -> Result<Vec<threads::ThreadSummary>, String> {
-    threads::list_threads_for_selection(&state, &list_state, &query).await
-}
-
-#[tauri::command]
-async fn export_threads(
-    state: State<'_, app_server::AppServerState>,
-    thread_ids: Vec<String>,
-    output_path: String,
-) -> Result<threads::ThreadExportSummary, String> {
-    threads::export_threads_to_path(&state, &thread_ids, Path::new(&output_path)).await
-}
-
-#[tauri::command]
-fn choose_export_path(
-    window: WebviewWindow,
-    default_file_name: String,
-    filter_name: String,
-) -> Option<String> {
-    let filter_name = if filter_name.trim().is_empty() {
-        "JSON".to_owned()
-    } else {
-        filter_name
-    };
-    rfd::FileDialog::new()
-        // 绑定父窗口后，Windows 会把“另存为”作为 Desk 的模态子窗口置于最前。
-        .set_parent(&window)
-        .add_filter(&filter_name, &["json"])
-        .set_file_name(&default_file_name)
-        .save_file()
-        .map(|path| path.to_string_lossy().into_owned())
-}
-
-#[tauri::command]
-async fn import_threads(
-    state: State<'_, app_server::AppServerState>,
-    trend_state: State<'_, threads::ThreadTrendState>,
-    list_state: State<'_, threads::ThreadListState>,
-    bundle_json: String,
-    imported_title_prefix: String,
-    imported_history_intro: String,
-) -> Result<threads::ThreadImportResult, String> {
-    let result = threads::import_threads(
-        &state,
-        &bundle_json,
-        &imported_title_prefix,
-        &imported_history_intro,
-    )
-    .await?;
-    if result.imported > 0 {
-        trend_state.invalidate().await;
-        list_state.invalidate().await;
-    }
-    Ok(result)
-}
-
-#[tauri::command]
-async fn read_thread(
-    state: State<'_, app_server::AppServerState>,
-    thread_id: String,
-) -> Result<threads::ThreadDetail, String> {
-    threads::read_thread(&state, &thread_id).await
-}
-
-#[tauri::command]
-async fn read_thread_page(
-    state: State<'_, app_server::AppServerState>,
-    thread_id: String,
-    cursor: String,
-) -> Result<threads::ThreadDetailPage, String> {
-    threads::read_thread_page(&state, &thread_id, &cursor).await
-}
-
-#[tauri::command]
-async fn read_thread_full_overview(
-    state: State<'_, app_server::AppServerState>,
-    thread_id: String,
-) -> Result<threads::ThreadFullOverview, String> {
-    threads::read_thread_full_overview(&state, &thread_id).await
-}
-
-#[tauri::command]
-async fn read_thread_trends(
-    state: State<'_, app_server::AppServerState>,
-    trend_state: State<'_, threads::ThreadTrendState>,
-    force_refresh: bool,
-    days: usize,
-) -> Result<threads::ThreadTrendResponse, String> {
-    threads::read_thread_trends(&state, &trend_state, force_refresh, days).await
-}
-
-#[tauri::command]
-async fn read_token_usage(
-    state: State<'_, app_server::AppServerState>,
-    local_usage_state: State<'_, local_usage::LocalUsageState>,
-) -> Result<usage::TokenUsageSnapshot, String> {
-    usage::read_token_usage(&state, &local_usage_state).await
-}
-
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
 #[tauri::command]
 fn open_billing_page() -> Result<(), String> {
@@ -408,16 +215,6 @@ fn open_billing_page() -> Result<(), String> {
 #[tauri::command]
 fn open_quota_reset_page() -> Result<(), String> {
     open_external_url(CODEX_USAGE_URL, "Codex 用量页面")
-}
-
-#[tauri::command]
-fn open_update_page() -> Result<(), String> {
-    open_external_url(GITHUB_RELEASES_URL, "GitHub 更新页面")
-}
-
-#[tauri::command]
-fn open_codex_config_docs() -> Result<(), String> {
-    open_external_url(CODEX_CONFIG_DOCS_URL, "Codex 配置参考")
 }
 
 fn open_external_url(url: &str, label: &str) -> Result<(), String> {
@@ -490,21 +287,9 @@ fn set_window_always_on_top(always_on_top: bool, window: WebviewWindow) -> Resul
 }
 
 #[tauri::command]
-fn resize_float_window(
-    expanded: bool,
-    sessions_expanded: bool,
-    window: WebviewWindow,
-) -> Result<(), String> {
-    // 会话展开和收起分别使用固定高度，屏幕较小时仍受工作区尺寸限制。
+fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), String> {
     let (preferred_width, preferred_height) = if expanded {
-        (
-            EXPANDED_WINDOW_WIDTH,
-            if sessions_expanded {
-                EXPANDED_WINDOW_HEIGHT
-            } else {
-                DASHBOARD_WINDOW_HEIGHT
-            },
-        )
+        (EXPANDED_WINDOW_WIDTH, DASHBOARD_WINDOW_HEIGHT)
     } else {
         (COLLAPSED_WINDOW_SIZE, COLLAPSED_WINDOW_SIZE)
     };
@@ -578,8 +363,6 @@ fn main() {
         .manage(app_server::AppServerState::default())
         .manage(account_store::AccountStoreState::default())
         .manage(account_login::AccountLoginState::default())
-        .manage(local_usage::LocalUsageState::default())
-        .manage(threads::ThreadTrendState::default())
         .plugin(tauri_plugin_notification::init())
         // 第二次启动由首个实例接收，并唤起已有窗口，避免重复连接与悬浮窗。
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -587,8 +370,6 @@ fn main() {
         }))
         .setup(move |app| {
             std::fs::create_dir_all(&data_directory)?;
-            let pin_path = data_directory.join("thread-pins.json");
-            app.manage(threads::ThreadListState::new(pin_path));
             for window in &app.config().app.windows {
                 tauri::WebviewWindowBuilder::from_config(app, window)?
                     .data_directory(data_directory.join("webview").join(&window.label))
@@ -598,7 +379,7 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
                 // 否则前端加载异常或 Windows 恢复出错误窗口尺寸时，只能看到托盘图标。
-                if let Err(error) = resize_float_window(true, false, window) {
+                if let Err(error) = resize_float_window(true, window) {
                     eprintln!("初始化主面板尺寸失败：{error}");
                 }
             }
@@ -621,22 +402,8 @@ fn main() {
             rename_saved_account,
             remove_saved_account,
             enable_account_file_storage,
-            open_update_page,
-            open_codex_config_docs,
             configure_cli_path,
             choose_cli_path,
-            read_local_text_preview,
-            search_threads,
-            set_thread_pinned,
-            list_threads_for_selection,
-            export_threads,
-            choose_export_path,
-            import_threads,
-            read_thread,
-            read_thread_page,
-            read_thread_full_overview,
-            read_thread_trends,
-            read_token_usage,
             open_billing_page,
             open_quota_reset_page,
             start_dragging,

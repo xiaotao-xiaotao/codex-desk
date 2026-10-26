@@ -1,7 +1,6 @@
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use std::{
-    collections::HashMap,
     path::{Path, PathBuf},
     process::Stdio,
     sync::{
@@ -73,15 +72,12 @@ impl ProxySettings {
     }
 }
 
-/// 账户、会话交互和后台统计分别使用一条连接，避免后台读取阻塞首页刷新。
-/// 每条连接内按 ID 收集响应；三条连接共享同一个本机 daemon。
+/// 精简版只保留账户连接，按请求 ID 收集共享 daemon 的响应。
 pub struct AppServerState {
     account: Mutex<Option<CodexAppServer>>,
-    threads: Mutex<Option<CodexAppServer>>,
-    background: Mutex<Option<CodexAppServer>>,
     /// 请求持有读锁，切换 CLI 或退出持有写锁，避免关闭期间又建立新连接。
     cli_path: RwLock<Option<PathBuf>>,
-    /// 多条连接首次启动或重连时，串行执行 daemon start，避免同时安装/启动。
+    /// 首次启动或重连时串行执行 daemon start，避免重复安装/启动。
     daemon_start: Mutex<()>,
     next_request_id: AtomicU64,
     /// 用户显式启用后才读取系统代理；生命周期写锁保护配置变更。
@@ -92,8 +88,6 @@ impl Default for AppServerState {
     fn default() -> Self {
         Self {
             account: Mutex::new(None),
-            threads: Mutex::new(None),
-            background: Mutex::new(None),
             cli_path: RwLock::new(None),
             daemon_start: Mutex::new(()),
             next_request_id: AtomicU64::new(2),
@@ -160,11 +154,6 @@ impl AppServerState {
             .await
     }
 
-    pub async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
-        self.request_with_timeout(method, params, DEFAULT_REQUEST_TIMEOUT)
-            .await
-    }
-
     pub async fn request_with_timeout(
         &self,
         method: &str,
@@ -172,12 +161,7 @@ impl AppServerState {
         response_timeout: Duration,
     ) -> Result<Value, String> {
         let cli_path = self.cli_path.read().await;
-        let channel = if method.starts_with("account/") {
-            &self.account
-        } else {
-            &self.threads
-        };
-        let mut connection = channel.lock().await;
+        let mut connection = self.account.lock().await;
         self.request_locked(
             &mut connection,
             cli_path.as_deref(),
@@ -186,54 +170,6 @@ impl AppServerState {
             response_timeout,
         )
         .await
-    }
-
-    pub async fn request_background(&self, method: &str, params: Value) -> Result<Value, String> {
-        let cli_path = self.cli_path.read().await;
-        let mut connection = self.background.lock().await;
-        self.request_locked(
-            &mut connection,
-            cli_path.as_deref(),
-            method,
-            params,
-            DEFAULT_REQUEST_TIMEOUT,
-        )
-        .await
-    }
-
-    /// 后台批次使用独立连接，响应顺序可以与请求顺序不同。
-    pub async fn request_background_batch(
-        &self,
-        requests: Vec<(String, Value)>,
-    ) -> Result<Vec<Result<Value, String>>, String> {
-        if requests.is_empty() {
-            return Ok(Vec::new());
-        }
-        let cli_path = self.cli_path.read().await;
-        let mut connection = self.background.lock().await;
-        self.ensure_connection(&mut connection, cli_path.as_deref())
-            .await?;
-        let requests = requests
-            .into_iter()
-            .map(|(method, params)| {
-                (
-                    self.next_request_id.fetch_add(1, Ordering::Relaxed),
-                    method,
-                    params,
-                )
-            })
-            .collect::<Vec<_>>();
-        let result = connection
-            .as_mut()
-            .expect("已建立 daemon 连接")
-            .request_batch(&requests, DEFAULT_REQUEST_TIMEOUT)
-            .await;
-        if result.is_err() {
-            if let Some(server) = connection.take() {
-                server.close().await;
-            }
-        }
-        result
     }
 
     async fn ensure_connection(
@@ -372,10 +308,8 @@ impl AppServerState {
     }
 
     async fn close_connections(&self) {
-        for channel in [&self.account, &self.threads, &self.background] {
-            if let Some(server) = channel.lock().await.take() {
-                server.close().await;
-            }
+        if let Some(server) = self.account.lock().await.take() {
+            server.close().await;
         }
     }
 }
@@ -662,38 +596,6 @@ impl CodexAppServer {
         })?
     }
 
-    async fn request_batch(
-        &mut self,
-        requests: &[(u64, String, Value)],
-        response_timeout: Duration,
-    ) -> Result<Vec<Result<Value, String>>, String> {
-        timeout(response_timeout, async {
-            for (id, method, params) in requests {
-                self.socket
-                    .feed(Message::Text(
-                        json!({ "id": id, "method": method, "params": params })
-                            .to_string()
-                            .into(),
-                    ))
-                    .await
-                    .map_err(|error| format!("发送批量请求失败：{error}"))?;
-            }
-            self.socket
-                .flush()
-                .await
-                .map_err(|error| format!("发送批量请求失败：{error}"))?;
-            let ids = requests.iter().map(|(id, _, _)| *id).collect::<Vec<_>>();
-            wait_for_responses(&mut self.socket, &ids).await
-        })
-        .await
-        .map_err(|_| {
-            format!(
-                "Codex daemon 批量请求在 {} 秒内未全部响应",
-                response_timeout.as_secs()
-            )
-        })?
-    }
-
     async fn close(mut self) {
         let _ = timeout(GRACEFUL_SHUTDOWN_TIMEOUT, self.socket.close(None)).await;
         // 关闭读写句柄让 proxy 正常退出，daemon 仍供其他客户端使用。
@@ -792,49 +694,6 @@ where
             Some(Ok(_)) => return Err("Codex daemon 返回非文本消息".to_owned()),
         }
     }
-}
-
-async fn wait_for_responses<S>(
-    socket: &mut WebSocketStream<S>,
-    request_ids: &[u64],
-) -> Result<Vec<Result<Value, String>>, String>
-where
-    S: AsyncRead + AsyncWrite + Unpin,
-{
-    let indexes = request_ids
-        .iter()
-        .enumerate()
-        .map(|(index, id)| (*id, index))
-        .collect::<HashMap<_, _>>();
-    let mut responses = vec![None; request_ids.len()];
-    let mut remaining = request_ids.len();
-    while remaining > 0 {
-        let message = next_rpc_message(socket).await?;
-        if message.get("method").is_some() {
-            continue;
-        }
-        let Some(index) = message
-            .get("id")
-            .and_then(Value::as_u64)
-            .and_then(|id| indexes.get(&id).copied())
-        else {
-            continue;
-        };
-        if responses[index].is_some() {
-            continue;
-        }
-        // 业务错误属于单个请求；协议错误意味着整批传输不再可信。
-        responses[index] = Some(match response_result(&message) {
-            Ok(value) => Ok(value),
-            Err(RpcError::Remote(error)) => Err(error),
-            Err(RpcError::Transport(error) | RpcError::Timeout(error)) => return Err(error),
-        });
-        remaining -= 1;
-    }
-    Ok(responses
-        .into_iter()
-        .map(|response| response.expect("已收齐全部批量响应"))
-        .collect())
 }
 
 #[cfg(test)]
@@ -997,66 +856,6 @@ mod tests {
     }
 
     #[test]
-    fn websocket_batch_handles_control_frames_notifications_and_reordered_responses() {
-        tauri::async_runtime::block_on(async {
-            let (client, server) = tokio::io::duplex(4_096);
-            let mut client = WebSocketStream::from_raw_socket(client, Role::Client, None).await;
-            let mut server = WebSocketStream::from_raw_socket(server, Role::Server, None).await;
-            let writer = tokio::spawn(async move {
-                for message in [
-                    Message::Ping(vec![1, 2].into()),
-                    Message::Text(
-                        json!({"method":"thread/updated","params":{}})
-                            .to_string()
-                            .into(),
-                    ),
-                    Message::Text(
-                        json!({"id":12,"result":{"thread":{"id":"second"}}})
-                            .to_string()
-                            .into(),
-                    ),
-                    Message::Text(
-                        json!({"id":12,"result":{"ignored":"duplicate"}})
-                            .to_string()
-                            .into(),
-                    ),
-                    Message::Text(
-                        json!({"id":11,"error":{"message":"first failed"}})
-                            .to_string()
-                            .into(),
-                    ),
-                ] {
-                    server.send(message).await.unwrap();
-                }
-                // 保持 socket 存活直到客户端发送 Close，让自动 Pong 可以正常写入。
-                while let Some(Ok(message)) = server.next().await {
-                    if matches!(message, Message::Close(_)) {
-                        break;
-                    }
-                }
-            });
-            let responses = timeout(
-                Duration::from_secs(1),
-                wait_for_responses(&mut client, &[11, 12]),
-            )
-            .await
-            .unwrap()
-            .unwrap();
-            assert_eq!(responses[0].as_ref().unwrap_err(), "first failed");
-            assert_eq!(
-                responses[1]
-                    .as_ref()
-                    .unwrap()
-                    .pointer("/thread/id")
-                    .and_then(Value::as_str),
-                Some("second")
-            );
-            client.close(None).await.unwrap();
-            writer.await.unwrap();
-        });
-    }
-
-    #[test]
     fn websocket_disconnect_is_reported() {
         tauri::async_runtime::block_on(async {
             let (client, server) = tokio::io::duplex(128);
@@ -1066,55 +865,33 @@ mod tests {
         });
     }
 
-    /// 显式运行时仅查询账户和会话，不生成模型任务，不停止或重启 daemon。
+    /// 显式运行时仅查询账户，不生成模型任务，不停止或重启 daemon。
     #[test]
     #[ignore = "需要本机已登录的 Codex CLI ≥ 0.157.0"]
     fn shared_daemon_read_only_smoke() {
         tauri::async_runtime::block_on(async {
             let state = AppServerState::default();
             state.warm_up().await.expect("应连接共享 daemon");
-            let (account, threads, background) = tokio::join!(
-                state.request_with_timeout(
+            state
+                .request_with_timeout(
                     "account/read",
                     json!({"refreshToken":false}),
-                    Duration::from_secs(20)
-                ),
-                state.request("thread/list", json!({"limit":1})),
-                state.request_background_batch(vec![
-                    ("thread/list".to_owned(), json!({"limit":1})),
-                    ("thread/loaded/list".to_owned(), json!({})),
-                ]),
-            );
-            account.expect("应读取账户");
-            let threads = threads.expect("应读取会话");
-            for response in background.expect("后台批次应完成") {
-                response.expect("后台 RPC 应成功");
-            }
-            if let Some(thread_id) = threads.pointer("/data/0/id").and_then(Value::as_str) {
-                let detail = crate::threads::read_thread(&state, thread_id)
-                    .await
-                    .expect("应读取真实会话的最近回合");
-                let detail = serde_json::to_value(detail).unwrap();
-                if let Some(cursor) = detail.get("nextCursor").and_then(Value::as_str) {
-                    crate::threads::read_thread_page(&state, thread_id, cursor)
-                        .await
-                        .expect("应读取更早回合");
-                }
-            }
-            let child_id = state.threads.lock().await.as_ref().unwrap().child.id();
+                    Duration::from_secs(20),
+                )
+                .await
+                .expect("应读取账户");
+            let child_id = state.account.lock().await.as_ref().unwrap().child.id();
             assert!(state
-                .request("desk/unknown-method", json!({}))
+                .request_with_timeout("desk/unknown-method", json!({}), DEFAULT_REQUEST_TIMEOUT)
                 .await
                 .is_err());
             assert_eq!(
-                state.threads.lock().await.as_ref().unwrap().child.id(),
+                state.account.lock().await.as_ref().unwrap().child.id(),
                 child_id,
                 "业务错误不应重建连接"
             );
             state.shutdown().await;
             assert!(state.account.lock().await.is_none());
-            assert!(state.threads.lock().await.is_none());
-            assert!(state.background.lock().await.is_none());
             let output = cli_command(None, &["app-server", "daemon", "version"])
                 .output()
                 .await
@@ -1127,7 +904,11 @@ mod tests {
             );
             // 断开后下一次读取应重新连接同一共享服务。
             state
-                .request("thread/list", json!({"limit":1}))
+                .request_with_timeout(
+                    "account/read",
+                    json!({"refreshToken":false}),
+                    DEFAULT_REQUEST_TIMEOUT,
+                )
                 .await
                 .expect("应能重连");
             state.shutdown().await;

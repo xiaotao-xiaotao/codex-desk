@@ -1,37 +1,26 @@
-import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { LANGUAGE_OPTIONS, createI18n } from "./i18n.js";
 import { THEME_ICONS, createThemeController } from "./theme.js";
-import { copyMessageContent, copyText } from "./utils/clipboard.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
 import { createDateFormatters } from "./utils/date-formatters.js";
 import { createLoadingOverlay } from "./utils/loading-overlay.js";
 import { renderRefreshIconButton, setRefreshIconButtonLoading } from "./utils/refresh-icon-button.js";
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createRefreshController } from "./features/refresh-controller.js";
-import { createSettingsController, READING_SETTINGS } from "./features/settings-controller.js";
+import { createSettingsController } from "./features/settings-controller.js";
 import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createAccountSwitchView } from "./views/account-switch-view.js";
 import { createAccountQuotaMonitorView } from "./views/account-quota-monitor-view.js";
-import { createCodexConfigView } from "./views/codex-config-view.js";
 import { createQuotaView } from "./views/quota-view.js";
 import { createSettingsDialogView } from "./views/settings-dialog-view.js";
-import { createThreadDialogView } from "./views/thread-dialog-view.js";
-import { createThreadListView } from "./views/thread-list-view.js";
-import { createThreadTrendView } from "./views/thread-trend-view.js";
-import { createTokenUsageTrendView } from "./views/token-usage-trend-view.js";
-import { createUpdateBannerView } from "./views/update-banner-view.js";
-import { createWordCloudView } from "./views/word-cloud-view.js";
 
 const DRAG_THRESHOLD_PX = 4;
-const THREAD_PAGE_SIZE = 10;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
 const status = document.querySelector("#status");
 const panel = document.querySelector(".panel");
-const appVersionElement = document.querySelector("#app-version");
 const windowDragRegion = document.querySelector("#window-drag-region");
 const languageSelect = document.querySelector("#language-select");
 const themeButton = document.querySelector("#theme-button");
@@ -39,18 +28,8 @@ const themeIcon = document.querySelector("#theme-icon");
 const alwaysOnTopButton = document.querySelector("#always-on-top-button");
 const minimizeButton = document.querySelector("#minimize-button");
 const collapseButton = document.querySelector("#collapse-button");
-const updateCheckButton = document.querySelector("#update-check-button");
 const refreshButton = document.querySelector("#refresh-button");
 const quitButton = document.querySelector("#quit-button");
-const importThreadsButton = document.querySelector("#import-threads");
-const exportThreadsButton = document.querySelector("#export-threads");
-const importFileInput = document.querySelector("#import-file-input");
-const threadListElement = document.querySelector("#thread-list");
-const threadSelectionBar = document.querySelector("#thread-selection-bar");
-const selectPageThreadsButton = document.querySelector("#select-page-threads");
-const selectAllThreadsButton = document.querySelector("#select-all-threads");
-const clearThreadSelectionButton = document.querySelector("#clear-thread-selection");
-const selectedThreadCount = document.querySelector("#selected-thread-count");
 const dashboardLayout = document.querySelector(".dashboard-layout");
 const sidebarToggle = document.querySelector("#sidebar-toggle");
 const sidebarMediaQuery = window.matchMedia("(max-width: 760px)");
@@ -61,11 +40,6 @@ const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-secti
 const dashboardSections = {
   account: document.querySelector("#account-section"),
   accounts: document.querySelector("#accounts-section"),
-  config: document.querySelector("#config-section"),
-  about: document.querySelector("#about-section"),
-  insights: document.querySelector("#insights-section"),
-  topics: document.querySelector("#topics-section"),
-  sessions: document.querySelector("#sessions-section"),
 };
 const dashboardError = document.querySelector("#dashboard-error");
 const dashboardErrorTitle = document.querySelector("#dashboard-error-title");
@@ -75,39 +49,26 @@ const dashboardRetry = document.querySelector("#dashboard-retry");
 const i18n = createI18n();
 const theme = createThemeController();
 const { t } = i18n;
-const codexConfigView = createCodexConfigView({ t, invoke, onOpenAccounts: () => setDashboardSection("accounts") });
 const dashboardLoadingOverlay = createLoadingOverlay({
   container: panel,
   className: "dashboard-loading-overlay",
 });
-const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime, formatUpdated } = createDateFormatters({
+const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime } = createDateFormatters({
   getLocale: i18n.getLocale,
   t,
 });
-const copyToClipboard = (text) => copyText(text, t("clipboardDenied"));
-const copyMessageToClipboard = (message) => copyMessageContent(message, t("clipboardDenied"));
-const quotaView = createQuotaView({ t, formatQuotaWindow, formatResetAt, formatResetCountdown });
+const quotaView = createQuotaView({ t, formatQuotaWindow });
 let refreshController;
 let autoRefreshTimer = null;
 const settingsController = createSettingsController({
   invoke,
-  onSettingsChanged: (settings) => {
-    applyReadingSettings(settings);
-    accountView.updateLanguage();
+  onSettingsChanged: () => {
     accountSwitchView.updateLanguage();
     accountQuotaMonitorView?.updateLanguage();
     restartAutoRefreshTimer();
     renderQuotaAlertStatus();
   },
 });
-applyReadingSettings(settingsController.getSettings());
-
-function applyReadingSettings(settings) {
-  for (const [field, config] of Object.entries(READING_SETTINGS)) {
-    const option = config.options.find((option) => option.value === settings[field]);
-    document.documentElement.style.setProperty(config.cssProperty, option.cssValue);
-  }
-}
 const quotaAlerts = createQuotaAlertController({
   t,
   formatResetTime,
@@ -115,7 +76,7 @@ const quotaAlerts = createQuotaAlertController({
   getThresholds: () => settingsController.getSettings().quotaAlertThresholds,
   getAccountScope: () => accountView.getAccountScope(),
 });
-const accountView = createAccountOverviewView({ t, invoke, getHideEmails: () => settingsController.getSettings().hideEmails });
+const accountView = createAccountOverviewView({ invoke });
 const accountQuotaMonitorView = createAccountQuotaMonitorView({
   t,
   invoke,
@@ -147,32 +108,6 @@ const accountSwitchView = createAccountSwitchView({
     restartAutoRefreshTimer();
   },
 });
-const updateView = createUpdateBannerView({
-  t,
-  invoke,
-  triggerButton: updateCheckButton,
-  getLanguage: i18n.getLanguage,
-  getCurrentVersion: getVersion,
-});
-const dialogView = createThreadDialogView({
-  t,
-  formatUpdated,
-  copyText: copyToClipboard,
-  copyMessage: copyMessageToClipboard,
-  onRefreshThread: (threadId) => invoke("read_thread", { threadId }),
-  onLoadOlderTurns: (threadId, cursor) => invoke("read_thread_page", { threadId, cursor }),
-  onReadFullOverview: (threadId) => invoke("read_thread_full_overview", { threadId }),
-  onReadLocalFile: (path) => invoke("read_local_text_preview", { path }),
-  onExportThread: exportThreadFromDialog,
-  onOpen: () => {
-    Object.values(dashboardSections).forEach((section) => { section.hidden = true; });
-  },
-  onClose: (restoreHistory) => {
-    threadReadVersion += 1;
-    renderCurrentThreadPage();
-    if (restoreHistory) setDashboardSection(activeDashboardSection);
-  },
-});
 const settingsView = createSettingsDialogView({
   t,
   onReadStoragePath: () => invoke("read_settings_directory"),
@@ -180,76 +115,29 @@ const settingsView = createSettingsDialogView({
   onBrowseCli: () => invoke("choose_cli_path"),
   onSave: async (settings) => {
     const version = await settingsController.save(settings);
-    void refreshController.refreshQuota(true);
+    void refreshController.refreshQuota();
     return version;
   },
 });
-const trendView = createThreadTrendView({
-  t,
-  onRangeChange: (days) => {
-    tokenUsageView.setRange(days);
-    void refreshController?.refreshThreadTrends();
-  },
-});
-const tokenUsageView = createTokenUsageTrendView({ t });
-const wordCloudView = createWordCloudView({ t, onSelectTopic: selectTopic });
-const threadListView = createThreadListView({
-  t,
-  formatUpdated,
-  copyText: copyToClipboard,
-  onOpenThread: openThread,
-  onSelectionChange: setThreadSelected,
-  onTogglePinned: toggleThreadPinned,
-});
-
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
 let expanded = true;
 let alwaysOnTop = false;
 let activeDashboardSection = "account";
-let threadReadVersion = 0;
-let lastOpenedThreadId = null;
 let windowMaximized = false;
-let topicFilter = null;
-let topicRequestVersion = 0;
-let topicDays = 7;
-const topicsRange = document.querySelector("#topics-range");
-let searchTimer = null;
-let searchRequestVersion = 0;
-let currentThreadPage = 1;
-let currentPageThreads = [];
-let currentThreadEmptyMessage = "";
-let selectedThreadIds = new Set();
-let transferInProgress = false;
 let orbDragStart = null;
 let panelDragStart = null;
 let suppressOrbClick = false;
 let dashboardUnavailable = false;
 let dashboardRetryStatus = null;
-let currentAppVersion = "";
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
   status.dataset.kind = kind;
 }
 
-function renderAppVersion() {
-  appVersionElement.hidden = false;
-  appVersionElement.textContent = currentAppVersion ? `v${currentAppVersion}` : "—";
-  appVersionElement.title = currentAppVersion ? t("currentVersionLabel", { version: currentAppVersion }) : "";
-}
-
-async function loadAppVersion() {
-  try {
-    currentAppVersion = await getVersion();
-    renderAppVersion();
-  } catch (error) {
-    console.warn("读取 Codex Desk 版本失败", error);
-  }
-}
-
 function renderDashboardAvailability() {
   panel.classList.toggle("is-dashboard-unavailable", dashboardUnavailable);
-  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config", "about"].includes(activeDashboardSection);
+  dashboardError.hidden = !dashboardUnavailable || activeDashboardSection === "accounts";
   dashboardErrorTitle.textContent = t("dashboardUnavailableTitle");
   const details = [t("dashboardUnavailableDescription")];
   if (dashboardRetryStatus?.error) {
@@ -266,7 +154,7 @@ function renderDashboardAvailability() {
 async function retryDashboard() {
   dashboardLoadingOverlay.show(t("readingLocalData"));
   try {
-    await refreshController.refreshQuota(true, { manual: true });
+    await refreshController.refreshQuota({ manual: true });
   } finally {
     dashboardLoadingOverlay.hide();
   }
@@ -276,19 +164,8 @@ refreshController = createRefreshController({
   invoke,
   quotaView,
   quotaAlerts,
-  trendView,
-  tokenUsageView,
-  refreshTopics,
-  getExpanded: () => expanded,
-  getSessionsExpanded: () => activeDashboardSection === "sessions",
-  refreshThreadList: (forceRefresh) => searchThreads(
-    threadListView.getSearchQuery(),
-    currentThreadPage,
-    forceRefresh,
-  ),
   // 新账户识别共用已有刷新周期，手动刷新也同步检查，不额外启动轮询。
   refreshAccount: () => Promise.all([accountView.refresh(), accountSwitchView.checkCurrentAccount(), accountQuotaMonitorView.refresh()]),
-  getTrendDays: () => Number(document.querySelector("#insights-range").value),
   setStatus,
   onRefreshingChange: (isRefreshing) => {
     setRefreshIconButtonLoading(refreshButton, isRefreshing);
@@ -334,28 +211,16 @@ async function toggleQuotaAlerts() {
   renderQuotaAlertStatus();
 }
 
-function renderCurrentThreadPage() {
-  threadListView.renderThreads(currentPageThreads, currentThreadEmptyMessage, selectedThreadIds, lastOpenedThreadId);
-}
-
-/** 栏目切换只改变内容可见性，保留筛选和选择状态，并避免调整原生窗口尺寸。 */
+/** 栏目切换只改变内容可见性，避免调整原生窗口尺寸。 */
 function setDashboardSection(nextSection) {
   if (!Object.prototype.hasOwnProperty.call(dashboardSections, nextSection)) return;
   const changed = activeDashboardSection !== nextSection;
-  // 侧栏收起和自动同步会重复选择当前栏目，不应打断正在阅读的详情。
-  if (dialogView.isOpen()) {
-    if (!changed) return;
-    dialogView.close(false);
-  }
   activeDashboardSection = nextSection;
-  dashboardError.hidden = !dashboardUnavailable || ["accounts", "config", "about"].includes(nextSection);
-  if (changed && nextSection === "config") void codexConfigView.activate();
+  dashboardError.hidden = !dashboardUnavailable || nextSection === "accounts";
   if (changed && nextSection === "accounts") {
     accountSwitchView.activate();
   }
   if (changed && nextSection === "account") accountQuotaMonitorView.activate();
-  // 离开历史页后使未完成的搜索失效，避免旧请求覆盖下一次进入时的结果。
-  if (changed) searchRequestVersion += 1;
   Object.entries(dashboardSections).forEach(([name, section]) => {
     section.hidden = name !== nextSection;
   });
@@ -364,19 +229,6 @@ function setDashboardSection(nextSection) {
     button.classList.toggle("is-active", selected);
     button.setAttribute("aria-selected", String(selected));
     button.tabIndex = selected ? 0 : -1;
-  });
-  window.requestAnimationFrame(() => {
-    // 隐藏栏目没有有效尺寸；恢复可见后再重绘，保证 SVG 与 Canvas 使用实际容器大小。
-    if (activeDashboardSection === "insights") {
-      trendView.render();
-      tokenUsageView.render();
-    } else if (activeDashboardSection === "topics") {
-      wordCloudView.render();
-    } else if (activeDashboardSection === "sessions" && !dashboardUnavailable) {
-      if (changed) {
-        void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
-      }
-    }
   });
 }
 
@@ -398,10 +250,8 @@ function setupDashboardNavigation() {
     setDashboardSection(activeDashboardSection);
   });
   renderSidebar();
-  threadListElement.style.setProperty("--thread-row-count", String(THREAD_PAGE_SIZE));
   dashboardNavButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      dialogView.close(false);
       setDashboardSection(button.dataset.dashboardSection);
     });
   });
@@ -417,165 +267,9 @@ function setupDashboardNavigation() {
     event.preventDefault();
     const nextButton = dashboardNavButtons[nextIndex];
     nextButton.focus();
-    dialogView.close(false);
     setDashboardSection(nextButton.dataset.dashboardSection);
   });
   setDashboardSection("account");
-}
-
-function updateTransferControls() {
-  const selectedCount = selectedThreadIds.size;
-  const hasVisibleThreads = currentPageThreads.length > 0;
-  threadSelectionBar.hidden = !hasVisibleThreads && selectedCount === 0;
-  selectedThreadCount.textContent = t("selectedThreads", { count: selectedCount });
-  exportThreadsButton.disabled = transferInProgress || selectedCount === 0;
-  importThreadsButton.disabled = transferInProgress;
-  selectPageThreadsButton.disabled = transferInProgress || !hasVisibleThreads;
-  selectAllThreadsButton.disabled = transferInProgress || !hasVisibleThreads;
-  clearThreadSelectionButton.disabled = transferInProgress || selectedCount === 0;
-}
-
-function setThreadSelected(thread, selected) {
-  if (selected) selectedThreadIds.add(thread.id);
-  else selectedThreadIds.delete(thread.id);
-  updateTransferControls();
-}
-
-function clearThreadSelection() {
-  selectedThreadIds = new Set();
-  renderCurrentThreadPage();
-  updateTransferControls();
-}
-
-function transferFailureSuffix(failures) {
-  return failures.length === 0
-    ? ""
-    : t("transferFailedSuffix", { count: failures.length });
-}
-
-function createExportFileName() {
-  const date = new Date().toISOString().slice(0, 10);
-  return `${t("exportFileName")}-${date}.codex-desk.json`;
-}
-
-async function exportThreadsToFile(threadIds) {
-  setStatus(t("selectingExportLocation"));
-  const outputPath = await invoke("choose_export_path", {
-    defaultFileName: createExportFileName(),
-    filterName: t("exportFileDialogFilter"),
-  });
-  if (!outputPath) {
-    refreshController.renderSyncedStatus();
-    return null;
-  }
-  setStatus(t("preparingExport", { count: threadIds.length }));
-  const result = await invoke("export_threads", {
-    threadIds,
-    outputPath,
-  });
-  setStatus(t("exportCompleted", {
-    count: result.exported,
-    failed: transferFailureSuffix(result.failures),
-  }));
-  return result;
-}
-
-async function exportThreadFromDialog(threadId) {
-  await exportThreadsToFile([threadId]);
-}
-
-async function exportSelectedThreads() {
-  if (selectedThreadIds.size === 0) {
-    setStatus(t("noThreadsSelected"), "error");
-    return;
-  }
-  transferInProgress = true;
-  updateTransferControls();
-  try {
-    const result = await exportThreadsToFile([...selectedThreadIds]);
-    if (!result) return;
-    clearThreadSelection();
-  } catch (error) {
-    console.error(error);
-    setStatus(t("exportFailed", { error: String(error) }), "error");
-  } finally {
-    transferInProgress = false;
-    updateTransferControls();
-  }
-}
-
-async function importTransferFile(file) {
-  const maxBytes = 64 * 1_024 * 1_024;
-  if (!file) return;
-  if (file.size === 0) {
-    setStatus(t("importFileInvalid"), "error");
-    return;
-  }
-  if (file.size > maxBytes) {
-    setStatus(t("importFileTooLarge"), "error");
-    return;
-  }
-
-  transferInProgress = true;
-  updateTransferControls();
-  setStatus(t("importReading"));
-  try {
-    const bundleJson = await file.text();
-    let threadCount = 0;
-    try {
-      const preview = JSON.parse(bundleJson);
-      threadCount = Array.isArray(preview?.threads) ? preview.threads.length : 0;
-    } catch {
-      // 文件格式由原生层统一校验；这里仅用于在可识别的批量包上显示配额提示。
-    }
-    if (threadCount > 0 && !window.confirm(t("importConfirmation", { count: threadCount }))) {
-      refreshController.renderSyncedStatus();
-      return;
-    }
-    setStatus(t("importingThreads"));
-    const result = await invoke("import_threads", {
-      bundleJson,
-      importedTitlePrefix: t("importedThreadTitlePrefix"),
-      importedHistoryIntro: t("importedHistoryIntro"),
-    });
-    setStatus(t("importCompleted", {
-      count: result.imported,
-      total: result.total,
-      failed: transferFailureSuffix(result.failures),
-    }), result.imported === 0 ? "error" : "normal");
-    if (result.imported > 0) {
-      currentThreadPage = 1;
-      await searchThreads(threadListView.getSearchQuery(), currentThreadPage);
-      void refreshController.refreshThreadTrends(true);
-    }
-  } catch (error) {
-    console.error(error);
-    setStatus(t("readFailed", { error: String(error) }), "error");
-  } finally {
-    transferInProgress = false;
-    updateTransferControls();
-  }
-}
-
-async function selectAllFilteredThreads() {
-  if (transferInProgress) return;
-  transferInProgress = true;
-  updateTransferControls();
-  setStatus(t("selectingThreads"));
-  try {
-    const threads = topicFilter ? topicFilter.threads : await invoke("list_threads_for_selection", {
-      query: threadListView.getSearchQuery().trim(),
-    });
-    selectedThreadIds = new Set(threads.map((thread) => thread.id));
-    renderCurrentThreadPage();
-    refreshController.renderSyncedStatus();
-  } catch (error) {
-    console.error(error);
-    setStatus(t("readFailed", { error: String(error) }), "error");
-  } finally {
-    transferInProgress = false;
-    updateTransferControls();
-  }
 }
 
 function renderTheme() {
@@ -585,8 +279,6 @@ function renderTheme() {
   themeButton.ariaLabel = themeButton.title;
   document.querySelector("#theme-label").textContent = t(`theme${mode[0].toUpperCase()}${mode.slice(1)}`);
   themeIcon.innerHTML = THEME_ICONS[mode];
-  // 词云颜色由当前主题计算，主题切换后按已有数据重新排版并更新颜色。
-  wordCloudView.render();
 }
 
 /**
@@ -623,12 +315,8 @@ function applyLanguage() {
   renderRefreshIconButton(refreshButton, { label: t("refresh") });
   renderCloseIconButton(quitButton, { label: t("quit") });
   settingsView.updateLanguage();
-  accountView.updateLanguage();
   accountSwitchView.updateLanguage();
   accountQuotaMonitorView.updateLanguage();
-  codexConfigView.updateLanguage();
-  updateView.updateLanguage();
-  renderAppVersion();
   if (dashboardLoadingOverlay.isVisible()) {
     dashboardLoadingOverlay.setMessage(t("readingLocalData"));
   }
@@ -645,14 +333,8 @@ function applyLanguage() {
     option.textContent = t(configuredOption?.labelKey ?? "languageSystem");
   }
 
-  dialogView.updateLanguage();
   renderDashboardAvailability();
-  trendView.render();
-  tokenUsageView.render();
   renderTheme();
-  renderTopicsControls();
-  renderCurrentThreadPage();
-  updateTransferControls();
   if (refreshController.getLatestQuota() && !refreshController.isRefreshing()) {
     quotaView.render(refreshController.getLatestQuota());
     refreshController.renderSyncedStatus();
@@ -661,107 +343,11 @@ function applyLanguage() {
   }
   setDashboardSection(activeDashboardSection);
   if (activeDashboardSection === "account") accountQuotaMonitorView.activate();
-  if (expanded && activeDashboardSection === "sessions") void searchThreads(threadListView.getSearchQuery(), currentThreadPage);
 }
 
 function selectLanguage(nextLanguage) {
   i18n.setMode(nextLanguage);
   applyLanguage();
-}
-
-function renderTopicsControls() {
-  topicsRange.replaceChildren(...[3, 7, 30].map((days) => {
-    const option = document.createElement("option");
-    option.value = days;
-    option.textContent = t(`trendRange${days}`);
-    return option;
-  }));
-  topicsRange.value = topicDays;
-  topicsRange.ariaLabel = t("conversationTopics");
-  const bar = document.querySelector("#topic-filter-bar");
-  bar.hidden = !topicFilter;
-  document.querySelector("#topic-filter-summary").textContent = topicFilter ? t("topicFilterSummary", {
-    word: topicFilter.name, days: topicFilter.days, occurrences: topicFilter.value, count: topicFilter.threads.length,
-  }) : "";
-}
-
-async function refreshTopics(forceRefresh = false) {
-  const requestVersion = ++topicRequestVersion;
-  const days = topicDays;
-  wordCloudView.showLoading();
-  try {
-    const data = await invoke("read_thread_trends", { days, forceRefresh });
-    if (requestVersion !== topicRequestVersion) return;
-    wordCloudView.setData(data.wordCloud, days);
-  } catch (error) {
-    if (requestVersion !== topicRequestVersion) return;
-    console.error("读取会话主题失败", error);
-    wordCloudView.showError();
-  }
-}
-
-function selectTopic(topic) {
-  window.clearTimeout(searchTimer);
-  searchRequestVersion += 1;
-  topicFilter = { ...topic, threads: topic.threads.map((thread) => ({ ...thread })) };
-  currentThreadPage = 1;
-  selectedThreadIds.clear();
-  document.querySelector("#thread-search").value = topic.name;
-  renderTopicsControls();
-  setDashboardSection("sessions");
-}
-
-topicsRange.addEventListener("change", () => {
-  topicDays = Number(topicsRange.value);
-  wordCloudView.setRange(topicDays);
-  void refreshTopics();
-});
-
-async function searchThreads(query, page = 1, forceRefresh = false) {
-  if (!expanded || activeDashboardSection !== "sessions" || dashboardUnavailable) return;
-  const requestVersion = ++searchRequestVersion;
-  const keyword = query.trim();
-  threadListView.setSearchResult(t("readingSearch"));
-  try {
-    // 主题结果来自词云快照，避免标题搜索和统计分词使用不同口径。
-    const total = topicFilter?.threads.length ?? 0;
-    const snapshotPage = Math.max(1, Math.min(page, Math.max(1, Math.ceil(total / THREAD_PAGE_SIZE))));
-    const data = topicFilter ? {
-      threads: topicFilter.threads.slice((snapshotPage - 1) * THREAD_PAGE_SIZE, snapshotPage * THREAD_PAGE_SIZE),
-      page: snapshotPage, total, totalPages: Math.ceil(total / THREAD_PAGE_SIZE),
-    } : await invoke("search_threads", { query: keyword, page, pageSize: THREAD_PAGE_SIZE, forceRefresh });
-    if (requestVersion !== searchRequestVersion) return;
-    currentThreadPage = data.page;
-    currentPageThreads = data.threads;
-    currentThreadEmptyMessage = keyword ? t("noMatches") : t("noThreads");
-    renderCurrentThreadPage();
-    threadListView.renderPagination(data.page, data.totalPages);
-    threadListView.setSearchResult(keyword
-      ? t("searchMatches", { total: data.total })
-      : t("searchTotal", { total: data.total }));
-    updateTransferControls();
-  } catch (error) {
-    if (requestVersion !== searchRequestVersion) return;
-    console.error(error);
-    currentPageThreads = [];
-    currentThreadEmptyMessage = t("threadReadFailed");
-    renderCurrentThreadPage();
-    threadListView.hidePagination();
-    threadListView.setSearchResult(String(error));
-    updateTransferControls();
-  }
-}
-
-async function openThread(thread) {
-  lastOpenedThreadId = thread.id;
-  const version = ++threadReadVersion;
-  dialogView.openLoading(thread);
-  try {
-    const detail = await invoke("read_thread", { threadId: thread.id });
-    if (version === threadReadVersion) dialogView.showDetail(detail);
-  } catch (error) {
-    if (version === threadReadVersion) dialogView.showReadFailure(error);
-  }
 }
 
 async function setExpanded(nextExpanded) {
@@ -778,8 +364,6 @@ async function setExpanded(nextExpanded) {
     // 原生层统一控制窗口尺寸和锚点；展开时保持先扩窗、后显示面板的原有顺序。
     await invoke("resize_float_window", {
       expanded: nextExpanded,
-      // 导航栏目共用紧凑窗口，重新展开也不因停留在历史页而增高。
-      sessionsExpanded: false,
     });
   } catch (error) {
     if (!nextExpanded) {
@@ -799,21 +383,6 @@ async function setExpanded(nextExpanded) {
   app.classList.toggle("is-expanded", expanded);
   app.classList.remove("is-collapsing");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
-}
-
-async function toggleThreadPinned(thread) {
-  try {
-    await invoke("set_thread_pinned", {
-      threadId: thread.id,
-      isPinned: !thread.isPinned,
-    });
-    const wasPinned = thread.isPinned;
-    if (topicFilter) thread.isPinned = !wasPinned;
-    await searchThreads(threadListView.getSearchQuery(), currentThreadPage, true);
-    setStatus(t(wasPinned ? "threadUnpinned" : "threadPinned"));
-  } catch (error) {
-    setStatus(t("readFailed", { error: String(error) }), "error");
-  }
 }
 
 function setupLanguageControls() {
@@ -866,16 +435,12 @@ async function toggleWindowMaximized() {
   if (!expanded) return;
   const previousMaximized = windowMaximized;
   const expectedMaximized = !previousMaximized;
-  wordCloudView.setWindowResizeTransitioning(true);
-  // 原生窗口动画期间暂停词云排版，完成后按最终尺寸重绘一次。
   windowMaximized = expectedMaximized;
   try {
     const maximized = await invoke("toggle_window_maximized");
     windowMaximized = maximized;
-    wordCloudView.setWindowResizeTransitioning(false);
   } catch (error) {
     windowMaximized = previousMaximized;
-    wordCloudView.setWindowResizeTransitioning(false);
     console.error("切换窗口最大化失败", error);
     setStatus(t("windowMaximizeFailed", { error: String(error) }), "error");
   }
@@ -915,7 +480,6 @@ function restartAutoRefreshTimer() {
 
 async function bootstrap() {
   applyLanguage();
-  void loadAppVersion();
   setupLanguageControls();
   setupDashboardNavigation();
   themeButton.addEventListener("click", () => {
@@ -931,36 +495,10 @@ async function bootstrap() {
   minimizeButton.addEventListener("click", () => invoke("hide_window"));
   alwaysOnTopButton.addEventListener("click", () => void toggleAlwaysOnTop());
   collapseButton.addEventListener("click", () => setExpanded(false));
-  refreshButton.addEventListener("click", () => refreshController.refreshQuota(true, { manual: true }));
+  refreshButton.addEventListener("click", () => refreshController.refreshQuota({ manual: true }));
   dashboardRetry.addEventListener("click", () => void retryDashboard());
   quitButton.addEventListener("click", () => invoke("quit_app"));
-  importThreadsButton.addEventListener("click", () => importFileInput.click());
-  exportThreadsButton.addEventListener("click", exportSelectedThreads);
-  selectPageThreadsButton.addEventListener("click", () => {
-    currentPageThreads.forEach((thread) => selectedThreadIds.add(thread.id));
-    renderCurrentThreadPage();
-    updateTransferControls();
-  });
-  selectAllThreadsButton.addEventListener("click", selectAllFilteredThreads);
-  clearThreadSelectionButton.addEventListener("click", clearThreadSelection);
-  importFileInput.addEventListener("change", async () => {
-    const [file] = importFileInput.files;
-    importFileInput.value = "";
-    await importTransferFile(file);
-  });
   setupWindowDragging();
-  threadListView.onSearchInput(() => {
-    window.clearTimeout(searchTimer);
-    searchRequestVersion += 1;
-    topicFilter = null;
-    renderTopicsControls();
-    currentThreadPage = 1;
-    clearThreadSelection();
-    searchTimer = window.setTimeout(() => searchThreads(threadListView.getSearchQuery(), 1), 260);
-  });
-  threadListView.onPreviousPage(() => searchThreads(threadListView.getSearchQuery(), currentThreadPage - 1));
-  threadListView.onNextPage(() => searchThreads(threadListView.getSearchQuery(), currentThreadPage + 1));
-
   await listen("quota://refresh", async () => {
     if (!expanded) await setExpanded(true);
     await refreshController.refreshQuota();
@@ -975,7 +513,7 @@ async function bootstrap() {
   }
   await setExpanded(true);
   // 首次启动需要立即读取；后续从悬浮球展开只恢复视图，刷新仍由定时器或用户操作触发。
-  await refreshController.refreshQuota(true);
+  await refreshController.refreshQuota();
   restartAutoRefreshTimer();
   window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
 }

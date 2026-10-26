@@ -61,7 +61,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
         </section>
         <div class="accounts-target" hidden><span class="accounts-avatar"></span><div><strong></strong><span></span></div></div>
         <label class="accounts-restart" hidden><input type="checkbox" /><div><strong></strong><span></span></div></label>
-        <div class="accounts-editor-actions"><button class="cancel-button accounts-cancel" type="button"></button><button class="thread-action-button thread-action-button-primary accounts-submit" type="submit"></button></div>
+        <div class="accounts-editor-actions"><button class="cancel-button accounts-cancel" type="button"></button><button class="primary-action-button accounts-submit" type="submit"></button></div>
       </form>
     </div>
     <footer class="accounts-footer"><span></span></footer>`;

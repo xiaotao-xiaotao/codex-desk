@@ -311,5 +311,5 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   compactLayout.addEventListener("change", updateNavigationLayout);
   updateNavigationLayout();
   selectTab(activeTab);
-  return { open, updateLanguage };
+  return { updateLanguage };
 }

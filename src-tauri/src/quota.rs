@@ -247,7 +247,9 @@ async fn query_account_quota(target: QuotaTarget) -> AccountQuotaSnapshot {
 }
 
 fn parse_rfc3339_seconds(value: &str) -> Option<i64> {
-    chrono::DateTime::parse_from_rfc3339(value).ok().map(|date| date.timestamp())
+    time::OffsetDateTime::parse(value, &time::format_description::well_known::Rfc3339)
+        .ok()
+        .map(|date| date.unix_timestamp())
 }
 
 fn normalize_compatibility_window(window: CompatibilityWindow) -> Option<QuotaWindow> {
@@ -330,6 +332,36 @@ fn normalize_quota(result: &Value) -> Result<QuotaSnapshot, String> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// 仅验证系统 TLS 能连通额度服务，不读取本机账户或发送认证信息。
+    #[cfg(windows)]
+    #[test]
+    #[ignore = "需要联网访问公开 HTTPS 服务"]
+    fn windows_system_tls_connects_without_credentials() {
+        tauri::async_runtime::block_on(async {
+            let response = reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(20))
+                .build()
+                .unwrap()
+                .get(COMPATIBILITY_USAGE_URL)
+                .send()
+                .await
+                .expect("系统 TLS 应能建立 HTTPS 连接");
+            assert_eq!(response.url().scheme(), "https");
+        });
+    }
+
+    #[test]
+    fn reset_expiry_preserves_timezone_and_unix_second_boundaries() {
+        let utc = parse_rfc3339_seconds("2026-10-25T00:00:00Z").unwrap();
+        assert_eq!(parse_rfc3339_seconds("2026-10-25T08:00:00+08:00"), Some(utc));
+        assert_eq!(parse_rfc3339_seconds("2026-10-24T19:00:00-05:00"), Some(utc));
+        assert_eq!(parse_rfc3339_seconds("2026-10-25T00:00:00.999Z"), Some(utc));
+        assert_eq!(parse_rfc3339_seconds("1969-12-31T23:59:59.5Z"), Some(-1));
+        for invalid in ["", "2026-10-25", "2026-02-30T00:00:00Z", "invalid"] {
+            assert_eq!(parse_rfc3339_seconds(invalid), None, "{invalid}");
+        }
+    }
 
     #[test]
     fn distinguishes_zero_from_missing_and_invalid_percentages() {

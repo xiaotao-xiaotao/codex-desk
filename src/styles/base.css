@@ -1,21 +1,16 @@
 :root {
-  /* 正文、辅助信息与标题共用字号层级；悬浮球标签、图表刻度保留专用尺寸。 */
+  /* 正文、辅助信息与标题共用字号层级。 */
   --font-caption: 11px;
   --font-body: 13px;
   --font-section: 14px;
   --font-title: 16px;
-  --font-metric: 20px;
-  --font-chart: 10px;
   --control-size: 28px;
   --input-size: 32px;
   --control-radius: 6px;
   --space-xs: 4px;
-  --space-sm: 8px;
   --space-md: 12px;
   --dashboard-sidebar-width: 134px;
   font-size: 16px;
-  --token-distribution-color: #4096ff;
-  --token-distribution-hover-color: #1677ff;
   font-family: Inter, "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
   color: #1f2329;
   background: transparent;
@@ -26,7 +21,8 @@ button, input { font: inherit; }
 .float-app { position: relative; width: 100%; height: 100%; }
 
 .panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
-.is-expanded .panel { opacity: 1; pointer-events: auto; transform: scale(1); }
+/* 展开后移除变换，避免正文长期处于变换图层中影响文字清晰度。 */
+.is-expanded .panel { opacity: 1; pointer-events: auto; transform: none; }
 .is-expanded .quota-orb { opacity: 0; pointer-events: none; transform: scale(.78); }
 /* 收窗前两层都立即隐藏，避免原生窗口先缩小时把旧面板裁成一块短暂残影。 */
 .is-collapsing .panel, .is-collapsing .quota-orb { visibility: hidden; transition: none; }
@@ -35,12 +31,15 @@ button, input { font: inherit; }
 .window-drag-region { min-width: 16px; align-self: stretch; flex: 1 1 auto; cursor: grab; user-select: none; }
 .window-drag-region:active { cursor: grabbing; }
 .title-row { display: flex; align-items: baseline; gap: 7px; }
-.app-version { display: inline-flex; align-items: center; padding: 1px 5px; border: 1px solid #d8e7fa; border-radius: 999px; color: #53739b; background: #f3f8ff; font-size: var(--font-caption); font-weight: 700; line-height: 1.35; }
-.app-version[hidden] { display: none; }
 .eyebrow { display: flex; align-items: center; gap: var(--space-xs); margin: 0; color: #1677ff; font-size: var(--font-caption); font-weight: 700; }
 .eyebrow .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #52c41a; box-shadow: 0 0 0 3px #edf9e8; }
 h1 { margin: 0; color: #171a1f; font-size: var(--font-title); letter-spacing: -.035em; }
 h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
+/* 顶栏、设置和账户弹窗共用关闭按钮，规则统一放在公共样式中。 */
+.close-icon-button { display: grid; width: var(--control-size); height: var(--control-size); flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: var(--control-radius); color: #7b8794; background: transparent; cursor: pointer; transition: color .15s, background .15s; }
+.close-icon-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.close-icon-button:hover { color: #4d5a69; background: #eef1f4; }
+.close-icon-button:focus-visible { outline: 2px solid #91caff; outline-offset: 1px; }
 .header-actions { display: flex; align-items: center; gap: 2px; overflow: visible; background: transparent; }
 .header-actions .icon-button,
 .header-actions .close-icon-button { width: var(--control-size); height: var(--control-size); flex: 0 0 var(--control-size); }
@@ -66,16 +65,8 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .dashboard-retry-button { min-width: 88px; padding: 7px 16px; border: 1px solid #1677ff; border-radius: var(--control-radius); color: #fff; background: #1677ff; font: inherit; font-size: var(--font-body); font-weight: 700; cursor: pointer; }
 .dashboard-retry-button:hover { border-color: #4096ff; background: #4096ff; }
 .dashboard-retry-button:focus-visible { outline: 2px solid rgba(22, 119, 255, .3); outline-offset: 2px; }
-.panel.is-dashboard-unavailable .dashboard-page:not(.accounts-page):not(.config-page):not(.settings-about),
+.panel.is-dashboard-unavailable .dashboard-page:not(.accounts-page),
 .panel.is-dashboard-unavailable .dashboard-status { display: none; }
-
-.section-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: 6px; }
-.section-kicker { margin: 0 0 1px; color: #8b95a1; font-size: var(--font-caption); font-weight: 700; letter-spacing: .04em; }
-/* 趋势与会话区采用“分类｜主标题”的单行结构，节省高度且保持信息层级。 */
-.section-title-row { display: flex; align-items: center; min-width: 0; gap: var(--space-xs); }
-.section-title-row .section-kicker { margin: 0; color: #1f2937; font-size: var(--font-section); font-weight: 700; letter-spacing: 0; }
-.section-title-row .section-kicker::after { margin-left: 5px; color: #d4dce5; content: "｜"; }
-.section-title-row h2 { color: #8b95a1; font-size: var(--font-caption); font-weight: 700; letter-spacing: .04em; }
 
 .status { flex: 0 0 auto; min-height: 13px; margin: 2px 0 0; color: #637286; font-size: var(--font-caption); }
 .status-refresh-countdown { display: inline-flex; align-items: center; margin: 0 2px; padding: 2px 5px; border-radius: 4px; color: #1668c6; background: #e6f4ff; font-size: var(--font-caption); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -115,11 +106,13 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .dashboard-workspace > .dashboard-page[hidden] { display: none; }
 .dashboard-page:focus-visible { outline: 2px solid #91caff; outline-offset: 5px; border-radius: 6px; }
 /* 同步时间跟随状态信息排列；窄窗口允许整项换行，避免挤压倒计时。 */
-.dashboard-status { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 4px 18px; min-height: 26px; margin: 12px 0 0; padding-top: 8px; border-top: 1px solid #e7edf5; font-size: 10px; line-height: 1.5; }
+.dashboard-status { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: baseline; align-content: flex-start; gap: 4px 18px; min-height: 26px; margin: 12px 0 0; padding-top: 8px; border-top: 1px solid #e7edf5; font-size: 12px; line-height: 1.5; }
 .dashboard-status > .status { flex: 0 1 auto; min-width: 0; min-height: 0; margin: 0; font-size: inherit; overflow-wrap: anywhere; }
+.account-sync-time { display: flex; flex: 0 0 auto; align-items: baseline; gap: 6px; color: var(--lite-muted); font-size: inherit; white-space: nowrap; }
+.account-sync-time time { color: var(--lite-ink); font-variant-numeric: tabular-nums; }
 .dashboard-loading-overlay { --loading-overlay-inset: 47px 0 0 var(--dashboard-sidebar-width); border-radius: 0 0 17px 0; }
 
-@keyframes dashboard-page-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dashboard-page-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
 /* 收起只隐藏栏目文字，保留导航、设置和恢复入口；内容区自动获得剩余宽度。 */
 .dashboard-layout.is-sidebar-collapsed { grid-template-columns: 62px minmax(0, 1fr); }
@@ -162,3 +155,8 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .sidebar-utilities #theme-button > svg,
 .sidebar-utilities #settings-button > svg { width: 16px; height: 16px; }
 .is-sidebar-collapsed .sidebar-utilities #settings-button > svg { display: block; }
+
+/* 设置保存与账户编辑共用主操作按钮。 */
+.primary-action-button { min-height: var(--control-size); padding: 0 9px; border: 0; color: #1668c6; background: #edf5ff; cursor: pointer; font-size: var(--font-caption); font-weight: 700; }
+.primary-action-button:hover:not(:disabled) { color: #0958d9; background: #dcecff; }
+.primary-action-button:disabled { cursor: default; opacity: .48; }

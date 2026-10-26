@@ -1,5 +1,5 @@
 /**
- * 额度重置时间是 Unix 秒，会话更新时间可能是秒或毫秒。
+ * 额度重置时间统一使用 Unix 秒。
  * 在此统一归一化，避免各个视图自行判断时间单位和语言区域。
  */
 export function createDateFormatters({ getLocale, t }) {
@@ -38,13 +38,6 @@ export function createDateFormatters({ getLocale, t }) {
     return t("resetCountdown", { value: countdown });
   };
 
-  const formatUpdated = (value) => {
-    if (!value) return t("updatedUnknown");
-    const timestamp = typeof value === "number" && value < 1_000_000_000_000 ? value * 1_000 : value;
-    const date = new Date(timestamp);
-    return Number.isNaN(date.getTime()) ? t("updatedUnknown") : format(date);
-  };
-
   /**
    * 原生层只返回窗口持续分钟数，具体文案由前端根据当前语言生成。
    * 这避免服务数据夹带某一种界面语言，切换语言后可立即重新渲染。
@@ -57,5 +50,5 @@ export function createDateFormatters({ getLocale, t }) {
     return t("quotaWindowMinutes", { count: minutes });
   };
 
-  return { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime, formatUpdated };
+  return { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime };
 }

@@ -1,23 +1,14 @@
-import { readStoredJson, writeStoredValue } from "../utils/browser-storage.js";
-
 /**
- * 集中管理额度、趋势与 Token 用量的刷新状态。
+ * 集中管理账户额度的刷新、失败重试与账户切换状态。
  *
  * 入口文件只负责将页面事件接到控制器，避免刷新计时、失败退避和异步请求版本
- * 分散在窗口、会话等不同职责中，导致后续修改时遗漏边界状态。
+ * 分散在窗口、账户等不同职责中，导致后续修改时遗漏边界状态。
  */
 export function createRefreshController({
   invoke,
   quotaView,
   quotaAlerts,
-  trendView,
-  tokenUsageView,
-  refreshTopics,
-  getExpanded,
-  getSessionsExpanded,
-  refreshThreadList,
   refreshAccount,
-  getTrendDays,
   setStatus,
   onRefreshingChange,
   onAvailabilityChange,
@@ -27,13 +18,9 @@ export function createRefreshController({
   onAutoRefreshScheduleChange,
   onRetryStatusChange,
 }) {
-  const INSIGHTS_CACHE_KEY = "codex-desk-insights-cache-v1";
-  const TOKEN_USAGE_CACHE_KEY = "codex-desk-token-usage-cache-v3";
   // 温和增加重试间隔；上限不能短于用户选择的正常刷新间隔。
   const MAX_AUTO_REFRESH_BACKOFF_MS = 5 * 60 * 1_000;
   const AUTO_REFRESH_RETRY_MULTIPLIERS = [1, 1.5, 2, 3, 5];
-  // 历史统计变化较慢，不必随每次额度轮询重复扫描；手动刷新仍可立即更新。
-  const BACKGROUND_INSIGHTS_INTERVAL_MS = 5 * 60 * 1_000;
   // 启动时 CLI 的认证与 app-server 可能仍在初始化，先快速重连，避免瞬时失败直接占满页面。
   const INITIAL_QUOTA_RETRY_DELAYS_MS = [500, 1_500];
   const TRANSIENT_QUOTA_RETRY_DELAY_MS = 1_500;
@@ -44,58 +31,9 @@ export function createRefreshController({
   let consecutiveRefreshFailures = 0;
   let initialQuotaRead = true;
   let latestRefreshError = "";
-  let trendRequestVersion = 0;
-  let tokenUsageRequestVersion = 0;
-  let insightsCache = readStoredJson(INSIGHTS_CACHE_KEY, {});
-  let tokenUsageCache = readStoredJson(TOKEN_USAGE_CACHE_KEY, null);
   let accountChangePaused = false;
   let accountVersion = 0;
   let refreshFinished = null;
-  let backgroundRefreshRunning = false;
-  let nextBackgroundRefreshAt = 0;
-
-  function currentUtcDay() {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  function restoreCachedThreadTrends(days) {
-    const cached = insightsCache?.[days];
-    const data = cached?.data;
-    if (cached?.day !== currentUtcDay()
-      || Number(data?.days) !== days
-      || !Array.isArray(data?.points)
-      || !data?.wordCloud) {
-      return false;
-    }
-    trendView.setData(data);
-    return true;
-  }
-
-  function cacheThreadTrends(data) {
-    const days = Number(data?.days);
-    if (![3, 7, 30].includes(days)) return;
-    insightsCache = {
-      ...insightsCache,
-      [days]: { day: currentUtcDay(), data },
-    };
-    writeStoredValue(INSIGHTS_CACHE_KEY, JSON.stringify(insightsCache));
-  }
-
-  function restoreCachedTokenUsage() {
-    const data = tokenUsageCache?.data;
-    if (tokenUsageCache?.day !== currentUtcDay()
-      || !Array.isArray(data?.dailyUsageBuckets)
-      || !Array.isArray(data?.localSessionUsage)) {
-      return false;
-    }
-    tokenUsageView.setData(data);
-    return true;
-  }
-
-  function cacheTokenUsage(data) {
-    tokenUsageCache = { day: currentUtcDay(), data };
-    writeStoredValue(TOKEN_USAGE_CACHE_KEY, JSON.stringify(tokenUsageCache));
-  }
 
   function scheduleNextAutoRefresh(delayMs) {
     nextAutoRefreshAt = Date.now() + delayMs;
@@ -167,48 +105,7 @@ export function createRefreshController({
     statusElement.dataset.kind = "normal";
   }
 
-  async function refreshThreadTrends(forceRefresh = false) {
-    if (accountChangePaused) return;
-    const requestVersion = ++trendRequestVersion;
-    const days = getTrendDays();
-    // 同一天的上次结果先立即展示，后台完成后再无闪烁替换为最新统计。
-    const restoredFromCache = restoreCachedThreadTrends(days);
-    trendView.showLoading();
-    try {
-      const data = await invoke("read_thread_trends", {
-        forceRefresh,
-        days,
-      });
-      if (requestVersion !== trendRequestVersion) return;
-      cacheThreadTrends(data);
-      trendView.setData(data);
-    } catch (error) {
-      if (requestVersion !== trendRequestVersion) return;
-      console.error(error);
-      if (!restoredFromCache) {
-        trendView.showError();
-      }
-    }
-  }
-
-  async function refreshTokenUsage() {
-    if (accountChangePaused) return;
-    const requestVersion = ++tokenUsageRequestVersion;
-    const restoredFromCache = restoreCachedTokenUsage();
-    tokenUsageView.showLoading();
-    try {
-      const data = await invoke("read_token_usage");
-      if (requestVersion !== tokenUsageRequestVersion) return;
-      cacheTokenUsage(data);
-      tokenUsageView.setData(data);
-    } catch (error) {
-      if (requestVersion !== tokenUsageRequestVersion) return;
-      console.error(error);
-      if (!restoredFromCache) tokenUsageView.showError();
-    }
-  }
-
-  async function refreshQuota(forceTrendRefresh = false, { manual = false } = {}) {
+  async function refreshQuota({ manual = false } = {}) {
     if (refreshing || accountChangePaused) return;
     // 手动请求跳过旧退避历史；失败后从第一档重试，自动刷新继续累积失败次数。
     if (manual) {
@@ -237,31 +134,11 @@ export function createRefreshController({
       scheduleNextAutoRefresh(getAutoRefreshIntervalMs());
       onAvailabilityChange(true);
       quotaView.render(latestQuota);
-      // 提醒与历史数据属于辅助任务，错误单独记录，不计入额度重试次数。
+      // 额度提醒属于辅助任务，错误单独记录，不计入额度重试次数。
       try {
         if (accountResult.status === "fulfilled") await quotaAlerts.notify(latestQuota);
       } catch (error) {
         console.warn("额度提醒失败", error);
-      }
-      if (version !== accountVersion) return;
-      if (getExpanded()) {
-        if (getSessionsExpanded()) {
-          try { await refreshThreadList(forceTrendRefresh); }
-          catch (error) { console.warn("历史列表刷新失败", error); }
-        }
-        if (!backgroundRefreshRunning && (forceTrendRefresh || Date.now() >= nextBackgroundRefreshAt)) {
-          backgroundRefreshRunning = true;
-          nextBackgroundRefreshAt = Date.now() + BACKGROUND_INSIGHTS_INTERVAL_MS;
-          void Promise.allSettled([
-            Promise.resolve().then(() => refreshTokenUsage()),
-            Promise.resolve().then(() => refreshTopics(forceTrendRefresh)),
-            Promise.resolve().then(() => refreshThreadTrends(forceTrendRefresh)),
-          ]).then((results) => {
-            results.forEach((result) => {
-              if (result.status === "rejected") console.warn("后台统计刷新失败", result.reason);
-            });
-          }).finally(() => { backgroundRefreshRunning = false; });
-        }
       }
     } catch (error) {
       if (version !== accountVersion) return;
@@ -282,25 +159,16 @@ export function createRefreshController({
     }
   }
 
-  restoreCachedThreadTrends(getTrendDays());
-  restoreCachedTokenUsage();
-
   return {
     pauseForAccountChange: async () => {
       accountChangePaused = true;
       ++accountVersion;
-      ++trendRequestVersion;
-      ++tokenUsageRequestVersion;
       // 等待旧刷新退出，防止 finally 与新账户刷新争用同一个状态。
       if (refreshFinished) await refreshFinished;
     },
     resumeAfterAccountChange: (changed) => {
       if (changed) {
-        nextBackgroundRefreshAt = 0;
         latestQuota = null; latestQuotaSyncedAt = null;
-        tokenUsageCache = null;
-        writeStoredValue(TOKEN_USAGE_CACHE_KEY, "null");
-        tokenUsageView.clear();
         quotaView.render({ windows: [] });
         consecutiveRefreshFailures = 0; latestRefreshError = "";
       }
@@ -311,8 +179,6 @@ export function createRefreshController({
     isRefreshing: () => refreshing,
     getNextAutoRefreshDelayMs: () => Math.max(0, nextAutoRefreshAt - Date.now()),
     refreshQuota,
-    refreshThreadTrends,
-    refreshTokenUsage,
     renderSyncedStatus,
     resetAutoRefreshSchedule: () => {
       nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
