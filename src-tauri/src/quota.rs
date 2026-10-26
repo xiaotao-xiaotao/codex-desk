@@ -1,4 +1,7 @@
-use crate::{account_store::QuotaTarget, app_server::AppServerState};
+use crate::{
+    account_store::QuotaTarget,
+    app_server::{AppServerState, ProxySettings},
+};
 use futures_util::{stream, StreamExt};
 use reqwest::StatusCode;
 use serde::Deserialize;
@@ -116,18 +119,22 @@ pub async fn read_quota(state: &AppServerState) -> Result<QuotaSnapshot, String>
 }
 
 /// 查询保存账户的额度。每个账户使用自己的 access token，绝不会切换当前 auth.json。
-pub async fn read_account_quotas(targets: Vec<QuotaTarget>) -> Vec<AccountQuotaSnapshot> {
-    stream::iter(targets.into_iter().map(query_account_quota))
+pub async fn read_account_quotas(
+    targets: Vec<QuotaTarget>,
+    proxy_settings: &ProxySettings,
+) -> Vec<AccountQuotaSnapshot> {
+    // 每批查询使用保存后的配置快照，避免一次刷新中的账户走不同代理。
+    stream::iter(targets.into_iter().map(|target| query_account_quota(target, proxy_settings)))
         .buffer_unordered(2)
         .collect()
         .await
 }
 
-async fn query_account_quota(target: QuotaTarget) -> AccountQuotaSnapshot {
+async fn query_account_quota(target: QuotaTarget, proxy_settings: &ProxySettings) -> AccountQuotaSnapshot {
     let queried_at = now();
-    let result = match reqwest::Client::builder()
-        .timeout(QUOTA_REQUEST_TIMEOUT)
-        .build()
+    let result = match proxy_settings
+        .configure_http_client(reqwest::Client::builder())
+        .and_then(|builder| builder.timeout(QUOTA_REQUEST_TIMEOUT).build())
     {
         Ok(client) => {
             async {

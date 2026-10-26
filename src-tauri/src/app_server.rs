@@ -34,7 +34,7 @@ struct CodexAppServer {
     socket: ProxySocket,
 }
 
-/// 网络路由属于 Desk 启动的 CLI 子进程，不修改操作系统或用户全局配置。
+/// Desk 的 CLI 子进程与直接 HTTP 查询共用的代理配置，不修改系统或用户全局配置。
 #[derive(Clone, Default)]
 pub struct ProxySettings {
     use_system_proxy: bool,
@@ -42,6 +42,20 @@ pub struct ProxySettings {
 }
 
 impl ProxySettings {
+    pub(crate) fn configure_http_client(
+        &self,
+        builder: reqwest::ClientBuilder,
+    ) -> Result<reqwest::ClientBuilder, reqwest::Error> {
+        if let Some(url) = &self.custom_url {
+            // 自定义代理覆盖自动检测；关闭模式也必须禁用继承的环境/系统代理。
+            Ok(builder.no_proxy().proxy(reqwest::Proxy::all(url)?))
+        } else if self.use_system_proxy {
+            Ok(builder)
+        } else {
+            Ok(builder.no_proxy())
+        }
+    }
+
     pub fn new(mode: &str, address: &str) -> Result<Self, String> {
         match mode {
             "off" => Ok(Self::default()),
@@ -97,7 +111,7 @@ impl Default for AppServerState {
 }
 
 impl AppServerState {
-    fn proxy_settings(&self) -> ProxySettings {
+    pub(crate) fn proxy_settings(&self) -> ProxySettings {
         self.proxy_settings
             .read()
             .expect("代理配置锁不可用")
@@ -812,6 +826,119 @@ mod tests {
         assert!(ProxySettings::new("custom", "https://proxy.example.com:8443").is_ok());
         assert!(ProxySettings::new("invalid", "").is_err());
         assert!(ProxySettings::new("off", "invalid old address").is_ok());
+    }
+
+    #[test]
+    fn http_proxy_modes_follow_saved_settings() {
+        use std::{
+            io::{BufRead, BufReader, Write},
+            net::TcpListener,
+            thread,
+            time::{Duration, Instant},
+        };
+
+        for (mode, scheme) in [
+            ("off", "http"),
+            ("system", "http"),
+            ("custom", "http"),
+            ("system", "https"),
+            ("custom", "https"),
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            listener.set_nonblocking(true).unwrap();
+            let address = listener.local_addr().unwrap();
+            // 关闭/自定义模式继承一个不可用代理，确保请求不会误走环境中的路由。
+            let unused_proxy = TcpListener::bind("127.0.0.1:0").unwrap();
+            let environment_proxy = if mode == "system" {
+                address
+            } else {
+                unused_proxy.local_addr().unwrap()
+            };
+            let server = thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(8);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            assert!(Instant::now() < deadline, "未收到预期的 {mode}/{scheme} 请求");
+                            thread::sleep(Duration::from_millis(10));
+                        }
+                        Err(error) => panic!("本地测试服务失败：{error}"),
+                    }
+                };
+                stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                let mut reader = BufReader::new(&mut stream);
+                let mut request_line = String::new();
+                reader.read_line(&mut request_line).unwrap();
+                loop {
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).unwrap() == 0 || line == "\r\n" {
+                        break;
+                    }
+                }
+                drop(reader);
+                // HTTPS 只核对 CONNECT 路由，不建立 TLS、不访问外网或读取真实凭据。
+                let response = if scheme == "https" {
+                    "HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                } else {
+                    "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+                };
+                stream.write_all(response.as_bytes()).unwrap();
+                request_line
+            });
+            let url = if mode == "off" {
+                format!("http://{address}/usage")
+            } else {
+                format!("{scheme}://quota.invalid/usage")
+            };
+            // 单独的测试进程隔离环境变量和 HTTP 库的代理缓存，避免干扰并行测试。
+            let mut child = std::process::Command::new(std::env::current_exe().unwrap());
+            for key in ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy", "NO_PROXY", "no_proxy", "REQUEST_METHOD"] {
+                child.env_remove(key);
+            }
+            let output = child
+                .args(["--exact", "app_server::tests::http_proxy_probe", "--ignored", "--nocapture"])
+                .env("HTTP_PROXY", format!("http://{environment_proxy}"))
+                .env("HTTPS_PROXY", format!("http://{environment_proxy}"))
+                .env("CODEX_DESK_TEST_PROXY_MODE", mode)
+                .env("CODEX_DESK_TEST_PROXY_URL", format!("http://{address}"))
+                .env("CODEX_DESK_TEST_REQUEST_URL", &url)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "{mode}/{scheme}: {}{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+            let request_line = server.join().unwrap();
+            let expected = if mode == "off" {
+                "GET /usage HTTP/1.1\r\n".to_owned()
+            } else if scheme == "https" {
+                "CONNECT quota.invalid:443 HTTP/1.1\r\n".to_owned()
+            } else {
+                format!("GET {url} HTTP/1.1\r\n")
+            };
+            assert_eq!(request_line, expected, "{mode}/{scheme}");
+        }
+    }
+
+    #[test]
+    #[ignore = "由 http_proxy_modes_follow_saved_settings 在独立进程中调用"]
+    fn http_proxy_probe() {
+        let Ok(mode) = std::env::var("CODEX_DESK_TEST_PROXY_MODE") else { return; };
+        let address = std::env::var("CODEX_DESK_TEST_PROXY_URL").unwrap();
+        let url = std::env::var("CODEX_DESK_TEST_REQUEST_URL").unwrap();
+        let settings = ProxySettings::new(&mode, &address).unwrap();
+        tauri::async_runtime::block_on(async {
+            let client = settings
+                .configure_http_client(reqwest::Client::builder())
+                .unwrap()
+                .timeout(std::time::Duration::from_secs(2))
+                .build()
+                .unwrap();
+            let result = client.get(&url).send().await;
+            if url.starts_with("https://") {
+                assert!(result.is_err(), "本地测试代理应拒绝 CONNECT 隧道");
+            } else {
+                assert_eq!(result.unwrap().status(), reqwest::StatusCode::OK);
+            }
+        });
     }
 
     #[test]

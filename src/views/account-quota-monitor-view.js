@@ -1,5 +1,9 @@
 import { displayEmail } from "../utils/email-privacy.js";
 
+const QUOTA_WARNING_REMAINING_PERCENT = 20;
+const QUOTA_CRITICAL_REMAINING_PERCENT = 10;
+const RESET_CARD_PREVIEW_LIMIT = 5;
+
 /** 多账户额度监控。只接收后端脱敏快照，单账户刷新仍通过同一批查询完成。 */
 export function createAccountQuotaMonitorView({
   t,
@@ -25,9 +29,11 @@ export function createAccountQuotaMonitorView({
   const featuredHeading = monitor.querySelector(".account-quota-featured-heading h2");
   const list = monitor.querySelector(".account-quota-list");
   const featured = monitor.querySelector(".account-quota-featured");
-  let focusedAccountId = null;
   let snapshots = [];
-  let loading = false;
+  // 等待启动配置恢复时也属于未完成状态，不能提前判定为没有账户。
+  let queryState = "pending";
+  // 展开状态按区域和账户隔离，刷新额度或切换语言时保留用户的选择。
+  const expandedCreditAccounts = new Set();
 
   const setFeedback = (message = "", kind = "normal") => {
     feedback.hidden = !message;
@@ -37,10 +43,17 @@ export function createAccountQuotaMonitorView({
 
   const avatar = (label) => (label || "?").trim().slice(0, 1).toUpperCase();
   const percent = (value) => value != null && Number.isFinite(Number(value)) ? `${Math.round(Number(value))}%` : "—";
+  const quotaStateOf = (value) => {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100) return "unavailable";
+    // 颜色与界面显示的整数百分比使用同一口径，缺失值不能误判为额度耗尽。
+    const remaining = Math.round(value);
+    if (remaining <= QUOTA_CRITICAL_REMAINING_PERCENT) return "critical";
+    return remaining <= QUOTA_WARNING_REMAINING_PERCENT ? "attention" : "healthy";
+  };
   const statusOf = (snapshot) => {
     if (!snapshot?.success) return "unavailable";
     const lowest = Math.min(...(snapshot.windows || []).map((window) => Number(window.remainingPercent)).filter(Number.isFinite));
-    return lowest <= 20 ? "attention" : "healthy";
+    return lowest <= QUOTA_WARNING_REMAINING_PERCENT ? "attention" : "healthy";
   };
 
   function renderWindow(window, index, { showAlert = false } = {}) {
@@ -107,135 +120,158 @@ export function createAccountQuotaMonitorView({
     }
   }
 
-  // 后台控制台布局：顶部聚焦账户，下面用紧凑行承载其他账户。
+  function renderResetCredits(snapshot, { featured = false } = {}) {
+    const count = snapshot.resetCredits ?? snapshot.resetCreditDetails?.length ?? 0;
+    const expansionKey = `${featured ? "featured" : "list"}:${snapshot.id}`;
+    if (count <= RESET_CARD_PREVIEW_LIMIT) expandedCreditAccounts.delete(expansionKey);
+    if (!snapshot.success || count <= 0) return null;
+
+    const footer = document.createElement("span"); footer.className = `account-quota-list-credits${featured ? " account-quota-featured-credits" : ""}`;
+    const entries = document.createElement("span"); entries.className = "account-quota-list-credit-entries";
+    entries.id = `account-quota-${featured ? "featured" : "list"}-credits-${snapshot.id}`;
+    footer.append(entries);
+    const toggle = count > RESET_CARD_PREVIEW_LIMIT ? document.createElement("button") : null;
+    if (toggle) {
+      toggle.type = "button";
+      toggle.className = "account-quota-list-credits-toggle";
+      toggle.setAttribute("aria-controls", entries.id);
+      footer.append(toggle);
+    }
+
+    const renderEntries = () => {
+      const expanded = expandedCreditAccounts.has(expansionKey);
+      const visibleCount = expanded ? count : Math.min(count, RESET_CARD_PREVIEW_LIMIT);
+      entries.replaceChildren();
+      for (let index = 0; index < visibleCount; index += 1) {
+        const credit = document.createElement("span"); credit.className = "account-quota-list-credit";
+        const label = document.createElement("span"); label.textContent = t("accountQuotaResetCardLabel", { index: index + 1 });
+        const expiry = document.createElement("time");
+        const expiresAt = snapshot.resetCreditDetails?.[index]?.expiresAt;
+        expiry.textContent = expiresAt ? formatResetAt(expiresAt) : t("accountQuotaCreditsExpiryUnknown");
+        credit.append(label, expiry);
+        entries.append(credit);
+      }
+      if (toggle) {
+        toggle.textContent = expanded ? t("accountQuotaResetCardsCollapse") : t("accountQuotaResetCardsExpand", { count: count - RESET_CARD_PREVIEW_LIMIT });
+        toggle.setAttribute("aria-expanded", String(expanded));
+      }
+    };
+    toggle?.addEventListener("click", (event) => {
+      // 只更新此账户的明细，保留展开按钮的键盘焦点。
+      event.stopPropagation();
+      if (expandedCreditAccounts.has(expansionKey)) expandedCreditAccounts.delete(expansionKey);
+      else expandedCreditAccounts.add(expansionKey);
+      renderEntries();
+    });
+    renderEntries();
+    return footer;
+  }
+
+  // 顶部仅展示当前登录，其他账户列表只读，避免点击后错标为“当前登录”。
   function renderList() {
+    const pending = queryState === "pending" || queryState === "loading";
+    list.setAttribute("aria-busy", String(pending));
     list.replaceChildren();
     featured.replaceChildren();
-    list.classList.toggle("is-empty", !snapshots.length);
+    // 当前登录已在顶部展示；没有其他账户时连同列表标题一起隐藏。
+    list.classList.toggle("is-empty", snapshots.every((snapshot) => snapshot.selected));
     if (!snapshots.length) {
       const empty = document.createElement("div");
       empty.className = "account-quota-empty";
       empty.innerHTML = `<strong></strong><p></p>`;
-      empty.classList.toggle("is-loading", loading);
-      empty.querySelector("strong").textContent = t(loading ? "accountQuotaRefreshing" : "accountQuotaNoAccounts");
-      empty.querySelector("p").textContent = t(loading ? "accountQuotaMonitorHint" : "accountQuotaNoAccountsHint");
+      empty.classList.toggle("is-loading", pending);
+      empty.querySelector("strong").textContent = t(pending ? "accountQuotaRefreshing" : queryState === "error" ? "accountQuotaUnavailable" : "accountQuotaNoAccounts");
+      empty.querySelector("p").hidden = queryState === "error";
+      empty.querySelector("p").textContent = t(pending ? "accountQuotaMonitorHint" : "accountQuotaNoAccountsHint");
       featured.append(empty);
       return;
     }
     const rank = (snapshot) => !snapshot.success ? 3 : statusOf(snapshot) === "attention" ? 2 : 1;
     const ordered = [...snapshots].sort((a, b) => Number(b.selected) - Number(a.selected) || rank(a) - rank(b) || a.label.localeCompare(b.label));
-    const focused = ordered.find((item) => item.id === focusedAccountId) || ordered.find((item) => item.selected) || ordered[0];
-    focusedAccountId = focused.id;
-    const detail = document.createElement("article");
-    detail.className = `account-quota-featured-card is-${statusOf(focused)}`;
-    const detailHeader = document.createElement("header");
-    detailHeader.className = "account-quota-featured-header";
-    const detailIdentity = document.createElement("div");
-    detailIdentity.className = "account-quota-identity";
-    const detailAvatar = document.createElement("span");
-    detailAvatar.className = "account-quota-avatar";
-    detailAvatar.textContent = avatar(focused.label);
-    const detailName = document.createElement("div");
-    detailName.innerHTML = `<strong></strong><span></span><em></em>`;
-    detailName.querySelector("strong").textContent = focused.label;
-    detailName.querySelector("span").textContent = displayEmail(focused.email || t("accountsEmailUnknown"), getHideEmails());
-    const detailPlan = detailName.querySelector("em");
-    detailPlan.hidden = !focused.success;
-    if (focused.success) detailPlan.textContent = `${t("accountPlan")}：${focused.planType || t("accountPlanUnavailable")}`;
-    const creditCount = focused.resetCredits == null ? 0 : Number(focused.resetCredits);
-    const creditDetails = Array.isArray(focused.resetCreditDetails) ? focused.resetCreditDetails : [];
-    detailIdentity.append(detailAvatar, detailName);
-    if (focused.selected) {
-      const currentMark = document.createElement("span");
-      currentMark.className = "account-quota-featured-current-mark";
-      currentMark.setAttribute("role", "img");
-      currentMark.setAttribute("aria-label", t("accountQuotaCurrent"));
-      currentMark.title = t("accountQuotaCurrent");
-      currentMark.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>';
-      detail.append(currentMark);
-    }
-    detailHeader.append(detailIdentity);
-    const detailActions = document.createElement("div");
-    detailActions.className = "account-quota-featured-actions";
-    detailHeader.append(detailActions);
-    detail.append(detailHeader);
-    if (creditCount > 0) {
-      const creditsPanel = document.createElement("div");
-      creditsPanel.className = "account-quota-featured-credits";
-      const creditsHeading = document.createElement("strong");
-      creditsHeading.className = "account-quota-featured-credits-heading";
-      creditsHeading.textContent = t("accountQuotaCreditsCount", { count: creditCount });
-      creditsPanel.append(creditsHeading);
-      for (let index = 0; index < creditCount; index += 1) {
-        const item = document.createElement("span");
-        item.className = "account-quota-featured-credit";
-        const label = document.createElement("strong");
-        label.textContent = t("accountQuotaCreditsExpiryItem", { index: index + 1, value: "" }).replace(/[：:、].*$/, "");
-        const expiry = document.createElement("time");
-        expiry.textContent = creditDetails[index]?.expiresAt
-          ? formatResetAt(creditDetails[index].expiresAt)
-          : t("accountQuotaCreditsExpiryUnknown");
-        item.append(label, expiry);
-        creditsPanel.append(item);
+    const focused = ordered.find((item) => item.selected);
+    if (!focused) {
+      const empty = document.createElement("div");
+      empty.className = "account-quota-empty";
+      empty.innerHTML = `<strong></strong><p></p>`;
+      empty.querySelector("strong").textContent = t("accountsCurrentUnknown");
+      empty.querySelector("p").textContent = t("accountQuotaNoAccountsHint");
+      featured.append(empty);
+    } else {
+      const detail = document.createElement("article");
+      detail.className = `account-quota-featured-card is-${statusOf(focused)}`;
+      const detailHeader = document.createElement("header");
+      detailHeader.className = "account-quota-featured-header";
+      const detailIdentity = document.createElement("div");
+      detailIdentity.className = "account-quota-identity";
+      const detailAvatar = document.createElement("span");
+      detailAvatar.className = "account-quota-avatar";
+      detailAvatar.textContent = avatar(focused.label);
+      const detailName = document.createElement("div");
+      detailName.innerHTML = `<div class="account-quota-featured-name"><strong></strong><em></em></div><span></span>`;
+      detailName.querySelector("strong").textContent = focused.label;
+      detailName.querySelector("strong").title = focused.label;
+      detailName.querySelector("span").textContent = displayEmail(focused.email || t("accountsEmailUnknown"), getHideEmails());
+      const detailPlan = detailName.querySelector("em");
+      detailPlan.hidden = !focused.success;
+      if (focused.success) {
+        const planName = focused.planType || t("accountPlanUnavailable");
+        detailPlan.textContent = `(${planName})`;
+        detailPlan.title = `${t("accountPlan")}：${planName}`;
       }
-      detailActions.append(creditsPanel);
+      detailIdentity.append(detailAvatar, detailName);
+      detailHeader.append(detailIdentity);
+      const detailActions = document.createElement("div");
+      detailActions.className = "account-quota-featured-actions";
+      detailHeader.append(detailActions);
+      detail.append(detailHeader);
+      const detailWindows = document.createElement("div");
+      detailWindows.className = "account-quota-windows";
+      if (focused.success) (focused.windows || []).forEach((window, index) => detailWindows.append(renderWindow(window, index, {
+        showAlert: focused.selected && index === 0,
+      })));
+      else {
+        const error = document.createElement("div"); error.className = "account-quota-unavailable"; error.textContent = focused.error || t("accountQuotaUnavailable"); detailWindows.append(error);
+      }
+      detail.append(detailWindows);
+      if (focused.selected) {
+        const resetButton = document.createElement("button");
+        resetButton.type = "button";
+        resetButton.className = "account-quota-featured-link";
+        resetButton.textContent = t("openQuotaReset");
+        resetButton.addEventListener("click", () => void openAccountAction("open_quota_reset_page", "accountQuotaResetOpenFailed"));
+        const billingButton = document.createElement("button");
+        billingButton.type = "button";
+        billingButton.className = "account-quota-featured-link";
+        billingButton.textContent = t("openBilling");
+        billingButton.addEventListener("click", () => void openAccountAction("open_billing_page", "accountBillingOpenFailed"));
+        detailActions.append(resetButton, billingButton);
+      }
+      const detailCredits = renderResetCredits(focused, { featured: true });
+      if (detailCredits) detail.append(detailCredits);
+      featured.append(detail);
     }
-    const detailWindows = document.createElement("div");
-    detailWindows.className = "account-quota-windows";
-    if (focused.success) (focused.windows || []).forEach((window, index) => detailWindows.append(renderWindow(window, index, {
-      showAlert: focused.selected && index === 0,
-    })));
-    else {
-      const error = document.createElement("div"); error.className = "account-quota-unavailable"; error.textContent = focused.error || t("accountQuotaUnavailable"); detailWindows.append(error);
-    }
-    detail.append(detailWindows);
-    if (focused.selected) {
-      const detailFooter = document.createElement("div");
-      detailFooter.className = "account-quota-featured-footer";
-      const resetButton = document.createElement("button");
-      resetButton.type = "button";
-      resetButton.className = "account-quota-featured-link";
-      resetButton.textContent = t("openQuotaReset");
-      resetButton.addEventListener("click", () => void openAccountAction("open_quota_reset_page", "accountQuotaResetOpenFailed"));
-      const billingButton = document.createElement("button");
-      billingButton.type = "button";
-      billingButton.className = "account-quota-featured-link";
-      billingButton.textContent = t("openBilling");
-      billingButton.addEventListener("click", () => void openAccountAction("open_billing_page", "accountBillingOpenFailed"));
-      detailFooter.append(resetButton, billingButton);
-      detail.append(detailFooter);
-    }
-    featured.append(detail);
 
-    ordered.forEach((snapshot) => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = `account-quota-list-row${snapshot.id === focused.id ? " is-active" : ""}${snapshot.success ? "" : " is-unavailable"}`;
-      row.addEventListener("click", () => { focusedAccountId = snapshot.id; renderList(); });
-      if (snapshot.selected) {
-        const currentMark = document.createElement("span");
-        currentMark.className = "account-quota-list-current-mark";
-        currentMark.setAttribute("role", "img");
-        currentMark.setAttribute("aria-label", t("accountQuotaCurrent"));
-        currentMark.title = t("accountQuotaCurrent");
-        currentMark.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>';
-        row.append(currentMark);
-      }
+    ordered.filter((snapshot) => !snapshot.selected).forEach((snapshot) => {
+      const row = document.createElement("div");
+      row.className = `account-quota-list-row${snapshot.success ? "" : " is-unavailable"}`;
       const rowIdentity = document.createElement("span"); rowIdentity.className = "account-quota-list-identity";
       const rowAvatar = document.createElement("i"); rowAvatar.textContent = avatar(snapshot.label);
-      const rowText = document.createElement("span"); rowText.innerHTML = `<strong></strong><small></small>`;
+      const rowText = document.createElement("span"); rowText.innerHTML = `<span class="account-quota-list-name"><strong></strong></span><small></small>`;
       rowText.querySelector("strong").textContent = snapshot.label;
+      rowText.querySelector("strong").title = snapshot.label;
       rowText.querySelector("small").textContent = displayEmail(snapshot.email || t("accountsEmailUnknown"), getHideEmails());
       rowIdentity.append(rowAvatar, rowText);
-      const state = document.createElement("span"); state.className = `account-quota-list-state is-${statusOf(snapshot)}`; state.textContent = snapshot.success ? t(statusOf(snapshot) === "attention" ? "accountQuotaAttention" : "accountQuotaHealthy") : t("accountQuotaUnavailable");
+      const quotaDetails = document.createElement("span"); quotaDetails.className = "account-quota-list-details";
       const mini = document.createElement("span"); mini.className = "account-quota-list-mini";
+      quotaDetails.append(mini);
       const listWindows = [...(snapshot.windows || [])]
         .sort((a, b) => Number(a.durationMinutes || 0) - Number(b.durationMinutes || 0))
         .slice(0, 2);
       listWindows.forEach((window) => {
         const item = document.createElement("span"); item.className = "account-quota-list-mini-item";
+        item.dataset.state = quotaStateOf(window.remainingPercent);
         const percentLabel = document.createElement("strong"); percentLabel.textContent = `${formatQuotaWindow(window.durationMinutes)} ${percent(window.remainingPercent)}`;
-        const bar = document.createElement("i"); bar.style.setProperty("--mini-progress", `${Math.max(0, Math.min(100, Number(window.remainingPercent) || 0))}%`);
+        const bar = document.createElement("i"); bar.style.setProperty("--mini-progress", `${item.dataset.state === "unavailable" ? 0 : window.remainingPercent}%`);
         const resetLabel = document.createElement("small"); resetLabel.textContent = window.resetsAt ? formatResetCountdown(window.resetsAt) : t("resetUnknown");
         item.append(percentLabel, bar, resetLabel);
         mini.append(item);
@@ -243,44 +279,35 @@ export function createAccountQuotaMonitorView({
       row.append(rowIdentity);
       if (snapshot.success) {
         const plan = document.createElement("span"); plan.className = "account-quota-list-plan";
-        const planLabel = document.createElement("small"); planLabel.textContent = t("accountPlan");
-        const planValue = document.createElement("strong"); planValue.textContent = snapshot.planType || t("accountPlanUnavailable");
-        plan.append(planLabel, planValue);
-        row.append(plan, state, mini);
+        const planName = snapshot.planType || t("accountPlanUnavailable");
+        plan.textContent = `(${planName})`;
+        plan.title = `${t("accountPlan")}：${planName}`;
+        rowText.querySelector(".account-quota-list-name").append(plan);
+        row.append(quotaDetails);
       } else {
+        const state = document.createElement("span"); state.className = "account-quota-list-state is-unavailable"; state.textContent = t("accountQuotaUnavailable");
         row.append(state);
       }
-      // 查询失败时不展示充值卡信息，避免把“不可用”账户误解成有可用的充值额度。
-      if (snapshot.success) {
-        const rowCredits = document.createElement("span"); rowCredits.className = "account-quota-list-credits";
-        const creditCount = snapshot.resetCredits == null ? "—" : t("accountQuotaCreditsCount", { count: snapshot.resetCredits });
-        const earliest = (snapshot.resetCreditDetails || []).map((item) => item.expiresAt).filter(Boolean).sort((a, b) => Number(a) - Number(b))[0];
-        rowCredits.innerHTML = `<strong></strong><small></small>`;
-        rowCredits.querySelector("strong").textContent = creditCount;
-        rowCredits.querySelector("small").textContent = earliest
-          ? t("accountQuotaCreditsExpiry", { value: formatResetAt(earliest) })
-          : t("accountQuotaCreditsExpiryUnknown");
-        row.append(rowCredits);
-      }
+      const resetCredits = renderResetCredits(snapshot);
+      if (resetCredits) row.append(resetCredits);
       list.append(row);
     });
   }
 
   async function refresh() {
-    if (loading) return;
-    loading = true;
-    list.setAttribute("aria-busy", "true");
+    if (queryState === "loading") return;
+    queryState = "loading";
+    setFeedback();
     renderList();
     try {
       snapshots = await invoke("read_account_quotas");
-      renderList();
+      queryState = "success";
     } catch (error) {
       snapshots = [];
-      renderList();
+      queryState = "error";
       setFeedback(t("accountQuotaQueryFailed", { error: String(error) }), "error");
     } finally {
-      loading = false;
-      list.setAttribute("aria-busy", "false");
+      renderList();
     }
   }
 
@@ -292,7 +319,7 @@ export function createAccountQuotaMonitorView({
   updateLanguage();
   return {
     refresh,
-    activate: () => { if (!loading && !snapshots.length) void refresh(); },
+    activate: () => { if (queryState !== "loading" && !snapshots.length) void refresh(); },
     updateLanguage,
     updateAlertStatus: renderList,
   };

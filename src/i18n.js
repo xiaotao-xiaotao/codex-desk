@@ -193,18 +193,28 @@ const ACCOUNT_SWITCH_TRANSLATIONS = {
 
 const ACCOUNT_QUOTA_TRANSLATIONS = {
   "zh-CN": {
+    accountQuotaResetCardLabel: "重置卡{index}：",
+    accountQuotaResetCardsExpand: "展开其余 {count} 张", accountQuotaResetCardsCollapse: "收起",
     accountQuotaMonitorHint: "同时查看已保存账户的额度余量与重置时间，查询不会切换当前登录。", accountQuotaRefreshing: "正在查询账户额度…",  accountQuotaHealthy: "状态正常", accountQuotaAttention: "需要注意", accountQuotaRemaining: "剩余", accountQuotaCurrent: "当前账户", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryItem: "第 {index} 张：{value}", accountQuotaCreditsExpiryUnknown: "暂无到期时间", accountQuotaUnavailable: "额度暂不可用", accountQuotaNoAccounts: "还没有可监控的账户", accountQuotaNoAccountsHint: "先在账户管理中保存一个 ChatGPT 账户，再回来刷新额度。", accountQuotaQueryFailed: "额度查询失败：{error}",
   },
   "zh-TW": {
+    accountQuotaResetCardLabel: "重設卡{index}：",
+    accountQuotaResetCardsExpand: "展開其餘 {count} 張", accountQuotaResetCardsCollapse: "收合",
     accountQuotaMonitorHint: "同時查看已保存帳戶的額度餘量與重設時間，查詢不會切換目前登入。", accountQuotaRefreshing: "正在查詢帳戶額度…",  accountQuotaHealthy: "狀態正常", accountQuotaAttention: "需要注意", accountQuotaRemaining: "剩餘", accountQuotaCurrent: "目前帳戶", accountQuotaCreditsCount: "充值卡 {count} 次", accountQuotaCreditsExpiry: "最近到期：{value}", accountQuotaCreditsExpiryUnknown: "暫無到期時間", accountQuotaUnavailable: "額度暫不可用", accountQuotaNoAccounts: "還沒有可監控的帳戶", accountQuotaNoAccountsHint: "先在帳戶管理中保存一個 ChatGPT 帳戶，再回來重新整理額度。", accountQuotaQueryFailed: "額度查詢失敗：{error}",
   },
   en: {
+    accountQuotaResetCardLabel: "Reset card {index}:",
+    accountQuotaResetCardsExpand: "Show {count} more", accountQuotaResetCardsCollapse: "Show less",
     accountQuotaMonitorHint: "See saved account headroom and reset times together. Queries never switch the active sign-in.", accountQuotaRefreshing: "Querying account quotas…",  accountQuotaHealthy: "Healthy", accountQuotaAttention: "Needs attention", accountQuotaRemaining: "Remaining", accountQuotaCurrent: "Current", accountQuotaCreditsCount: "Recharge cards: {count}", accountQuotaCreditsExpiry: "Earliest expiry: {value}", accountQuotaCreditsExpiryItem: "Card {index}: {value}", accountQuotaCreditsExpiryUnknown: "Expiry unavailable", accountQuotaUnavailable: "Unavailable", accountQuotaNoAccounts: "No accounts to monitor", accountQuotaNoAccountsHint: "Save a ChatGPT account in account management, then refresh this view.", accountQuotaQueryFailed: "Quota query failed: {error}",
   },
   ja: {
+    accountQuotaResetCardLabel: "リセットカード{index}：",
+    accountQuotaResetCardsExpand: "残り{count}枚を表示", accountQuotaResetCardsCollapse: "折りたたむ",
     accountQuotaMonitorHint: "保存済みアカウントの残量とリセット時刻をまとめて確認できます。現在のログインは切り替わりません。", accountQuotaRefreshing: "アカウントのクォータを確認中…",  accountQuotaHealthy: "正常", accountQuotaAttention: "要確認", accountQuotaRemaining: "残り", accountQuotaCurrent: "現在", accountQuotaUnavailable: "利用不可", accountQuotaNoAccounts: "監視するアカウントがありません", accountQuotaNoAccountsHint: "アカウント管理で ChatGPT アカウントを保存してから更新してください。", accountQuotaQueryFailed: "クォータの確認に失敗：{error}",
   },
   ko: {
+    accountQuotaResetCardLabel: "재설정 카드 {index}:",
+    accountQuotaResetCardsExpand: "나머지 {count}장 펼치기", accountQuotaResetCardsCollapse: "접기",
     accountQuotaMonitorHint: "저장된 계정의 잔여량과 재설정 시간을 함께 확인합니다. 현재 로그인은 전환되지 않습니다.", accountQuotaRefreshing: "계정 할당량을 확인하는 중…",  accountQuotaHealthy: "정상", accountQuotaAttention: "확인 필요", accountQuotaRemaining: "남은 할당량", accountQuotaCurrent: "현재", accountQuotaUnavailable: "사용할 수 없음", accountQuotaNoAccounts: "모니터링할 계정이 없음", accountQuotaNoAccountsHint: "계정 관리에서 ChatGPT 계정을 저장한 후 새로 고침하세요.", accountQuotaQueryFailed: "할당량 조회 실패: {error}",
   },
 };

@@ -36,6 +36,7 @@ async fn read_quota(
 async fn read_account_quotas(
     app: AppHandle,
     state: State<'_, account_store::AccountStoreState>,
+    server: State<'_, app_server::AppServerState>,
 ) -> Result<Vec<quota::AccountQuotaSnapshot>, String> {
     // 只在读取账户快照时持锁，远端查询期间允许保存、删除和切换账户。
     let targets = {
@@ -45,7 +46,7 @@ async fn read_account_quotas(
             .await
             .map_err(|_| "账户读取任务中断")??
     };
-    Ok(quota::read_account_quotas(targets).await)
+    Ok(quota::read_account_quotas(targets, &server.proxy_settings()).await)
 }
 
 #[tauri::command]

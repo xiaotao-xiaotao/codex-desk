@@ -37,11 +37,11 @@ tauri-plugin-single-instance = "2.4.3"
 tokio = { version = "1", features = ["io-util", "macros", "process", "sync", "time"] }
 
 [target.'cfg(windows)'.dependencies]
-# Windows 复用系统 TLS 与证书存储，减少静态打包的加密实现。
-reqwest = { version = "0.12", default-features = false, features = ["json", "native-tls"] }
+# Windows 复用系统 TLS 与证书存储；显式启用系统代理，供账户额度查询使用。
+reqwest = { version = "0.12", default-features = false, features = ["json", "native-tls", "system-proxy"] }
 
 [target.'cfg(not(windows))'.dependencies]
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "system-proxy"] }
 
 [profile.release]
 # 桌面安装包更重视体积；LTO 与单代码生成单元可移除跨 crate 的冗余代码。

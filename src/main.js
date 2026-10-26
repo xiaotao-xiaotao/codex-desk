@@ -129,6 +129,8 @@ let panelDragStart = null;
 let suppressOrbClick = false;
 let dashboardUnavailable = false;
 let dashboardRetryStatus = null;
+// 启动时先恢复代理偏好，再允许页面激活触发账户 HTTP 查询。
+let settingsInitialized = false;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
@@ -188,13 +190,15 @@ refreshController = createRefreshController({
 function renderAccountSyncTime() {
   const element = document.querySelector("#account-last-synced");
   const syncedAt = refreshController?.getLatestQuotaSyncedAt();
-  if (syncedAt == null) {
-    element.textContent = "--";
+  const date = syncedAt == null ? null : new Date(syncedAt);
+  // 标签和时间一起隐藏，避免首次加载或切换账户时短暂显示“最近同步 --”。
+  element.parentElement.hidden = date === null || Number.isNaN(date.getTime());
+  if (element.parentElement.hidden) {
+    element.textContent = "";
     element.removeAttribute("datetime");
     element.removeAttribute("title");
     return;
   }
-  const date = new Date(syncedAt);
   element.textContent = new Intl.DateTimeFormat(i18n.getLocale(), { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
   element.dateTime = date.toISOString();
   element.title = new Intl.DateTimeFormat(i18n.getLocale(), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(date);
@@ -220,7 +224,7 @@ function setDashboardSection(nextSection) {
   if (changed && nextSection === "accounts") {
     accountSwitchView.activate();
   }
-  if (changed && nextSection === "account") accountQuotaMonitorView.activate();
+  if (settingsInitialized && changed && nextSection === "account") accountQuotaMonitorView.activate();
   Object.entries(dashboardSections).forEach(([name, section]) => {
     section.hidden = name !== nextSection;
   });
@@ -342,7 +346,7 @@ function applyLanguage() {
     setStatus(t("readingLocalData"));
   }
   setDashboardSection(activeDashboardSection);
-  if (activeDashboardSection === "account") accountQuotaMonitorView.activate();
+  if (settingsInitialized && activeDashboardSection === "account") accountQuotaMonitorView.activate();
 }
 
 function selectLanguage(nextLanguage) {
@@ -510,6 +514,8 @@ async function bootstrap() {
     // 自定义路径失效时保留设置供用户修正，同时继续尝试系统 PATH。
     console.error("应用 Codex CLI 路径失败", error);
     setStatus(t("settingsSaveFailed", { error: String(error) }), "error");
+  } finally {
+    settingsInitialized = true;
   }
   await setExpanded(true);
   // 首次启动需要立即读取；后续从悬浮球展开只恢复视图，刷新仍由定时器或用户操作触发。

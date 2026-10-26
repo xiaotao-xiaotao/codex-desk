@@ -5,67 +5,60 @@
 .account-quota-feedback { margin: 14px 0 0; color: var(--lite-muted); font-size: 12px; }
 .account-quota-feedback[data-kind="success"] { display: none; }
 .account-quota-feedback[data-kind="error"] { color: #d95d67; }
-.account-quota-list { display: grid; gap: 12px; }
+.account-quota-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 4px; }
 .account-quota-featured { display: block; }
 .account-quota-featured-card { position: relative; padding: 24px; border: 1px solid var(--lite-accent); border-radius: 16px; background: var(--lite-surface); box-shadow: 0 8px 24px rgba(18, 102, 214, .08); }
-.account-quota-featured-current-mark { position: absolute; z-index: 1; top: -7px; left: 0; display: grid; box-sizing: border-box; width: 14px; height: 14px; place-items: center; border: 3px solid var(--lite-surface); border-radius: 50%; color: var(--lite-accent); background: var(--lite-accent); }
-.account-quota-featured-current-mark svg { width: 8px; height: 8px; fill: currentColor; stroke: none; }
 .account-quota-featured-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-.account-quota-featured-header .account-quota-identity > div { grid-template-columns: minmax(0, auto) minmax(0, auto); grid-template-areas: "name name" "email plan" "credits credits"; align-items: baseline; column-gap: 10px; }
-.account-quota-featured-header .account-quota-identity > div > strong { grid-area: name; }
-.account-quota-featured-header .account-quota-identity > div > span { grid-area: email; }
-.account-quota-featured-header .account-quota-identity > div > em { grid-area: plan; }
-.account-quota-featured-credits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; max-height: 116px; margin: 0 0 8px; padding: 0 4px 0 0; overflow-y: auto; }
-.account-quota-featured-credits-heading { grid-column: 1 / -1; color: var(--lite-muted); font-size: 11px; font-weight: 650; }
-.account-quota-featured-actions > .account-quota-featured-credits { grid-column: 1 / -1; width: 100%; margin: 8px 0 0; }
-.account-quota-featured-credit { display: flex; min-width: 0; align-items: baseline; gap: 8px; color: var(--lite-muted); font-size: 11px; line-height: 1.35; }
-.account-quota-featured-credit strong { flex: 0 0 auto; color: var(--lite-ink); font-size: 11px; font-weight: 650; }
-.account-quota-featured-credit time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-featured-actions { display: grid; grid-template-columns: repeat(2, max-content); align-items: center; justify-content: end; gap: 7px; }
-.account-quota-featured-link { min-height: 26px; padding: 4px 8px; border: 1px solid var(--lite-border); border-radius: 7px; color: var(--lite-accent); background: var(--lite-surface); font-size: 11px; cursor: pointer; }
+.account-quota-featured-header .account-quota-featured-name { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+.account-quota-featured-name strong { min-width: 0; }
+.account-quota-featured-name em { flex: 0 0 auto; color: var(--lite-muted); font-size: 11px; font-style: normal; font-weight: 400; white-space: nowrap; }
+.account-quota-featured-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; max-width: 100%; }
+.account-quota-featured-link { min-height: 26px; padding: 4px 8px; border: 1px solid var(--lite-border); border-radius: 7px; color: var(--lite-accent); background: var(--lite-surface); font-size: 12px; line-height: 16px; cursor: pointer; }
 .account-quota-featured-link:hover { border-color: var(--lite-accent); background: var(--lite-accent-soft); }
-.account-quota-featured-footer { position: absolute; top: -30px; right: 24px; display: flex; justify-content: flex-end; gap: 6px; margin: 0; padding: 0; }
-.account-quota-featured-footer .account-quota-featured-link { min-height: 22px; padding: 2px 7px; border-radius: 6px; font-size: 12px; line-height: 16px; }
 .account-quota-list { margin-top: 0; padding-top: 14px; border-top: 1px solid var(--lite-border); }
 .account-quota-list::before { color: var(--lite-muted); content: "账户列表"; font-size: 12px; font-weight: 400; letter-spacing: normal; }
 .account-quota-list.is-empty { display: none; }
-.account-quota-list-row { position: relative; display: grid; grid-template-columns: minmax(190px, 1.25fr) minmax(80px, .6fr) 86px minmax(190px, 1.25fr) minmax(150px, .9fr); align-items: center; gap: 16px; width: 100%; padding: 13px 16px; border: 1px solid var(--lite-border); border-radius: 12px; color: var(--lite-ink); background: color-mix(in srgb, var(--lite-surface) 72%, var(--lite-ground)); text-align: left; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
-.account-quota-list-current-mark { position: absolute; z-index: 1; top: -7px; left: 0; display: grid; box-sizing: border-box; width: 14px; height: 14px; place-items: center; border: 3px solid var(--lite-ground); border-radius: 50%; color: var(--lite-accent); background: var(--lite-accent); }
-.account-quota-list-current-mark svg { width: 8px; height: 8px; fill: currentColor; }
-.account-quota-list-row:hover { border-color: #a9c9f2; background: var(--lite-surface); transform: translateY(-1px); }
-.account-quota-list-row.is-active { border-color: var(--lite-accent); background: var(--lite-surface); box-shadow: 0 4px 14px rgba(18, 102, 214, .08); }
-.account-quota-list-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* 账户与额度保持横排，重置卡在底部横向铺开，利用整行空间减少卡片高度。 */
+.account-quota-list-row { position: relative; display: grid; grid-template-columns: minmax(220px, 1.1fr) minmax(340px, 1.9fr); grid-template-areas: "identity quota"; align-items: start; gap: 6px 14px; width: 100%; min-width: 660px; padding: 12px 14px; border: 1px solid var(--lite-border); border-radius: 12px; color: var(--lite-ink); background: color-mix(in srgb, var(--lite-surface) 72%, var(--lite-ground)); text-align: left; }
+.account-quota-list-identity { grid-area: identity; display: flex; align-items: center; gap: 10px; min-width: 0; }
 .account-quota-list-identity i { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: var(--lite-accent); background: var(--lite-accent-soft); font-size: 12px; font-style: normal; font-weight: 700; }
 .account-quota-list-row.is-unavailable .account-quota-list-identity i { color: #72849a; background: #f1f4f8; }
 .account-quota-list-row.is-unavailable .account-quota-list-identity strong,
 .account-quota-list-row.is-unavailable .account-quota-list-identity small { color: #72849a; }
 .account-quota-list-identity > span { display: grid; gap: 2px; min-width: 0; }
-.account-quota-list-identity strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-list-identity strong { min-width: 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-identity small { overflow: hidden; color: var(--lite-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-plan { display: grid; gap: 2px; min-width: 0; }
-.account-quota-list-plan small { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-plan strong { overflow: hidden; color: var(--lite-accent); font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-state { justify-self: start; padding: 0; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.account-quota-list-state.is-healthy { color: #1668c6; }
-.account-quota-list-state.is-attention { color: #ab741d; }
-.account-quota-list-state.is-unavailable { color: #5f7186; }
-.account-quota-list-state.is-healthy,
-.account-quota-list-state.is-attention,
+.account-quota-list-name { display: flex; align-items: baseline; gap: 4px; min-width: 0; white-space: nowrap; }
+.account-quota-list-plan { flex: 0 0 auto; color: var(--lite-muted); font-size: 11px; font-weight: 400; }
+.account-quota-list-state { padding: 0; color: var(--lite-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+.account-quota-list-row.is-unavailable > .account-quota-list-state { grid-column: 2 / -1; justify-self: end; }
 .account-quota-list-state.is-unavailable { background: transparent; }
-.account-quota-list-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; }
-.account-quota-list-mini-item { display: grid; grid-template-rows: auto 6px auto; gap: 4px; min-width: 0; }
-.account-quota-list-mini-item strong { overflow: hidden; color: var(--lite-accent); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-mini-item i { display: block; height: 6px; overflow: hidden; border-radius: 5px; background: linear-gradient(to right, var(--lite-accent) var(--mini-progress), var(--lite-border) var(--mini-progress)); }
-.account-quota-list-mini-item small { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-credits { display: grid; gap: 2px; min-width: 0; }
-.account-quota-list-credits strong { overflow: hidden; color: var(--lite-ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-list-credits small { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-list-details { grid-area: quota; display: grid; gap: 7px; min-width: 0; }
+.account-quota-list-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 16px; min-width: 0; }
+.account-quota-list-mini-item { --quota-color: var(--lite-accent); --quota-track: var(--lite-border); display: grid; grid-template-rows: auto 6px auto; gap: 5px; min-width: 0; }
+.account-quota-list-mini-item[data-state="attention"] { --quota-color: #d46b08; }
+.account-quota-list-mini-item[data-state="critical"] { --quota-color: #cf1322; }
+.account-quota-list-mini-item[data-state="unavailable"] { --quota-color: var(--lite-muted); }
+/* 空额度仍保留轻微告警底色，配合红色 0% 表达已耗尽，不伪造剩余进度。 */
+.account-quota-list-mini-item[data-state="attention"],
+.account-quota-list-mini-item[data-state="critical"] { --quota-track: color-mix(in srgb, var(--quota-color) 18%, var(--lite-border)); }
+.account-quota-list-mini-item strong { color: var(--quota-color); font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.account-quota-list-mini-item i { display: block; height: 6px; overflow: hidden; border-radius: 5px; background: linear-gradient(to right, var(--quota-color) var(--mini-progress), var(--quota-track) var(--mini-progress)); }
+.account-quota-list-mini-item small { color: var(--lite-muted); font-size: 12px; line-height: 1.5; white-space: nowrap; }
+.account-quota-list-credits { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; min-width: 0; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--lite-border) 70%, transparent); color: var(--lite-muted); font-size: 11px; font-weight: 400; line-height: 1.4; }
+.account-quota-featured-credits { margin-top: 14px; padding-top: 12px; }
+.account-quota-list-credit { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.account-quota-list-credit > span { font-weight: 500; }
+.account-quota-list-credit time { font-variant-numeric: tabular-nums; }
+.account-quota-list-credit-entries { display: contents; }
+.account-quota-list-credits-toggle { padding: 1px 4px; border: 0; border-radius: 4px; color: var(--lite-accent); background: transparent; font: inherit; line-height: inherit; white-space: nowrap; cursor: pointer; }
+.account-quota-list-credits-toggle:hover { background: var(--lite-accent-soft); }
+.account-quota-list-credits-toggle:focus-visible { outline: 2px solid var(--lite-accent); outline-offset: 2px; }
 .account-quota-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .account-quota-avatar { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--lite-accent); background: var(--lite-accent-soft); font-size: 14px; font-weight: 800; }
 .account-quota-identity div { display: grid; gap: 3px; min-width: 0; }
 .account-quota-identity strong { overflow: hidden; color: var(--lite-ink); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-identity div > span { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-identity div > em { overflow: hidden; color: var(--lite-accent); font-size: 11px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 .account-quota-window { display: grid; grid-template-areas: "heading" "value" "meter" "reset"; min-width: 0; padding: 14px 14px 12px 22px; border: 1px solid var(--lite-border); border-radius: 11px; background: var(--lite-surface); box-shadow: inset 4px 0 0 var(--lite-accent); }
 .account-quota-window-heading { display: flex; grid-area: heading; justify-content: space-between; gap: 7px; color: var(--lite-muted); font-size: 13px; }
@@ -91,19 +84,14 @@
 .accounts-management-panel > .accounts-feedback { margin-bottom: 10px; padding: 6px 10px; border-radius: 7px; font-size: 11px; }
 
 :root[data-theme="dark"] .account-quota-window { background: var(--lite-surface); }
+:root[data-theme="dark"] .account-quota-list-mini-item[data-state="attention"] { --quota-color: #ffc069; }
+:root[data-theme="dark"] .account-quota-list-mini-item[data-state="critical"] { --quota-color: #ff7875; }
 :root[data-theme="dark"] .account-quota-window-reset { border: 0; color: #8dc5ff !important; background: transparent; }
 
 
 @container quota-page (max-width: 760px) {
   .account-quota-featured-header { align-items: flex-start; flex-direction: column; }
   .account-quota-featured-actions { justify-content: flex-start; }
-  .account-quota-featured-footer { position: static; margin-top: 8px; justify-content: flex-start; }
-  .account-quota-list-row { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
-  .account-quota-list-plan { grid-column: 2; grid-row: 1; }
-  .account-quota-list-state { grid-column: 2; grid-row: 2; }
-  .account-quota-list-mini { grid-column: 1 / -1; }
-  .account-quota-list-credits { grid-column: 1 / -1; }
-  .account-quota-featured-credits { grid-template-columns: 1fr; margin-left: 0; }
 }
 @media (max-width: 760px) {
   .account-quota-list { grid-template-columns: 1fr; }
