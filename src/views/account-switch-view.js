@@ -60,7 +60,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
           <button class="accounts-button accounts-login-browser" type="button"></button>
         </section>
         <div class="accounts-target" hidden><span class="accounts-avatar"></span><div><strong></strong><span></span></div></div>
-        <label class="accounts-restart" hidden><input type="checkbox" /><div><strong></strong><span></span></div></label>
         <div class="accounts-editor-actions"><button class="cancel-button accounts-cancel" type="button"></button><button class="primary-action-button accounts-submit" type="submit"></button></div>
       </form>
     </div>
@@ -134,7 +133,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   const pageFeedback = page.querySelector(".accounts-feedback");
   const feedbacks = [dialogFeedback, pageFeedback];
   const input = find(".accounts-name-input");
-  const restartCheckbox = find(".accounts-restart input");
   const list = find(".accounts-list");
   let snapshot = null;
   let action = null;
@@ -221,7 +219,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     editor.hidden = false;
     setFeedback(null);
     input.value = account?.label ?? (kind === "save" ? snapshot?.accounts.find((saved) => saved.selected)?.label : null) ?? snapshot?.currentEmail?.split("@")[0] ?? "";
-    restartCheckbox.checked = true;
     renderEditor();
     dialog.showModal();
     (kind === "save" || kind === "rename" || kind === "login" ? input : find(".accounts-submit")).focus();
@@ -251,7 +248,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-name-label").textContent = t(kind === "login" ? "accountsLoginNameLabel" : "accountsNameLabel");
     input.placeholder = t(kind === "login" ? "accountsLoginNamePlaceholder" : "accountsNamePlaceholder");
     find(".accounts-target").hidden = !account;
-    find(".accounts-restart").hidden = kind !== "switch";
     find(".accounts-editor-title").textContent = t(`accounts${kind[0].toUpperCase() + kind.slice(1)}Title`);
     // 常规账户操作由正文说明即可；隐藏标题仅作为弹窗的无障碍名称。
     find(".accounts-editor-title").hidden = kind !== "enable";
@@ -270,7 +266,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     submit.hidden = kind === "login" && Boolean(loginSession);
     find(".accounts-login-panel").hidden = kind !== "login";
     if (kind === "login") renderLogin();
-    submit.textContent = t(busy ? "accountsWorking" : kind === "login" && selectedLoginMethod() === "device" ? "accountsLoginDeviceConfirm" : kind === "switch" && restartCheckbox.checked ? "accountsSwitchRestart" : `accounts${kind[0].toUpperCase() + kind.slice(1)}Confirm`);
+    submit.textContent = t(busy ? "accountsWorking" : kind === "login" && selectedLoginMethod() === "device" ? "accountsLoginDeviceConfirm" : `accounts${kind[0].toUpperCase() + kind.slice(1)}Confirm`);
   }
 
   function button(labelKey, iconName, handler, className = "") {
@@ -356,7 +352,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     if ((kind === "save" || kind === "rename" || kind === "login") && ((!label && kind !== "login") || [...label].length > 48 || /[\u0000-\u001f\u007f]/.test(label))) {
       setFeedback("accountsNameInvalid", {}, "error"); input.focus(); return;
     }
-    const restart = restartCheckbox.checked;
     setFeedback(null); setBusy(true);
     let changed = false;
     try {
@@ -365,15 +360,18 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
         scheduleLoginPoll();
       } else if (kind === "switch") {
         await onBeforeSwitch();
-        const result = await invoke("switch_saved_account", { id: account.id, restart });
+        const result = await invoke("switch_saved_account", { id: account.id });
         changed = true;
         snapshot = result.snapshot ?? snapshot;
         showList();
-        // 正常切换由账户信息变化体现，仅在服务未启动时提示异常。
-        if (result.restart === "startFailed") setFeedback("accountsRestartFailed", {}, "pending");
-        // 服务同步失败不能把已经完成的凭据切换报告成失败。
-        try { await onAfterSwitch({ changed: true, restarted: result.restart === "restarted" }); }
-        catch { setFeedback("accountsSyncFailed", {}, "pending"); }
+        setFeedback(
+          result.restartError ? "accountsRestartFailed" : result.restarted ? "accountsRestarted" : "accountsSwitched",
+          { error: result.restartError },
+          result.restartError ? "pending" : "success",
+        );
+        // 凭据已提交，展示刷新失败不能被报告成切换失败。
+        try { await onAfterSwitch({ changed: true }); }
+        catch { if (!result.restartError) setFeedback("accountsSyncFailed", {}, "pending"); }
       } else {
         const commands = { save: "save_current_account", rename: "rename_saved_account", remove: "remove_saved_account", enable: "enable_account_file_storage" };
         snapshot = await invoke(commands[kind], { ...(account ? { id: account.id } : {}), ...(kind === "save" || kind === "rename" ? { label } : {}) });
@@ -382,7 +380,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       }
     } catch (error) {
       setFeedback("accountsFailed", { error: String(error) }, "error");
-      if (kind === "switch" && !changed) await onAfterSwitch({ changed: false, restarted: false });
+      if (kind === "switch" && !changed) await onAfterSwitch({ changed: false });
     } finally {
       setBusy(false);
       if (action) (action.kind === "login" ? loginSession ? find(".accounts-cancel") : input : action.kind === "save" || action.kind === "rename" ? input : find(".accounts-submit")).focus();
@@ -516,8 +514,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     input.placeholder = t("accountsNamePlaceholder");
     find(".accounts-back span").textContent = t("accountsBack");
     find(".accounts-cancel").textContent = t("accountsCancel");
-    find(".accounts-restart strong").textContent = t("accountsRestartLabel");
-    find(".accounts-restart div > span").textContent = t("accountsRestartHint");
     renderCloseIconButton(find(".accounts-close"), { label: t("accountsClose") });
     if (notice) setFeedback(notice.key, notice.values, notice.kind, notice.target);
     renderList(); renderEditor();
@@ -568,7 +564,6 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   find(".accounts-enable").addEventListener("click", () => showEditor("enable"));
   find(".accounts-cancel").addEventListener("click", () => { void closeEditor(); });
   find(".accounts-back").addEventListener("click", () => { void closeEditor(); });
-  restartCheckbox.addEventListener("change", renderEditor);
   editor.addEventListener("submit", submit);
   updateLanguage();
   return { updateLanguage, checkCurrentAccount, activate: () => { if (!busy) { setFeedback(null); void refresh(); } } };

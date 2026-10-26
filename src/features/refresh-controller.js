@@ -7,6 +7,7 @@
 export function createRefreshController({
   invoke,
   quotaView,
+  accountQuotaView,
   quotaAlerts,
   refreshAccount,
   setStatus,
@@ -21,15 +22,11 @@ export function createRefreshController({
   // 温和增加重试间隔；上限不能短于用户选择的正常刷新间隔。
   const MAX_AUTO_REFRESH_BACKOFF_MS = 5 * 60 * 1_000;
   const AUTO_REFRESH_RETRY_MULTIPLIERS = [1, 1.5, 2, 3, 5];
-  // 启动时 CLI 的认证与 app-server 可能仍在初始化，先快速重连，避免瞬时失败直接占满页面。
-  const INITIAL_QUOTA_RETRY_DELAYS_MS = [500, 1_500];
-  const TRANSIENT_QUOTA_RETRY_DELAY_MS = 1_500;
   let latestQuota = null;
   let latestQuotaSyncedAt = null;
   let refreshing = false;
   let nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
   let consecutiveRefreshFailures = 0;
-  let initialQuotaRead = true;
   let latestRefreshError = "";
   let accountChangePaused = false;
   let accountVersion = 0;
@@ -45,27 +42,6 @@ export function createRefreshController({
     const retryIndex = Math.min(Math.max(0, consecutiveRefreshFailures - 1), AUTO_REFRESH_RETRY_MULTIPLIERS.length - 1);
     const maximumDelay = Math.max(baseDelay, MAX_AUTO_REFRESH_BACKOFF_MS);
     return Math.min(baseDelay * AUTO_REFRESH_RETRY_MULTIPLIERS[retryIndex], maximumDelay);
-  }
-
-  function wait(delayMs) {
-    return new Promise((resolve) => window.setTimeout(resolve, delayMs));
-  }
-
-  async function readQuotaWithStartupRetry() {
-    const startup = initialQuotaRead;
-    const retryDelays = startup ? INITIAL_QUOTA_RETRY_DELAYS_MS : [TRANSIENT_QUOTA_RETRY_DELAY_MS];
-    initialQuotaRead = false;
-    for (let attempt = 0; ; attempt += 1) {
-      try {
-        return await invoke("read_quota");
-      } catch (error) {
-        // 常规轮询只缓冲明确的网络发送失败；认证、限流与慢响应仍交给原有退避处理。
-        const transientNetworkFailure = String(error).includes("failed to fetch codex rate limits: error sending request");
-        if (attempt >= retryDelays.length || (!startup && !transientNetworkFailure) || accountChangePaused) throw error;
-        await wait(retryDelays[attempt]);
-        if (accountChangePaused) throw error;
-      }
-    }
   }
 
   function renderSyncedStatus() {
@@ -105,7 +81,7 @@ export function createRefreshController({
     statusElement.dataset.kind = "normal";
   }
 
-  async function refreshQuota({ manual = false } = {}) {
+  async function refreshQuota({ manual = false, showLoadingStatus = true } = {}) {
     if (refreshing || accountChangePaused) return;
     // 手动请求跳过旧退避历史；失败后从第一档重试，自动刷新继续累积失败次数。
     if (manual) {
@@ -117,18 +93,33 @@ export function createRefreshController({
     refreshFinished = new Promise((resolve) => { finish = resolve; });
     refreshing = true;
     onRefreshingChange(true);
-    setStatus(t("readingLocalData"));
+    // 首次进入首页已有内容区加载提示；后续刷新在底部显示查询状态。
+    setStatus(showLoadingStatus ? t("readingLocalData") : "");
+    accountQuotaView.setLoading();
     try {
-      // 提醒使用本轮运行中账户的归属，不能沿用切换前的邮箱。
-      // 账户摘要读取失败不能否定已成功获取的额度；等待其完成后再判断提醒归属。
-      const [quotaResult, accountResult] = await Promise.allSettled([readQuotaWithStartupRetry(), refreshAccount()]);
-      if (quotaResult.status === "rejected") throw quotaResult.reason;
-      if (accountResult.status === "rejected") console.warn("账户摘要刷新失败", accountResult.reason);
-      const result = quotaResult.value;
+      // 一轮查询的快照同时供顶部、列表、悬浮球、同步状态和提醒使用。
+      const [snapshots, accountResult] = await Promise.all([
+        invoke("read_account_quotas"),
+        Promise.resolve().then(refreshAccount).then(() => true, () => false),
+      ]);
       if (version !== accountVersion) return;
+      accountQuotaView.setSnapshots(snapshots);
+      onAvailabilityChange(true);
+      const result = snapshots.find((snapshot) => snapshot.selected);
+      if (!result) {
+        latestQuota = null;
+        latestQuotaSyncedAt = null;
+        quotaView.render({ windows: [] });
+        throw new Error(t("accountsCurrentUnknown"));
+      }
+      if (latestQuota && latestQuota.id !== result.id) {
+        latestQuota = null;
+        latestQuotaSyncedAt = null;
+      }
+      if (!result.success) throw new Error(result.error || t("accountQuotaUnavailable"));
       latestQuota = result;
       // 仅成功读取额度时更新，失败重试保留上次成功时间，避免误导数据新鲜度。
-      latestQuotaSyncedAt = Date.now();
+      latestQuotaSyncedAt = Number.isFinite(result.queriedAt) ? result.queriedAt * 1_000 : Date.now();
       consecutiveRefreshFailures = 0;
       latestRefreshError = "";
       scheduleNextAutoRefresh(getAutoRefreshIntervalMs());
@@ -136,7 +127,7 @@ export function createRefreshController({
       quotaView.render(latestQuota);
       // 额度提醒属于辅助任务，错误单独记录，不计入额度重试次数。
       try {
-        if (accountResult.status === "fulfilled") await quotaAlerts.notify(latestQuota);
+        if (accountResult) await quotaAlerts.notify(latestQuota);
       } catch (error) {
         console.warn("额度提醒失败", error);
       }
@@ -145,10 +136,11 @@ export function createRefreshController({
       console.error(error);
       consecutiveRefreshFailures += 1;
       latestRefreshError = String(error);
-      // 保留最近一次有效额度并持续退避重试；无缓存时才切换到全量错误态。
-      quotaView.showReadFailure(!latestQuota);
-      // 没有任何可回退数据时使用整页错误态，避免多个空卡片让请求失败看起来像无数据。
-      if (!latestQuota) onAvailabilityChange(false);
+      // 最近同步保留成功时间，悬浮球明确标记失败，避免继续展示其他账户或过期额度。
+      latestQuota = null;
+      quotaView.showReadFailure(true);
+      accountQuotaView.setError(error);
+      // 单账户失败仍保留其他账户卡片，错误由卡片和底部状态共同呈现。
       scheduleNextAutoRefresh(retryDelayMs());
     } finally {
       refreshing = false;
@@ -170,6 +162,7 @@ export function createRefreshController({
       if (changed) {
         latestQuota = null; latestQuotaSyncedAt = null;
         quotaView.render({ windows: [] });
+        accountQuotaView.clear();
         consecutiveRefreshFailures = 0; latestRefreshError = "";
       }
       accountChangePaused = false;
@@ -181,8 +174,7 @@ export function createRefreshController({
     refreshQuota,
     renderSyncedStatus,
     resetAutoRefreshSchedule: () => {
-      nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
-      consecutiveRefreshFailures = 0;
+      nextAutoRefreshAt = Date.now() + (consecutiveRefreshFailures > 0 ? retryDelayMs() : getAutoRefreshIntervalMs());
       renderSyncedStatus();
     },
   };

@@ -23,7 +23,6 @@ function normalizeSettings(value) {
     // 未配置有效代理模式时默认使用系统代理。
     proxyMode: ["off", "system", "custom"].includes(value?.proxyMode) ? value.proxyMode : "system",
     proxyUrl: typeof value?.proxyUrl === "string" ? value.proxyUrl.trim() : "",
-    cliPath: typeof value?.cliPath === "string" ? value.cliPath.trim() : "",
     refreshIntervalSeconds: REFRESH_INTERVAL_OPTIONS.has(refreshIntervalSeconds)
       ? refreshIntervalSeconds
       : DEFAULT_REFRESH_INTERVAL_SECONDS,
@@ -38,29 +37,23 @@ function cloneSettings(settings) {
   };
 }
 
-/**
- * 设置控制器只负责本机偏好与原生 CLI 配置同步；弹窗渲染留在 view 中。
- * CLI 路径先由原生层校验，成功后才持久化，避免下次启动被无效路径卡住。
- */
+/** 本地偏好与应用 HTTP 网络配置同步。 */
 export function createSettingsController({ invoke, onSettingsChanged }) {
   let settings = normalizeSettings(readStoredJson(SETTINGS_STORAGE_KEY, {}));
 
   async function initialize() {
-    return invoke("configure_cli_path", { cliPath: settings.cliPath, proxyMode: settings.proxyMode, proxyUrl: settings.proxyUrl });
+    return invoke("configure_network", { proxyMode: settings.proxyMode, proxyUrl: settings.proxyUrl });
   }
 
   async function save(nextSettings) {
     const normalized = normalizeSettings({ ...settings, ...nextSettings });
-    const cliVersion = await invoke("configure_cli_path", {
-      cliPath: normalized.cliPath,
+    await invoke("configure_network", {
       proxyMode: normalized.proxyMode,
       proxyUrl: normalized.proxyUrl,
-      restartService: nextSettings.restartService === true,
     });
     settings = normalized;
     writeStoredValue(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     onSettingsChanged?.(cloneSettings(settings));
-    return cliVersion;
   }
 
   return {

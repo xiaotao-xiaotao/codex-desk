@@ -2,7 +2,7 @@ import { displayEmail } from "../utils/email-privacy.js";
 
 const QUOTA_WARNING_REMAINING_PERCENT = 20;
 const QUOTA_CRITICAL_REMAINING_PERCENT = 10;
-const RESET_CARD_PREVIEW_LIMIT = 5;
+const RESET_CARD_PREVIEW_LIMIT = 4;
 
 /** 多账户额度监控。只接收后端脱敏快照，单账户刷新仍通过同一批查询完成。 */
 export function createAccountQuotaMonitorView({
@@ -19,7 +19,7 @@ export function createAccountQuotaMonitorView({
   const monitor = document.createElement("section");
   monitor.className = "account-quota-monitor-inline";
   monitor.innerHTML = `
-    <div class="account-quota-featured-heading"><h2></h2></div>
+    <div class="account-quota-featured-heading" hidden><h2></h2></div>
     <div class="account-quota-feedback" role="status" hidden></div>
     <section class="account-quota-featured" aria-live="polite"></section>
     <div class="account-quota-list" aria-live="polite" aria-busy="false"></div>`;
@@ -27,6 +27,7 @@ export function createAccountQuotaMonitorView({
 
   const feedback = monitor.querySelector(".account-quota-feedback");
   const featuredHeading = monitor.querySelector(".account-quota-featured-heading h2");
+  const featuredHeadingContainer = monitor.querySelector(".account-quota-featured-heading");
   const list = monitor.querySelector(".account-quota-list");
   const featured = monitor.querySelector(".account-quota-featured");
   let snapshots = [];
@@ -121,6 +122,13 @@ export function createAccountQuotaMonitorView({
   }
 
   function renderResetCredits(snapshot, { featured = false } = {}) {
+    if (snapshot.success && snapshot.resetCreditsError) {
+      const warning = document.createElement("span");
+      warning.className = "account-quota-list-credits";
+      warning.textContent = t("accountQuotaResetCreditsUnavailable");
+      warning.title = snapshot.resetCreditsError;
+      return warning;
+    }
     const count = snapshot.resetCredits ?? snapshot.resetCreditDetails?.length ?? 0;
     const expansionKey = `${featured ? "featured" : "list"}:${snapshot.id}`;
     if (count <= RESET_CARD_PREVIEW_LIMIT) expandedCreditAccounts.delete(expansionKey);
@@ -170,6 +178,8 @@ export function createAccountQuotaMonitorView({
   // 顶部仅展示当前登录，其他账户列表只读，避免点击后错标为“当前登录”。
   function renderList() {
     const pending = queryState === "pending" || queryState === "loading";
+    // 未读到当前账户前不展示标题；有缓存时刷新仍保留已有账户与标题。
+    featuredHeadingContainer.hidden = !snapshots.some((snapshot) => snapshot.selected);
     list.setAttribute("aria-busy", String(pending));
     list.replaceChildren();
     featured.replaceChildren();
@@ -272,7 +282,15 @@ export function createAccountQuotaMonitorView({
         item.dataset.state = quotaStateOf(window.remainingPercent);
         const percentLabel = document.createElement("strong"); percentLabel.textContent = `${formatQuotaWindow(window.durationMinutes)} ${percent(window.remainingPercent)}`;
         const bar = document.createElement("i"); bar.style.setProperty("--mini-progress", `${item.dataset.state === "unavailable" ? 0 : window.remainingPercent}%`);
-        const resetLabel = document.createElement("small"); resetLabel.textContent = window.resetsAt ? formatResetCountdown(window.resetsAt) : t("resetUnknown");
+        const resetLabel = document.createElement("small");
+        const resetCountdown = document.createElement("span");
+        resetCountdown.textContent = window.resetsAt ? formatResetCountdown(window.resetsAt) : t("resetUnknown");
+        resetLabel.append(resetCountdown);
+        if (window.resetsAt) {
+          const resetDate = document.createElement("span");
+          resetDate.textContent = formatResetAt(window.resetsAt);
+          resetLabel.append(resetDate);
+        }
         item.append(percentLabel, bar, resetLabel);
         mini.append(item);
       });
@@ -286,6 +304,7 @@ export function createAccountQuotaMonitorView({
         row.append(quotaDetails);
       } else {
         const state = document.createElement("span"); state.className = "account-quota-list-state is-unavailable"; state.textContent = t("accountQuotaUnavailable");
+        state.title = snapshot.error || t("accountQuotaUnavailable");
         row.append(state);
       }
       const resetCredits = renderResetCredits(snapshot);
@@ -294,21 +313,23 @@ export function createAccountQuotaMonitorView({
     });
   }
 
-  async function refresh() {
-    if (queryState === "loading") return;
+  function setLoading() {
     queryState = "loading";
     setFeedback();
     renderList();
-    try {
-      snapshots = await invoke("read_account_quotas");
-      queryState = "success";
-    } catch (error) {
-      snapshots = [];
-      queryState = "error";
-      setFeedback(t("accountQuotaQueryFailed", { error: String(error) }), "error");
-    } finally {
-      renderList();
-    }
+  }
+
+  function setSnapshots(result) {
+    snapshots = result;
+    queryState = "success";
+    setFeedback();
+    renderList();
+  }
+
+  function setError(error) {
+    queryState = "error";
+    setFeedback(t("accountQuotaQueryFailed", { error: String(error) }), "error");
+    renderList();
   }
 
   function updateLanguage() {
@@ -318,8 +339,10 @@ export function createAccountQuotaMonitorView({
 
   updateLanguage();
   return {
-    refresh,
-    activate: () => { if (queryState !== "loading" && !snapshots.length) void refresh(); },
+    setLoading,
+    setSnapshots,
+    setError,
+    clear: () => { snapshots = []; queryState = "pending"; setFeedback(); renderList(); },
     updateLanguage,
     updateAlertStatus: renderList,
   };

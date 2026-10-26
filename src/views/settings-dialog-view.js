@@ -1,6 +1,6 @@
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
 
-export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, onReadStoragePath }) {
+export function createSettingsDialogView({ t, getSettings, onSave, onReadStoragePath }) {
   const openButton = document.querySelector("#settings-button");
   const dialog = document.querySelector("#settings-dialog");
   const closeButton = document.querySelector("#settings-close");
@@ -24,14 +24,10 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
   const body = dialog.querySelector(".settings-body");
   // 与样式中的窄窗口断点保持一致，键盘方向和无障碍声明随布局切换。
   const compactLayout = window.matchMedia("(max-width: 600px)");
-  const cliPathInput = document.querySelector("#settings-cli-path");
   const proxyModes = [...document.querySelectorAll('input[name="proxyMode"]')];
   const proxyUrl = document.querySelector("#settings-proxy-url");
   const proxyAddress = document.querySelector("#settings-proxy-address");
   const proxyError = document.querySelector("#settings-proxy-error");
-  const restartService = document.querySelector("#settings-restart-service");
-  const browseButton = document.querySelector("#settings-cli-browse");
-  const resetButton = document.querySelector("#settings-cli-reset");
   const refreshInterval = document.querySelector("#settings-refresh-interval");
   const emailVisibilityOptions = [...document.querySelectorAll('input[name="emailVisibility"]')];
   const thresholdInputs = [
@@ -153,11 +149,9 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
 
   function fillForm() {
     const settings = getSettings();
-    cliPathInput.value = settings.cliPath;
     proxyModes.forEach((input) => { input.checked = input.value === settings.proxyMode; });
     proxyUrl.value = settings.proxyUrl;
     renderProxyMode();
-    restartService.checked = false;
     refreshInterval.value = String(settings.refreshIntervalSeconds);
     emailVisibilityOptions.forEach((input) => { input.checked = input.value === (settings.hideEmails ? "hide" : "show"); });
     thresholdInputs.forEach((input, index) => {
@@ -216,11 +210,6 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     tabs.forEach((tab) => { tab.textContent = t(tab.dataset.settingsLabel); });
     dialog.querySelectorAll("[data-settings-layout-i18n]").forEach((element) => { element.textContent = t(element.dataset.settingsLayoutI18n); });
     renderStorageHint();
-    document.querySelector("#settings-cli-label").textContent = t("settingsCliPath");
-    document.querySelector("#settings-cli-hint").textContent = t("settingsCliPathHint");
-    cliPathInput.placeholder = t("settingsCliPathPlaceholder");
-    browseButton.textContent = t("settingsBrowse");
-    resetButton.textContent = t("settingsUsePath");
     document.querySelector("#settings-refresh-label").textContent = t("settingsRefreshInterval");
     document.querySelector("#settings-refresh-hint").textContent = t("settingsRefreshIntervalHint");
     document.querySelector("#settings-quota-thresholds-label").textContent = t("settingsQuotaAlertThresholds");
@@ -234,23 +223,11 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     renderProxyMode();
   }
 
-  browseButton.addEventListener("click", async () => {
-    try {
-      const selectedPath = await onBrowseCli();
-      if (selectedPath) cliPathInput.value = selectedPath;
-    } catch (error) {
-      showStatus(t("settingsBrowseFailed", { error: String(error) }), true);
-    }
-  });
   openButton.addEventListener("click", open);
   proxyModes.forEach((input) => input.addEventListener("change", renderProxyMode));
   proxyUrl.addEventListener("input", () => {
     proxyError.hidden = true;
     proxyUrl.removeAttribute("aria-invalid");
-  });
-  resetButton.addEventListener("click", () => {
-    cliPathInput.value = "";
-    cliPathInput.focus();
   });
   cancelButton.addEventListener("click", () => { if (!saving) dialog.close(); });
   closeButton.addEventListener("click", () => { if (!saving) dialog.close(); });
@@ -286,16 +263,14 @@ export function createSettingsDialogView({ t, getSettings, onBrowseCli, onSave, 
     setBusy(true);
     showStatus(t("settingsSaving"));
     try {
-      const version = await onSave({
+      await onSave({
         hideEmails: emailVisibilityOptions.some((input) => input.checked && input.value === "hide"),
-        cliPath: cliPathInput.value,
         proxyMode: selectedProxyMode(),
         proxyUrl: proxyUrl.value.trim(),
-        restartService: restartService.checked,
         refreshIntervalSeconds: Number(refreshInterval.value),
         quotaAlertThresholds,
       });
-      showStatus(t("settingsSaved", { version }));
+      showStatus(t("settingsSaved"));
     } catch (error) {
       showStatus(t("settingsSaveFailed", { error: String(error) }), true);
     } finally {

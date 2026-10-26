@@ -1,19 +1,20 @@
-//! 独立授权会话：IPC 只提供阶段和供用户输入的设备码，认证 URL 与令牌留在后端。
-use crate::{account_store, app_server};
+//! 应用直接处理 OAuth：浏览器 PKCE 回调与设备码轮询均不启动 CLI。
+use crate::{account_store, http_client::HttpState, oauth};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::{sync::Arc, time::Duration};
 use tauri::Manager;
 use tokio::{
-    io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpListener, TcpStream},
     sync::{watch, Mutex},
-    time::timeout,
+    time::{sleep, timeout},
 };
 
-const LOGIN_TIMEOUT: Duration = Duration::from_secs(600);
-const RPC_TIMEOUT: Duration = Duration::from_secs(30);
-const MAX_MESSAGE_BYTES: u64 = 1024 * 1024;
-const WORKSPACE_DISCOVERY_FAILED: &str = "workspace routing discovery failed";
+const LOGIN_TIMEOUT: Duration = Duration::from_secs(900);
+const OAUTH_REQUEST_TIMEOUT: Duration = Duration::from_secs(45);
+const CALLBACK_READ_TIMEOUT: Duration = Duration::from_secs(5);
+const MAX_CALLBACK_BYTES: usize = 8192;
 
 #[derive(Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -23,15 +24,6 @@ pub enum LoginMethod {
     Device,
 }
 
-impl LoginMethod {
-    fn rpc_type(self) -> &'static str {
-        match self {
-            Self::Browser => "chatgpt",
-            Self::Device => "chatgptDeviceCode",
-        }
-    }
-}
-
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginStatus {
@@ -39,14 +31,12 @@ pub struct LoginStatus {
     phase: String,
     error: Option<String>,
     method: LoginMethod,
-    // 仅公开需要用户手动输入的验证码，不包含后端设备配对凭据。
     #[serde(skip_serializing_if = "Option::is_none")]
     user_code: Option<String>,
 }
 
 struct Session {
     status: LoginStatus,
-    // 授权地址包含临时配对信息，不进入前端或日志。
     url: Option<String>,
     cancel: watch::Sender<bool>,
     done: watch::Receiver<bool>,
@@ -79,25 +69,18 @@ impl AccountLoginState {
         } else {
             account_store::checked_label(&label)?
         };
+        let client = app.state::<HttpState>().client(OAUTH_REQUEST_TIMEOUT)?;
+        let store = account_store::AccountStore::from_app(&app)?;
         let mut current = self.0.lock().await;
         if current.as_ref().is_some_and(|s| !*s.done.borrow()) {
             return Err("请先完成或取消正在进行的登录".into());
         }
-        let store = account_store::AccountStore::from_app(&app)?;
-        let home = tempfile::Builder::new()
-            .prefix("codex-desk-login-")
-            .tempdir()
-            .map_err(|_| "无法创建临时登录目录")?;
-        let id = home
-            .path()
-            .file_name()
-            .ok_or("无法标识登录会话")?
-            .to_string_lossy()
-            .into_owned();
-        let child = app
-            .state::<app_server::AppServerState>()
-            .login_process(home.path())
-            .await?;
+        let mut bytes = [0_u8; 16];
+        getrandom::fill(&mut bytes).map_err(|_| "无法生成登录会话标识")?;
+        let id = bytes
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
         let (cancel, mut cancelled) = watch::channel(false);
         let (done, finished) = watch::channel(false);
         let status = LoginStatus {
@@ -115,73 +98,96 @@ impl AccountLoginState {
         });
         let state = self.clone();
         tauri::async_runtime::spawn(async move {
-            let mut child = child;
-            let authorization = async {
-                let mut stdin = child.stdin.take().ok_or("无法建立登录输入通道")?;
-                let mut reader = BufReader::new(child.stdout.take().ok_or("无法建立登录输出通道")?);
-                send(
-                    &mut stdin,
-                    json!({"id":1,"method":"initialize","params":{
-                        "clientInfo":{"name":"codex-desk","version":env!("CODEX_DESK_VERSION")}
-                    }}),
-                )
-                .await?;
-                response(&mut reader, 1).await?;
-                send(&mut stdin, json!({"method":"initialized"})).await?;
-                send(
-                    &mut stdin,
-                    json!({"id":2,"method":"account/login/start","params":{"type":method.rpc_type()}}),
-                )
-                .await?;
-                let login = response(&mut reader, 2).await?;
-                let (login_id, url, user_code) = login_prompt(&login, method)?;
-                {
-                    let mut session = state.0.lock().await;
-                    let session = session.as_mut().ok_or("登录会话已结束")?;
-                    session.url = Some(url.clone());
-                    session.status.user_code = user_code;
-                    session.status.phase = "waiting".into();
-                }
-                // 浏览器打开失败可在界面重试；授权等待仍继续。
-                if crate::open_external_url(&url, "账户授权页面").is_err() {
-                    if let Some(session) = state.0.lock().await.as_mut() {
-                        session.status.error =
-                            Some("未能打开浏览器，请点击重新打开授权页面".into());
+            let authorize = async {
+                match method {
+                    LoginMethod::Browser => {
+                        let listener = TcpListener::bind((
+                            std::net::Ipv4Addr::LOCALHOST,
+                            oauth::BROWSER_CALLBACK_PORT,
+                        ))
+                        .await
+                        .map_err(|_| {
+                            "浏览器授权回调端口被占用，请关闭其他登录窗口或使用设备码登录"
+                        })?;
+                        let authorization = oauth::BrowserAuthorization::new()?;
+                        state.waiting(&id, authorization.url.clone(), None).await?;
+                        loop {
+                            let (mut stream, peer) = listener
+                                .accept()
+                                .await
+                                .map_err(|_| "无法接收浏览器授权回调")?;
+                            if !peer.ip().is_loopback() {
+                                continue;
+                            }
+                            let result = timeout(
+                                CALLBACK_READ_TIMEOUT,
+                                read_callback(&mut stream, &authorization.state),
+                            )
+                            .await;
+                            match result {
+                                Ok(Ok(Some(code))) => {
+                                    let _ = callback_response(&mut stream, true).await;
+                                    break authorization.complete(&client, &code).await;
+                                }
+                                Ok(Err(error)) => {
+                                    let _ = callback_response(&mut stream, false).await;
+                                    break Err(error);
+                                }
+                                _ => {
+                                    let _ = callback_response(&mut stream, false).await;
+                                }
+                            }
+                        }
+                    }
+                    LoginMethod::Device => {
+                        let device = oauth::start_device(&client).await?;
+                        state
+                            .waiting(
+                                &id,
+                                oauth::DEVICE_VERIFICATION_URL.into(),
+                                Some(device.user_code.clone()),
+                            )
+                            .await?;
+                        timeout(Duration::from_secs(device.expires_in), async {
+                            loop {
+                                sleep(Duration::from_secs(device.interval_secs)).await;
+                                if let Some(auth) = oauth::poll_device(&client, &device).await? {
+                                    return Ok(auth);
+                                }
+                            }
+                        })
+                        .await
+                        .unwrap_or_else(|_| Err("设备码已过期，请重新发起登录".into()))
                     }
                 }
-                wait_for_login(&mut reader, &login_id, &home.path().join("auth.json")).await
             };
-            let result = tokio::select! {
-                result = timeout(LOGIN_TIMEOUT, authorization) => result.unwrap_or_else(|_| Err("登录超过 10 分钟，请重新发起".into())),
+            let result: Result<Value, String> = tokio::select! {
+                result = timeout(LOGIN_TIMEOUT, authorize) => result.unwrap_or_else(|_| Err("登录超时，请重新发起".into())),
                 _ = cancelled.changed() => Err("登录已取消".into()),
             };
-            if result.is_ok() {
-                if let Some(session) = state.0.lock().await.as_mut() {
-                    session.url = None;
-                    session.status.user_code = None;
-                    session.status.phase = "saving".into();
-                }
-            }
-            // 关闭会话所属进程树再读取最终文件，防止写入与目录清理发生竞争。
-            app_server::close_proxy(child).await;
             let result = match result {
-                Ok(()) => {
+                Ok(auth) => {
                     let gate = app.state::<account_store::AccountStoreState>();
                     let _gate = gate.0.lock().await;
-                    let session = state.0.lock().await;
-                    if session.as_ref().is_none_or(|s| *s.cancel.borrow()) {
+                    let mut session = state.0.lock().await;
+                    if session
+                        .as_ref()
+                        .is_none_or(|s| s.status.session_id != id || *s.cancel.borrow())
+                    {
                         Err("登录已取消".into())
                     } else {
-                        // 提交与取消在会话锁上串行；取消返回后不会再保存此会话。
-                        read_auth(&home.path().join("auth.json"))
-                            .and_then(|auth| store.save_login(&auth, &label))
+                        let session = session.as_mut().unwrap();
+                        session.status.phase = "saving".into();
+                        session.url = None;
+                        session.status.user_code = None;
+                        // 保存和取消以会话锁串行提交，取消返回后不能再保存本次授权。
+                        store.save_login(&auth, &label)
                     }
                 }
                 Err(error) => Err(error),
             };
-            let cleaned = home.close().is_ok();
             let mut session = state.0.lock().await;
-            if let Some(session) = session.as_mut() {
+            if let Some(session) = session.as_mut().filter(|s| s.status.session_id == id) {
                 session.url = None;
                 session.status.user_code = None;
                 session.status.phase = if result.is_ok() {
@@ -193,13 +199,28 @@ impl AccountLoginState {
                 }
                 .into();
                 session.status.error = result.err();
-                if !cleaned {
-                    session.status.error = Some("临时登录目录未能清理，请检查系统文件权限".into());
-                }
             }
             let _ = done.send(true);
         });
         Ok(status)
+    }
+
+    async fn waiting(&self, id: &str, url: String, code: Option<String>) -> Result<(), String> {
+        if !valid_auth_url(&url) {
+            return Err("授权地址无效".into());
+        }
+        let mut current = self.0.lock().await;
+        let session = current
+            .as_mut()
+            .filter(|s| s.status.session_id == id && !*s.cancel.borrow())
+            .ok_or("登录已取消")?;
+        session.url = Some(url.clone());
+        session.status.user_code = code;
+        session.status.phase = "waiting".into();
+        if crate::open_external_url(&url, "账户授权页面").is_err() {
+            session.status.error = Some("未能打开浏览器，请点击重新打开授权页面".into());
+        }
+        Ok(())
     }
 
     pub async fn status(&self, id: &str) -> Result<LoginStatus, String> {
@@ -214,15 +235,19 @@ impl AccountLoginState {
 
     pub async fn reopen(&self, id: &str) -> Result<(), String> {
         let mut current = self.0.lock().await;
-        let url = current
-            .as_ref()
-            .filter(|s| s.status.session_id == id)
-            .and_then(|s| s.url.as_deref())
+        let session = current
+            .as_mut()
+            .filter(|s| s.status.session_id == id && !*s.cancel.borrow())
+            .ok_or("登录会话已结束")?;
+        let url = session
+            .url
+            .as_deref()
             .ok_or("授权页面尚未准备好或登录已结束")?;
-        crate::open_external_url(url, "账户授权页面")?;
-        if let Some(session) = current.as_mut() {
-            session.status.error = None;
+        if !valid_auth_url(url) {
+            return Err("授权地址无效".into());
         }
+        crate::open_external_url(url, "账户授权页面")?;
+        session.status.error = None;
         Ok(())
     }
 
@@ -244,387 +269,168 @@ impl AccountLoginState {
 }
 
 fn valid_auth_url(raw: &str) -> bool {
-    valid_login_url(raw, LoginMethod::Browser)
-}
-
-fn valid_login_url(raw: &str, method: LoginMethod) -> bool {
     tauri::Url::parse(raw).is_ok_and(|url| {
         url.scheme() == "https"
             && url.host_str() == Some("auth.openai.com")
             && url.username().is_empty()
             && url.password().is_none()
             && url.port().is_none()
-            && url.path()
-                == match method {
-                    LoginMethod::Browser => "/oauth/authorize",
-                    LoginMethod::Device => "/codex/device",
-                }
+            && matches!(url.path(), "/oauth/authorize" | "/codex/device")
     })
 }
 
-/// 两种登录共用 CLI 协议，严格区分返回类型和授权地址，避免打开任意链接。
-fn login_prompt(
-    login: &Value,
-    method: LoginMethod,
-) -> Result<(String, String, Option<String>), String> {
-    if login["type"].as_str() != Some(method.rpc_type()) {
-        return Err("本机 Codex 不支持所选登录方式，请更新 CLI 或选择另一种方式".into());
+/// 回调 state 必须唯一且一致；拒绝额外来源、重复参数和不完整授权，且不回显敏感内容。
+fn callback_code(target: &str, expected_state: &str) -> Result<Option<String>, String> {
+    if !target.starts_with('/') || target.starts_with("//") {
+        return Ok(None);
     }
-    let id = login["loginId"]
-        .as_str()
-        .filter(|id| !id.is_empty() && id.len() < 256)
-        .ok_or("Codex 未返回有效登录标识，请更新 CLI 后重试")?;
-    let url_field = if method == LoginMethod::Device {
-        "verificationUrl"
-    } else {
-        "authUrl"
+    let Ok(url) = tauri::Url::parse(&format!(
+        "http://localhost:{}{target}",
+        oauth::BROWSER_CALLBACK_PORT
+    )) else {
+        return Ok(None);
     };
-    let url = login[url_field]
-        .as_str()
-        .filter(|url| match method {
-            LoginMethod::Browser => valid_auth_url(url),
-            LoginMethod::Device => valid_login_url(url, method),
-        })
-        .ok_or("Codex 返回了无法验证的授权地址")?;
-    let code = if method == LoginMethod::Device {
-        Some(
-            login["userCode"]
-                .as_str()
-                .filter(|code| {
-                    !code.is_empty()
-                        && code.len() <= 64
-                        && code.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-')
-                })
-                .ok_or("Codex 未返回有效设备码，请重新发起登录")?
-                .to_owned(),
-        )
-    } else {
-        None
-    };
-    Ok((id.into(), url.into(), code))
-}
-
-async fn wait_for_login(
-    reader: &mut (impl AsyncBufRead + Unpin),
-    login_id: &str,
-    auth_path: &std::path::Path,
-) -> Result<(), String> {
-    loop {
-        let message = read_message(reader).await?;
-        if message["method"].as_str() != Some("account/login/completed")
-            || message["params"]["loginId"].as_str() != Some(login_id)
-        {
-            continue;
-        }
-        return if message["params"]["success"].as_bool() == Some(true) {
-            Ok(())
-        } else if message["params"]["error"].as_str() == Some(WORKSPACE_DISCOVERY_FAILED) {
-            // CLI 0.162.1 在凭据落盘后仍会检查工作区路由，并可能把已完成的授权报告为失败。
-            // Desk 此处只收录当前独立会话的完整凭据；工作区权限和连接仍由 CLI 校验。
-            read_auth(auth_path)
-                .and_then(|auth| account_store::normalized_auth(&auth))
-                .map(|_| ())
-                .map_err(|_| {
-                    "工作区连接检查失败，且未找到完整登录凭据，请检查网络后重新授权".into()
-                })
-        } else {
-            Err(login_failure_message(
-                message["params"]["error"].as_str(),
-                "授权未成功，请检查授权页面、网络及登录会话有效期后重试",
-            ))
-        };
+    if url.path() != oauth::BROWSER_CALLBACK_PATH {
+        return Ok(None);
     }
+    let pairs = url.query_pairs().collect::<Vec<_>>();
+    let states = pairs
+        .iter()
+        .filter(|(key, _)| key == "state")
+        .collect::<Vec<_>>();
+    if states.len() != 1 || states[0].1 != expected_state {
+        return Ok(None);
+    }
+    if pairs.iter().any(|(key, _)| key == "error") {
+        return Err("浏览器授权未完成，请重新登录".into());
+    }
+    let codes = pairs
+        .iter()
+        .filter(|(key, _)| key == "code")
+        .collect::<Vec<_>>();
+    if codes.len() != 1 || codes[0].1.trim().is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(codes[0].1.to_string()))
 }
 
-fn login_failure_message(error: Option<&str>, fallback: &str) -> String {
-    // 只识别已知错误类别，不能透传可能包含令牌或认证响应正文的 CLI 错误。
-    let error = error.unwrap_or_default().to_ascii_lowercase();
-    let message = if error.contains("error sending request") {
-        if error.contains("/deviceauth/token") {
-            "设备授权结果领取失败：Codex CLI 无法连接认证服务器。网页授权可能已完成，但尚未生成登录凭据，请检查 CLI 的代理和网络后重试"
-        } else if error.contains("/oauth/token") {
-            "登录令牌交换失败：Codex CLI 无法连接认证服务器，请检查 CLI 的代理和网络后重新授权"
-        } else {
-            "无法连接认证服务器，请检查 Codex CLI 的代理和网络后重试"
-        }
-    } else if error.contains("timed out") || error.contains("timeout") {
-        "登录等待超时，请检查网络后重新发起授权"
-    } else if error.contains("workspace routing discovery unauthorized") {
-        "工作区权限检查失败，请核对所选账户的权限后重新授权"
-    } else if error.contains("device auth failed with status") {
-        "认证服务器拒绝了设备授权结果领取请求，请检查网络及设备码有效期后重试"
-    } else {
-        fallback
-    };
-    message.into()
-}
-
-async fn send(
-    writer: &mut (impl tokio::io::AsyncWrite + Unpin),
-    message: Value,
-) -> Result<(), String> {
-    writer
-        .write_all(format!("{message}\n").as_bytes())
-        .await
-        .map_err(|_| "无法发送登录请求".to_owned())
-        .map(|_| ())
-}
-
-async fn read_message(reader: &mut (impl AsyncBufRead + Unpin)) -> Result<Value, String> {
+async fn read_callback(stream: &mut TcpStream, state: &str) -> Result<Option<String>, String> {
     let mut bytes = Vec::new();
-    // 限制单条消息大小，不透传可能包含凭据的进程输出或 RPC 错误。
-    reader
-        .take(MAX_MESSAGE_BYTES + 1)
-        .read_until(b'\n', &mut bytes)
-        .await
-        .map_err(|_| "登录连接已中断")?;
-    if bytes.len() as u64 > MAX_MESSAGE_BYTES || bytes.is_empty() {
-        return Err("登录响应无效".into());
-    }
-    serde_json::from_slice(&bytes).map_err(|_| "登录响应格式无效".into())
-}
-
-async fn response(reader: &mut (impl AsyncBufRead + Unpin), id: u64) -> Result<Value, String> {
-    timeout(RPC_TIMEOUT, async {
-        loop {
-            let message = read_message(reader).await?;
-            if message["id"].as_u64() != Some(id) {
-                continue;
-            }
-            return message.get("result").cloned().ok_or_else(|| {
-                login_failure_message(
-                    message["error"]["message"].as_str(),
-                    "无法启动授权，请检查 CLI 版本、网络及本地回调端口后重试",
-                )
-            });
+    let mut chunk = [0_u8; 512];
+    while bytes.len() < MAX_CALLBACK_BYTES {
+        let read = stream
+            .read(&mut chunk)
+            .await
+            .map_err(|_| "无法读取授权回调")?;
+        if read == 0 {
+            break;
         }
-    })
-    .await
-    .map_err(|_| "登录准备超时，请检查网络和 Codex CLI")?
+        bytes.extend_from_slice(&chunk[..read]);
+        if bytes.windows(4).any(|value| value == b"\r\n\r\n") {
+            break;
+        }
+    }
+    if bytes.len() >= MAX_CALLBACK_BYTES {
+        return Ok(None);
+    }
+    let Ok(request) = std::str::from_utf8(&bytes) else {
+        return Ok(None);
+    };
+    let parts = request
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .split_whitespace()
+        .collect::<Vec<_>>();
+    if parts.len() != 3 || parts[0] != "GET" {
+        return Ok(None);
+    }
+    callback_code(parts[1], state)
 }
 
-fn read_auth(path: &std::path::Path) -> Result<Value, String> {
-    let metadata = std::fs::symlink_metadata(path).map_err(|_| "未找到登录凭据，请重新授权")?;
-    if !metadata.file_type().is_file() || metadata.len() > MAX_MESSAGE_BYTES {
-        return Err("登录凭据文件无效".into());
-    }
-    let bytes = std::fs::read(path).map_err(|_| "无法读取登录凭据")?;
-    serde_json::from_slice(&bytes).map_err(|_| "登录凭据格式无效".into())
+async fn callback_response(stream: &mut TcpStream, accepted: bool) -> Result<(), std::io::Error> {
+    let (status, body) = if accepted {
+        ("200 OK", "已收到授权，请返回 Codex Desk 查看登录结果。")
+    } else {
+        ("400 Bad Request", "授权回调无效，请返回应用重新登录。")
+    };
+    let response = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n{body}", body.len());
+    stream.write_all(response.as_bytes()).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn device_prompt_accepts_only_the_expected_code_and_verification_endpoint() {
-        let mut prompt = json!({"type":"chatgptDeviceCode","loginId":"device-login",
-            "verificationUrl":"https://auth.openai.com/codex/device","userCode":"ABCD-1234"});
-        let (id, url, code) = login_prompt(&prompt, LoginMethod::Device).unwrap();
-        assert_eq!(id, "device-login");
-        assert_eq!(url, "https://auth.openai.com/codex/device");
-        assert_eq!(code.as_deref(), Some("ABCD-1234"));
-        assert!(login_prompt(&prompt, LoginMethod::Browser).is_err());
-        prompt["verificationUrl"] = "https://auth.openai.com.evil.test/codex/device".into();
-        assert!(login_prompt(&prompt, LoginMethod::Device).is_err());
-        prompt["verificationUrl"] = "https://auth.openai.com/codex/device".into();
-        for code in ["", "bad\ncode", "<script>"] {
-            prompt["userCode"] = code.into();
-            assert!(login_prompt(&prompt, LoginMethod::Device).is_err());
-        }
-    }
 
     #[test]
-    fn browser_prompt_does_not_publish_device_codes() {
-        let prompt = json!({"type":"chatgpt","loginId":"browser-login",
-            "authUrl":"https://auth.openai.com/oauth/authorize?state=test","userCode":"ignored"});
-        assert!(login_prompt(&prompt, LoginMethod::Browser)
-            .unwrap()
-            .2
-            .is_none());
-        assert!(login_prompt(&prompt, LoginMethod::Device).is_err());
-    }
-
-    #[test]
-    fn completion_ignores_other_logins_and_sanitizes_rejections() {
+    fn browser_callback_accepts_fragmented_http_and_replies_with_crlf() {
         tauri::async_runtime::block_on(async {
-            let home = tempfile::tempdir().unwrap();
-            let auth_path = home.path().join("auth.json");
-            let messages = concat!(
-                "{\"method\":\"account/login/completed\",\"params\":{\"loginId\":\"old\",\"success\":false}}\n",
-                "{\"method\":\"account/updated\",\"params\":{}}\n",
-                "{\"method\":\"account/login/completed\",\"params\":{\"loginId\":\"device\",\"success\":true}}\n");
-            wait_for_login(
-                &mut BufReader::new(messages.as_bytes()),
-                "device",
-                &auth_path,
-            )
-            .await
-            .unwrap();
-            let failure = b"{\"method\":\"account/login/completed\",\"params\":{\"loginId\":\"device\",\"success\":false,\"error\":\"secret-token\"}}\n";
-            assert!(
-                !wait_for_login(&mut BufReader::new(&failure[..]), "device", &auth_path)
+            let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+                .await
+                .unwrap();
+            let mut browser = TcpStream::connect(listener.local_addr().unwrap())
+                .await
+                .unwrap();
+            let (mut callback, _) = listener.accept().await.unwrap();
+            let server = async {
+                let code = read_callback(&mut callback, "expected").await.unwrap();
+                assert_eq!(code.as_deref(), Some("test-code"));
+                callback_response(&mut callback, true).await.unwrap();
+            };
+            let client = async {
+                browser
+                    .write_all(b"GET /auth/callback?state=expected&code=test-code HTTP/1.1\r\n")
                     .await
-                    .unwrap_err()
-                    .contains("secret-token")
-            );
-        });
-    }
-
-    #[test]
-    fn workspace_discovery_failure_requires_complete_session_credentials() {
-        tauri::async_runtime::block_on(async {
-            let home = tempfile::tempdir().unwrap();
-            let auth_path = home.path().join("auth.json");
-            let mut notification = json!({"method":"account/login/completed","params":{
-                "loginId":"browser", "success":false, "error":WORKSPACE_DISCOVERY_FAILED
-            }});
-            let message = format!("{notification}\n");
-            assert!(wait_for_login(
-                &mut BufReader::new(message.as_bytes()),
-                "browser",
-                &auth_path
-            )
-            .await
-            .is_err());
-            for auth in [
-                json!({}),
-                json!({"auth_mode":"chatgpt","tokens":{"access_token":"access","account_id":"account"}}),
-            ] {
-                std::fs::write(&auth_path, auth.to_string()).unwrap();
-                assert!(wait_for_login(
-                    &mut BufReader::new(message.as_bytes()),
-                    "browser",
-                    &auth_path
-                )
-                .await
-                .is_err());
-            }
-            let auth = json!({"auth_mode":"chatgpt","tokens":{
-                "access_token":"access", "refresh_token":"refresh", "account_id":"account"
-            }});
-            std::fs::write(&auth_path, auth.to_string()).unwrap();
-            wait_for_login(
-                &mut BufReader::new(message.as_bytes()),
-                "browser",
-                &auth_path,
-            )
+                    .unwrap();
+                tokio::task::yield_now().await;
+                browser.write_all(b"Host: localhost\r\n\r\n").await.unwrap();
+                let mut response = [0; 1024];
+                let read = browser.read(&mut response).await.unwrap();
+                assert!(response[..read]
+                    .windows(4)
+                    .any(|bytes| bytes == b"\r\n\r\n"));
+                assert!(!String::from_utf8_lossy(&response[..read]).contains("test-code"));
+            };
+            timeout(Duration::from_secs(2), async {
+                tokio::join!(server, client);
+            })
             .await
             .unwrap();
-            // 已存在凭据不能覆盖权限拒绝、取消或其他未知失败。
-            for error in [
-                "workspace routing discovery unauthorized (401)",
-                "Login was not completed",
-                "secret-token",
-            ] {
-                notification["params"]["error"] = error.into();
-                let message = format!("{notification}\n");
-                assert!(wait_for_login(
-                    &mut BufReader::new(message.as_bytes()),
-                    "browser",
-                    &auth_path
-                )
-                .await
-                .is_err());
-            }
         });
     }
 
     #[test]
-    fn authorization_url_is_restricted_to_expected_endpoint() {
-        assert!(valid_auth_url(
-            "https://auth.openai.com/oauth/authorize?state=test"
-        ));
-        for raw in [
-            "https://auth.openai.com.evil.test/oauth/authorize",
-            "http://auth.openai.com/oauth/authorize",
-            "https://user@auth.openai.com/oauth/authorize",
-            "https://auth.openai.com/other",
-            "file:///auth.json",
+    fn callback_requires_state_unique_code_and_expected_path() {
+        assert_eq!(
+            callback_code("/auth/callback?state=expected&code=sample", "expected").unwrap(),
+            Some("sample".into())
+        );
+        for target in [
+            "/auth/callback?state=wrong&code=sample",
+            "/auth/callback?code=sample",
+            "/auth/callback?state=expected&state=expected&code=sample",
+            "/auth/callback?state=expected&code=a&code=b",
+            "/other?state=expected&code=sample",
+            "//example.invalid/auth/callback?state=expected&code=sample",
         ] {
-            assert!(!valid_auth_url(raw));
+            assert!(callback_code(target, "expected").unwrap().is_none());
         }
-    }
-    #[test]
-    fn stale_session_cannot_cancel_or_open_current_authorization() {
-        tauri::async_runtime::block_on(async {
-            let state = AccountLoginState::default();
-            let (cancel, cancelled) = watch::channel(false);
-            let (_done, finished) = watch::channel(false);
-            *state.0.lock().await = Some(Session {
-                status: LoginStatus {
-                    session_id: "new".into(),
-                    phase: "waiting".into(),
-                    error: None,
-                    method: LoginMethod::Browser,
-                    user_code: None,
-                },
-                url: Some("https://auth.openai.com/oauth/authorize?state=secret".into()),
-                cancel,
-                done: finished,
-            });
-            assert!(state.cancel("old").await.is_err());
-            assert!(state.reopen("old").await.is_err());
-            assert!(!*cancelled.borrow());
-            let serialized = serde_json::to_string(&state.status("new").await.unwrap()).unwrap();
-            assert!(!serialized.contains("secret") && !serialized.contains("auth.openai.com"));
-        });
+        assert!(callback_code("/auth/callback?state=expected&error=denied", "expected").is_err());
     }
 
     #[test]
-    fn cancel_waits_for_worker_cleanup() {
-        tauri::async_runtime::block_on(async {
-            let state = AccountLoginState::default();
-            let (cancel, mut cancelled) = watch::channel(false);
-            let (done, finished) = watch::channel(false);
-            *state.0.lock().await = Some(Session {
-                status: LoginStatus {
-                    session_id: "test".into(),
-                    phase: "waiting".into(),
-                    error: None,
-                    method: LoginMethod::Browser,
-                    user_code: None,
-                },
-                url: None,
-                cancel,
-                done: finished,
-            });
-            let worker = tokio::spawn(async move {
-                cancelled.changed().await.unwrap();
-                assert!(*cancelled.borrow());
-                done.send(true).unwrap();
-            });
-            state.cancel("test").await.unwrap();
-            assert!(*state.0.lock().await.as_ref().unwrap().done.borrow());
-            worker.await.unwrap();
-        });
-    }
-
-    #[test]
-    fn rpc_errors_do_not_echo_secrets() {
-        tauri::async_runtime::block_on(async {
-            let mut reader =
-                BufReader::new(&b"{\"id\":2,\"error\":{\"message\":\"secret-token\"}}\n"[..]);
-            assert!(!response(&mut reader, 2)
-                .await
-                .unwrap_err()
-                .contains("secret-token"));
-        });
-    }
-
-    #[test]
-    fn login_errors_distinguish_network_stages_without_echoing_secrets() {
-        for (error, expected) in [
-            ("error sending request for url (https://auth.openai.com/api/accounts/deviceauth/token?secret-token)", "设备授权结果领取失败"),
-            ("error sending request for url (https://auth.openai.com/oauth/token?secret-token)", "登录令牌交换失败"),
-            ("error sending request: secret-token", "无法连接认证服务器"),
-            ("timed out: secret-token", "登录等待超时"),
-            ("workspace routing discovery unauthorized (401): secret-token", "工作区权限检查失败"),
-            ("device auth failed with status 500: secret-token", "认证服务器拒绝"),
-            ("secret-token", "未知错误"),
+    fn only_trusted_auth_pages_can_be_opened() {
+        assert!(valid_auth_url(
+            "https://auth.openai.com/oauth/authorize?state=sample"
+        ));
+        assert!(valid_auth_url(oauth::DEVICE_VERIFICATION_URL));
+        for url in [
+            "http://auth.openai.com/oauth/authorize",
+            "https://auth.openai.com.evil.invalid/oauth/authorize",
+            "https://user@auth.openai.com/oauth/authorize",
+            "https://auth.openai.com:8443/codex/device",
         ] {
-            let message = login_failure_message(Some(error), "未知错误");
-            assert!(message.contains(expected));
-            assert!(!message.contains("secret-token"));
+            assert!(!valid_auth_url(url));
         }
     }
 }

@@ -19,13 +19,14 @@ const MAX_LABEL_CHARS: usize = 48;
 #[derive(Default)]
 pub struct AccountStoreState(pub tokio::sync::Mutex<()>);
 
-/// 额度查询专用目标。访问令牌只在后端进程内流转，禁止序列化或返回 WebView。
+/// 额度查询与续期使用的凭据快照，只在后端进程内流转，禁止序列化。
 pub(crate) struct QuotaTarget {
     pub(crate) id: String,
     pub(crate) label: String,
     pub(crate) email: Option<String>,
     pub(crate) account_id: String,
-    pub(crate) access_token: String,
+    pub(crate) auth: Value,
+    pub(crate) saved_auth: Option<Value>,
     pub(crate) selected: bool,
 }
 
@@ -76,7 +77,7 @@ pub struct AccountSummary {
     label: String,
     email: Option<String>,
     updated_at: u64,
-    // 仅表示磁盘登录信息匹配，不代表运行中的 daemon 已使用该账户。
+    // 表示当前 auth.json 与此账户匹配，不推断外部客户端的内存登录状态。
     selected: bool,
 }
 
@@ -94,7 +95,10 @@ pub struct AccountStoreSnapshot {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SwitchOutcome {
-    pub restart: String,
+    // 原服务已运行且成功重启；原本未运行时保持关闭。
+    pub restarted: bool,
+    // 凭据已提交后的服务重启错误；与凭据写入失败分开报告，避免误导用户重试。
+    pub restart_error: Option<String>,
     // 凭据已经提交后，摘要读取失败不能被报告成“切换失败”。
     pub snapshot: Option<AccountStoreSnapshot>,
 }
@@ -170,7 +174,7 @@ impl AccountStore {
         self.snapshot()
     }
 
-    /// 独立登录只收录凭据，当前 auth.json 与运行中服务保持原身份。
+    /// 独立登录只收录凭据，不自动覆盖当前 auth.json。
     pub fn save_login(&self, auth: &Value, label: &str) -> Result<(), String> {
         let auth = normalized_auth(auth)?;
         let id = identity(&auth)?;
@@ -304,34 +308,100 @@ impl AccountStore {
         self.snapshot()
     }
 
-    /// 读取额度监控所需的最小账户快照，不向前端暴露 access token。
+    /// 当前账户优先使用实时凭据；未保存的当前登录也可查询，不要求安装 CLI。
     pub fn quota_targets(&self) -> Result<Vec<QuotaTarget>, String> {
-        self.ensure_file_mode()?;
-        let current = self
-            .read_current()
-            .ok()
-            .and_then(|auth| normalized_auth(&auth).ok())
-            .and_then(|auth| identity(&auth).ok());
+        let current_auth = if self.storage_mode().ok().as_deref() == Some("file") {
+            self.read_current()
+                .ok()
+                .and_then(|auth| normalized_auth(&auth).ok())
+        } else {
+            None
+        };
+        let current = current_auth.as_ref().and_then(|auth| identity(auth).ok());
         let store = self.load()?;
-        store
+        let mut targets = store
             .accounts
             .into_iter()
             .map(|account| {
-                let access_token = nonempty(account.auth.pointer("/tokens/access_token"))
-                    .ok_or("保存的账户缺少访问凭据，请重新保存")?
-                    .to_owned();
+                let selected = current
+                    .as_ref()
+                    .is_some_and(|id| same_identity(id, &account.identity));
+                let saved_auth = normalized_auth(&account.auth)?;
                 Ok(QuotaTarget {
-                    selected: current
-                        .as_ref()
-                        .is_some_and(|id| same_identity(id, &account.identity)),
+                    selected,
                     id: account.id,
                     label: account.label,
                     email: account.identity.email,
                     account_id: account.identity.account_id,
-                    access_token,
+                    auth: if selected {
+                        current_auth.as_ref().unwrap().clone()
+                    } else {
+                        saved_auth.clone()
+                    },
+                    saved_auth: Some(saved_auth),
                 })
             })
-            .collect()
+            .collect::<Result<Vec<_>, String>>()?;
+        if let (Some(auth), Some(id)) = (current_auth, current) {
+            if !targets.iter().any(|target| target.selected) {
+                let label = id
+                    .email
+                    .as_deref()
+                    .and_then(|email| email.split('@').next())
+                    .unwrap_or("ChatGPT 账户")
+                    .chars()
+                    .take(MAX_LABEL_CHARS)
+                    .collect();
+                targets.push(QuotaTarget {
+                    id: format!(
+                        "current:{}:{}",
+                        id.account_id,
+                        id.subject.as_deref().unwrap_or_default()
+                    ),
+                    label,
+                    email: id.email,
+                    account_id: id.account_id,
+                    auth,
+                    saved_auth: None,
+                    selected: true,
+                });
+            }
+        }
+        Ok(targets)
+    }
+
+    /// 只替换查询开始时仍未变化的凭据；外部登录、切换或删除后不能覆盖新状态。
+    pub(crate) fn persist_refreshed_auth(
+        &self,
+        target: &QuotaTarget,
+        refreshed: &Value,
+    ) -> Result<(), String> {
+        let refreshed = normalized_auth(refreshed)?;
+        validate_same_identity(&target.auth, &refreshed)?;
+        if target.selected {
+            if let Ok(current) = self.read_current().and_then(|auth| normalized_auth(&auth)) {
+                if current == target.auth {
+                    write_json(&self.home.join("auth.json"), &refreshed)?;
+                }
+            }
+        }
+        let mut store = self.load()?;
+        if let Some(account) = store
+            .accounts
+            .iter_mut()
+            .find(|account| account.id == target.id)
+        {
+            if target
+                .saved_auth
+                .as_ref()
+                .is_some_and(|old| normalized_auth(&account.auth).as_ref() == Ok(old))
+            {
+                account.auth = refreshed;
+                account.updated_at = now();
+                self.persist(&store)?;
+            }
+        }
+        Ok(())
     }
 
     fn ensure_file_mode(&self) -> Result<(), String> {
@@ -369,7 +439,7 @@ impl AccountStore {
 
     fn read_current(&self) -> Result<Value, String> {
         read_json(&self.home.join("auth.json"))
-            .map_err(|_| "无法读取当前登录信息，请先登录 Codex 并使用文件存储".into())
+            .map_err(|_| "无法读取当前登录信息，请在账户管理中登录并切换账户，使用文件存储".into())
     }
 
     fn load(&self) -> Result<StoreFile, String> {
@@ -458,6 +528,16 @@ fn identity(auth: &Value) -> Result<Identity, String> {
     if claim_ids.iter().any(|id| *id != account_id) {
         return Err("登录信息中的账户身份不一致".into());
     }
+    let subjects: Vec<&str> = [&id_claims, &access_claims]
+        .into_iter()
+        .filter_map(|claims| claims.as_ref().and_then(|value| nonempty(value.get("sub"))))
+        .collect();
+    if subjects
+        .iter()
+        .any(|subject| Some(subject) != subjects.first())
+    {
+        return Err("登录信息中的用户身份不一致".into());
+    }
     let field = |key: &str| {
         [&id_claims, &access_claims].into_iter().find_map(|c| {
             c.as_ref()
@@ -488,6 +568,14 @@ pub(crate) fn normalized_auth(auth: &Value) -> Result<Value, String> {
         result["last_refresh"] = refresh.into();
     }
     Ok(result)
+}
+
+pub(crate) fn validate_same_identity(original: &Value, next: &Value) -> Result<(), String> {
+    if same_identity(&identity(original)?, &identity(next)?) {
+        Ok(())
+    } else {
+        Err("刷新凭据所属账户不一致，请重新登录".into())
+    }
 }
 
 pub(crate) fn checked_label(label: &str) -> Result<String, String> {
@@ -572,6 +660,135 @@ mod tests {
     }
     fn auth(id: &str, refresh: &str) -> Value {
         json!({"auth_mode":"chatgpt","tokens":{"account_id":id,"access_token":"test-access","refresh_token":refresh}})
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn switch_preserves_daemon_state_and_reports_partial_failure() {
+        tauri::async_runtime::block_on(async {
+            for (stop_status, fail) in [
+                ("stopped", ""), ("notRunning", ""), ("stopped", "stop"),
+                ("stopped", "start"), ("invalid", ""), ("started", ""),
+            ] {
+                let (dir, store) = setup();
+                write_json(&store.home.join("auth.json"), &auth("a", "refresh-a")).unwrap();
+                let target = store.save_current("目标账户").unwrap().accounts[0].id.clone();
+                write_json(&store.home.join("auth.json"), &auth("b", "refresh-b")).unwrap();
+                let executable = dir.path().join("fake cli.cmd");
+                // 只使用临时目录中的假 CLI；stop/start 都必须读到已提交的目标凭据。
+                fs::write(&executable, format!(
+                    "@echo off\r\nfindstr /C:\"refresh-a\" \"%~dp0codex\\auth.json\" >nul\r\nif errorlevel 1 exit /b 9\r\necho %*>>\"%~dp0daemon.log\"\r\nif \"%3\"==\"{fail}\" exit /b 1\r\nif \"%3\"==\"stop\" (\r\n echo {{\"status\":\"{stop_status}\"}}\r\n exit /b 0\r\n)\r\necho {{\"status\":\"started\"}}\r\nexit /b 0\r\n"
+                )).unwrap();
+                let outcome = crate::app_server::apply_auth_change(store.clone(), target, Some(&executable)).await.unwrap();
+                assert_eq!(store.read_current().unwrap()["tokens"]["account_id"], "a");
+                assert!(outcome.snapshot.unwrap().accounts.iter().any(|account| account.selected));
+                assert_eq!(outcome.restarted, stop_status == "stopped" && fail.is_empty());
+                if fail.is_empty() && matches!(stop_status, "stopped" | "notRunning") {
+                    assert!(outcome.restart_error.is_none());
+                } else {
+                    assert!(outcome.restart_error.is_some());
+                }
+                let log = fs::read_to_string(dir.path().join("daemon.log")).unwrap();
+                let expected = if fail == "stop" || stop_status != "stopped" {
+                    vec!["app-server daemon stop"]
+                } else {
+                    vec!["app-server daemon stop", "app-server daemon start"]
+                };
+                assert_eq!(log.lines().map(str::trim).collect::<Vec<_>>(), expected);
+
+                fs::remove_file(dir.path().join("daemon.log")).unwrap();
+                assert!(crate::app_server::apply_auth_change(store.clone(), "missing".into(), Some(&executable)).await.is_err());
+                assert!(!dir.path().join("daemon.log").exists());
+            }
+        });
+    }
+
+    #[test]
+    fn current_account_uses_live_credentials_even_without_a_saved_record() {
+        let (_dir, store) = setup();
+        write_json(&store.home.join("auth.json"), &auth("a", "original")).unwrap();
+        let targets = store.quota_targets().unwrap();
+        assert_eq!(targets.len(), 1);
+        assert!(targets[0].selected && targets[0].saved_auth.is_none());
+        store.save_current("个人").unwrap();
+        write_json(
+            &store.home.join("auth.json"),
+            &auth("a", "external-rotation"),
+        )
+        .unwrap();
+        let targets = store.quota_targets().unwrap();
+        assert_eq!(targets.len(), 1);
+        assert_eq!(
+            targets[0].auth["tokens"]["refresh_token"],
+            "external-rotation"
+        );
+        assert_eq!(
+            targets[0].saved_auth.as_ref().unwrap()["tokens"]["refresh_token"],
+            "original"
+        );
+    }
+
+    #[test]
+    fn renewed_credentials_update_current_and_saved_copies() {
+        let (_dir, store) = setup();
+        write_json(&store.home.join("auth.json"), &auth("a", "original")).unwrap();
+        store.save_current("个人").unwrap();
+        let target = store.quota_targets().unwrap().remove(0);
+        store
+            .persist_refreshed_auth(&target, &auth("a", "rotated"))
+            .unwrap();
+        assert_eq!(
+            store.read_current().unwrap()["tokens"]["refresh_token"],
+            "rotated"
+        );
+        assert_eq!(
+            store.load().unwrap().accounts[0].auth["tokens"]["refresh_token"],
+            "rotated"
+        );
+        assert!(store
+            .persist_refreshed_auth(&target, &auth("b", "wrong-account"))
+            .is_err());
+    }
+
+    #[test]
+    fn renewal_never_overwrites_external_switch_updates_or_deleted_accounts() {
+        let (_dir, store) = setup();
+        write_json(&store.home.join("auth.json"), &auth("a", "original")).unwrap();
+        store.save_current("个人").unwrap();
+        let target = store.quota_targets().unwrap().remove(0);
+        store
+            .save_login(&auth("a", "new-login"), "重新登录")
+            .unwrap();
+        write_json(&store.home.join("auth.json"), &auth("b", "external-switch")).unwrap();
+        store
+            .persist_refreshed_auth(&target, &auth("a", "rotated"))
+            .unwrap();
+        assert_eq!(store.read_current().unwrap()["tokens"]["account_id"], "b");
+        assert_eq!(
+            store.load().unwrap().accounts[0].auth["tokens"]["refresh_token"],
+            "new-login"
+        );
+        store.remove(&target.id).unwrap();
+        store
+            .persist_refreshed_auth(&target, &auth("a", "rotated"))
+            .unwrap();
+        assert!(store.load().unwrap().accounts.is_empty());
+    }
+
+    #[test]
+    fn keyring_mode_can_query_saved_accounts_without_claiming_current_identity() {
+        let (_dir, store) = setup();
+        store.save_login(&auth("a", "original"), "个人").unwrap();
+        atomic_write(
+            &store.home.join("config.toml"),
+            b"cli_auth_credentials_store = 'keyring'\n",
+        )
+        .unwrap();
+        write_json(&store.home.join("auth.json"), &auth("a", "stale-file")).unwrap();
+        let targets = store.quota_targets().unwrap();
+        assert_eq!(targets.len(), 1);
+        assert!(!targets[0].selected);
+        assert_eq!(targets[0].auth["tokens"]["refresh_token"], "original");
     }
 
     #[test]
@@ -722,66 +939,5 @@ mod tests {
             store.save_current(subject).unwrap();
         }
         assert_eq!(store.snapshot().unwrap().accounts.len(), 2);
-    }
-
-    #[cfg(windows)]
-    #[test]
-    fn restart_failures_distinguish_uncommitted_and_committed_credentials() {
-        tauri::async_runtime::block_on(async {
-            for fail in ["stop", "start"] {
-                let (dir, store) = setup();
-                write_json(&store.home.join("auth.json"), &auth("a", "refresh-a")).unwrap();
-                let target = store.save_current("个人").unwrap().accounts[0].id.clone();
-                write_json(&store.home.join("auth.json"), &auth("b", "refresh-b")).unwrap();
-                let executable = dir.path().join("fake-cli.cmd");
-                fs::write(&executable, format!(
-                    "@echo off\r\nif \"%1\"==\"--version\" (\r\n echo codex-cli 0.160.1\r\n exit /b 0\r\n)\r\nif \"%3\"==\"{fail}\" exit /b 1\r\nexit /b 0\r\n"
-                )).unwrap();
-                let server = crate::app_server::AppServerState::default();
-                server
-                    .configure_cli_path(
-                        Some(executable),
-                        &crate::app_server::ProxySettings::default(),
-                        false,
-                    )
-                    .await
-                    .unwrap();
-                let result = server.apply_auth_change(store.clone(), target, true).await;
-                if fail == "stop" {
-                    assert!(result.is_err());
-                    assert_eq!(store.read_current().unwrap()["tokens"]["account_id"], "b");
-                } else {
-                    assert_eq!(result.unwrap(), "startFailed");
-                    assert_eq!(store.read_current().unwrap()["tokens"]["account_id"], "a");
-                }
-            }
-        });
-    }
-
-    #[test]
-    fn credentials_only_switch_does_not_execute_cli_or_restart_shared_service() {
-        tauri::async_runtime::block_on(async {
-            let (dir, store) = setup();
-            write_json(&store.home.join("auth.json"), &auth("a", "refresh-a")).unwrap();
-            let target = store.save_current("个人").unwrap().accounts[0].id.clone();
-            write_json(&store.home.join("auth.json"), &auth("b", "refresh-b")).unwrap();
-            let server = crate::app_server::AppServerState::default();
-            server
-                .configure_cli_path(
-                    Some(dir.path().join("does-not-exist.exe")),
-                    &crate::app_server::ProxySettings::default(),
-                    false,
-                )
-                .await
-                .unwrap();
-            assert_eq!(
-                server
-                    .apply_auth_change(store.clone(), target, false)
-                    .await
-                    .unwrap(),
-                "notRequested"
-            );
-            assert_eq!(store.read_current().unwrap()["tokens"]["account_id"], "a");
-        });
     }
 }

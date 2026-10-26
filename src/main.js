@@ -9,7 +9,6 @@ import { renderRefreshIconButton, setRefreshIconButtonLoading } from "./utils/re
 import { createQuotaAlertController } from "./features/quota-alert-controller.js";
 import { createRefreshController } from "./features/refresh-controller.js";
 import { createSettingsController } from "./features/settings-controller.js";
-import { createAccountOverviewView } from "./views/account-dialog-view.js";
 import { createAccountSwitchView } from "./views/account-switch-view.js";
 import { createAccountQuotaMonitorView } from "./views/account-quota-monitor-view.js";
 import { createQuotaView } from "./views/quota-view.js";
@@ -33,8 +32,8 @@ const quitButton = document.querySelector("#quit-button");
 const dashboardLayout = document.querySelector(".dashboard-layout");
 const sidebarToggle = document.querySelector("#sidebar-toggle");
 const sidebarMediaQuery = window.matchMedia("(max-width: 760px)");
-// 精简版只有两个业务入口，桌面端首次打开保留菜单文字；窄屏仍默认收起以保留内容空间。
-let sidebarCollapsedPreference = null;
+// 首次打开默认收起侧栏，为账户额度留出更多空间；用户可手动展开。
+let sidebarCollapsedPreference = true;
 const dashboardNav = document.querySelector(".dashboard-nav");
 const dashboardNavButtons = [...document.querySelectorAll("[data-dashboard-section]")];
 const dashboardSections = {
@@ -74,9 +73,11 @@ const quotaAlerts = createQuotaAlertController({
   formatResetTime,
   setStatus,
   getThresholds: () => settingsController.getSettings().quotaAlertThresholds,
-  getAccountScope: () => accountView.getAccountScope(),
+  getAccountScope: () => {
+    const current = refreshController?.getLatestQuota();
+    return current ? `${current.accountId}:${current.email ?? current.id}` : "unknown";
+  },
 });
-const accountView = createAccountOverviewView({ invoke });
 const accountQuotaMonitorView = createAccountQuotaMonitorView({
   t,
   invoke,
@@ -96,15 +97,11 @@ const accountSwitchView = createAccountSwitchView({
     if (autoRefreshTimer !== null) window.clearTimeout(autoRefreshTimer);
     autoRefreshTimer = null;
     await refreshController.pauseForAccountChange();
-    accountView.invalidate();
   },
-  onAccountsChanged: () => accountQuotaMonitorView.refresh(),
-  onAfterSwitch: async ({ changed, restarted }) => {
+  onAccountsChanged: () => refreshController.refreshQuota(),
+  onAfterSwitch: async ({ changed }) => {
     refreshController.resumeAfterAccountChange(changed);
-    // 没有重启时账户区展示服务实际身份，绝不把保存的目标摘要当作生效状态。
-    if (changed && restarted) await refreshController.refreshQuota();
-    else await accountView.refresh();
-    await accountQuotaMonitorView?.refresh();
+    await refreshController.refreshQuota();
     restartAutoRefreshTimer();
   },
 });
@@ -112,11 +109,11 @@ const settingsView = createSettingsDialogView({
   t,
   onReadStoragePath: () => invoke("read_settings_directory"),
   getSettings: settingsController.getSettings,
-  onBrowseCli: () => invoke("choose_cli_path"),
   onSave: async (settings) => {
-    const version = await settingsController.save(settings);
+    await refreshController.pauseForAccountChange();
+    try { await settingsController.save(settings); }
+    finally { refreshController.resumeAfterAccountChange(false); }
     void refreshController.refreshQuota();
-    return version;
   },
 });
 // 页面状态集中在入口层：视图模块保持无状态，方便被语言切换和刷新复用。
@@ -129,8 +126,6 @@ let panelDragStart = null;
 let suppressOrbClick = false;
 let dashboardUnavailable = false;
 let dashboardRetryStatus = null;
-// 启动时先恢复代理偏好，再允许页面激活触发账户 HTTP 查询。
-let settingsInitialized = false;
 
 function setStatus(text, kind = "normal") {
   status.textContent = text;
@@ -167,7 +162,8 @@ refreshController = createRefreshController({
   quotaView,
   quotaAlerts,
   // 新账户识别共用已有刷新周期，手动刷新也同步检查，不额外启动轮询。
-  refreshAccount: () => Promise.all([accountView.refresh(), accountSwitchView.checkCurrentAccount(), accountQuotaMonitorView.refresh()]),
+  refreshAccount: () => accountSwitchView.checkCurrentAccount(),
+  accountQuotaView: accountQuotaMonitorView,
   setStatus,
   onRefreshingChange: (isRefreshing) => {
     setRefreshIconButtonLoading(refreshButton, isRefreshing);
@@ -224,7 +220,6 @@ function setDashboardSection(nextSection) {
   if (changed && nextSection === "accounts") {
     accountSwitchView.activate();
   }
-  if (settingsInitialized && changed && nextSection === "account") accountQuotaMonitorView.activate();
   Object.entries(dashboardSections).forEach(([name, section]) => {
     section.hidden = name !== nextSection;
   });
@@ -343,10 +338,9 @@ function applyLanguage() {
     quotaView.render(refreshController.getLatestQuota());
     refreshController.renderSyncedStatus();
   } else if (!refreshController.isRefreshing()) {
-    setStatus(t("readingLocalData"));
+    setStatus("");
   }
   setDashboardSection(activeDashboardSection);
-  if (settingsInitialized && activeDashboardSection === "account") accountQuotaMonitorView.activate();
 }
 
 function selectLanguage(nextLanguage) {
@@ -507,21 +501,22 @@ async function bootstrap() {
     if (!expanded) await setExpanded(true);
     await refreshController.refreshQuota();
   });
-  // 应用启动时直接展示看板；用户可通过标题栏的收起按钮主动切换为悬浮球。
+  // 应用启动时直接展示看板，网络配置恢复完成后才发起查询。
+  await setExpanded(true);
+  window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
   try {
     await settingsController.initialize();
   } catch (error) {
-    // 自定义路径失效时保留设置供用户修正，同时继续尝试系统 PATH。
-    console.error("应用 Codex CLI 路径失败", error);
+    // 保留无效网络设置供用户修正，不静默替换用户选择的代理。
+    console.error("应用网络设置失败", error);
     setStatus(t("settingsSaveFailed", { error: String(error) }), "error");
-  } finally {
-    settingsInitialized = true;
+    accountQuotaMonitorView.setError(error);
+    quotaView.showReadFailure(true);
+    return;
   }
-  await setExpanded(true);
   // 首次启动需要立即读取；后续从悬浮球展开只恢复视图，刷新仍由定时器或用户操作触发。
-  await refreshController.refreshQuota();
+  await refreshController.refreshQuota({ showLoadingStatus: false });
   restartAutoRefreshTimer();
-  window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
 }
 
 bootstrap().catch((error) => {

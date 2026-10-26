@@ -1,8 +1,8 @@
 # Codex Desk
 
 <p align="center">
-  <strong>Monitor Codex CLI quota and manage accounts.</strong><br />
-  A local desktop console for Codex CLI on Windows, macOS, and Linux.
+  <strong>Monitor Codex quota and manage accounts.</strong><br />
+  A local desktop console for Codex on Windows, macOS, and Linux.
 </p>
 
 <p align="center">
@@ -20,10 +20,10 @@
 
 - **Account usage**: quota windows, reset times, subscription and reset credits, with billing and quota reset shortcuts.
 - **Accounts**: browser or device-code sign-in, local storage, editing, and switching.
-- **Settings**: CLI path, refresh interval, network proxy, quota alerts, and email masking.
+- **Settings**: refresh interval, network proxy, quota alerts, and email masking.
 - **Desktop**: floating quota orb, always-on-top mode, collapsible sidebar, light/dark themes, tray controls, and five interface languages.
 
-Requires **Codex CLI ≥ 0.157.0** ([installation guide](https://github.com/openai/codex)).
+Sign-in and quota queries use HTTPS directly. No Codex CLI installation is required.
 
 ## Download
 
@@ -33,7 +33,7 @@ Download the latest installer from [Releases](https://github.com/xiaotao-xiaotao
 - **macOS**: download the `.dmg` installer that matches your Mac's chip.
 - **Linux**: download `.deb` for Debian/Ubuntu, `.rpm` for Fedora and other compatible RPM-based distributions, or `.AppImage` for other desktop distributions.
 
-Before launching the app, install and sign in to [Codex CLI](https://github.com/openai/codex) **version 0.157.0 or later** separately. The ChatGPT desktop app does not provide the `codex` command or the `app-server` protocol.
+On first launch, sign in from Account management using browser authorization or a device code.
 
 ### macOS installation
 
@@ -42,12 +42,12 @@ Before launching the app, install and sign in to [Codex CLI](https://github.com/
 3. The current packages are not yet Apple-signed or notarized. Only if you downloaded the package from this project's Releases page, `Control`-click `Codex Desk` in **Applications**, choose **Open**, then confirm **Open** once more if macOS blocks it.
 4. If it is still blocked, go to **System Settings → Privacy & Security** and select **Open Anyway** beside the security notice.
 
-After installation, you still need to install and sign in to Codex CLI separately; Codex Desk does not include or replace it.
+After installation, sign in directly from Codex Desk.
 
 ### First launch in two steps
 
-1. Install and sign in to Codex CLI: `npm install -g @openai/codex`, then run `codex` to complete sign-in.
-2. Launch Codex Desk. If quota is unavailable, confirm the Codex CLI path in **Settings**, then select **Refresh now** to retry.
+1. Launch Codex Desk and sign in to ChatGPT using browser authorization or a device code in Account management.
+2. Switch to a saved account to view quota. If the network is unavailable, check the proxy in Settings and refresh.
 
 ## Languages
 
@@ -55,24 +55,21 @@ Simplified Chinese, Traditional Chinese, English, Japanese, and Korean. Select a
 
 ## Data and accounts
 
-The current account identity and quota come from the local Codex service. Saved-account quota is queried directly from official endpoints using each account’s credentials. Credentials are stored locally and are not sent to the frontend or logs.
+All accounts use their own credentials for direct HTTPS quota and reset-credit queries, with token renewal when needed. Browser sign-in uses PKCE and a loopback callback; device-code sign-in polls the authorization service directly. Quota queries and sign-in do not start Codex CLI; account switching invokes the CLI to restart app-server only if it was running. Credentials remain local and are not sent to the frontend or logs.
 
-Saved credentials are plaintext in `.codex-desk/saved-accounts.json`, alongside the Codex directory. Keep this file private. Old account storage is not migrated.
+Quota, reset credits, and device authorization use compatibility endpoints and may require updates when upstream responses or access restrictions change. Cards, the orb, alerts, and sync status share each query batch.
 
-Account switching requires `cli_auth_credentials_store = "file"`. Restart your client after switching to verify the active account. An optional shared-service restart may interrupt other clients; removing a saved account does not log out the current account.
+Saved credentials are plaintext in `.codex-desk/config.json`, alongside the Codex directory. Keep this file private. Old account storage is not migrated.
+
+Account switching writes `CODEX_HOME/auth.json` (default `~/.codex/auth.json`) for external Codex client compatibility and requires `cli_auth_credentials_store = "file"`. Other storage modes can still query saved accounts; enable file storage before switching. After writing credentials, Desk invokes `codex app-server daemon stop` using Codex CLI on PATH and checks its JSON status. A `stopped` response triggers `start` to restart the service; `notRunning` leaves it stopped so credentials apply on its next start. Restarting may interrupt running tasks. An unknown status or failure skips further startup, preserves the switched credentials, and asks you to check the service manually; removing a saved account does not log out the current account.
 
 ## Requirements
 
-- Node.js 24 or later (only required for Codex Desk development and packaging; Codex CLI dependencies depend on its installation method)
+- Node.js 24 or later (only required for development and packaging)
+- Automatic service restart after account switching requires Codex CLI on PATH with `app-server daemon stop/start` support
 - Rust stable toolchain (only required for development and packaging), installed with `rustup`
-- **Codex CLI ≥ 0.157.0**, installed and signed in
+- A ChatGPT account and network access to the authorization and quota services
 - WebView2 on Windows (normally included with Windows 10/11)
-
-### Local service
-
-Desk starts or reuses the shared Codex daemon. Quitting Desk or changing the CLI path leaves the daemon running.
-
-Check the CLI with `codex --version`; upgrade with `npm install -g @openai/codex@latest` if needed.
 
 ## Development
 
@@ -90,7 +87,7 @@ npm run tauri dev
 
 ## Build
 
-Release metadata has a single source of truth: `version.json` in the repository root. For a new release, update its version, publication date, and localized release notes; Tauri, the installer, and the Codex app-server client use that file.
+Release metadata has a single source of truth: `version.json` in the repository root. For a new release, update its version, publication date, and localized release notes; Tauri, the installer, and the HTTPS client use that file.
 
 Push a `v<version>` tag matching the version file to build all platform installers with GitHub Actions and generate the Chinese and English Release body from that tag's `version.json`. Confirm that all platform builds succeed and all installers are uploaded to the Release before publishing.
 

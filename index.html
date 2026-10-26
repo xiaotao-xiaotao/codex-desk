@@ -50,7 +50,7 @@
           </div>
         </header>
 
-        <div class="dashboard-layout">
+        <div class="dashboard-layout is-sidebar-collapsed">
           <aside class="dashboard-sidebar">
             <div class="sidebar-brand">
               <span class="sidebar-brand-name"><svg class="sidebar-brand-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" opacity=".22" /><path d="M12 3a9 9 0 1 1-8.6 6.3M12 7.5V12l3.5 2" /></svg><span>Codex <strong>Desk</strong></span></span>
@@ -100,7 +100,7 @@
             <section id="account-section" class="dashboard-section dashboard-page quota-section" role="tabpanel" aria-labelledby="nav-account" tabindex="0"></section>
 
             <div class="dashboard-status">
-              <div id="status" class="status" data-i18n="readingLocalData">正在读取本地 Codex 数据…</div>
+              <div id="status" class="status"></div>
               <span class="account-sync-time" hidden><span data-i18n="accountLastSynced">最近同步</span><time id="account-last-synced"></time></span>
             </div>
           </div>
@@ -113,7 +113,7 @@
         <header class="settings-header">
           <div>
             <h2 id="settings-title" class="visually-hidden">设置</h2>
-            <p id="settings-intro" class="settings-intro">配置 Codex CLI 和数据刷新方式，所有设置仅保存在本机。</p>
+            <p id="settings-intro" class="settings-intro">配置网络连接和数据刷新方式，所有设置仅保存在本机。</p>
           </div>
           <button id="settings-close" class="close-icon-button" type="button" aria-label="关闭设置"></button>
         </header>
@@ -121,15 +121,6 @@
         <div class="settings-body app-scrollable">
           <!-- 新分类在面板声明唯一标识和翻译键，导航及键盘交互由视图自动接入。 -->
           <section id="settings-panel-connection" class="settings-panel" data-settings-category="connection" data-settings-label="settingsConnectionTab" role="tabpanel">
-            <section class="settings-group">
-              <label id="settings-cli-label" for="settings-cli-path">Codex CLI 路径</label>
-              <p id="settings-cli-hint" class="settings-hint">留空时使用系统 PATH 中的 codex。</p>
-              <div class="settings-path-row">
-                <input id="settings-cli-path" type="text" autocomplete="off" spellcheck="false" placeholder="使用系统 PATH" aria-describedby="settings-cli-hint" />
-                <button id="settings-cli-browse" class="settings-secondary-button" type="button">浏览</button>
-                <button id="settings-cli-reset" class="settings-secondary-button" type="button">使用系统 PATH</button>
-              </div>
-            </section>
             <section class="settings-group settings-refresh-group">
               <label id="settings-refresh-label" for="settings-refresh-interval">自动刷新间隔</label>
               <p id="settings-refresh-hint" class="settings-hint">控制账户用量和账户状态的自动刷新间隔。</p>
@@ -154,10 +145,6 @@
                 <input id="settings-proxy-url" type="url" autocomplete="off" spellcheck="false" placeholder="http://host:port" aria-describedby="settings-proxy-address-hint settings-proxy-error" />
                 <p id="settings-proxy-address-hint" class="settings-hint" data-settings-layout-i18n="settingsProxyAddressHint">支持 HTTP / HTTPS，填写主机与端口即可。</p>
                 <p id="settings-proxy-error" class="settings-proxy-error" role="status" hidden></p>
-              </div>
-              <div class="settings-proxy-restart">
-                <label class="settings-proxy-option"><input id="settings-restart-service" type="checkbox" aria-describedby="settings-proxy-restart-hint" /><span data-settings-layout-i18n="settingsProxyRestart">保存时重启 Codex 服务</span></label>
-                <p id="settings-proxy-restart-hint" class="settings-hint" data-settings-layout-i18n="settingsProxyRestartHint">勾选后立即应用，会中断共享服务的任务；否则下次服务启动时生效。</p>
               </div>
             </section>
           </section>

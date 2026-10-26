@@ -3,10 +3,11 @@
     windows_subsystem = "windows"
 )]
 
-mod account;
 mod account_login;
 mod account_store;
 mod app_server;
+mod http_client;
+mod oauth;
 mod quota;
 mod tray;
 
@@ -15,7 +16,7 @@ use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
 
-const EXPANDED_WINDOW_WIDTH: f64 = 1100.0;
+const EXPANDED_WINDOW_WIDTH: f64 = 1020.0;
 // 账户用量与账户列表共用固定窗口高度。
 const DASHBOARD_WINDOW_HEIGHT: f64 = 820.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
@@ -26,18 +27,12 @@ const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/settings/billing";
 const CODEX_USAGE_URL: &str = "https://chatgpt.com/settings/usage";
 
 #[tauri::command]
-async fn read_quota(
-    state: State<'_, app_server::AppServerState>,
-) -> Result<quota::QuotaSnapshot, String> {
-    quota::read_quota(&state).await
-}
-
-#[tauri::command]
 async fn read_account_quotas(
     app: AppHandle,
     state: State<'_, account_store::AccountStoreState>,
-    server: State<'_, app_server::AppServerState>,
+    network: State<'_, http_client::HttpState>,
 ) -> Result<Vec<quota::AccountQuotaSnapshot>, String> {
+    let _batch = network.quota_gate.lock().await;
     // 只在读取账户快照时持锁，远端查询期间允许保存、删除和切换账户。
     let targets = {
         let _guard = state.0.lock().await;
@@ -46,14 +41,27 @@ async fn read_account_quotas(
             .await
             .map_err(|_| "账户读取任务中断")??
     };
-    Ok(quota::read_account_quotas(targets, &server.proxy_settings()).await)
-}
-
-#[tauri::command]
-async fn read_account(
-    state: State<'_, app_server::AppServerState>,
-) -> Result<account::AccountProfile, String> {
-    account::read_account(&state).await
+    let client = network.client(quota::QUOTA_REQUEST_TIMEOUT)?;
+    let outcomes = quota::read_account_quotas(targets, &client).await;
+    let mut snapshots = Vec::with_capacity(outcomes.len());
+    for mut outcome in outcomes {
+        if let Some(auth) = outcome.refreshed_auth.take() {
+            let _guard = state.0.lock().await;
+            let store = account_store::AccountStore::from_app(&app)?;
+            let saved = tauri::async_runtime::spawn_blocking(move || {
+                store.persist_refreshed_auth(&outcome.target, &auth)
+            })
+            .await;
+            if !matches!(saved, Ok(Ok(()))) {
+                outcome.snapshot.success = false;
+                outcome.snapshot.windows.clear();
+                outcome.snapshot.error =
+                    Some("登录凭据已续期，但保存失败，请检查账户目录写入权限后重新登录".into());
+            }
+        }
+        snapshots.push(outcome.snapshot);
+    }
+    Ok(snapshots)
 }
 
 #[tauri::command]
@@ -164,47 +172,24 @@ async fn enable_account_file_storage(
 async fn switch_saved_account(
     app: AppHandle,
     state: State<'_, account_store::AccountStoreState>,
-    server: State<'_, app_server::AppServerState>,
     id: String,
-    restart: bool,
 ) -> Result<account_store::SwitchOutcome, String> {
     let _guard = state.0.lock().await;
     let store = account_store::AccountStore::from_app(&app)?;
-    let restart = server.apply_auth_change(store.clone(), id, restart).await?;
-    let snapshot = tauri::async_runtime::spawn_blocking(move || store.snapshot())
-        .await
-        .ok()
-        .and_then(Result::ok);
-    Ok(account_store::SwitchOutcome { restart, snapshot })
+    app_server::apply_auth_change(store, id, None).await
 }
 
-/// 校验并切换 Codex CLI。返回版本信息，供设置中心在保存前确认目标可执行。
+/// 网络配置同时作用于额度、登录和凭据续期，无需重启服务。
 #[tauri::command]
-async fn configure_cli_path(
-    state: State<'_, app_server::AppServerState>,
-    cli_path: String,
+async fn configure_network(
+    state: State<'_, http_client::HttpState>,
     proxy_mode: Option<String>,
     proxy_url: Option<String>,
-    restart_service: Option<bool>,
-) -> Result<String, String> {
-    let cli_path = app_server::normalize_cli_path(&cli_path)?;
-    let version = app_server::read_cli_version_from(cli_path.as_deref()).await?;
-    let proxy_settings = app_server::ProxySettings::new(
-        proxy_mode.as_deref().unwrap_or("off"),
+) -> Result<(), String> {
+    state.configure(
+        proxy_mode.as_deref().unwrap_or("system"),
         proxy_url.as_deref().unwrap_or(""),
-    )?;
-    state
-        .configure_cli_path(cli_path, &proxy_settings, restart_service.unwrap_or(false))
-        .await?;
-    Ok(version)
-}
-
-#[tauri::command]
-fn choose_cli_path(window: WebviewWindow) -> Option<String> {
-    rfd::FileDialog::new()
-        .set_parent(&window)
-        .pick_file()
-        .map(|path| path.to_string_lossy().into_owned())
+    )
 }
 
 /// 在系统默认浏览器中打开官方账单入口；具体订阅门户由 ChatGPT 按登录态和购买渠道处理。
@@ -256,7 +241,7 @@ fn start_dragging(window: WebviewWindow) -> Result<(), String> {
 
 #[tauri::command]
 fn hide_window(window: WebviewWindow) -> Result<(), String> {
-    // 最小化后保留 Desk 与共享 daemon 的连接，用户可从托盘菜单恢复悬浮窗。
+    // 最小化后继续后台刷新，用户可从托盘菜单恢复悬浮窗。
     window
         .hide()
         .map_err(|error| format!("无法最小化悬浮窗：{error}"))
@@ -350,7 +335,7 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
 
 #[tauri::command]
 fn quit_app(app: AppHandle) {
-    tray::close_app_server_and_exit(app);
+    tray::shutdown_and_exit(app);
 }
 
 fn main() {
@@ -361,7 +346,7 @@ fn main() {
         window.create = false;
     }
     tauri::Builder::default()
-        .manage(app_server::AppServerState::default())
+        .manage(http_client::HttpState::default())
         .manage(account_store::AccountStoreState::default())
         .manage(account_login::AccountLoginState::default())
         .plugin(tauri_plugin_notification::init())
@@ -385,13 +370,11 @@ fn main() {
                 }
             }
             tray::show_main_window(app.handle());
-            // 前端恢复 CLI 与代理偏好后再按需连接，避免预热以默认网络设置抢先启动服务。
+            // 前端恢复代理偏好后再发起网络请求。
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            read_quota,
             read_account_quotas,
-            read_account,
             read_settings_directory,
             list_saved_accounts,
             save_current_account,
@@ -403,8 +386,7 @@ fn main() {
             rename_saved_account,
             remove_saved_account,
             enable_account_file_storage,
-            configure_cli_path,
-            choose_cli_path,
+            configure_network,
             open_billing_page,
             open_quota_reset_page,
             start_dragging,

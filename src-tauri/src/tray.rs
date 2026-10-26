@@ -1,4 +1,3 @@
-use crate::app_server;
 use tauri::{
     menu::{MenuBuilder, MenuItem, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -71,32 +70,24 @@ pub fn show_main_window(app: &AppHandle) {
     }
 }
 
-/// 应用退出时只断开 Desk 的连接并回收 proxy，保留其他客户端共享的 daemon。
-pub fn close_app_server_and_exit(app: AppHandle) {
+/// 退出前取消未完成的授权，防止退出后仍写入登录凭据。
+pub fn shutdown_and_exit(app: AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {
         app_handle
             .state::<crate::account_login::AccountLoginState>()
-            .shutdown()
-            .await;
-        app_handle
-            .state::<app_server::AppServerState>()
             .shutdown()
             .await;
         app_handle.exit(0);
     });
 }
 
-/// 先断开本机 CLI 连接，再由 Tauri 在当前实例退出后拉起新实例，避免触发单实例冲突。
+/// 取消授权后由 Tauri 重启应用，避免触发单实例冲突。
 pub fn restart_app(app: AppHandle) {
     let app_handle = app.clone();
     tauri::async_runtime::spawn(async move {
         app_handle
             .state::<crate::account_login::AccountLoginState>()
-            .shutdown()
-            .await;
-        app_handle
-            .state::<app_server::AppServerState>()
             .shutdown()
             .await;
         app_handle.request_restart();
@@ -138,7 +129,7 @@ pub fn setup(app: &mut App) -> tauri::Result<()> {
                 let _ = app.emit("quota://refresh", ());
             }
             "restart" => restart_app(app.clone()),
-            "quit" => close_app_server_and_exit(app.clone()),
+            "quit" => shutdown_and_exit(app.clone()),
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {

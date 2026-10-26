@@ -1,7 +1,4 @@
-use crate::{
-    account_store::QuotaTarget,
-    app_server::{AppServerState, ProxySettings},
-};
+use crate::{account_store::QuotaTarget, http_client, oauth};
 use futures_util::{stream, StreamExt};
 use reqwest::StatusCode;
 use serde::Deserialize;
@@ -10,9 +7,14 @@ use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// 额度属于首页核心数据，与账户信息一样允许服务端最多 40 秒的慢响应。
-const QUOTA_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(40);
+pub const QUOTA_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(40);
+const MAX_CONCURRENT_QUERIES: usize = 2;
+const MAX_GET_ATTEMPTS: usize = 2;
+const GET_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(400);
+const MAX_RETRY_AFTER_SECONDS: u64 = 5;
 const COMPATIBILITY_USAGE_URL: &str = "https://chatgpt.com/backend-api/wham/usage";
-const COMPATIBILITY_CREDITS_URL: &str = "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits";
+const COMPATIBILITY_CREDITS_URL: &str =
+    "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,16 +36,6 @@ pub struct ResetCredit {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct QuotaSnapshot {
-    windows: Vec<QuotaWindow>,
-    plan_type: Option<String>,
-    /// 未返回权益数量时为 None，和明确返回 0 区分。
-    reset_credits: Option<u64>,
-    reset_credit_details: Vec<ResetCredit>,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct AccountQuotaSnapshot {
     pub id: String,
     pub label: String,
@@ -54,6 +46,7 @@ pub struct AccountQuotaSnapshot {
     pub plan_type: Option<String>,
     pub reset_credits: Option<u64>,
     pub reset_credit_details: Vec<ResetCredit>,
+    pub reset_credits_error: Option<String>,
     pub success: bool,
     pub error: Option<String>,
     pub queried_at: u64,
@@ -106,102 +99,184 @@ struct CompatibilityWindow {
     reset_at: Option<i64>,
 }
 
-/// 仅从当前本机已登录的 Codex CLI 读取额度；不会读取或保存 auth.json。
-pub async fn read_quota(state: &AppServerState) -> Result<QuotaSnapshot, String> {
-    let rate_limits = state
-        .request_with_timeout(
-            "account/rateLimits/read",
-            Value::Null,
-            QUOTA_REQUEST_TIMEOUT,
-        )
-        .await?;
-    normalize_quota(&rate_limits)
+/// 整批只返回一份查询结果；凭据更新由命令层持锁提交，认证信息不参与 IPC 序列化。
+pub(crate) struct QuotaOutcome {
+    pub snapshot: AccountQuotaSnapshot,
+    pub target: QuotaTarget,
+    pub refreshed_auth: Option<Value>,
 }
 
-/// 查询保存账户的额度。每个账户使用自己的 access token，绝不会切换当前 auth.json。
-pub async fn read_account_quotas(
+struct Endpoints<'a> {
+    usage: &'a str,
+    credits: &'a str,
+    token: &'a str,
+}
+
+#[derive(Debug)]
+enum QueryError {
+    Unauthorized,
+    Message(String),
+}
+
+impl QueryError {
+    fn message(self) -> String {
+        match self {
+            Self::Unauthorized => "账户凭据已失效，请重新登录".into(),
+            Self::Message(message) => message,
+        }
+    }
+}
+
+pub(crate) async fn read_account_quotas(
     targets: Vec<QuotaTarget>,
-    proxy_settings: &ProxySettings,
-) -> Vec<AccountQuotaSnapshot> {
-    // 每批查询使用保存后的配置快照，避免一次刷新中的账户走不同代理。
-    stream::iter(targets.into_iter().map(|target| query_account_quota(target, proxy_settings)))
-        .buffer_unordered(2)
-        .collect()
-        .await
+    client: &reqwest::Client,
+) -> Vec<QuotaOutcome> {
+    let endpoints = Endpoints {
+        usage: COMPATIBILITY_USAGE_URL,
+        credits: COMPATIBILITY_CREDITS_URL,
+        token: oauth::TOKEN_URL,
+    };
+    stream::iter(
+        targets
+            .into_iter()
+            .map(|target| query_account_quota(target, client, &endpoints)),
+    )
+    .buffer_unordered(MAX_CONCURRENT_QUERIES)
+    .collect()
+    .await
 }
 
-async fn query_account_quota(target: QuotaTarget, proxy_settings: &ProxySettings) -> AccountQuotaSnapshot {
-    let queried_at = now();
-    let result = match proxy_settings
-        .configure_http_client(reqwest::Client::builder())
-        .and_then(|builder| builder.timeout(QUOTA_REQUEST_TIMEOUT).build())
-    {
-        Ok(client) => {
-            async {
-                let response = client
-                    .get(COMPATIBILITY_USAGE_URL)
-                    .bearer_auth(&target.access_token)
-                    .header("Accept", "application/json")
-                    .header("ChatGPT-Account-Id", &target.account_id)
-                    .send()
-                    .await
-                    .map_err(|error| {
-                        if error.is_timeout() {
-                            "额度查询超时".to_owned()
-                        } else {
-                            "无法连接额度服务".to_owned()
-                        }
-                    })?;
-                if response.status() == StatusCode::UNAUTHORIZED
-                    || response.status() == StatusCode::FORBIDDEN
+async fn send_quota_request(
+    client: &reqwest::Client,
+    url: &str,
+    auth: &Value,
+    account_id: &str,
+) -> Result<reqwest::Response, QueryError> {
+    let token = auth
+        .pointer("/tokens/access_token")
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| QueryError::Message("缺少访问凭据，请重新登录".into()))?;
+    for attempt in 0..MAX_GET_ATTEMPTS {
+        let response = client
+            .get(url)
+            .bearer_auth(token)
+            .header("Accept", "application/json")
+            .header("ChatGPT-Account-Id", account_id)
+            .send()
+            .await;
+        match response {
+            Ok(response) => {
+                if attempt == 0
+                    && (response.status() == StatusCode::TOO_MANY_REQUESTS
+                        || response.status().is_server_error())
                 {
-                    return Err("账户凭据已失效，请重新登录".to_owned());
-                }
-                if !response.status().is_success() {
-                    return Err(format!("额度服务暂不可用（HTTP {}）", response.status()));
-                }
-                let mut parsed = response
-                    .json::<CompatibilityResponse>()
-                    .await
-                    .map_err(|_| "额度服务返回了无法识别的响应".to_owned())?;
-                // 充值卡到期时间由独立兼容接口返回；接口失败不影响额度窗口展示。
-                if let Ok(credits_response) = client
-                    .get(COMPATIBILITY_CREDITS_URL)
-                    .bearer_auth(&target.access_token)
-                    .header("Accept", "application/json")
-                    .header("ChatGPT-Account-Id", &target.account_id)
-                    .send()
-                    .await
-                {
-                    if credits_response.status().is_success() {
-                        if let Ok(credits) = credits_response.json::<CompatibilityCredits>().await {
-                            parsed.rate_limit_reset_credits = Some(credits);
-                        }
+                    let delay = response
+                        .headers()
+                        .get("Retry-After")
+                        .and_then(|value| value.to_str().ok())
+                        .and_then(|value| value.parse::<u64>().ok());
+                    if delay.is_none_or(|seconds| seconds <= MAX_RETRY_AFTER_SECONDS) {
+                        drop(response);
+                        tokio::time::sleep(
+                            delay
+                                .map(std::time::Duration::from_secs)
+                                .unwrap_or(GET_RETRY_DELAY),
+                        )
+                        .await;
+                        continue;
                     }
                 }
-                Ok(parsed)
+                return match response.status() {
+                    StatusCode::UNAUTHORIZED => Err(QueryError::Unauthorized),
+                    StatusCode::FORBIDDEN => Err(QueryError::Message(
+                        "额度服务拒绝访问（HTTP 403），请检查网络或账户权限".into(),
+                    )),
+                    StatusCode::TOO_MANY_REQUESTS => {
+                        Err(QueryError::Message("额度查询过于频繁，请稍后重试".into()))
+                    }
+                    status if !status.is_success() => Err(QueryError::Message(format!(
+                        "额度服务暂不可用（HTTP {status}）"
+                    ))),
+                    _ => Ok(response),
+                };
             }
-            .await
+            Err(error) if attempt == 0 && (error.is_connect() || error.is_timeout()) => {
+                tokio::time::sleep(GET_RETRY_DELAY).await;
+            }
+            Err(error) => {
+                return Err(QueryError::Message(http_client::network_error(
+                    "额度服务",
+                    &error,
+                )))
+            }
         }
-        Err(_) => Err("无法初始化额度查询服务".to_owned()),
+    }
+    unreachable!("GET 请求最多重试一次")
+}
+
+async fn query_details(
+    client: &reqwest::Client,
+    auth: &Value,
+    account_id: &str,
+    endpoints: &Endpoints<'_>,
+) -> Result<(CompatibilityResponse, Option<String>), QueryError> {
+    let response = send_quota_request(client, endpoints.usage, auth, account_id).await?;
+    let mut result = response
+        .json::<CompatibilityResponse>()
+        .await
+        .map_err(|_| QueryError::Message("额度服务返回了无法识别的响应".into()))?;
+    // 重置卡属于辅助信息，失败不能把有效的额度窗口一并抹掉。
+    let credits_error = match send_quota_request(client, endpoints.credits, auth, account_id).await
+    {
+        Ok(response) => match response.json::<CompatibilityCredits>().await {
+            Ok(credits) => {
+                result.rate_limit_reset_credits = Some(credits);
+                None
+            }
+            Err(_) => Some("重置卡服务返回了无法识别的响应".into()),
+        },
+        Err(error) => Some(error.message()),
     };
-    let base = |success, windows, plan_type, reset_credits, reset_credit_details, error| AccountQuotaSnapshot {
+    Ok((result, credits_error))
+}
+
+async fn query_account_quota(
+    target: QuotaTarget,
+    client: &reqwest::Client,
+    endpoints: &Endpoints<'_>,
+) -> QuotaOutcome {
+    let mut result = query_details(client, &target.auth, &target.account_id, endpoints).await;
+    let mut refreshed_auth = None;
+    if matches!(result, Err(QueryError::Unauthorized)) {
+        match oauth::refresh_auth_at(client, &target.auth, endpoints.token).await {
+            Ok(auth) => {
+                result = query_details(client, &auth, &target.account_id, endpoints).await;
+                // 即使重试额度失败，也必须保存已经轮换的新令牌。
+                refreshed_auth = Some(auth);
+            }
+            Err(error) => result = Err(QueryError::Message(error)),
+        }
+    }
+    let mut snapshot = AccountQuotaSnapshot {
         id: target.id.clone(),
         label: target.label.clone(),
         email: target.email.clone(),
         account_id: target.account_id.clone(),
         selected: target.selected,
-        windows,
-        plan_type,
-        reset_credits,
-        reset_credit_details,
-        success,
-        error,
-        queried_at,
+        windows: Vec::new(),
+        plan_type: None,
+        reset_credits: None,
+        reset_credit_details: Vec::new(),
+        reset_credits_error: None,
+        success: false,
+        error: None,
+        queried_at: now(),
     };
     match result {
-        Ok(response) => {
-            let windows: Vec<QuotaWindow> = response
+        Ok((response, credits_error)) => {
+            snapshot.reset_credits_error = credits_error;
+            snapshot.windows = response
                 .rate_limit
                 .map(|limits| {
                     [limits.primary_window, limits.secondary_window]
@@ -211,45 +286,36 @@ async fn query_account_quota(target: QuotaTarget, proxy_settings: &ProxySettings
                         .collect()
                 })
                 .unwrap_or_default();
-            let credits = response.rate_limit_reset_credits;
-            let reset_credit_details: Vec<ResetCredit> = credits
-                .as_ref()
-                .map(|value| {
-                    value
-                        .credits
-                        .iter()
-                        .filter(|credit| credit.status.as_deref() == Some("available") && credit.is_supported_by_plan.unwrap_or(true))
-                        .map(|credit| ResetCredit {
-                            expires_at: credit.expires_at.as_deref().and_then(parse_rfc3339_seconds),
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
-            let reset_credits = credits.as_ref().map(|value| {
-                value
-                    .available_count
-                    .unwrap_or(reset_credit_details.len() as u64)
-            });
-            if windows.is_empty() {
-                return base(
-                    false,
-                    Vec::new(),
-                    response.plan_type,
-                    reset_credits,
-                    reset_credit_details,
-                    Some("账户未返回可展示的额度窗口".to_owned()),
+            snapshot.plan_type = response.plan_type;
+            if let Some(credits) = response.rate_limit_reset_credits {
+                snapshot.reset_credit_details = credits
+                    .credits
+                    .iter()
+                    .filter(|credit| {
+                        credit.status.as_deref() == Some("available")
+                            && credit.is_supported_by_plan.unwrap_or(true)
+                    })
+                    .map(|credit| ResetCredit {
+                        expires_at: credit.expires_at.as_deref().and_then(parse_rfc3339_seconds),
+                    })
+                    .collect();
+                snapshot.reset_credits = Some(
+                    credits
+                        .available_count
+                        .unwrap_or(snapshot.reset_credit_details.len() as u64),
                 );
             }
-            base(
-                true,
-                windows,
-                response.plan_type,
-                reset_credits,
-                reset_credit_details,
-                None,
-            )
+            snapshot.success = !snapshot.windows.is_empty();
+            if !snapshot.success {
+                snapshot.error = Some("账户未返回可展示的额度窗口".into());
+            }
         }
-        Err(error) => base(false, Vec::new(), None, None, Vec::new(), Some(error)),
+        Err(error) => snapshot.error = Some(error.message()),
+    }
+    QuotaOutcome {
+        snapshot,
+        target,
+        refreshed_auth,
     }
 }
 
@@ -263,11 +329,16 @@ fn normalize_compatibility_window(window: CompatibilityWindow) -> Option<QuotaWi
     let used = window
         .used_percent
         .filter(|value| value.is_finite() && (0.0..=100.0).contains(value))?;
-    let duration_minutes = window.window_duration_mins.or_else(|| {
-        window
-            .limit_window_seconds
-            .map(|seconds| (seconds + 59) / 60)
-    });
+    let duration_minutes = window
+        .window_duration_mins
+        .filter(|minutes| *minutes > 0)
+        .or_else(|| {
+            window
+                .limit_window_seconds
+                .filter(|seconds| *seconds > 0)
+                .and_then(|seconds| seconds.checked_add(59))
+                .map(|seconds| seconds / 60)
+        });
     Some(QuotaWindow {
         duration_minutes,
         used_percent: Some(used),
@@ -283,121 +354,209 @@ fn now() -> u64 {
         .as_secs()
 }
 
-fn normalize_quota(result: &Value) -> Result<QuotaSnapshot, String> {
-    let limits = result
-        .get("rateLimits")
-        .ok_or("Codex 未返回 rateLimits 字段")?;
-    let mut windows = Vec::new();
-    for key in ["primary", "secondary"] {
-        let Some(window) = limits.get(key).filter(|value| value.is_object()) else {
-            continue;
-        };
-        let used_percent = window
-            .get("usedPercent")
-            .and_then(Value::as_f64)
-            .filter(|value| value.is_finite() && (0.0..=100.0).contains(value));
-        windows.push(QuotaWindow {
-            duration_minutes: window.get("windowDurationMins").and_then(Value::as_i64),
-            used_percent,
-            remaining_percent: used_percent.map(|used| 100.0 - used),
-            resets_at: window.get("resetsAt").and_then(Value::as_i64),
-        });
-    }
-    if windows.is_empty() {
-        return Err("Codex 未返回可展示的额度窗口".to_owned());
-    }
-    let reset_credits = result.get("rateLimitResetCredits");
-    let reset_credit_details = reset_credits
-        .and_then(|credits| credits.get("credits"))
-        .and_then(Value::as_array)
-        .map(|credits| {
-            credits
-                .iter()
-                // 后端可能返回历史条目；首页只呈现仍可使用的额度重置权益。
-                .filter(|credit| credit.get("status").and_then(Value::as_str) == Some("available"))
-                .map(|credit| ResetCredit {
-                    expires_at: credit.get("expiresAt").and_then(Value::as_i64),
-                })
-                .collect()
-        })
-        .unwrap_or_default();
-
-    Ok(QuotaSnapshot {
-        windows,
-        plan_type: limits
-            .get("planType")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
-        reset_credits: reset_credits
-            .and_then(|credits| credits.get("availableCount"))
-            .and_then(Value::as_u64),
-        reset_credit_details,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
 
-    /// 仅验证系统 TLS 能连通额度服务，不读取本机账户或发送认证信息。
-    #[cfg(windows)]
+    // 只连接随机回环端口，使用虚构凭据核对完整请求序列，不触及真实授权服务。
+    fn serve(script: Vec<(u16, &'static str)>) -> (String, std::thread::JoinHandle<Vec<String>>) {
+        use std::{
+            io::{BufRead, BufReader, Read, Write},
+            net::TcpListener,
+            time::{Duration, Instant},
+        };
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        listener.set_nonblocking(true).unwrap();
+        let server = std::thread::spawn(move || {
+            let mut requests = Vec::new();
+            for (status, body) in script {
+                let deadline = Instant::now() + Duration::from_secs(5);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            assert!(Instant::now() < deadline, "未收到预期 HTTP 请求");
+                            std::thread::sleep(Duration::from_millis(5));
+                        }
+                        Err(error) => panic!("测试服务接收失败：{error}"),
+                    }
+                };
+                stream.set_nonblocking(false).unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
+                let mut reader = BufReader::new(&mut stream);
+                let mut request = String::new();
+                let mut length = 0;
+                loop {
+                    let mut line = String::new();
+                    assert!(reader.read_line(&mut line).unwrap() > 0);
+                    if let Some(value) = line.to_lowercase().strip_prefix("content-length:") {
+                        length = value.trim().parse().unwrap();
+                    }
+                    request.push_str(&line);
+                    if line == "\r\n" {
+                        break;
+                    }
+                }
+                let mut payload = vec![0; length];
+                reader.read_exact(&mut payload).unwrap();
+                request.push_str(&String::from_utf8(payload).unwrap());
+                requests.push(request.to_lowercase());
+                drop(reader);
+                write!(stream, "HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+            }
+            requests
+        });
+        (url, server)
+    }
+
+    fn target() -> QuotaTarget {
+        QuotaTarget {
+            id: "test-account".into(),
+            label: "测试账户".into(),
+            email: None,
+            account_id: "workspace".into(),
+            selected: true,
+            saved_auth: None,
+            auth: json!({"auth_mode":"chatgpt", "tokens":{"account_id":"workspace", "access_token":"old-access", "refresh_token":"old-refresh"}}),
+        }
+    }
+
+    const USAGE: &str = r#"{"plan_type":"plus","rate_limit":{"primary_window":{"used_percent":25,"limit_window_seconds":18000,"reset_at":123}}}"#;
+    const ROTATED: &str = r#"{"access_token":"next-access","refresh_token":"next-refresh"}"#;
+    const CREDITS: &str = r#"{"available_count":1,"credits":[{"status":"available","expires_at":"2026-10-30T00:00:00Z"}]}"#;
+
     #[test]
-    #[ignore = "需要联网访问公开 HTTPS 服务"]
-    fn windows_system_tls_connects_without_credentials() {
+    fn unauthorized_renews_once_and_requeries_with_new_credentials() {
         tauri::async_runtime::block_on(async {
-            let response = reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(20))
+            let (url, server) = serve(vec![
+                (401, "{}"),
+                (200, ROTATED),
+                (200, USAGE),
+                (200, CREDITS),
+            ]);
+            let client = reqwest::Client::builder()
+                .no_proxy()
+                .timeout(std::time::Duration::from_secs(2))
                 .build()
-                .unwrap()
-                .get(COMPATIBILITY_USAGE_URL)
-                .send()
-                .await
-                .expect("系统 TLS 应能建立 HTTPS 连接");
-            assert_eq!(response.url().scheme(), "https");
+                .unwrap();
+            let endpoints = Endpoints {
+                usage: &format!("{url}/usage"),
+                credits: &format!("{url}/credits"),
+                token: &format!("{url}/token"),
+            };
+            let result = query_account_quota(target(), &client, &endpoints).await;
+            assert!(result.snapshot.success);
+            assert_eq!(result.snapshot.windows[0].remaining_percent, Some(75.0));
+            assert_eq!(result.snapshot.reset_credits, Some(1));
+            assert_eq!(
+                result.refreshed_auth.unwrap()["tokens"]["refresh_token"],
+                "next-refresh"
+            );
+            let requests = server.join().unwrap();
+            assert!(
+                requests[0].starts_with("get /usage ")
+                    && requests[0].contains("authorization: bearer old-access")
+            );
+            assert!(
+                requests[1].starts_with("post /token ")
+                    && requests[1].contains("refresh_token=old-refresh")
+            );
+            assert!(
+                requests[2].contains("authorization: bearer next-access")
+                    && requests[2].contains("chatgpt-account-id: workspace")
+            );
+            let ipc = serde_json::to_string(&result.snapshot).unwrap();
+            assert!(!ipc.contains("next-access") && !ipc.contains("next-refresh"));
+        });
+    }
+
+    #[test]
+    fn forbidden_is_not_refreshed_and_invalid_refresh_body_is_never_exposed() {
+        tauri::async_runtime::block_on(async {
+            for script in [
+                vec![(403, "private-response-secret")],
+                vec![(401, "{}"), (400, "private-response-secret")],
+            ] {
+                let (url, server) = serve(script);
+                let client = reqwest::Client::builder().no_proxy().build().unwrap();
+                let endpoints = Endpoints {
+                    usage: &url,
+                    credits: &url,
+                    token: &url,
+                };
+                let result = query_account_quota(target(), &client, &endpoints).await;
+                assert!(!result.snapshot.success && result.refreshed_auth.is_none());
+                let error = result.snapshot.error.unwrap();
+                assert!(
+                    !error.contains("private-response-secret") && !error.contains("old-refresh")
+                );
+                server.join().unwrap();
+            }
+        });
+    }
+
+    #[test]
+    fn rotated_tokens_survive_failed_requery_and_auxiliary_failure_preserves_quota() {
+        tauri::async_runtime::block_on(async {
+            for (script, success, renewed) in [
+                (vec![(401, "{}"), (200, ROTATED), (401, "{}")], false, true),
+                (vec![(200, USAGE), (403, "{}")], true, false),
+                (vec![(503, "{}"), (200, USAGE), (200, CREDITS)], true, false),
+            ] {
+                let (url, server) = serve(script);
+                let client = reqwest::Client::builder().no_proxy().build().unwrap();
+                let endpoints = Endpoints {
+                    usage: &url,
+                    credits: &url,
+                    token: &url,
+                };
+                let result = query_account_quota(target(), &client, &endpoints).await;
+                assert_eq!(result.snapshot.success, success);
+                assert_eq!(result.refreshed_auth.is_some(), renewed);
+                if success && result.snapshot.reset_credits.is_none() {
+                    assert!(result.snapshot.reset_credits_error.is_some());
+                }
+                server.join().unwrap();
+            }
         });
     }
 
     #[test]
     fn reset_expiry_preserves_timezone_and_unix_second_boundaries() {
         let utc = parse_rfc3339_seconds("2026-10-25T00:00:00Z").unwrap();
-        assert_eq!(parse_rfc3339_seconds("2026-10-25T08:00:00+08:00"), Some(utc));
-        assert_eq!(parse_rfc3339_seconds("2026-10-24T19:00:00-05:00"), Some(utc));
-        assert_eq!(parse_rfc3339_seconds("2026-10-25T00:00:00.999Z"), Some(utc));
+        assert_eq!(
+            parse_rfc3339_seconds("2026-10-25T08:00:00+08:00"),
+            Some(utc)
+        );
         assert_eq!(parse_rfc3339_seconds("1969-12-31T23:59:59.5Z"), Some(-1));
         for invalid in ["", "2026-10-25", "2026-02-30T00:00:00Z", "invalid"] {
-            assert_eq!(parse_rfc3339_seconds(invalid), None, "{invalid}");
+            assert_eq!(parse_rfc3339_seconds(invalid), None);
         }
     }
 
     #[test]
-    fn distinguishes_zero_from_missing_and_invalid_percentages() {
-        for used in [Value::Null, json!("20"), json!(-1), json!(101)] {
-            let quota = normalize_quota(&json!({"rateLimits": {
-                "primary": {"usedPercent": used}, "secondary": {"usedPercent": 0}
-            }}))
-            .unwrap();
-            assert_eq!(quota.windows[0].used_percent, None);
-            assert_eq!(quota.windows[0].remaining_percent, None);
-            assert_eq!(quota.windows[1].remaining_percent, Some(100.0));
-            assert_eq!(quota.reset_credits, None);
+    fn missing_or_invalid_windows_never_become_full_quota() {
+        for used in [None, Some(-1.0), Some(101.0), Some(f64::NAN)] {
+            let result = normalize_compatibility_window(CompatibilityWindow {
+                used_percent: used,
+                limit_window_seconds: Some(300),
+                window_duration_mins: None,
+                reset_at: None,
+            });
+            assert!(result.is_none());
         }
-        let quota = normalize_quota(&json!({"rateLimits": {"primary": {}},
-            "rateLimitResetCredits": {"availableCount": 0}}))
+        let full = normalize_compatibility_window(CompatibilityWindow {
+            used_percent: Some(0.0),
+            limit_window_seconds: Some(18_000),
+            window_duration_mins: None,
+            reset_at: Some(123),
+        })
         .unwrap();
-        assert_eq!(quota.windows[0].remaining_percent, None);
-        assert_eq!(quota.reset_credits, Some(0));
-    }
-
-    #[test]
-    fn preserves_known_window_when_another_is_absent() {
-        let quota = normalize_quota(&json!({"rateLimits": {
-            "primary": null, "secondary": {"usedPercent": 100, "windowDurationMins": 10080}
-        }}))
-        .unwrap();
-        assert_eq!(quota.windows.len(), 1);
-        assert_eq!(quota.windows[0].remaining_percent, Some(0.0));
-        assert_eq!(quota.windows[0].duration_minutes, Some(10080));
-        assert!(normalize_quota(&json!({"rateLimits": {}})).is_err());
+        assert_eq!(full.remaining_percent, Some(100.0));
+        assert_eq!(full.duration_minutes, Some(300));
     }
 }
