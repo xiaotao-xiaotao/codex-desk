@@ -326,9 +326,10 @@ export function createAccountQuotaMonitorView({
     renderList();
   }
 
-  function setError(error) {
+  function setError() {
     queryState = "error";
-    setFeedback(t("accountQuotaQueryFailed", { error: String(error) }), "error");
+    // 查询失败已由账户卡片和底部状态呈现，顶部只保留操作反馈，避免重复报错。
+    setFeedback();
     renderList();
   }
 
