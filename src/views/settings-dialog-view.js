@@ -1,5 +1,7 @@
 import { renderCloseIconButton } from "../utils/close-icon-button.js";
 
+const SAVE_SUCCESS_DURATION_MS = 3_000;
+
 export function createSettingsDialogView({ t, getSettings, onSave, onReadStoragePath }) {
   const openButton = document.querySelector("#settings-button");
   const dialog = document.querySelector("#settings-dialog");
@@ -38,11 +40,13 @@ export function createSettingsDialogView({ t, getSettings, onSave, onReadStorage
   const cancelButton = document.querySelector("#settings-cancel");
   const saveButton = document.querySelector("#settings-save");
   const status = document.querySelector("#settings-status");
+  const statusMessage = document.querySelector("#settings-status-message");
   const storageHint = document.querySelector("#settings-storage-hint");
   let storagePath = null;
   let storageError = null;
   let readingStoragePath = false;
   let saving = false;
+  let statusTimer = null;
   let activeTab = tabs[0]?.dataset.settingsTab;
   const disabledStates = new Map();
 
@@ -141,10 +145,14 @@ export function createSettingsDialogView({ t, getSettings, onSave, onReadStorage
     }
   }
 
-  function showStatus(message = "", error = false) {
-    status.textContent = message;
-    status.dataset.kind = error ? "error" : "normal";
+  function showStatus(message = "", kind = "normal") {
+    // 新反馈先清除旧计时器，避免上次成功提示的自动隐藏误清除保存错误。
+    clearTimeout(statusTimer);
+    statusTimer = null;
+    statusMessage.textContent = message;
+    status.dataset.kind = kind;
     status.hidden = !message;
+    if (kind === "success") statusTimer = setTimeout(() => showStatus(), SAVE_SUCCESS_DURATION_MS);
   }
 
   function fillForm() {
@@ -247,6 +255,7 @@ export function createSettingsDialogView({ t, getSettings, onSave, onReadStorage
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (saving) return;
+    showStatus();
     if (selectedProxyMode() === "custom" && !validProxyAddress()) {
       proxyError.textContent = t("settingsProxyInvalid");
       proxyError.hidden = false;
@@ -256,7 +265,7 @@ export function createSettingsDialogView({ t, getSettings, onSave, onReadStorage
     }
     const quotaAlertThresholds = readQuotaAlertThresholds();
     if (!quotaAlertThresholds) {
-      showStatus(t("settingsQuotaAlertThresholdInvalid"), true);
+      showStatus(t("settingsQuotaAlertThresholdInvalid"), "error");
       focusField(thresholdInputs.find((input) => !input.checkValidity()) ?? thresholdInputs[0]);
       return;
     }
@@ -270,13 +279,17 @@ export function createSettingsDialogView({ t, getSettings, onSave, onReadStorage
         refreshIntervalSeconds: Number(refreshInterval.value),
         quotaAlertThresholds,
       });
-      showStatus(t("settingsSaved"));
+      showStatus(t("settingsSaved"), "success");
     } catch (error) {
-      showStatus(t("settingsSaveFailed", { error: String(error) }), true);
+      showStatus(t("settingsSaveFailed", { error: String(error) }), "error");
     } finally {
       setBusy(false);
     }
   });
+  form.addEventListener("input", () => {
+    if (status.dataset.kind === "success") showStatus();
+  });
+  dialog.addEventListener("close", () => showStatus());
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog && !saving) dialog.close();
   });

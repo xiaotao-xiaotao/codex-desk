@@ -79,22 +79,37 @@ const PRODUCT_TRANSLATIONS = {
 const ACCOUNT_TRANSLATIONS = {
   "zh-CN": {
     accountLastSynced: "最近同步",
+    accountSubscriptionExpiryTitle: "订阅有效期",
+    accountSubscriptionExpiresAt: "{date} 到期",
+    accountSubscriptionExpiry: "有效期至", accountSubscriptionExpiryUnknown: "订阅有效期未知", accountSubscriptionExpiryHint: "有效期可能随续费或订阅变更更新，请以账单页面为准。",
       accountPlan: "订阅方案",           accountPlanUnavailable: "未提供",  openBilling: "查看订阅到期时间", accountBillingOpenFailed: "无法打开账单页面：{error}",
   },
   "zh-TW": {
     accountLastSynced: "最近同步",
+    accountSubscriptionExpiryTitle: "訂閱有效期",
+    accountSubscriptionExpiresAt: "{date} 到期",
+    accountSubscriptionExpiry: "有效期至", accountSubscriptionExpiryUnknown: "訂閱有效期未知", accountSubscriptionExpiryHint: "有效期可能隨續費或訂閱變更更新，請以帳單頁面為準。",
       accountPlan: "訂閱方案",           accountPlanUnavailable: "未提供",  openBilling: "查看訂閱到期時間", accountBillingOpenFailed: "無法開啟帳單頁面：{error}",
   },
   en: {
     accountLastSynced: "Last synced",
+    accountSubscriptionExpiryTitle: "Subscription expiry",
+    accountSubscriptionExpiresAt: "Expires {date}",
+    accountSubscriptionExpiry: "Valid until", accountSubscriptionExpiryUnknown: "Subscription expiry unknown", accountSubscriptionExpiryHint: "Renewals or subscription changes may update this date. Check the billing page for the current status.",
       accountPlan: "Plan",           accountPlanUnavailable: "Unavailable",  openBilling: "View subscription expiry", accountBillingOpenFailed: "Could not open the billing page: {error}",
   },
   ja: {
     accountLastSynced: "最終同期",
+    accountSubscriptionExpiryTitle: "契約の有効期限",
+    accountSubscriptionExpiresAt: "{date} まで有効",
+    accountSubscriptionExpiry: "有効期限", accountSubscriptionExpiryUnknown: "契約の有効期限は不明", accountSubscriptionExpiryHint: "更新や契約変更により期限が変わる場合があります。最新の状態は請求ページでご確認ください。",
       accountPlan: "プラン",           accountPlanUnavailable: "利用不可",  openBilling: "契約の有効期限を確認", accountBillingOpenFailed: "請求ページを開けませんでした：{error}",
   },
   ko: {
     accountLastSynced: "최근 동기화",
+    accountSubscriptionExpiryTitle: "구독 만료일",
+    accountSubscriptionExpiresAt: "{date} 만료",
+    accountSubscriptionExpiry: "유효 기한", accountSubscriptionExpiryUnknown: "구독 만료일 알 수 없음", accountSubscriptionExpiryHint: "갱신 또는 구독 변경에 따라 날짜가 바뀔 수 있습니다. 최신 상태는 청구 페이지에서 확인하세요.",
       accountPlan: "구독 플랜",           accountPlanUnavailable: "제공되지 않음",  openBilling: "구독 만료일 보기", accountBillingOpenFailed: "청구 페이지를 열 수 없습니다: {error}",
   },
 };

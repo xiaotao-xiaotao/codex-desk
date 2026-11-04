@@ -1,4 +1,7 @@
-use crate::{account_store::QuotaTarget, http_client, oauth};
+use crate::{
+    account_store::{subscription_active_until, QuotaTarget},
+    http_client, oauth,
+};
 use futures_util::{stream, StreamExt};
 use reqwest::StatusCode;
 use serde::Deserialize;
@@ -44,6 +47,8 @@ pub struct AccountQuotaSnapshot {
     pub selected: bool,
     pub windows: Vec<QuotaWindow>,
     pub plan_type: Option<String>,
+    /// 最近登录凭据记录的订阅有效期（Unix 秒）；缺失不代表未订阅，查询失败时仍可展示。
+    pub subscription_active_until: Option<i64>,
     pub reset_credits: Option<u64>,
     pub reset_credit_details: Vec<ResetCredit>,
     pub reset_credits_error: Option<String>,
@@ -266,6 +271,11 @@ async fn query_account_quota(
         selected: target.selected,
         windows: Vec::new(),
         plan_type: None,
+        subscription_active_until: subscription_active_until(
+            refreshed_auth.as_ref().unwrap_or(&target.auth),
+        )
+        .as_deref()
+        .and_then(parse_rfc3339_seconds),
         reset_credits: None,
         reset_credit_details: Vec::new(),
         reset_credits_error: None,
@@ -536,6 +546,52 @@ mod tests {
         for invalid in ["", "2026-10-25", "2026-02-30T00:00:00Z", "invalid"] {
             assert_eq!(parse_rfc3339_seconds(invalid), None);
         }
+    }
+
+    #[test]
+    fn subscription_expiry_is_available_even_when_quota_fails() {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+
+        tauri::async_runtime::block_on(async {
+            // 未提供或非法日期都应保持未知，不能从令牌 exp 推断订阅到期时间。
+            for expiry in [
+                json!("2026-11-19T09:21:48+08:00"),
+                Value::Null,
+                json!("invalid"),
+            ] {
+                let mut account = target();
+                let payload = URL_SAFE_NO_PAD.encode(
+                    serde_json::to_vec(&json!({
+                        "exp": 1_800_000_000,
+                        "https://api.openai.com/auth": {
+                            "chatgpt_subscription_active_until": expiry,
+                        },
+                    }))
+                    .unwrap(),
+                );
+                account.auth["tokens"]["id_token"] = format!("test.{payload}.test").into();
+                let (url, server) = serve(vec![(403, "{}")]);
+                let client = reqwest::Client::builder().no_proxy().build().unwrap();
+                let endpoints = Endpoints {
+                    usage: &url,
+                    credits: &url,
+                    token: &url,
+                };
+                let result = query_account_quota(account, &client, &endpoints).await;
+                assert!(!result.snapshot.success);
+                assert_eq!(
+                    result.snapshot.subscription_active_until,
+                    expiry.as_str().and_then(parse_rfc3339_seconds),
+                );
+                let ipc = serde_json::to_value(&result.snapshot).unwrap();
+                assert!(ipc.get("subscriptionActiveUntil").is_some());
+                assert!(!ipc.to_string().contains(&payload));
+                server.join().unwrap();
+            }
+            for auth in [json!({}), json!({"tokens": {"id_token": "invalid"}})] {
+                assert_eq!(subscription_active_until(&auth), None);
+            }
+        });
     }
 
     #[test]

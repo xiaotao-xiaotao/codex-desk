@@ -1,5 +1,5 @@
 #account-section { overflow-y: auto; container: quota-page / inline-size; }
-.account-quota-monitor-inline { display: grid; flex: 0 0 auto; gap: 16px; width: 100%; max-width: 1180px; margin: 0 auto 4px; padding-top: 4px; }
+.account-quota-monitor-inline { display: grid; flex: 0 0 auto; gap: 16px; width: 100%; margin: 0 0 4px; padding-top: 4px; }
 .account-quota-featured-heading { margin: 0; }
 .account-quota-featured-heading h2 { margin: 0; color: var(--lite-muted); font-size: 12px; font-weight: 400; letter-spacing: normal; }
 .account-quota-feedback { margin: 14px 0 0; color: var(--lite-muted); font-size: 12px; }
@@ -9,10 +9,13 @@
 .account-quota-featured { display: block; }
 .account-quota-featured-card { position: relative; padding: 24px; border: 1px solid var(--lite-accent); border-radius: 16px; background: var(--lite-surface); box-shadow: 0 8px 24px rgba(18, 102, 214, .08); }
 .account-quota-featured-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-.account-quota-featured-header .account-quota-featured-name { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
-.account-quota-featured-name strong { min-width: 0; }
-.account-quota-featured-name em { flex: 0 0 auto; color: var(--lite-muted); font-size: 11px; font-style: normal; font-weight: 400; white-space: nowrap; }
-.account-quota-featured-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; max-width: 100%; }
+.account-quota-featured-header > .account-quota-identity { flex: 1 1 auto; }
+.account-quota-featured-header .account-quota-featured-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; min-width: 0; }
+.account-quota-featured-name strong { min-width: 0; max-width: 100%; }
+/* 套餐与完整到期时间作为账号名旁的辅助文字；空间不足时换行，不截断日期。 */
+.account-quota-featured-name .account-quota-featured-badge { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; max-width: 100%; overflow: visible; color: var(--lite-muted); font-size: 11px; line-height: 1.5; text-overflow: clip; white-space: normal; }
+.account-quota-featured-plan { color: var(--lite-accent); font-weight: 600; text-transform: capitalize; }
+.account-quota-featured-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; max-width: 100%; }
 .account-quota-featured-link { min-height: 26px; padding: 4px 8px; border: 1px solid var(--lite-border); border-radius: 7px; color: var(--lite-accent); background: var(--lite-surface); font-size: 12px; line-height: 16px; cursor: pointer; }
 .account-quota-featured-link:hover { border-color: var(--lite-accent); background: var(--lite-accent-soft); }
 .account-quota-list { margin-top: 0; padding-top: 14px; border-top: 1px solid var(--lite-border); }
@@ -30,7 +33,15 @@
 .account-quota-list-identity strong { min-width: 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-identity small { overflow: hidden; color: var(--lite-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-name { display: flex; align-items: baseline; gap: 4px; min-width: 0; white-space: nowrap; }
-.account-quota-list-plan { flex: 0 0 auto; color: var(--lite-muted); font-size: 11px; font-weight: 400; }
+.account-quota-list-plan { flex: 0 0 auto; color: var(--lite-accent); font-size: 11px; font-weight: 600; text-transform: capitalize; }
+.account-quota-list-plan::after { margin-inline-start: 4px; color: var(--lite-muted); content: "·"; font-weight: 400; }
+/* 列表有效期归入账户身份区，允许换行，避免挤占右侧额度和重置时间。 */
+.account-quota-subscription,
+.account-quota-identity .account-quota-subscription { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; margin-top: 3px; overflow: visible; color: var(--lite-muted); font-size: 11px; line-height: 1.5; white-space: normal; }
+.account-quota-subscription time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.account-quota-featured-subscription { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; margin-top: 0; line-height: 1.5; }
+.account-quota-featured-subscription time { white-space: normal; }
+.account-quota-featured-plan + .account-quota-featured-subscription::before { content: "·"; }
 .account-quota-list-state { padding: 0; color: var(--lite-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
 .account-quota-list-row.is-unavailable > .account-quota-list-state { grid-column: 2 / -1; justify-self: end; }
 .account-quota-list-state.is-unavailable { background: transparent; }
@@ -61,6 +72,7 @@
 .account-quota-identity strong { overflow: hidden; color: var(--lite-ink); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-identity div > span { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
+.account-quota-windows.is-single { grid-template-columns: minmax(0, 1fr); }
 .account-quota-window { display: grid; grid-template-areas: "heading" "value" "meter" "reset"; min-width: 0; padding: 14px 14px 12px 22px; border: 1px solid var(--lite-border); border-radius: 11px; background: var(--lite-surface); box-shadow: inset 4px 0 0 var(--lite-accent); }
 .account-quota-window-heading { display: flex; grid-area: heading; justify-content: space-between; gap: 7px; color: var(--lite-muted); font-size: 13px; }
 .account-quota-window-heading > span:first-child { color: var(--lite-muted); font-size: 14px; font-weight: 700; line-height: 1.15; }
@@ -91,8 +103,8 @@
 
 
 @container quota-page (max-width: 760px) {
-  .account-quota-featured-header { align-items: flex-start; flex-direction: column; }
-  .account-quota-featured-actions { justify-content: flex-start; }
+  .account-quota-featured-header { align-items: flex-start; flex-wrap: wrap; }
+  .account-quota-featured-actions { margin-inline-start: auto; }
 }
 @media (max-width: 760px) {
   .account-quota-list { grid-template-columns: 1fr; }

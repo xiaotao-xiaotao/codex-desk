@@ -189,11 +189,16 @@
         <footer class="settings-actions">
           <div class="settings-footer-info">
             <p id="settings-storage-hint" class="settings-storage-hint">正在读取设置保存目录…</p>
-            <p id="settings-status" class="settings-status" aria-live="polite" hidden></p>
           </div>
-          <div class="settings-action-buttons">
-            <button id="settings-cancel" class="cancel-button" type="button">取消</button>
-            <button id="settings-save" class="primary-action-button" type="submit">保存并验证</button>
+          <div class="settings-action-area">
+            <p id="settings-status" class="settings-status" role="status" aria-live="polite" aria-atomic="true" hidden>
+              <svg class="settings-status-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m4.5 10 3.5 3.5 7.5-7.5" /></svg>
+              <span id="settings-status-message"></span>
+            </p>
+            <div class="settings-action-buttons">
+              <button id="settings-cancel" class="cancel-button" type="button">取消</button>
+              <button id="settings-save" class="primary-action-button" type="submit">保存并验证</button>
+            </div>
           </div>
         </footer>
       </form>

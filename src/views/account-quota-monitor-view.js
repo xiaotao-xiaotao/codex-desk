@@ -121,6 +121,24 @@ export function createAccountQuotaMonitorView({
     }
   }
 
+  function renderSubscriptionExpiry(snapshot, { featured = false } = {}) {
+    const expiry = document.createElement("span");
+    expiry.className = `account-quota-subscription${featured ? " account-quota-featured-subscription" : ""}`;
+    if (!featured) expiry.title = t("accountSubscriptionExpiryHint");
+    const timestamp = snapshot.subscriptionActiveUntil;
+    // 有效期独立于额度查询结果；缺失时只标记未知，不推断免费或已过期。
+    const valid = typeof timestamp === "number" && Number.isFinite(timestamp) && timestamp > 0
+      && !Number.isNaN(new Date(timestamp * 1_000).getTime());
+    const date = document.createElement(valid ? "time" : "span");
+    if (valid) date.dateTime = new Date(timestamp * 1_000).toISOString();
+    // 标签直接展示完整年月日和时分，避免需要悬停才能确认到期时间。
+    date.textContent = valid
+      ? t("accountSubscriptionExpiresAt", { date: formatResetAt(timestamp) })
+      : t("accountSubscriptionExpiryUnknown");
+    expiry.append(date);
+    return expiry;
+  }
+
   function renderResetCredits(snapshot, { featured = false } = {}) {
     if (snapshot.success && snapshot.resetCreditsError) {
       const warning = document.createElement("span");
@@ -217,17 +235,19 @@ export function createAccountQuotaMonitorView({
       detailAvatar.className = "account-quota-avatar";
       detailAvatar.textContent = avatar(focused.label);
       const detailName = document.createElement("div");
-      detailName.innerHTML = `<div class="account-quota-featured-name"><strong></strong><em></em></div><span></span>`;
+      detailName.innerHTML = `<div class="account-quota-featured-name"><strong></strong><span class="account-quota-featured-badge"></span></div><span class="account-quota-featured-email"></span>`;
       detailName.querySelector("strong").textContent = focused.label;
       detailName.querySelector("strong").title = focused.label;
-      detailName.querySelector("span").textContent = displayEmail(focused.email || t("accountsEmailUnknown"), getHideEmails());
-      const detailPlan = detailName.querySelector("em");
-      detailPlan.hidden = !focused.success;
+      detailName.querySelector(".account-quota-featured-email").textContent = displayEmail(focused.email || t("accountsEmailUnknown"), getHideEmails());
+      const detailBadge = detailName.querySelector(".account-quota-featured-badge");
       if (focused.success) {
+        const detailPlan = document.createElement("span");
+        detailPlan.className = "account-quota-featured-plan";
         const planName = focused.planType || t("accountPlanUnavailable");
-        detailPlan.textContent = `(${planName})`;
-        detailPlan.title = `${t("accountPlan")}：${planName}`;
+        detailPlan.textContent = planName;
+        detailBadge.append(detailPlan);
       }
+      detailBadge.append(renderSubscriptionExpiry(focused, { featured: true }));
       detailIdentity.append(detailAvatar, detailName);
       detailHeader.append(detailIdentity);
       const detailActions = document.createElement("div");
@@ -235,7 +255,7 @@ export function createAccountQuotaMonitorView({
       detailHeader.append(detailActions);
       detail.append(detailHeader);
       const detailWindows = document.createElement("div");
-      detailWindows.className = "account-quota-windows";
+      detailWindows.className = `account-quota-windows${(focused.windows || []).length === 1 ? " is-single" : ""}`;
       if (focused.success) (focused.windows || []).forEach((window, index) => detailWindows.append(renderWindow(window, index, {
         showAlert: focused.selected && index === 0,
       })));
@@ -249,12 +269,7 @@ export function createAccountQuotaMonitorView({
         resetButton.className = "account-quota-featured-link";
         resetButton.textContent = t("openQuotaReset");
         resetButton.addEventListener("click", () => void openAccountAction("open_quota_reset_page", "accountQuotaResetOpenFailed"));
-        const billingButton = document.createElement("button");
-        billingButton.type = "button";
-        billingButton.className = "account-quota-featured-link";
-        billingButton.textContent = t("openBilling");
-        billingButton.addEventListener("click", () => void openAccountAction("open_billing_page", "accountBillingOpenFailed"));
-        detailActions.append(resetButton, billingButton);
+        detailActions.append(resetButton);
       }
       const detailCredits = renderResetCredits(focused, { featured: true });
       if (detailCredits) detail.append(detailCredits);
@@ -270,6 +285,7 @@ export function createAccountQuotaMonitorView({
       rowText.querySelector("strong").textContent = snapshot.label;
       rowText.querySelector("strong").title = snapshot.label;
       rowText.querySelector("small").textContent = displayEmail(snapshot.email || t("accountsEmailUnknown"), getHideEmails());
+      rowText.append(renderSubscriptionExpiry(snapshot));
       rowIdentity.append(rowAvatar, rowText);
       const quotaDetails = document.createElement("span"); quotaDetails.className = "account-quota-list-details";
       const mini = document.createElement("span"); mini.className = "account-quota-list-mini";
@@ -284,6 +300,7 @@ export function createAccountQuotaMonitorView({
         const bar = document.createElement("i"); bar.style.setProperty("--mini-progress", `${item.dataset.state === "unavailable" ? 0 : window.remainingPercent}%`);
         const resetLabel = document.createElement("small");
         const resetCountdown = document.createElement("span");
+        resetCountdown.className = "account-quota-window-reset";
         resetCountdown.textContent = window.resetsAt ? formatResetCountdown(window.resetsAt) : t("resetUnknown");
         resetLabel.append(resetCountdown);
         if (window.resetsAt) {
@@ -298,9 +315,9 @@ export function createAccountQuotaMonitorView({
       if (snapshot.success) {
         const plan = document.createElement("span"); plan.className = "account-quota-list-plan";
         const planName = snapshot.planType || t("accountPlanUnavailable");
-        plan.textContent = `(${planName})`;
+        plan.textContent = planName;
         plan.title = `${t("accountPlan")}：${planName}`;
-        rowText.querySelector(".account-quota-list-name").append(plan);
+        rowText.querySelector(".account-quota-subscription").prepend(plan);
         row.append(quotaDetails);
       } else {
         const state = document.createElement("span"); state.className = "account-quota-list-state is-unavailable"; state.textContent = t("accountQuotaUnavailable");
