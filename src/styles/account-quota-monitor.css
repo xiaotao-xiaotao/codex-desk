@@ -12,8 +12,10 @@
 .account-quota-featured-header > .account-quota-identity { flex: 1 1 auto; }
 .account-quota-featured-header .account-quota-featured-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; min-width: 0; }
 .account-quota-featured-name strong { min-width: 0; max-width: 100%; }
-/* 套餐与完整到期时间作为账号名旁的辅助文字；空间不足时换行，不截断日期。 */
-.account-quota-featured-name .account-quota-featured-badge { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; max-width: 100%; overflow: visible; color: var(--lite-muted); font-size: 11px; line-height: 1.5; text-overflow: clip; white-space: normal; }
+/* 邮箱与套餐到期信息并排显示；窄空间下自动换行且保留完整日期。 */
+.account-quota-identity .account-quota-featured-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; min-width: 0; }
+.account-quota-identity .account-quota-featured-badge { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; max-width: 100%; overflow: visible; color: var(--lite-muted); font-size: 11px; line-height: 1.5; text-overflow: clip; white-space: normal; }
+.account-quota-identity .account-quota-featured-badge::before { width: 1px; height: 12px; align-self: center; background: var(--lite-border); content: ""; }
 .account-quota-featured-plan { color: var(--lite-accent); font-weight: 600; text-transform: capitalize; }
 .account-quota-featured-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; max-width: 100%; }
 .account-quota-featured-link { min-height: 26px; padding: 4px 8px; border: 1px solid var(--lite-border); border-radius: 7px; color: var(--lite-accent); background: var(--lite-surface); font-size: 12px; line-height: 16px; cursor: pointer; }

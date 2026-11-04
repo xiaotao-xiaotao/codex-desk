@@ -235,7 +235,7 @@ export function createAccountQuotaMonitorView({
       detailAvatar.className = "account-quota-avatar";
       detailAvatar.textContent = avatar(focused.label);
       const detailName = document.createElement("div");
-      detailName.innerHTML = `<div class="account-quota-featured-name"><strong></strong><span class="account-quota-featured-badge"></span></div><span class="account-quota-featured-email"></span>`;
+      detailName.innerHTML = `<div class="account-quota-featured-name"><strong></strong></div><div class="account-quota-featured-meta"><span class="account-quota-featured-email"></span><span class="account-quota-featured-badge"></span></div>`;
       detailName.querySelector("strong").textContent = focused.label;
       detailName.querySelector("strong").title = focused.label;
       detailName.querySelector(".account-quota-featured-email").textContent = displayEmail(focused.email || t("accountsEmailUnknown"), getHideEmails());
