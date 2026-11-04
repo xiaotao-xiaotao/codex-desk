@@ -3,6 +3,7 @@ import { displayEmail } from "../utils/email-privacy.js";
 const QUOTA_WARNING_REMAINING_PERCENT = 20;
 const QUOTA_CRITICAL_REMAINING_PERCENT = 10;
 const RESET_CARD_PREVIEW_LIMIT = 4;
+const RESET_CREDIT_TONE_FADE_PERCENT = 65;
 
 /** 多账户额度监控。只接收后端脱敏快照，单账户刷新仍通过同一批查询完成。 */
 export function createAccountQuotaMonitorView({
@@ -149,6 +150,12 @@ export function createAccountQuotaMonitorView({
     }
     const count = snapshot.resetCredits ?? snapshot.resetCreditDetails?.length ?? 0;
     const expansionKey = `${featured ? "featured" : "list"}:${snapshot.id}`;
+    // 先显示最早到期的重置卡，让卡片深浅和实际到期先后保持一致。
+    const creditDetails = [...(snapshot.resetCreditDetails ?? [])].sort((a, b) => {
+      const expiryA = Number.isFinite(a?.expiresAt) ? a.expiresAt : Number.POSITIVE_INFINITY;
+      const expiryB = Number.isFinite(b?.expiresAt) ? b.expiresAt : Number.POSITIVE_INFINITY;
+      return expiryA - expiryB;
+    });
     if (count <= RESET_CARD_PREVIEW_LIMIT) expandedCreditAccounts.delete(expansionKey);
     if (!snapshot.success || count <= 0) return null;
 
@@ -170,9 +177,11 @@ export function createAccountQuotaMonitorView({
       entries.replaceChildren();
       for (let index = 0; index < visibleCount; index += 1) {
         const credit = document.createElement("span"); credit.className = "account-quota-list-credit";
+        const toneStrength = Math.round(100 - (index / Math.max(visibleCount - 1, 1)) * RESET_CREDIT_TONE_FADE_PERCENT);
+        credit.style.setProperty("--credit-accent-mix", `${toneStrength}%`);
         const label = document.createElement("span"); label.textContent = t("accountQuotaResetCardLabel", { index: index + 1 });
         const expiry = document.createElement("time");
-        const expiresAt = snapshot.resetCreditDetails?.[index]?.expiresAt;
+        const expiresAt = creditDetails[index]?.expiresAt;
         expiry.textContent = expiresAt ? formatResetAt(expiresAt) : t("accountQuotaCreditsExpiryUnknown");
         credit.append(label, expiry);
         entries.append(credit);
