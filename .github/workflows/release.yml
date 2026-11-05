@@ -175,6 +175,14 @@ jobs:
             }
             body.push(`## ${heading}`, '', ...notes.map(note => `- ${note}`), '');
           }
+          if (version === '2.0.0-lite') {
+            // 固定引用发布标签中的截图，避免分支更新后历史版本展示不同界面。
+            const imageBase = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/raw/refs/tags/${encodeURIComponent(process.env.GITHUB_REF_NAME)}/docs/screenshots`;
+            body.push('## 界面预览 / Screenshots', '', '截图使用虚构账户和额度数据。 / Screenshots use fictional accounts and quota data.', '');
+            for (const [label, file] of [['账户用量', 'dashboard-light-zh.png'], ['账户管理', 'accounts-zh.png'], ['账户登录', 'account-login-zh.png'], ['设置', 'settings-connection-zh.png']]) {
+              body.push(`![${label}](${imageBase}/${file})`, '');
+            }
+          }
           writeFileSync('release-notes.md', body.join('\n'), 'utf8');
           NODE
 
