@@ -1,8 +1,8 @@
 #account-section { overflow-y: auto; container: quota-page / inline-size; }
 .account-quota-monitor-inline { display: grid; flex: 0 0 auto; gap: 16px; width: 100%; margin: 0 0 4px; padding-top: 4px; }
 .account-quota-featured-heading { margin: 0; }
-.account-quota-featured-heading h2 { margin: 0; color: var(--lite-muted); font-size: 12px; font-weight: 400; letter-spacing: normal; }
-.account-quota-feedback { margin: 14px 0 0; color: var(--lite-muted); font-size: 12px; }
+.account-quota-featured-heading h2 { margin: 0; color: var(--lite-muted); font-size: 11px; font-weight: 400; letter-spacing: normal; }
+.account-quota-feedback { margin: 14px 0 0; color: var(--lite-muted); font-size: 11px; }
 .account-quota-feedback[data-kind="success"] { display: none; }
 .account-quota-feedback[data-kind="error"] { color: #d95d67; }
 .account-quota-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 4px; }
@@ -18,15 +18,20 @@
 .account-quota-identity .account-quota-featured-badge::before { width: 1px; height: 12px; align-self: center; background: var(--lite-border); content: ""; }
 .account-quota-featured-plan { color: var(--lite-accent); font-weight: 600; text-transform: capitalize; }
 .account-quota-featured-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; max-width: 100%; }
-.account-quota-featured-link { min-height: 26px; padding: 4px 8px; border: 1px solid var(--lite-border); border-radius: 7px; color: var(--lite-accent); background: var(--lite-surface); font-size: 12px; line-height: 16px; cursor: pointer; }
-.account-quota-featured-link:hover { border-color: var(--lite-accent); background: var(--lite-accent-soft); }
+.account-quota-featured-link,
+.account-quota-featured-card .quota-alert-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 28px; padding: 0 10px; border: 1px solid #cfe1fa; border-radius: 8px; color: #1668c6; background: #f5f9ff; font-size: 11px; font-weight: 600; line-height: 1.2; white-space: nowrap; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.account-quota-featured-link:hover,
+.account-quota-featured-card .quota-alert-toggle:hover { border-color: #91bdf4; color: #0958d9; background: #eaf3ff; }
+.account-quota-featured-link:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
+.account-quota-featured-card .quota-alert-toggle-label { letter-spacing: normal; }
+.account-quota-featured-card .quota-alert-toggle.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
 .account-quota-list { margin-top: 0; padding-top: 14px; border-top: 1px solid var(--lite-border); }
-.account-quota-list::before { color: var(--lite-muted); content: "账户列表"; font-size: 12px; font-weight: 400; letter-spacing: normal; }
+.account-quota-list::before { color: var(--lite-muted); content: "账户列表"; font-size: 11px; font-weight: 400; letter-spacing: normal; }
 .account-quota-list.is-empty { display: none; }
 /* 账户列固定宽度，避免宽窗口放大账户与额度间的空白；重置卡仍在底部横向铺开。 */
-.account-quota-list-row { position: relative; display: grid; grid-template-columns: 200px minmax(340px, 1fr); grid-template-areas: "identity quota"; align-items: start; gap: 6px 20px; width: 100%; min-width: 660px; padding: 12px 14px; border: 1px solid var(--lite-border); border-radius: 12px; color: var(--lite-ink); background: color-mix(in srgb, var(--lite-surface) 72%, var(--lite-ground)); text-align: left; }
+.account-quota-list-row { position: relative; display: grid; grid-template-columns: 270px minmax(340px, 1fr); grid-template-areas: "identity quota"; align-items: start; gap: 6px 10px; width: 100%; min-width: 660px; padding: 12px 14px; border: 1px solid var(--lite-border); border-radius: 12px; color: var(--lite-ink); background: color-mix(in srgb, var(--lite-surface) 72%, var(--lite-ground)); text-align: left; }
 .account-quota-list-identity { grid-area: identity; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.account-quota-list-identity i { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: var(--lite-accent); background: var(--lite-accent-soft); font-size: 12px; font-style: normal; font-weight: 700; }
+.account-quota-list-identity i { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: var(--lite-accent); background: var(--lite-accent-soft); font-size: 11px; font-style: normal; font-weight: 700; }
 .account-quota-list-row.is-unavailable .account-quota-list-identity i { color: #72849a; background: #f1f4f8; }
 .account-quota-list-row.is-unavailable .account-quota-list-identity strong,
 .account-quota-list-row.is-unavailable .account-quota-list-identity small { color: #72849a; }
@@ -36,14 +41,15 @@
 .account-quota-list-identity small { overflow: hidden; color: var(--lite-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-list-name { display: flex; align-items: baseline; gap: 4px; min-width: 0; white-space: nowrap; }
 .account-quota-list-plan { flex: 0 0 auto; color: var(--lite-accent); font-size: 11px; font-weight: 600; text-transform: capitalize; }
-.account-quota-list-plan::after { margin-inline-start: 4px; color: var(--lite-muted); content: "·"; font-weight: 400; }
+.account-quota-subscription:not(.has-countdown) .account-quota-list-plan:not(:last-child)::after { margin-inline-start: 4px; color: var(--lite-muted); content: "·"; font-weight: 400; }
 /* 列表有效期归入账户身份区，允许换行，避免挤占右侧额度和重置时间。 */
 .account-quota-subscription,
 .account-quota-identity .account-quota-subscription { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 4px; margin-top: 3px; overflow: visible; color: var(--lite-muted); font-size: 11px; line-height: 1.5; white-space: normal; }
 .account-quota-subscription time { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.account-quota-date-separated::before { margin-inline-end: 8px; color: var(--lite-muted); content: "|"; font-weight: 400; }
 .account-quota-featured-subscription { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 6px; min-width: 0; margin-top: 0; line-height: 1.5; }
 .account-quota-featured-subscription time { white-space: normal; }
-.account-quota-featured-plan + .account-quota-featured-subscription::before { content: "·"; }
+.account-quota-featured-plan + .account-quota-featured-subscription:not(.has-countdown)::before { content: "·"; }
 .account-quota-list-state { padding: 0; color: var(--lite-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
 .account-quota-list-row.is-unavailable > .account-quota-list-state { grid-column: 2 / -1; justify-self: end; }
 .account-quota-list-state.is-unavailable { background: transparent; }
@@ -56,9 +62,9 @@
 /* 空额度仍保留轻微告警底色，配合红色 0% 表达已耗尽，不伪造剩余进度。 */
 .account-quota-list-mini-item[data-state="attention"],
 .account-quota-list-mini-item[data-state="critical"] { --quota-track: color-mix(in srgb, var(--quota-color) 18%, var(--lite-border)); }
-.account-quota-list-mini-item strong { color: var(--quota-color); font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.account-quota-list-mini-item strong { color: var(--quota-color); font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .account-quota-list-mini-item i { display: block; height: 6px; overflow: hidden; border-radius: 5px; background: linear-gradient(to right, var(--quota-color) var(--mini-progress), var(--quota-track) var(--mini-progress)); }
-.account-quota-list-mini-item small { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0; color: var(--lite-muted); font-size: 12px; line-height: 1.5; white-space: nowrap; }
+.account-quota-list-mini-item small { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0; color: var(--lite-muted); font-size: 11px; line-height: 1.5; white-space: nowrap; }
 .account-quota-list-credits { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; min-width: 0; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--lite-border) 70%, transparent); color: var(--lite-muted); font-size: 11px; font-weight: 400; line-height: 1.4; }
 .account-quota-featured-credits { margin-top: 14px; padding-top: 12px; }
 .account-quota-list-credit { --credit-tone: color-mix(in srgb, var(--lite-accent) var(--credit-accent-mix), var(--lite-muted)); display: inline-flex; align-items: baseline; gap: 8px; color: var(--credit-tone); white-space: nowrap; }
@@ -72,33 +78,36 @@
 .account-quota-avatar { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--lite-accent); background: var(--lite-accent-soft); font-size: 14px; font-weight: 800; }
 .account-quota-identity div { display: grid; gap: 3px; min-width: 0; }
 .account-quota-identity strong { overflow: hidden; color: var(--lite-ink); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.account-quota-identity div > span { overflow: hidden; color: var(--lite-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.account-quota-identity div > span { overflow: hidden; color: var(--lite-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 .account-quota-windows.is-single { grid-template-columns: minmax(0, 1fr); }
 .account-quota-window { display: grid; grid-template-areas: "heading" "value" "meter" "reset"; min-width: 0; padding: 14px 14px 12px 22px; border: 1px solid var(--lite-border); border-radius: 11px; background: var(--lite-surface); box-shadow: inset 4px 0 0 var(--lite-accent); }
 .account-quota-window-heading { display: flex; grid-area: heading; justify-content: space-between; gap: 7px; color: var(--lite-muted); font-size: 13px; }
 .account-quota-window-heading > span:first-child { color: var(--lite-muted); font-size: 14px; font-weight: 700; line-height: 1.15; }
-.account-quota-window-reset { padding: 0; border: 0; color: #1668c6 !important; background: transparent; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.account-quota-window-reset { padding: 0; border: 0; color: #1668c6 !important; background: transparent; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .account-quota-value-row { display: flex; grid-area: value; align-items: baseline; flex-wrap: wrap; gap: 5px; min-width: 0; margin-top: 6px; }
 .account-quota-percent { color: var(--lite-accent); font-size: 36px; line-height: 1.15; letter-spacing: -.05em; }
 .account-quota-featured .account-quota-percent { font-size: 48px; font-weight: 750; line-height: 1; }
-.account-quota-percent-label { color: var(--lite-muted); font-size: 12px; white-space: nowrap; }
-.account-quota-used { color: var(--lite-muted); font-size: 12px; white-space: nowrap; }
+.account-quota-percent-label { color: var(--lite-muted); font-size: 11px; white-space: nowrap; }
+.account-quota-used { color: var(--lite-muted); font-size: 11px; white-space: nowrap; }
 .account-quota-meter { grid-area: meter; height: 6px; margin: 11px 0 0; overflow: hidden; border-radius: 999px; background: var(--lite-border); }
 .account-quota-meter span { display: block; height: 100%; border-radius: inherit; background: var(--lite-accent); }
 .account-quota-window small { display: flex; grid-area: reset; align-items: center; gap: 8px; min-width: 0; margin-top: 8px; overflow: hidden; color: var(--lite-muted); font-size: 11px; white-space: nowrap; }
 .account-quota-window small > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.account-quota-unavailable { grid-column: 1 / -1; padding: 17px; border-radius: 12px; color: #d95d67; background: color-mix(in srgb, #d95d67 8%, var(--lite-ground)); font-size: 12px; line-height: 1.5; }
+.account-quota-unavailable { grid-column: 1 / -1; padding: 17px; border-radius: 12px; color: #d95d67; background: color-mix(in srgb, #d95d67 8%, var(--lite-ground)); font-size: 11px; line-height: 1.5; }
 .account-quota-empty { grid-column: 1 / -1; padding: 42px 20px; border: 1px dashed var(--lite-border); border-radius: 16px; text-align: center; }
 .account-quota-empty.is-loading { display: grid; min-height: 132px; align-content: center; justify-items: center; padding: 24px; border-style: solid; background: color-mix(in srgb, var(--lite-surface) 72%, var(--lite-ground)); }
 .account-quota-empty.is-loading strong { color: var(--lite-accent); }
 .account-quota-empty strong { color: var(--lite-ink); font-size: 15px; }
-.account-quota-empty p { margin: 8px 0 0; color: var(--lite-muted); font-size: 12px; }
+.account-quota-empty p { margin: 8px 0 0; color: var(--lite-muted); font-size: 11px; }
 .accounts-management-panel { margin: 0; padding: 0; }
 .accounts-management-panel .accounts-page-header { padding-top: 0; }
 .accounts-management-panel > .accounts-feedback { margin-bottom: 10px; padding: 6px 10px; border-radius: 7px; font-size: 11px; }
 
 :root[data-theme="dark"] .account-quota-window { background: var(--lite-surface); }
+:root[data-theme="dark"] .account-quota-featured-link { border-color: #315f90; color: #8dc5ff; background: #152b43; }
+:root[data-theme="dark"] .account-quota-featured-link:hover { border-color: #4c85b8; color: #c7e2ff; background: #1b3857; }
+:root[data-theme="dark"] .account-quota-featured-card .quota-alert-toggle.is-enabled { border-color: #245c4b; color: #77d9b5; background: #163a31; }
 :root[data-theme="dark"] .account-quota-list-mini-item[data-state="attention"] { --quota-color: #ffc069; }
 :root[data-theme="dark"] .account-quota-list-mini-item[data-state="critical"] { --quota-color: #ff7875; }
 :root[data-theme="dark"] .account-quota-window-reset { border: 0; color: #8dc5ff !important; background: transparent; }

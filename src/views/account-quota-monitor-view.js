@@ -11,6 +11,7 @@ export function createAccountQuotaMonitorView({
   invoke,
   formatQuotaWindow,
   formatResetAt,
+  formatRelativeCountdown,
   formatResetCountdown,
   getHideEmails = () => false,
   onToggleAlerts = async () => {},
@@ -97,6 +98,7 @@ export function createAccountQuotaMonitorView({
     resetCountdown.className = "account-quota-window-reset";
     resetCountdown.textContent = window.resetsAt ? formatResetCountdown(window.resetsAt) : t("resetUnknown");
     const resetDate = document.createElement("span");
+    if (window.resetsAt) resetDate.className = "account-quota-date-separated";
     resetDate.textContent = window.resetsAt ? formatResetAt(window.resetsAt) : "";
     resetAt.append(resetCountdown, resetDate);
     card.dataset.window = String(index);
@@ -125,17 +127,37 @@ export function createAccountQuotaMonitorView({
   function renderSubscriptionExpiry(snapshot, { featured = false } = {}) {
     const expiry = document.createElement("span");
     expiry.className = `account-quota-subscription${featured ? " account-quota-featured-subscription" : ""}`;
+    // 免费套餐没有订阅有效期，用账户类型说明替代未知提示。
+    if (typeof snapshot.planType === "string" && snapshot.planType.trim().toLowerCase() === "free") {
+      const label = document.createElement("span");
+      label.textContent = t("accountFreePlanDescription");
+      expiry.append(label);
+      return expiry;
+    }
     if (!featured) expiry.title = t("accountSubscriptionExpiryHint");
-    const timestamp = snapshot.subscriptionActiveUntil;
+    const renewing = typeof snapshot.subscriptionRenewsAt === "number" && Number.isFinite(snapshot.subscriptionRenewsAt) && snapshot.subscriptionRenewsAt > 0 && !Number.isNaN(new Date(snapshot.subscriptionRenewsAt * 1_000).getTime());
+    const timestamp = renewing ? snapshot.subscriptionRenewsAt : snapshot.subscriptionActiveUntil;
     // 有效期独立于额度查询结果；缺失时只标记未知，不推断免费或已过期。
     const valid = typeof timestamp === "number" && Number.isFinite(timestamp) && timestamp > 0
       && !Number.isNaN(new Date(timestamp * 1_000).getTime());
     const date = document.createElement(valid ? "time" : "span");
-    if (valid) date.dateTime = new Date(timestamp * 1_000).toISOString();
+    if (valid) {
+      date.className = "account-quota-date-separated";
+      date.dateTime = new Date(timestamp * 1_000).toISOString();
+    }
     // 标签直接展示完整年月日和时分，避免需要悬停才能确认到期时间。
     date.textContent = valid
-      ? t("accountSubscriptionExpiresAt", { date: formatResetAt(timestamp) })
+      ? formatResetAt(timestamp)
       : t("accountSubscriptionExpiryUnknown");
+    if (valid) {
+      expiry.classList.add("has-countdown");
+      const countdown = document.createElement("span");
+      countdown.className = "account-quota-window-reset";
+      countdown.textContent = timestamp * 1_000 <= Date.now()
+        ? t(renewing ? "accountSubscriptionRenewalDue" : "accountSubscriptionExpired")
+        : t(renewing ? "accountSubscriptionRenewalCountdown" : "accountSubscriptionExpiryCountdown", { value: formatRelativeCountdown(timestamp) });
+      expiry.append(countdown);
+    }
     expiry.append(date);
     return expiry;
   }
@@ -256,7 +278,8 @@ export function createAccountQuotaMonitorView({
         detailPlan.textContent = planName;
         detailBadge.append(detailPlan);
       }
-      detailBadge.append(renderSubscriptionExpiry(focused, { featured: true }));
+      const subscriptionExpiry = renderSubscriptionExpiry(focused, { featured: true });
+      if (subscriptionExpiry.hasChildNodes()) detailBadge.append(subscriptionExpiry);
       detailIdentity.append(detailAvatar, detailName);
       detailHeader.append(detailIdentity);
       const detailActions = document.createElement("div");
@@ -314,6 +337,7 @@ export function createAccountQuotaMonitorView({
         resetLabel.append(resetCountdown);
         if (window.resetsAt) {
           const resetDate = document.createElement("span");
+          resetDate.className = "account-quota-date-separated";
           resetDate.textContent = formatResetAt(window.resetsAt);
           resetLabel.append(resetDate);
         }

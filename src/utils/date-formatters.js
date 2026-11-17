@@ -23,20 +23,23 @@ export function createDateFormatters({ getLocale, t }) {
     return Number.isNaN(date.getTime()) ? t("resetUnknown") : format(date);
   };
 
-  const formatResetCountdown = (timestamp) => {
+  const formatRelativeCountdown = (timestamp) => {
     if (!timestamp) return t("resetUnknown");
     const resetsAt = Number(timestamp) * 1_000;
     if (!Number.isFinite(resetsAt)) return t("resetUnknown");
 
     const minutes = Math.max(1, Math.ceil((resetsAt - Date.now()) / 60_000));
     const relative = new Intl.RelativeTimeFormat(getLocale(), { numeric: "always" });
-    const countdown = minutes < 60
+    return minutes < 60
       ? relative.format(minutes, "minute")
       : minutes < 1_440
         ? relative.format(Math.ceil(minutes / 60), "hour")
         : relative.format(Math.ceil(minutes / 1_440), "day");
-    return t("resetCountdown", { value: countdown });
   };
+
+  const formatResetCountdown = (timestamp) => !timestamp || !Number.isFinite(Number(timestamp) * 1_000)
+    ? t("resetUnknown")
+    : t("resetCountdown", { value: formatRelativeCountdown(timestamp) });
 
   /**
    * 原生层只返回窗口持续分钟数，具体文案由前端根据当前语言生成。
@@ -50,5 +53,5 @@ export function createDateFormatters({ getLocale, t }) {
     return t("quotaWindowMinutes", { count: minutes });
   };
 
-  return { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime };
+  return { formatQuotaWindow, formatResetAt, formatRelativeCountdown, formatResetCountdown, formatResetTime };
 }

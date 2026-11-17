@@ -1,7 +1,4 @@
-use crate::{
-    account_store::{subscription_active_until, QuotaTarget},
-    http_client, oauth,
-};
+use crate::{account_store::QuotaTarget, http_client, oauth};
 use futures_util::{stream, StreamExt};
 use reqwest::StatusCode;
 use serde::Deserialize;
@@ -18,6 +15,7 @@ const MAX_RETRY_AFTER_SECONDS: u64 = 5;
 const COMPATIBILITY_USAGE_URL: &str = "https://chatgpt.com/backend-api/wham/usage";
 const COMPATIBILITY_CREDITS_URL: &str =
     "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits";
+const ACCOUNT_CHECK_URL: &str = "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,8 +45,9 @@ pub struct AccountQuotaSnapshot {
     pub selected: bool,
     pub windows: Vec<QuotaWindow>,
     pub plan_type: Option<String>,
-    /// 最近登录凭据记录的订阅有效期（Unix 秒）；缺失不代表未订阅，查询失败时仍可展示。
+    /// 账户检查接口返回的订阅有效期；缺失不代表未订阅。
     pub subscription_active_until: Option<i64>,
+    pub subscription_renews_at: Option<i64>,
     pub reset_credits: Option<u64>,
     pub reset_credit_details: Vec<ResetCredit>,
     pub reset_credits_error: Option<String>,
@@ -115,6 +114,7 @@ struct Endpoints<'a> {
     usage: &'a str,
     credits: &'a str,
     token: &'a str,
+    account_check: Option<&'a str>,
 }
 
 #[derive(Debug)]
@@ -140,6 +140,7 @@ pub(crate) async fn read_account_quotas(
         usage: COMPATIBILITY_USAGE_URL,
         credits: COMPATIBILITY_CREDITS_URL,
         token: oauth::TOKEN_URL,
+        account_check: Some(ACCOUNT_CHECK_URL),
     };
     stream::iter(
         targets
@@ -263,6 +264,26 @@ async fn query_account_quota(
             Err(error) => result = Err(QueryError::Message(error)),
         }
     }
+    // 订阅信息独立查询，不能以旧令牌中的日期代替实时账户状态。
+    let subscription = if let Some(url) = endpoints.account_check {
+        match send_quota_request(
+            client,
+            url,
+            refreshed_auth.as_ref().unwrap_or(&target.auth),
+            &target.account_id,
+        )
+        .await
+        {
+            Ok(response) => response
+                .json::<Value>()
+                .await
+                .ok()
+                .and_then(|value| subscription_dates(&value, &target.account_id)),
+            Err(_) => None,
+        }
+    } else {
+        None
+    };
     let mut snapshot = AccountQuotaSnapshot {
         id: target.id.clone(),
         label: target.label.clone(),
@@ -271,11 +292,8 @@ async fn query_account_quota(
         selected: target.selected,
         windows: Vec::new(),
         plan_type: None,
-        subscription_active_until: subscription_active_until(
-            refreshed_auth.as_ref().unwrap_or(&target.auth),
-        )
-        .as_deref()
-        .and_then(parse_rfc3339_seconds),
+        subscription_active_until: subscription.and_then(|dates| dates.0),
+        subscription_renews_at: subscription.and_then(|dates| dates.1),
         reset_credits: None,
         reset_credit_details: Vec::new(),
         reset_credits_error: None,
@@ -327,6 +345,29 @@ async fn query_account_quota(
         target,
         refreshed_auth,
     }
+}
+
+fn subscription_dates(value: &Value, account_id: &str) -> Option<(Option<i64>, Option<i64>)> {
+    let account = value.get("accounts")?.get(account_id)?;
+    let entitlement = account.get("entitlement")?;
+    if entitlement.get("has_active_subscription")?.as_bool()? == false {
+        return None;
+    }
+    let date = |key| {
+        entitlement
+            .get(key)
+            .and_then(Value::as_str)
+            .and_then(parse_rfc3339_seconds)
+    };
+    let renews = account
+        .get("last_active_subscription")
+        .and_then(|v| v.get("will_renew"))
+        .and_then(Value::as_bool)
+        == Some(true);
+    Some((
+        date("expires_at"),
+        if renews { date("renews_at") } else { None },
+    ))
 }
 
 fn parse_rfc3339_seconds(value: &str) -> Option<i64> {
@@ -457,6 +498,7 @@ mod tests {
                 usage: &format!("{url}/usage"),
                 credits: &format!("{url}/credits"),
                 token: &format!("{url}/token"),
+                account_check: None,
             };
             let result = query_account_quota(target(), &client, &endpoints).await;
             assert!(result.snapshot.success);
@@ -497,6 +539,7 @@ mod tests {
                     usage: &url,
                     credits: &url,
                     token: &url,
+                    account_check: None,
                 };
                 let result = query_account_quota(target(), &client, &endpoints).await;
                 assert!(!result.snapshot.success && result.refreshed_auth.is_none());
@@ -523,6 +566,7 @@ mod tests {
                     usage: &url,
                     credits: &url,
                     token: &url,
+                    account_check: None,
                 };
                 let result = query_account_quota(target(), &client, &endpoints).await;
                 assert_eq!(result.snapshot.success, success);
@@ -549,48 +593,41 @@ mod tests {
     }
 
     #[test]
-    fn subscription_expiry_is_available_even_when_quota_fails() {
-        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+    fn subscription_dates_require_matching_active_account_and_explicit_renewal() {
+        let mut response = json!({"accounts": {"workspace": {
+            "entitlement": {"has_active_subscription": true, "expires_at": "2026-11-19T09:21:48+08:00", "renews_at": "2026-11-18T09:21:48+08:00"},
+            "last_active_subscription": {"will_renew": true}
+        }}});
+        let (expires, renews) = subscription_dates(&response, "workspace").unwrap();
+        assert_eq!(expires, parse_rfc3339_seconds("2026-11-19T09:21:48+08:00"));
+        assert_eq!(renews, parse_rfc3339_seconds("2026-11-18T09:21:48+08:00"));
+        assert!(subscription_dates(&response, "other").is_none());
+        response["accounts"]["workspace"]["last_active_subscription"]["will_renew"] = json!(false);
+        assert_eq!(subscription_dates(&response, "workspace").unwrap().1, None);
+        response["accounts"]["workspace"]["entitlement"]["has_active_subscription"] = json!(false);
+        assert!(subscription_dates(&response, "workspace").is_none());
+    }
 
+    #[test]
+    fn subscription_failure_does_not_use_token_or_break_quota() {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
         tauri::async_runtime::block_on(async {
-            // 未提供或非法日期都应保持未知，不能从令牌 exp 推断订阅到期时间。
-            for expiry in [
-                json!("2026-11-19T09:21:48+08:00"),
-                Value::Null,
-                json!("invalid"),
-            ] {
-                let mut account = target();
-                let payload = URL_SAFE_NO_PAD.encode(
-                    serde_json::to_vec(&json!({
-                        "exp": 1_800_000_000,
-                        "https://api.openai.com/auth": {
-                            "chatgpt_subscription_active_until": expiry,
-                        },
-                    }))
-                    .unwrap(),
-                );
-                account.auth["tokens"]["id_token"] = format!("test.{payload}.test").into();
-                let (url, server) = serve(vec![(403, "{}")]);
-                let client = reqwest::Client::builder().no_proxy().build().unwrap();
-                let endpoints = Endpoints {
-                    usage: &url,
-                    credits: &url,
-                    token: &url,
-                };
-                let result = query_account_quota(account, &client, &endpoints).await;
-                assert!(!result.snapshot.success);
-                assert_eq!(
-                    result.snapshot.subscription_active_until,
-                    expiry.as_str().and_then(parse_rfc3339_seconds),
-                );
-                let ipc = serde_json::to_value(&result.snapshot).unwrap();
-                assert!(ipc.get("subscriptionActiveUntil").is_some());
-                assert!(!ipc.to_string().contains(&payload));
-                server.join().unwrap();
-            }
-            for auth in [json!({}), json!({"tokens": {"id_token": "invalid"}})] {
-                assert_eq!(subscription_active_until(&auth), None);
-            }
+            let mut account = target();
+            let payload = URL_SAFE_NO_PAD.encode(br#"{"https://api.openai.com/auth":{"chatgpt_subscription_active_until":"2030-01-01T00:00:00Z"}}"#);
+            account.auth["tokens"]["id_token"] = format!("test.{payload}.test").into();
+            let (url, server) = serve(vec![(200, USAGE), (200, CREDITS), (403, "{}")]);
+            let client = reqwest::Client::builder().no_proxy().build().unwrap();
+            let endpoints = Endpoints {
+                usage: &url,
+                credits: &url,
+                token: &url,
+                account_check: Some(&url),
+            };
+            let result = query_account_quota(account, &client, &endpoints).await;
+            assert!(result.snapshot.success);
+            assert_eq!(result.snapshot.subscription_active_until, None);
+            assert_eq!(result.snapshot.subscription_renews_at, None);
+            server.join().unwrap();
         });
     }
 

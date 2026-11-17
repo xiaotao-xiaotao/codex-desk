@@ -52,7 +52,7 @@ const dashboardLoadingOverlay = createLoadingOverlay({
   container: panel,
   className: "dashboard-loading-overlay",
 });
-const { formatQuotaWindow, formatResetAt, formatResetCountdown, formatResetTime } = createDateFormatters({
+const { formatQuotaWindow, formatResetAt, formatRelativeCountdown, formatResetCountdown, formatResetTime } = createDateFormatters({
   getLocale: i18n.getLocale,
   t,
 });
@@ -83,6 +83,7 @@ const accountQuotaMonitorView = createAccountQuotaMonitorView({
   invoke,
   formatQuotaWindow,
   formatResetAt,
+  formatRelativeCountdown,
   formatResetCountdown,
   getHideEmails: () => settingsController.getSettings().hideEmails,
   onToggleAlerts: () => toggleQuotaAlerts(),

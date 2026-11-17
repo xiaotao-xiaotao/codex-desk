@@ -492,16 +492,6 @@ fn claim(token: Option<&str>) -> Option<Value> {
     serde_json::from_slice(&URL_SAFE_NO_PAD.decode(payload).ok()?).ok()
 }
 
-/// 只读取凭据中的订阅展示信息，不据此判断实时订阅状态或授权有效性。
-pub(crate) fn subscription_active_until(auth: &Value) -> Option<String> {
-    let claims = claim(auth.pointer("/tokens/id_token").and_then(Value::as_str))?;
-    claims
-        .get("https://api.openai.com/auth")?
-        .get("chatgpt_subscription_active_until")?
-        .as_str()
-        .map(str::to_owned)
-}
-
 fn nonempty(value: Option<&Value>) -> Option<&str> {
     value
         .and_then(Value::as_str)
