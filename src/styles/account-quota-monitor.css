@@ -1,4 +1,4 @@
-#account-section { overflow-y: auto; container: quota-page / inline-size; }
+#account-section { overflow-y: auto; padding-right: 10px; container: quota-page / inline-size; }
 .account-quota-monitor-inline { display: grid; flex: 0 0 auto; gap: 16px; width: 100%; margin: 0 0 4px; padding-top: 4px; }
 .account-quota-featured-heading { margin: 0; }
 .account-quota-featured-heading h2 { margin: 0; color: var(--lite-muted); font-size: 11px; font-weight: 400; letter-spacing: normal; }
