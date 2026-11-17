@@ -667,22 +667,39 @@ mod tests {
     fn switch_preserves_daemon_state_and_reports_partial_failure() {
         tauri::async_runtime::block_on(async {
             for (stop_status, fail) in [
-                ("stopped", ""), ("notRunning", ""), ("stopped", "stop"),
-                ("stopped", "start"), ("invalid", ""), ("started", ""),
+                ("stopped", ""),
+                ("notRunning", ""),
+                ("stopped", "stop"),
+                ("stopped", "start"),
+                ("invalid", ""),
+                ("started", ""),
             ] {
                 let (dir, store) = setup();
                 write_json(&store.home.join("auth.json"), &auth("a", "refresh-a")).unwrap();
-                let target = store.save_current("目标账户").unwrap().accounts[0].id.clone();
+                let target = store.save_current("目标账户").unwrap().accounts[0]
+                    .id
+                    .clone();
                 write_json(&store.home.join("auth.json"), &auth("b", "refresh-b")).unwrap();
                 let executable = dir.path().join("fake cli.cmd");
                 // 只使用临时目录中的假 CLI；stop/start 都必须读到已提交的目标凭据。
                 fs::write(&executable, format!(
                     "@echo off\r\nfindstr /C:\"refresh-a\" \"%~dp0codex\\auth.json\" >nul\r\nif errorlevel 1 exit /b 9\r\necho %*>>\"%~dp0daemon.log\"\r\nif \"%3\"==\"{fail}\" exit /b 1\r\nif \"%3\"==\"stop\" (\r\n echo {{\"status\":\"{stop_status}\"}}\r\n exit /b 0\r\n)\r\necho {{\"status\":\"started\"}}\r\nexit /b 0\r\n"
                 )).unwrap();
-                let outcome = crate::app_server::apply_auth_change(store.clone(), target, Some(&executable)).await.unwrap();
+                let outcome =
+                    crate::app_server::apply_auth_change(store.clone(), target, Some(&executable))
+                        .await
+                        .unwrap();
                 assert_eq!(store.read_current().unwrap()["tokens"]["account_id"], "a");
-                assert!(outcome.snapshot.unwrap().accounts.iter().any(|account| account.selected));
-                assert_eq!(outcome.restarted, stop_status == "stopped" && fail.is_empty());
+                assert!(outcome
+                    .snapshot
+                    .unwrap()
+                    .accounts
+                    .iter()
+                    .any(|account| account.selected));
+                assert_eq!(
+                    outcome.restarted,
+                    stop_status == "stopped" && fail.is_empty()
+                );
                 if fail.is_empty() && matches!(stop_status, "stopped" | "notRunning") {
                     assert!(outcome.restart_error.is_none());
                 } else {
@@ -697,7 +714,13 @@ mod tests {
                 assert_eq!(log.lines().map(str::trim).collect::<Vec<_>>(), expected);
 
                 fs::remove_file(dir.path().join("daemon.log")).unwrap();
-                assert!(crate::app_server::apply_auth_change(store.clone(), "missing".into(), Some(&executable)).await.is_err());
+                assert!(crate::app_server::apply_auth_change(
+                    store.clone(),
+                    "missing".into(),
+                    Some(&executable)
+                )
+                .await
+                .is_err());
                 assert!(!dir.path().join("daemon.log").exists());
             }
         });

@@ -17,8 +17,10 @@ use tauri::{
 };
 
 const EXPANDED_WINDOW_WIDTH: f64 = 1020.0;
-// 账户用量与账户列表共用固定窗口高度。
+// 账户用量与账户列表的默认展开高度。
 const DASHBOARD_WINDOW_HEIGHT: f64 = 820.0;
+const MIN_WINDOW_WIDTH: f64 = 640.0;
+const MIN_WINDOW_HEIGHT: f64 = 480.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
 // 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
@@ -323,13 +325,24 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
         target_position.x = target_position.x.clamp(work_area.position.x, max_x);
         target_position.y = target_position.y.clamp(work_area.position.y, max_y);
     }
-    // 窗口保持不可手动缩放，避免 Windows 在拖至屏幕边缘时显示 Snap 贴靠预览；
-    // 程序仍可通过原生 API 切换展开和收起尺寸。
+    // 收起前解除最小尺寸限制，展开后恢复；悬浮球不能被手动拉伸。
     window
         // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
         .unmaximize()
+        .and_then(|_| window.set_min_size(None::<Size>))
         .and_then(|_| window.set_size(Size::Logical(LogicalSize::new(width, height))))
         .and_then(|_| window.set_position(Position::Physical(target_position)))
+        .and_then(|_| window.set_resizable(expanded))
+        .and_then(|_| {
+            if expanded {
+                window.set_min_size(Some(Size::Logical(LogicalSize::new(
+                    MIN_WINDOW_WIDTH.min(width),
+                    MIN_WINDOW_HEIGHT.min(height),
+                ))))
+            } else {
+                Ok(())
+            }
+        })
         .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
 }
 

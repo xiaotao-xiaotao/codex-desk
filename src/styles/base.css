@@ -17,6 +17,10 @@
 }
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+html[data-resize-direction="North"] *, html[data-resize-direction="South"] * { cursor: ns-resize !important; }
+html[data-resize-direction="East"] *, html[data-resize-direction="West"] * { cursor: ew-resize !important; }
+html[data-resize-direction="NorthWest"] *, html[data-resize-direction="SouthEast"] * { cursor: nwse-resize !important; }
+html[data-resize-direction="NorthEast"] *, html[data-resize-direction="SouthWest"] * { cursor: nesw-resize !important; }
 button, input { font: inherit; }
 .float-app { position: relative; width: 100%; height: 100%; }
 

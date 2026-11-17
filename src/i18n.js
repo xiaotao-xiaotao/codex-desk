@@ -149,11 +149,11 @@ const QUOTA_LABEL_TRANSLATIONS = {
 };
 
 const NAVIGATION_TRANSLATIONS = {
-  "zh-CN": { mainNavigation: "主导航", collapseSidebar: "收起侧栏", expandSidebar: "展开侧栏" },
-  "zh-TW": { mainNavigation: "主導覽", collapseSidebar: "收起側欄", expandSidebar: "展開側欄" },
-  en: { mainNavigation: "Main navigation", collapseSidebar: "Collapse sidebar", expandSidebar: "Expand sidebar" },
-  ja: { mainNavigation: "メインナビゲーション", collapseSidebar: "サイドバーを閉じる", expandSidebar: "サイドバーを開く" },
-  ko: { mainNavigation: "주 탐색", collapseSidebar: "사이드바 접기", expandSidebar: "사이드바 펼치기" },
+  "zh-CN": { mainNavigation: "主导航", collapseSidebar: "收起侧栏", expandSidebar: "展开侧栏", sidebarNarrow: "窗口较窄，侧栏已自动收起" },
+  "zh-TW": { mainNavigation: "主導覽", collapseSidebar: "收起側欄", expandSidebar: "展開側欄", sidebarNarrow: "視窗較窄，側欄已自動收起" },
+  en: { mainNavigation: "Main navigation", collapseSidebar: "Collapse sidebar", expandSidebar: "Expand sidebar", sidebarNarrow: "Sidebar collapsed because the window is narrow" },
+  ja: { mainNavigation: "メインナビゲーション", collapseSidebar: "サイドバーを閉じる", expandSidebar: "サイドバーを開く", sidebarNarrow: "ウィンドウが狭いためサイドバーを折りたたみました" },
+  ko: { mainNavigation: "주 탐색", collapseSidebar: "사이드바 접기", expandSidebar: "사이드바 펼치기", sidebarNarrow: "창이 좁아 사이드바가 자동으로 접혔습니다" },
 };
 
 const ACCOUNT_SWITCH_TRANSLATIONS = {

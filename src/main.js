@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { LANGUAGE_OPTIONS, createI18n } from "./i18n.js";
 import { THEME_ICONS, createThemeController } from "./theme.js";
 import { renderCloseIconButton } from "./utils/close-icon-button.js";
@@ -15,6 +16,7 @@ import { createQuotaView } from "./views/quota-view.js";
 import { createSettingsDialogView } from "./views/settings-dialog-view.js";
 
 const DRAG_THRESHOLD_PX = 4;
+const RESIZE_EDGE_PX = 7;
 
 const app = document.querySelector("#app");
 const orb = document.querySelector("#quota-orb");
@@ -233,10 +235,12 @@ function setDashboardSection(nextSection) {
 }
 
 function renderSidebar() {
-  const collapsed = sidebarCollapsedPreference ?? sidebarMediaQuery.matches;
+  // 窄窗口优先保留内容空间；宽度恢复后继续使用用户原先的选择。
+  const collapsed = sidebarMediaQuery.matches || sidebarCollapsedPreference;
   dashboardLayout.classList.toggle("is-sidebar-collapsed", collapsed);
+  sidebarToggle.disabled = sidebarMediaQuery.matches;
   sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
-  sidebarToggle.title = sidebarToggle.ariaLabel = t(collapsed ? "expandSidebar" : "collapseSidebar");
+  sidebarToggle.title = sidebarToggle.ariaLabel = t(sidebarMediaQuery.matches ? "sidebarNarrow" : collapsed ? "expandSidebar" : "collapseSidebar");
 }
 
 function setupDashboardNavigation() {
@@ -393,6 +397,32 @@ function setupLanguageControls() {
 }
 
 function setupWindowDragging() {
+  const resizeDirection = (event) => {
+    if (!expanded || windowMaximized) return null;
+    const north = event.clientY < RESIZE_EDGE_PX;
+    const south = event.clientY >= window.innerHeight - RESIZE_EDGE_PX;
+    const west = event.clientX < RESIZE_EDGE_PX;
+    const east = event.clientX >= window.innerWidth - RESIZE_EDGE_PX;
+    return north ? (west ? "NorthWest" : east ? "NorthEast" : "North")
+      : south ? (west ? "SouthWest" : east ? "SouthEast" : "South")
+        : west ? "West" : east ? "East" : null;
+  };
+  window.addEventListener("mousemove", (event) => {
+    const direction = resizeDirection(event);
+    if (direction) document.documentElement.dataset.resizeDirection = direction;
+    else delete document.documentElement.dataset.resizeDirection;
+  });
+  window.addEventListener("mouseleave", () => { delete document.documentElement.dataset.resizeDirection; });
+  window.addEventListener("mousedown", (event) => {
+    const direction = event.button === 0 && resizeDirection(event);
+    if (!direction) return;
+    event.preventDefault();
+    event.stopPropagation();
+    getCurrentWindow().startResizeDragging(direction).catch((error) => {
+      console.error("调整窗口大小失败", error);
+      setStatus(t("windowResizeFailed", { error: String(error) }), "error");
+    });
+  }, true);
   orb.addEventListener("mousedown", (event) => {
     if (event.button !== 0) return;
     suppressOrbClick = false;

@@ -65,9 +65,10 @@
 .account-quota-list-mini-item strong { color: var(--quota-color); font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .account-quota-list-mini-item i { display: block; height: 6px; overflow: hidden; border-radius: 5px; background: linear-gradient(to right, var(--quota-color) var(--mini-progress), var(--quota-track) var(--mini-progress)); }
 .account-quota-list-mini-item small { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0; color: var(--lite-muted); font-size: 11px; line-height: 1.5; white-space: nowrap; }
-.account-quota-list-credits { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; min-width: 0; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--lite-border) 70%, transparent); color: var(--lite-muted); font-size: 11px; font-weight: 400; line-height: 1.4; }
+.account-quota-list-credits { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--lite-border) 70%, transparent); color: var(--lite-muted); font-size: 11px; font-weight: 400; line-height: 1.4; }
 .account-quota-featured-credits { margin-top: 14px; padding-top: 12px; }
 .account-quota-list-credit { --credit-tone: color-mix(in srgb, var(--lite-accent) var(--credit-accent-mix), var(--lite-muted)); display: inline-flex; align-items: baseline; gap: 8px; color: var(--credit-tone); white-space: nowrap; }
+.account-quota-list-credit + .account-quota-list-credit::before { color: var(--lite-muted); content: "|"; font-weight: 400; }
 .account-quota-list-credit > span { font-weight: 500; }
 .account-quota-list-credit time { font-variant-numeric: tabular-nums; }
 .account-quota-list-credit-entries { display: contents; }
@@ -116,6 +117,12 @@
 @container quota-page (max-width: 760px) {
   .account-quota-featured-header { align-items: flex-start; flex-wrap: wrap; }
   .account-quota-featured-actions { margin-inline-start: auto; }
+  /* 内容宽度不足时改为上下排列，保留完整账号与额度信息。 */
+  .account-quota-list-row { grid-template-columns: minmax(0, 1fr); grid-template-areas: "identity" "quota"; min-width: 0; gap: 10px; }
+  .account-quota-list-row.is-unavailable > .account-quota-list-state { grid-column: 1; justify-self: start; }
+}
+@container quota-page (max-width: 430px) {
+  .account-quota-list-mini { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 }
 @media (max-width: 760px) {
   .account-quota-list { grid-template-columns: 1fr; }
