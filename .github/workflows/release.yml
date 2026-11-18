@@ -24,12 +24,11 @@ jobs:
       matrix:
         include:
           - name: macOS Intel
-            # macos-13 的 Intel 共享 Runner 容易长时间排队；使用已验证可调度的
-            # Apple Silicon Runner 交叉编译，仍产出可在 Intel Mac 上运行的安装包。
-            runner: macos-14
+            # 使用 Apple Silicon Runner 交叉编译，产出 Intel Mac 安装包。
+            runner: macos-15
             target: x86_64-apple-darwin
           - name: macOS Apple Silicon
-            runner: macos-14
+            runner: macos-15
             target: aarch64-apple-darwin
 
     runs-on: ${{ matrix.runner }}
