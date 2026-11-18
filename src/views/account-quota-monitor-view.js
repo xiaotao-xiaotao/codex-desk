@@ -16,6 +16,7 @@ export function createAccountQuotaMonitorView({
   getHideEmails = () => false,
   onToggleAlerts = async () => {},
   getAlertsEnabled = () => false,
+  getAlertLevel = () => 0,
 }) {
   const page = document.querySelector("#account-section");
   const monitor = document.createElement("section");
@@ -62,6 +63,8 @@ export function createAccountQuotaMonitorView({
   function renderWindow(window, index, { showAlert = false } = {}) {
     const card = document.createElement("div");
     card.className = "account-quota-window";
+    const alertLevel = showAlert ? getAlertLevel(window.usedPercent) : 0;
+    if (alertLevel) card.dataset.alertLevel = String(alertLevel);
     const heading = document.createElement("div");
     heading.className = "account-quota-window-heading";
     const name = document.createElement("span");

@@ -58,7 +58,6 @@ const { formatQuotaWindow, formatResetAt, formatRelativeCountdown, formatResetCo
   getLocale: i18n.getLocale,
   t,
 });
-const quotaView = createQuotaView({ t, formatQuotaWindow });
 let refreshController;
 let autoRefreshTimer = null;
 const settingsController = createSettingsController({
@@ -66,6 +65,8 @@ const settingsController = createSettingsController({
   onSettingsChanged: () => {
     accountSwitchView.updateLanguage();
     accountQuotaMonitorView?.updateLanguage();
+    const currentQuota = refreshController?.getLatestQuota();
+    if (currentQuota) quotaView.render(currentQuota);
     restartAutoRefreshTimer();
     renderQuotaAlertStatus();
   },
@@ -80,6 +81,7 @@ const quotaAlerts = createQuotaAlertController({
     return current ? `${current.accountId}:${current.email ?? current.id}` : "unknown";
   },
 });
+const quotaView = createQuotaView({ t, getLocale: i18n.getLocale, formatQuotaWindow, getAlertLevel: quotaAlerts.getAlertLevel });
 const accountQuotaMonitorView = createAccountQuotaMonitorView({
   t,
   invoke,
@@ -90,6 +92,7 @@ const accountQuotaMonitorView = createAccountQuotaMonitorView({
   getHideEmails: () => settingsController.getSettings().hideEmails,
   onToggleAlerts: () => toggleQuotaAlerts(),
   getAlertsEnabled: () => quotaAlerts.isEnabled(),
+  getAlertLevel: quotaAlerts.getAlertLevel,
 });
 const accountSwitchView = createAccountSwitchView({
   t,
@@ -326,6 +329,7 @@ function applyLanguage() {
   }
   renderQuotaAlertStatus();
   orb.title = t("orbTitle");
+  quotaView.renderReset();
   renderAccountSyncTime();
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 
@@ -354,7 +358,7 @@ function selectLanguage(nextLanguage) {
 }
 
 async function setExpanded(nextExpanded) {
-  // 收起时必须先在 WebView 隐藏完整面板，再让原生窗口缩为 56px。
+  // 收起时先隐藏完整面板，再让原生窗口缩为悬浮球尺寸。
   // 否则 Windows 会先裁切旧面板的一帧，产生“Codex”标题残影。
   if (!nextExpanded) {
     app.classList.add("is-collapsing");
@@ -434,7 +438,7 @@ function setupWindowDragging() {
       suppressOrbClick = false;
       return;
     }
-    setExpanded(!expanded);
+    void setExpanded(!expanded);
   });
   windowDragRegion.addEventListener("mousedown", (event) => {
     if (!expanded || event.button !== 0) return;
@@ -534,7 +538,10 @@ async function bootstrap() {
   });
   // 应用启动时直接展示看板，网络配置恢复完成后才发起查询。
   await setExpanded(true);
-  window.setInterval(() => refreshController.renderSyncedStatus(), 1_000);
+  window.setInterval(() => {
+    refreshController.renderSyncedStatus();
+    quotaView.renderReset();
+  }, 1_000);
   try {
     await settingsController.initialize();
   } catch (error) {

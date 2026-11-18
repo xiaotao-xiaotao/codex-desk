@@ -45,11 +45,11 @@ export function createDateFormatters({ getLocale, t }) {
    * 原生层只返回窗口持续分钟数，具体文案由前端根据当前语言生成。
    * 这避免服务数据夹带某一种界面语言，切换语言后可立即重新渲染。
    */
-  const formatQuotaWindow = (durationMinutes) => {
+  const formatQuotaWindow = (durationMinutes, { compact = false } = {}) => {
     const minutes = Number(durationMinutes);
     if (!Number.isFinite(minutes) || minutes <= 0) return t("quotaWindow");
-    if (minutes % 1_440 === 0) return t("quotaWindowDays", { count: minutes / 1_440 });
-    if (minutes % 60 === 0) return t("quotaWindowHours", { count: minutes / 60 });
+    if (minutes % 1_440 === 0) return t(compact ? "compactQuotaWindowDays" : "quotaWindowDays", { count: minutes / 1_440 });
+    if (minutes % 60 === 0) return t(compact ? "compactQuotaWindowHours" : "quotaWindowHours", { count: minutes / 60 });
     return t("quotaWindowMinutes", { count: minutes });
   };
 

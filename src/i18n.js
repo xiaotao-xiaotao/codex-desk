@@ -23,11 +23,11 @@ const LOCALE_BY_LANGUAGE = {
 // 翻译资源独立维护，避免页面控制器混入大段文案与语言判断。
 const TRANSLATIONS = {
   "zh-CN": {
-    compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小时",
+    compactQuotaWindowDays: "{count}天", compactQuotaWindowHours: "{count}小时",
     appTitle: "Codex 桌面控制台", secureAccess: "本机安全访问", remaining: "剩余", accountUsage: "账户用量",  quotaWindow: "额度窗口", quotaWindowDays: "{count} 天额度", quotaWindowHours: "{count} 小时额度", quotaWindowMinutes: "{count} 分钟额度",        minimize: "最小化到系统托盘", pinWindow: "置顶窗口", unpinWindow: "取消置顶", collapse: "收起为悬浮球", refresh: "立即刷新", quit: "退出程序", expandOrb: "展开 Codex 额度详情", collapseOrb: "收起 Codex 桌面控制台", orbTitle: "短按展开，按住后拖动", theme: "主题", themeLight: "白天", themeDark: "黑夜", language: "语言", languageSystem: "跟随系统", languageZhCN: "简体中文", languageZhTW: "繁體中文", languageEn: "English", languageJa: "日本語", languageKo: "한국어", readingLocalData: "正在查询账户额度…",   readFailed: "读取失败：{error}",        copied: "已复制", copyFailed: "失败", copy: "复制", copyFailedLong: "复制失败",  resetUnknown: "重置时间未知", resetCredits: "可用重置额度：{credits}",  planPrefix: " · {plan}",    codex: "Codex", windowResizeFailed: "无法调整悬浮窗：{error}", windowMaximizeFailed: "无法切换窗口最大化：{error}", windowAlwaysOnTopFailed: "无法切换窗口置顶状态：{error}", initializationFailed: "初始化失败：{error}", clipboardDenied: "系统未允许复制到剪贴板",
   "syncedStatusPrefix": "账户额度已更新{plan}（", "autoRefreshCountdownPrefix": "", "autoRefreshCountdownSuffix": " 秒后自动刷新", "syncedStatusSuffix": "）", "autoRefreshRetryPrefix": "刷新失败，", "autoRefreshRetrySuffix": " 秒后重试（第 {count} 次退避）", "dashboardUnavailableTitle": "暂时无法连接 Codex", "dashboardUnavailableDescription": "Codex 数据暂时不可用，请检查登录状态或网络连接。", "dashboardUnavailableReason": "原因：{error}", "dashboardUnavailableRetry": "{seconds} 秒后自动重试（第 {count} 次退避）", "dashboardRetry": "立即重试"},
   "zh-TW": {
-    compactQuotaWindowDays: "{count} 天", compactQuotaWindowHours: "{count} 小時",
+    compactQuotaWindowDays: "{count}天", compactQuotaWindowHours: "{count}小時",
     pinWindow: "置頂視窗", unpinWindow: "取消置頂", windowAlwaysOnTopFailed: "無法切換視窗置頂狀態：{error}",
     appTitle: "Codex 桌面控制台", secureAccess: "本機安全存取", remaining: "剩餘", accountUsage: "帳戶用量",  quotaWindow: "額度視窗", quotaWindowDays: "{count} 天額度", quotaWindowHours: "{count} 小時額度", quotaWindowMinutes: "{count} 分鐘額度",        minimize: "最小化到系統匣", collapse: "收合為浮動球", refresh: "立即重新整理", quit: "結束程式", expandOrb: "展開 Codex 額度詳情", collapseOrb: "收合 Codex 桌面控制台", orbTitle: "短按展開，按住後拖曳", theme: "主題", themeLight: "白天", themeDark: "黑夜", language: "語言", languageSystem: "跟隨系統", languageZhCN: "简体中文", languageZhTW: "繁體中文", languageEn: "English", languageJa: "日本語", languageKo: "한국어", readingLocalData: "正在查詢帳戶額度…",   readFailed: "讀取失敗：{error}",       copied: "已複製", copyFailed: "失敗", copy: "複製", copyFailedLong: "複製失敗",  resetUnknown: "重設時間未知", resetCredits: "可用重設額度：{credits}",  planPrefix: " · {plan}",   codex: "Codex", windowResizeFailed: "無法調整浮動視窗：{error}", windowMaximizeFailed: "無法切換視窗最大化：{error}", initializationFailed: "初始化失敗：{error}", clipboardDenied: "系統未允許複製到剪貼簿",
   "syncedStatusPrefix": "帳戶額度已更新{plan}（", "autoRefreshCountdownPrefix": "", "autoRefreshCountdownSuffix": " 秒後自動重新整理", "syncedStatusSuffix": "）", "autoRefreshRetryPrefix": "重新整理失敗，", "autoRefreshRetrySuffix": " 秒後重試（第 {count} 次退避）", "dashboardUnavailableTitle": "暫時無法連線 Codex", "dashboardUnavailableDescription": "Codex 資料暫時無法使用，請檢查登入狀態或網路連線。", "dashboardUnavailableReason": "原因：{error}", "dashboardUnavailableRetry": "{seconds} 秒後自動重試（第 {count} 次退避）", "dashboardRetry": "立即重試"},
@@ -320,8 +320,17 @@ const PROXY_SETTINGS_TRANSLATIONS = {
   }
 };
 
+const ORB_RESET_TRANSLATIONS = {
+  "zh-CN": { orbResetIn: "{value}后重置", orbResetSoon: "即将重置", orbResetNow: "正在重置", orbResetUnknown: "重置时间未知" },
+  "zh-TW": { orbResetIn: "{value}後重設", orbResetSoon: "即將重設", orbResetNow: "正在重設", orbResetUnknown: "重設時間未知" },
+  en: { orbResetIn: "Resets in {value}", orbResetSoon: "Resetting soon", orbResetNow: "Resetting", orbResetUnknown: "Reset time unknown" },
+  ja: { orbResetIn: "{value}後にリセット", orbResetSoon: "まもなくリセット", orbResetNow: "リセット中", orbResetUnknown: "リセット時刻不明" },
+  ko: { orbResetIn: "{value} 후 초기화", orbResetSoon: "곧 초기화", orbResetNow: "초기화 중", orbResetUnknown: "초기화 시간 미상" },
+};
+
 // 低优先级文案先合并，后面的业务分组覆盖同名键，保持原有查询优先级。
 const TRANSLATION_SOURCES = [
+  ORB_RESET_TRANSLATIONS,
   SETTINGS_LAYOUT_TRANSLATIONS,
   PROXY_SETTINGS_TRANSLATIONS,
   ACCOUNT_SWITCH_TRANSLATIONS,

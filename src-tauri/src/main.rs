@@ -11,7 +11,7 @@ mod oauth;
 mod quota;
 mod tray;
 
-use std::process::Command;
+use std::{process::Command, sync::Mutex};
 use tauri::{
     AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, State, WebviewWindow,
 };
@@ -23,10 +23,17 @@ const MIN_WINDOW_WIDTH: f64 = 640.0;
 const MIN_WINDOW_HEIGHT: f64 = 480.0;
 // 展开窗口与屏幕工作区保留安全边距，避免被任务栏或屏幕边缘裁切。
 const WINDOW_WORK_AREA_MARGIN: i32 = 12;
-// 收起态仅容纳 56px 悬浮球与阴影留白，避免透明窗口产生过大的点击区域。
-const COLLAPSED_WINDOW_SIZE: f64 = 64.0;
+// 为较长的本地化倒计时预留宽度，胶囊本身按文案长度收紧。
+const COLLAPSED_WINDOW_WIDTH: f64 = 156.0;
+const COLLAPSED_WINDOW_HEIGHT: f64 = 56.0;
 const CHATGPT_BILLING_URL: &str = "https://chatgpt.com/settings/billing";
 const CODEX_USAGE_URL: &str = "https://chatgpt.com/settings/usage";
+
+#[derive(Default)]
+struct FloatWindowPlacement {
+    compact: bool,
+    compact_position: Option<PhysicalPosition<i32>>,
+}
 
 #[tauri::command]
 async fn read_account_quotas(
@@ -275,11 +282,16 @@ fn set_window_always_on_top(always_on_top: bool, window: WebviewWindow) -> Resul
 }
 
 #[tauri::command]
-fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), String> {
+fn resize_float_window(
+    expanded: bool,
+    window: WebviewWindow,
+    placement: State<'_, Mutex<FloatWindowPlacement>>,
+) -> Result<(), String> {
+    let mut placement = placement.lock().map_err(|_| "无法读取悬浮窗位置状态")?;
     let (preferred_width, preferred_height) = if expanded {
         (EXPANDED_WINDOW_WIDTH, DASHBOARD_WINDOW_HEIGHT)
     } else {
-        (COLLAPSED_WINDOW_SIZE, COLLAPSED_WINDOW_SIZE)
+        (COLLAPSED_WINDOW_WIDTH, COLLAPSED_WINDOW_HEIGHT)
     };
     let previous_size = window
         .outer_size()
@@ -287,13 +299,28 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
     let previous_position = window
         .outer_position()
         .map_err(|error| format!("无法读取悬浮窗位置：{error}"))?;
-    let scale_factor = window
-        .scale_factor()
-        .map_err(|error| format!("无法读取屏幕缩放比例：{error}"))?;
+    // 展开时窗口会被屏幕边界调整，收起应回到展开前胶囊的位置。
+    let restore_position = if expanded { None } else { placement.compact_position };
+    let monitor = restore_position
+        .and_then(|position| {
+            window.available_monitors().ok()?.into_iter().find(|monitor| {
+                let origin = monitor.position();
+                let size = monitor.size();
+                (origin.x..origin.x + size.width as i32).contains(&position.x)
+                    && (origin.y..origin.y + size.height as i32).contains(&position.y)
+            })
+        })
+        .or_else(|| window.current_monitor().ok().flatten());
+    let scale_factor = match &monitor {
+        Some(monitor) => monitor.scale_factor(),
+        None => window
+            .scale_factor()
+            .map_err(|error| format!("无法读取屏幕缩放比例：{error}"))?,
+    };
     // 不能只钳制坐标：当固定尺寸大于工作区时，窗口仍会从底部溢出。
     // 这里先按当前显示器的实际工作区缩小逻辑尺寸，再计算位置，兼容高 DPI 缩放。
     let (width, height) = if expanded {
-        if let Some(monitor) = window.current_monitor().ok().flatten() {
+        if let Some(monitor) = &monitor {
             let work_area = monitor.work_area();
             let available_width =
                 (work_area.size.width as i32 - WINDOW_WORK_AREA_MARGIN * 2).max(1) as f64;
@@ -312,11 +339,11 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
     let target_width = (width * scale_factor).round() as i32;
     let target_height = (height * scale_factor).round() as i32;
     // 以悬浮球/当前窗口的中心为锚点缩放，而非固定左上角，展开不会只向右下延伸。
-    let mut target_position = PhysicalPosition::new(
+    let mut target_position = restore_position.unwrap_or(PhysicalPosition::new(
         previous_position.x + (previous_size.width as i32 - target_width) / 2,
         previous_position.y + (previous_size.height as i32 - target_height) / 2,
-    );
-    if let Some(monitor) = window.current_monitor().ok().flatten() {
+    ));
+    if let Some(monitor) = &monitor {
         let work_area = monitor.work_area();
         let max_x = (work_area.position.x + work_area.size.width as i32 - target_width)
             .max(work_area.position.x);
@@ -343,7 +370,12 @@ fn resize_float_window(expanded: bool, window: WebviewWindow) -> Result<(), Stri
                 Ok(())
             }
         })
-        .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))
+        .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))?;
+    if expanded && placement.compact {
+        placement.compact_position = Some(previous_position);
+    }
+    placement.compact = !expanded;
+    Ok(())
 }
 
 #[tauri::command]
@@ -362,6 +394,7 @@ fn main() {
         .manage(http_client::HttpState::default())
         .manage(account_store::AccountStoreState::default())
         .manage(account_login::AccountLoginState::default())
+        .manage(Mutex::new(FloatWindowPlacement::default()))
         .plugin(tauri_plugin_notification::init())
         // 第二次启动由首个实例接收，并唤起已有窗口，避免重复连接与悬浮窗。
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
@@ -378,7 +411,7 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 // 首次启动由原生层保证主面板尺寸和前台可见，不能依赖 WebView 初始化完成后再补救。
                 // 否则前端加载异常或 Windows 恢复出错误窗口尺寸时，只能看到托盘图标。
-                if let Err(error) = resize_float_window(true, window) {
+                if let Err(error) = resize_float_window(true, window, app.state()) {
                     eprintln!("初始化主面板尺寸失败：{error}");
                 }
             }

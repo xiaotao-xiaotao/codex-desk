@@ -44,6 +44,14 @@
   box-shadow: none;
 }
 
+:is(.account-quota-window, .quota-orb) { --quota-color: var(--lite-accent); }
+:is(.account-quota-window, .quota-orb)[data-alert-level="1"] { --quota-color: #986000; }
+:is(.account-quota-window, .quota-orb)[data-alert-level="2"] { --quota-color: #b94e00; }
+:is(.account-quota-window, .quota-orb)[data-alert-level="3"] { --quota-color: #cf1322; }
+:root[data-theme="dark"] :is(.account-quota-window, .quota-orb)[data-alert-level="1"] { --quota-color: #ffc069; }
+:root[data-theme="dark"] :is(.account-quota-window, .quota-orb)[data-alert-level="2"] { --quota-color: #ff9c6e; }
+:root[data-theme="dark"] :is(.account-quota-window, .quota-orb)[data-alert-level="3"] { --quota-color: #ff7875; }
+
 .panel-header {
   min-height: 54px;
   padding: 9px 18px;

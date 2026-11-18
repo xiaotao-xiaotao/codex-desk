@@ -27,7 +27,9 @@ button, input { font: inherit; }
 .panel { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; opacity: 0; border: 1px solid #e7e9ee; border-radius: 18px; background: #f8fafc; box-shadow: 0 14px 42px rgba(31, 35, 41, .14); pointer-events: none; transform: scale(.98); transition: opacity .18s ease, transform .18s ease; }
 /* 展开后移除变换，避免正文长期处于变换图层中影响文字清晰度。 */
 .is-expanded .panel { opacity: 1; pointer-events: auto; transform: none; }
-.is-expanded .quota-orb { opacity: 0; pointer-events: none; transform: scale(.78); }
+/* 收起后移除面板的绘制层，窗口里只留下胶囊。 */
+.is-compact .panel { display: none; }
+.is-expanded .quota-orb { visibility: hidden; opacity: 0; pointer-events: none; transform: scale(.78); }
 /* 收窗前两层都立即隐藏，避免原生窗口先缩小时把旧面板裁成一块短暂残影。 */
 .is-collapsing .panel, .is-collapsing .quota-orb { visibility: hidden; transition: none; }
 .panel-header { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-md); min-height: 46px; margin: 0; padding: 7px 14px; border-bottom: 1px solid #e7edf5; background: #fff; user-select: text; }

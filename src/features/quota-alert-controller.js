@@ -1,4 +1,5 @@
-import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
+import { invoke } from "@tauri-apps/api/core";
+import { isPermissionGranted, requestPermission } from "@tauri-apps/plugin-notification";
 import { readStoredEnum, readStoredJson, writeStoredValue } from "../utils/browser-storage.js";
 import { normalizeQuotaAlertThresholds } from "./settings-controller.js";
 
@@ -18,6 +19,15 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus, getT
   let history = new Set(
     (Array.isArray(storedHistory) ? storedHistory : []).filter((key) => typeof key === "string"),
   );
+  const pending = new Set();
+  const getNormalizedThresholds = () => normalizeQuotaAlertThresholds(getThresholds?.());
+
+  function getAlertLevel(percentage, thresholds = getNormalizedThresholds()) {
+    if (typeof percentage !== "number" || !Number.isFinite(percentage)
+      || percentage < 0 || percentage > 100) return 0;
+    const used = Math.round(percentage);
+    return thresholds.findLastIndex((threshold) => used >= threshold) + 1;
+  }
 
   function persistHistory() {
     // 每个重置窗口至多产生三个键；限制长度可避免长期运行后 localStorage 无限制累积。
@@ -34,32 +44,33 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus, getT
     if (!primaryWindow) return;
 
     const percentage = primaryWindow.usedPercent;
-    // 缺失值或非法数据不能作为额度已耗尽的依据。
-    if (typeof percentage !== "number" || !Number.isFinite(percentage)
-      || percentage < 0 || percentage > 100) return;
-    const used = Math.round(percentage);
-    // 设置页按从低到高展示，判断时倒序查找，优先提醒本次已达到的最高档次。
-    const thresholds = normalizeQuotaAlertThresholds(getThresholds?.()).sort((a, b) => b - a);
-    const threshold = thresholds.find((value) => used >= value);
+    const thresholds = getNormalizedThresholds();
+    const threshold = thresholds[getAlertLevel(percentage, thresholds) - 1];
     if (!threshold) return;
 
     // 多账户共享提醒偏好，但提醒去重必须按账户隔离。
     const historyKey = `${accountScope}:${primaryWindow.resetsAt ?? "unknown"}:${threshold}`;
-    if (history.has(historyKey)) return;
+    if (history.has(historyKey) || pending.has(historyKey)) return;
 
+    pending.add(historyKey);
     try {
-      await sendNotification({
-        title: t("quotaAlertTitle"),
-        body: t("quotaAlertBody", {
-          used,
-          remaining: formatResetTime(primaryWindow.resetsAt),
-        }),
+      // 插件的 JS 发送方法不返回 IPC Promise，直接等待命令回执以免失败时也写入去重记录。
+      await invoke("plugin:notification|notify", {
+        options: {
+          title: t("quotaAlertTitle"),
+          body: t("quotaAlertBody", {
+            used: Math.round(percentage),
+            remaining: formatResetTime(primaryWindow.resetsAt),
+          }),
+        },
       });
       history.add(historyKey);
       persistHistory();
     } catch (error) {
       // 系统可能在应用运行期间撤销权限；不打断主刷新流程，下一次用户操作可重新授权。
       console.warn("发送额度提醒失败", error);
+    } finally {
+      pending.delete(historyKey);
     }
   }
 
@@ -89,7 +100,7 @@ export function createQuotaAlertController({ t, formatResetTime, setStatus, getT
   }
 
   return {
-    getThresholds: () => normalizeQuotaAlertThresholds(getThresholds?.()),
+    getAlertLevel,
     isEnabled: () => enabled,
     notify,
     toggle,

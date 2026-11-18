@@ -96,6 +96,7 @@ export function createRefreshController({
     // 首次进入首页已有内容区加载提示；后续刷新在底部显示查询状态。
     setStatus(showLoadingStatus ? t("readingLocalData") : "");
     accountQuotaView.setLoading();
+    let hasAvailableQuotas = false;
     try {
       // 一轮查询的快照同时供顶部、列表、悬浮球、同步状态和提醒使用。
       const [snapshots, accountResult] = await Promise.all([
@@ -103,14 +104,16 @@ export function createRefreshController({
         Promise.resolve().then(refreshAccount).then(() => true, () => false),
       ]);
       if (version !== accountVersion) return;
+      // 空账户列表应保留登录引导，有成功结果时应保留可用账户的额度。
+      hasAvailableQuotas = snapshots.length === 0 || snapshots.some((snapshot) => snapshot.success);
       accountQuotaView.setSnapshots(snapshots);
-      onAvailabilityChange(true);
       const result = snapshots.find((snapshot) => snapshot.selected);
       if (!result) {
         latestQuota = null;
         latestQuotaSyncedAt = null;
         quotaView.render({ windows: [] });
-        throw new Error(t("accountsCurrentUnknown"));
+        const batchError = !hasAvailableQuotas && snapshots.find((snapshot) => snapshot.error)?.error;
+        throw new Error(batchError || t("accountsCurrentUnknown"));
       }
       if (latestQuota && latestQuota.id !== result.id) {
         latestQuota = null;
@@ -135,13 +138,13 @@ export function createRefreshController({
       if (version !== accountVersion) return;
       console.error(error);
       consecutiveRefreshFailures += 1;
-      latestRefreshError = String(error);
+      latestRefreshError = error instanceof Error ? error.message : String(error);
       // 最近同步保留成功时间，悬浮球明确标记失败，避免继续展示其他账户或过期额度。
       latestQuota = null;
       quotaView.showReadFailure(true);
       accountQuotaView.setError(error);
-      // 单账户失败仍保留其他账户卡片，错误由卡片和底部状态共同呈现。
       scheduleNextAutoRefresh(retryDelayMs());
+      onAvailabilityChange(hasAvailableQuotas);
     } finally {
       refreshing = false;
       finish();

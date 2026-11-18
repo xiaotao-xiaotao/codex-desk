@@ -1,13 +1,98 @@
-.quota-orb { --quota-progress: 0%; position: absolute; z-index: 3; inset: 0; width: 56px; height: 56px; margin: auto; padding: 0; border: 0; border-radius: 50%; color: #fff; background: conic-gradient(var(--orb-progress-color, #1677ff) var(--quota-progress), #e5eaf2 0); box-shadow: none; cursor: pointer; transition: transform .2s ease, opacity .18s ease; }
-.quota-orb::before { position: absolute; z-index: 0; inset: 0; border-radius: inherit; background: conic-gradient(from 0deg, transparent 0 72%, rgba(255, 255, 255, .08) 78%, rgba(255, 255, 255, .92) 86%, rgba(255, 255, 255, .18) 92%, transparent 100%); content: ""; pointer-events: none; will-change: transform; animation: quota-orb-flow 3.2s linear infinite; }
-.quota-orb:hover { transform: scale(1.045); }
-.quota-orb:active { transform: scale(.98); }
-.orb-ring { position: absolute; z-index: 1; inset: 4px; border-radius: 50%; background: #fff; }
-.orb-value, .orb-label { position: absolute; z-index: 2; right: 0; left: 0; }
-.orb-value { top: 15px; color: #1677ff; font-size: 14px; font-weight: 750; letter-spacing: -.45px; }
-.orb-label { top: 33px; overflow: hidden; color: #7d8792; font-size: 7px; font-weight: 650; letter-spacing: .01em; text-overflow: ellipsis; white-space: nowrap; }
-@keyframes quota-orb-flow { to { transform: rotate(1turn); } }
-.is-expanded .quota-orb::before { animation-play-state: paused; }
+.quota-orb {
+  --quota-progress: 0%;
+  --orb-border: #cfdef3;
+  --orb-label: #213756;
+  --orb-muted: #475e80;
+  --orb-divider: #33598d29;
+  --orb-track: #b9cfee;
+  position: absolute;
+  z-index: 3;
+  inset: 4px;
+  width: max-content;
+  max-width: calc(100% - 8px);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
+  border: 1px solid var(--orb-border);
+  border-radius: 999px;
+  background: var(--lite-ground);
+  color: var(--quota-color);
+  cursor: pointer;
+  user-select: none;
+}
+
+:root[data-theme="dark"] .quota-orb {
+  --orb-border: #6585a8;
+  --orb-label: #e6efff;
+  --orb-muted: #b1c4de;
+  --orb-divider: #ffffff24;
+  --orb-track: #496784;
+}
+
+.quota-orb:focus-visible { outline: 2px solid var(--lite-accent); outline-offset: 1px; }
+.orb-ring {
+  position: relative;
+  display: grid;
+  flex: 0 0 36px;
+  height: 36px;
+  padding: 3px;
+  border-radius: 50%;
+  background: conic-gradient(var(--quota-color) var(--quota-progress), var(--orb-alert-track, var(--orb-track)) 0);
+}
+.quota-orb[data-alert-level] { --orb-alert-track: color-mix(in srgb, var(--quota-color) 18%, var(--orb-track)); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .is-compact:not(.is-collapsing) .quota-orb:not(.is-unavailable) .orb-ring::before {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(transparent 0 72%, #ffffff14 78%, #ffffffb8 86%, #ffffff2e 92%, transparent 100%);
+    content: "";
+    pointer-events: none;
+    animation: quota-orb-flow 3.2s linear infinite;
+  }
+}
+
+@keyframes quota-orb-flow {
+  to { transform: rotate(1turn); }
+}
+
+.orb-value {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lite-ground);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.orb-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  min-width: 0;
+  padding-inline-start: 4px;
+  border-inline-start: 1px solid var(--orb-divider);
+  text-align: start;
+}
+.orb-label, .orb-reset {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 14px;
+}
+.orb-heading { display: flex; align-items: center; gap: 3px; min-width: 0; color: var(--orb-label); }
+.orb-clock { width: 12px; height: 12px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.orb-label { font-size: 11px; font-weight: 600; }
+.orb-reset { color: var(--orb-muted); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.orb-reset:lang(zh) { font-size: 11px; letter-spacing: .02em; }
+.orb-number { color: var(--lite-accent); }
+.quota-orb.is-unavailable { color: var(--orb-muted); }
 
 .quota-alert-toggle { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; min-height: var(--control-size); padding: 2px 6px; border: 1px solid #b7d4ff; border-radius: 4px; color: #1668c6; background: #f5f9ff; cursor: pointer; font-size: var(--font-caption); font-weight: 500; line-height: 1.2; white-space: nowrap; }
 .quota-alert-toggle-label { letter-spacing: 1px; }
@@ -16,7 +101,3 @@
 .quota-alert-toggle:focus-visible { outline: 2px solid #91caff; outline-offset: 2px; }
 .quota-alert-toggle:hover { border-color: #69a5ef; color: #0958d9; background: #eaf3ff; }
 .quota-alert-toggle.is-enabled { border-color: #b7eb8f; color: #389e0d; background: #f6ffed; }
-
-@media (prefers-reduced-motion: reduce) {
-  .quota-orb::before { animation: none; }
-}

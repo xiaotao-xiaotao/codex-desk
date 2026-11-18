@@ -1,12 +1,6 @@
 /* 深色主题仅覆盖颜色，不改变现有紧凑布局与交互尺寸。 */
-:root[data-theme="dark"] .quota-orb.is-unavailable .orb-value { color: #9aa9ba; }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color: #e6edf3; color-scheme: dark; }
-/* 收起态窗口本身透明，悬浮球不投射阴影，避免桌面上出现误认为底色的灰色区域。 */
-:root[data-theme="dark"] .quota-orb { background: conic-gradient(var(--orb-progress-color, #4096ff) var(--quota-progress), #334155 0); box-shadow: none; }
-:root[data-theme="dark"] .orb-ring { background: #151b23; }
-:root[data-theme="dark"] .orb-value { color: #69b1ff; }
-:root[data-theme="dark"] .orb-label { color: #aab7c7; }
 :root[data-theme="dark"] .panel { border-color: #2a3544; background: #10151c; box-shadow: 0 14px 42px rgba(0, 0, 0, .36); }
 :root[data-theme="dark"] .panel-header,
 :root[data-theme="dark"] .dashboard-section,

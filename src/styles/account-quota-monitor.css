@@ -82,17 +82,18 @@
 .account-quota-identity div > span { overflow: hidden; color: var(--lite-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .account-quota-windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 .account-quota-windows.is-single { grid-template-columns: minmax(0, 1fr); }
-.account-quota-window { display: grid; grid-template-areas: "heading" "value" "meter" "reset"; min-width: 0; padding: 14px 14px 12px 22px; border: 1px solid var(--lite-border); border-radius: 11px; background: var(--lite-surface); box-shadow: inset 4px 0 0 var(--lite-accent); }
+.account-quota-window { --quota-track: var(--lite-border); display: grid; grid-template-areas: "heading" "value" "meter" "reset"; min-width: 0; padding: 14px 14px 12px 22px; border: 1px solid var(--lite-border); border-radius: 11px; background: var(--lite-surface); box-shadow: inset 4px 0 0 var(--quota-color); }
+.account-quota-window[data-alert-level] { --quota-track: color-mix(in srgb, var(--quota-color) 18%, var(--lite-border)); }
 .account-quota-window-heading { display: flex; grid-area: heading; justify-content: space-between; gap: 7px; color: var(--lite-muted); font-size: 13px; }
 .account-quota-window-heading > span:first-child { color: var(--lite-muted); font-size: 14px; font-weight: 700; line-height: 1.15; }
 .account-quota-window-reset { padding: 0; border: 0; color: #1668c6 !important; background: transparent; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .account-quota-value-row { display: flex; grid-area: value; align-items: baseline; flex-wrap: wrap; gap: 5px; min-width: 0; margin-top: 6px; }
-.account-quota-percent { color: var(--lite-accent); font-size: 36px; line-height: 1.15; letter-spacing: -.05em; }
+.account-quota-percent { color: var(--quota-color); font-size: 36px; line-height: 1.15; letter-spacing: -.05em; }
 .account-quota-featured .account-quota-percent { font-size: 48px; font-weight: 750; line-height: 1; }
 .account-quota-percent-label { color: var(--lite-muted); font-size: 11px; white-space: nowrap; }
 .account-quota-used { color: var(--lite-muted); font-size: 11px; white-space: nowrap; }
-.account-quota-meter { grid-area: meter; height: 6px; margin: 11px 0 0; overflow: hidden; border-radius: 999px; background: var(--lite-border); }
-.account-quota-meter span { display: block; height: 100%; border-radius: inherit; background: var(--lite-accent); }
+.account-quota-meter { grid-area: meter; height: 6px; margin: 11px 0 0; overflow: hidden; border-radius: 999px; background: var(--quota-track); }
+.account-quota-meter span { display: block; height: 100%; border-radius: inherit; background: var(--quota-color); }
 .account-quota-window small { display: flex; grid-area: reset; align-items: center; gap: 8px; min-width: 0; margin-top: 8px; overflow: hidden; color: var(--lite-muted); font-size: 11px; white-space: nowrap; }
 .account-quota-window small > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .account-quota-unavailable { grid-column: 1 / -1; padding: 17px; border-radius: 12px; color: #d95d67; background: color-mix(in srgb, #d95d67 8%, var(--lite-ground)); font-size: 11px; line-height: 1.5; }

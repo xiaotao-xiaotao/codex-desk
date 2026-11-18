@@ -31,7 +31,8 @@ function setup(read) {
     refreshAccount: async () => {},
     setStatus: () => {},
     onRefreshingChange: () => {},
-    onAvailabilityChange: () => {},
+    onAvailabilityChange: (available) => { state.available = available; },
+    onRetryStatusChange: (retryStatus) => { state.retryStatus = retryStatus; },
     statusElement: status,
     t: (key) => key,
     getAutoRefreshIntervalMs: () => 180_000,
@@ -63,6 +64,7 @@ test("当前账户失败时底部保持失败，重置计时器和其他账户�
   assert.equal(controller.getLatestQuota(), null);
   assert.equal(controller.getLatestQuotaSyncedAt(), null);
   assert.equal(state.snapshots.length, 2);
+  assert.equal(state.available, true);
   assert.equal(state.orbFailed, true);
   assert.equal(state.notified.length, 0);
 });
@@ -90,6 +92,35 @@ test("首次成功后刷新失败不更新最近同步，悬浮球明确标记�
   assert.equal(state.orbFailed, true);
 });
 
+test("启动或刷新时所有账户都失败，显示统一错误状态并在重试成功后恢复", async (context) => {
+  context.mock.method(console, "error", () => {});
+  let results = [current({ success: false, error: "quota timeout" }), { selected: false, success: false }];
+  const { controller, state } = setup(() => results);
+  await controller.refreshQuota({ showLoadingStatus: false });
+  assert.equal(state.available, false);
+  assert.equal(state.retryStatus.error, "quota timeout");
+  assert.equal(state.retryStatus.count, 1);
+  assert.ok(state.retryStatus.seconds > 0);
+
+  results = [current()];
+  await controller.refreshQuota({ manual: true });
+  assert.equal(state.available, true);
+  assert.equal(state.retryStatus, null);
+  assert.equal(controller.getLatestQuota(), results[0]);
+
+  results = [current({ success: false, error: "quota timeout" })];
+  await controller.refreshQuota();
+  assert.equal(state.available, false);
+});
+
+test("未添加账户时保留登录引导", async (context) => {
+  context.mock.method(console, "error", () => {});
+  const { controller, state } = setup(() => []);
+  await controller.refreshQuota();
+  assert.equal(state.available, true);
+  assert.deepEqual(state.snapshots, []);
+});
+
 test("重叠刷新只发一次请求，账户切换前的旧结果不会覆盖新账户", async () => {
   let resolve;
   const pending = new Promise((done) => { resolve = done; });
@@ -111,6 +142,7 @@ test("批量调用失败会结束加载并进入可重试状态", async (context
   const { controller, state, status } = setup(() => { throw new Error("IPC failure"); });
   await controller.refreshQuota();
   assert.equal(state.loading, false);
+  assert.equal(state.available, false);
   assert.equal(status.dataset.kind, "warning");
   assert.equal(controller.isRefreshing(), false);
   assert.ok(controller.getNextAutoRefreshDelayMs() > 0);
