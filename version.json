@@ -1,31 +1,26 @@
 {
-  "version": "2.0.0",
-  "publishedAt": "2026-11-05",
+  "version": "2.0.0-lite.1",
+  "publishedAt": "2026-11-18",
   "releaseNotes": {
     "zh-CN": [
-      "精简桌面工作区，仅保留账户用量和账户管理两个业务页面。",
-      "支持多账户登录、保存、编辑与切换，展示各账户额度及重置时间。",
-      "提供代理设置、自动刷新、额度提醒、邮箱脱敏、悬浮球、托盘、主题及多语言。"
+      "新增订阅有效期与续订时间显示。",
+      "支持拖动窗口边缘调整大小，优化账户用量布局和滚动条。"
     ],
     "zh-TW": [
-      "精簡桌面工作區，僅保留帳戶用量與帳戶管理兩個業務頁面。",
-      "支援多帳戶登入、儲存、編輯與切換，顯示各帳戶額度及重設時間。",
-      "提供代理設定、自動更新、額度提醒、電子郵件遮蔽、懸浮球、系統匣、主題及多語言。"
+      "新增訂閱有效期與續訂時間顯示。",
+      "支援拖曳視窗邊緣調整大小，最佳化帳戶用量版面與捲動條。"
     ],
     "en": [
-      "Streamlined the workspace to account usage and account management.",
-      "Supports signing in, saving, editing, and switching accounts, with per-account quota and reset times.",
-      "Includes proxy settings, automatic refresh, quota alerts, email masking, a floating orb, tray controls, themes, and multiple languages."
+      "Added subscription expiration and renewal time display.",
+      "Added window resizing from its edges and improved the account usage layout and scrollbar."
     ],
     "ja": [
-      "ワークスペースをアカウント使用量とアカウント管理の2画面に整理。",
-      "複数アカウントのログイン、保存、編集、切り替えと、使用量・リセット時刻の表示に対応。",
-      "プロキシ設定、自動更新、クォータ通知、メールのマスク、フローティング表示、トレイ、テーマ、多言語に対応。"
+      "サブスクリプションの有効期限と更新日時を表示します。",
+      "ウィンドウの端でのサイズ変更に対応し、アカウント使用量のレイアウトとスクロールバーを改善しました。"
     ],
     "ko": [
-      "계정 사용량과 계정 관리의 두 화면으로 작업 공간을 정리했습니다.",
-      "여러 계정의 로그인, 저장, 편집, 전환과 계정별 할당량 및 초기화 시간을 지원합니다.",
-      "프록시 설정, 자동 새로 고침, 할당량 알림, 이메일 마스킹, 플로팅 표시, 트레이, 테마, 다국어를 제공합니다."
+      "구독 만료일과 갱신 시간을 표시합니다.",
+      "창 가장자리 크기 조절을 지원하고 계정 사용량 화면과 스크롤바를 개선했습니다."
     ]
   }
 }

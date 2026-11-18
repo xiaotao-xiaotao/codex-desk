@@ -84,10 +84,10 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content -Raw "version.json" | ConvertFrom-Json).version
-          if ($version -eq "2.0.0-lite") {
-            # MSI 不接受字母后缀；仅安装包版本使用数字，应用版本仍为 2.0.0-lite。
+          if ($version -eq "2.0.0-lite.1") {
+            # MSI 不接受字母后缀；递增安装包版本以允许从 2.0.0-lite 升级。
             $overridePath = Join-Path $env:RUNNER_TEMP "tauri-lite-bundle.json"
-            '{"bundle":{"windows":{"wix":{"version":"2.0.0"}}}}' | Set-Content -LiteralPath $overridePath -Encoding utf8
+            '{"bundle":{"windows":{"wix":{"version":"2.0.1"}}}}' | Set-Content -LiteralPath $overridePath -Encoding utf8
             npm run tauri build -- --bundles msi,nsis --config $overridePath
           } else {
             npm run tauri build -- --bundles msi,nsis
@@ -186,7 +186,7 @@ jobs:
             }
             body.push(`## ${heading}`, '', ...notes.map(note => `- ${note}`), '');
           }
-          if (version === '2.0.0-lite') {
+          if (version === '2.0.0-lite.1') {
             // 固定引用发布标签中的截图，避免分支更新后历史版本展示不同界面。
             const imageBase = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/raw/refs/tags/${encodeURIComponent(process.env.GITHUB_REF_NAME)}/docs/screenshots`;
             body.push('## 界面预览 / Screenshots', '', '截图使用虚构账户和额度数据。 / Screenshots use fictional accounts and quota data.', '');
