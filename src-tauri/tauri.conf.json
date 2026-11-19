@@ -42,6 +42,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "targets": "all"
+    "targets": "all",
+    "windows": {
+      "wix": {
+        "version": "2.0.2"
+      }
+    }
   }
 }

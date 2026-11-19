@@ -80,18 +80,7 @@ jobs:
 
       # 同时保留 MSI（企业部署友好）和 NSIS EXE（普通用户安装方便）两种格式。
       - name: 构建 Windows 安装包
-        shell: pwsh
-        run: |
-          $version = (Get-Content -Raw "version.json" | ConvertFrom-Json).version
-          if ($version -eq "2.0.0-lite.2") {
-            # MSI 不接受字母后缀；递增安装包版本以允许从 2.0.0-lite.1 升级。
-            $overridePath = Join-Path $env:RUNNER_TEMP "tauri-lite-bundle.json"
-            '{"bundle":{"windows":{"wix":{"version":"2.0.2"}}}}' | Set-Content -LiteralPath $overridePath -Encoding utf8
-            npm run tauri build -- --bundles msi,nsis --config $overridePath
-          } else {
-            npm run tauri build -- --bundles msi,nsis
-          }
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        run: npm run tauri build -- --bundles msi,nsis
 
       - name: 保存 Windows 安装包
         uses: actions/upload-artifact@v7
