@@ -7,7 +7,7 @@
   --orb-track: #b9cfee;
   position: absolute;
   z-index: 3;
-  inset: 4px;
+  inset: 4px 4px auto;
   width: max-content;
   max-width: calc(100% - 8px);
   margin-inline: auto;
@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0 4px;
+  padding: 5px 4px;
   border: 1px solid var(--orb-border);
   border-radius: 999px;
   background: var(--lite-ground);
@@ -45,7 +45,7 @@
 .quota-orb[data-alert-level] { --orb-alert-track: color-mix(in srgb, var(--quota-color) 18%, var(--orb-track)); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .is-compact:not(.is-collapsing) .quota-orb:not(.is-unavailable) .orb-ring::before {
+  .is-compact:not(.is-resizing) .quota-orb:not(.is-unavailable) .orb-ring::before {
     position: absolute;
     inset: 0;
     border-radius: inherit;

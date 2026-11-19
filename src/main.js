@@ -358,29 +358,25 @@ function selectLanguage(nextLanguage) {
 }
 
 async function setExpanded(nextExpanded) {
-  // 收起时先隐藏完整面板，再让原生窗口缩为悬浮球尺寸。
-  // 否则 Windows 会先裁切旧面板的一帧，产生“Codex”标题残影。
-  if (!nextExpanded) {
-    app.classList.add("is-collapsing");
-    app.classList.remove("is-expanded");
-    // 将隐藏状态提交给渲染队列后再发起原生缩窗，避免尺寸变化抢在样式更新之前。
-    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  if (app.classList.contains("is-resizing")) return;
+  if (nextExpanded !== expanded) {
+    app.classList.add("is-resizing");
+    // 留出一帧绘制隐藏状态，避免原生窗口先缩放，拉伸胶囊或裁切旧面板。
+    await new Promise((resolve) => {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(resolve));
+    });
   }
 
   try {
-    // 原生层统一控制窗口尺寸和锚点；展开时保持先扩窗、后显示面板的原有顺序。
     await invoke("resize_float_window", {
       expanded: nextExpanded,
     });
   } catch (error) {
-    if (!nextExpanded) {
-      // 原生层调整失败时还原面板，不能让用户停留在一个透明的大窗口中。
-      app.classList.remove("is-collapsing", "is-compact");
-      app.classList.add("is-expanded");
-    }
     console.error("调整悬浮窗尺寸失败", error);
     setStatus(t("windowResizeFailed", { error: String(error) }), "error");
     return;
+  } finally {
+    app.classList.remove("is-resizing");
   }
   expanded = nextExpanded;
   if (!expanded && windowMaximized) {
@@ -388,7 +384,6 @@ async function setExpanded(nextExpanded) {
   }
   app.classList.toggle("is-compact", !expanded);
   app.classList.toggle("is-expanded", expanded);
-  app.classList.remove("is-collapsing");
   orb.ariaLabel = expanded ? t("collapseOrb") : t("expandOrb");
 }
 

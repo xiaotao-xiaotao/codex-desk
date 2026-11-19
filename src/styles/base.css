@@ -30,8 +30,8 @@ button, input { font: inherit; }
 /* 收起后移除面板的绘制层，窗口里只留下胶囊。 */
 .is-compact .panel { display: none; }
 .is-expanded .quota-orb { visibility: hidden; opacity: 0; pointer-events: none; transform: scale(.78); }
-/* 收窗前两层都立即隐藏，避免原生窗口先缩小时把旧面板裁成一块短暂残影。 */
-.is-collapsing .panel, .is-collapsing .quota-orb { visibility: hidden; transition: none; }
+/* 原生窗口调整尺寸时隐藏两层，避免内容以过渡尺寸绘制。 */
+.is-resizing .panel, .is-resizing .quota-orb { visibility: hidden; transition: none; }
 .panel-header { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-md); min-height: 46px; margin: 0; padding: 7px 14px; border-bottom: 1px solid #e7edf5; background: #fff; user-select: text; }
 /* 仅中间空白拖动区移动窗口，标题和其余文字始终可以正常框选、复制。 */
 .window-drag-region { min-width: 16px; align-self: stretch; flex: 1 1 auto; cursor: grab; user-select: none; }
