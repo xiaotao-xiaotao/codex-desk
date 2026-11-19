@@ -83,10 +83,10 @@ jobs:
         shell: pwsh
         run: |
           $version = (Get-Content -Raw "version.json" | ConvertFrom-Json).version
-          if ($version -eq "2.0.0-lite.1") {
-            # MSI 不接受字母后缀；递增安装包版本以允许从 2.0.0-lite 升级。
+          if ($version -eq "2.0.0-lite.2") {
+            # MSI 不接受字母后缀；递增安装包版本以允许从 2.0.0-lite.1 升级。
             $overridePath = Join-Path $env:RUNNER_TEMP "tauri-lite-bundle.json"
-            '{"bundle":{"windows":{"wix":{"version":"2.0.1"}}}}' | Set-Content -LiteralPath $overridePath -Encoding utf8
+            '{"bundle":{"windows":{"wix":{"version":"2.0.2"}}}}' | Set-Content -LiteralPath $overridePath -Encoding utf8
             npm run tauri build -- --bundles msi,nsis --config $overridePath
           } else {
             npm run tauri build -- --bundles msi,nsis
@@ -185,11 +185,11 @@ jobs:
             }
             body.push(`## ${heading}`, '', ...notes.map(note => `- ${note}`), '');
           }
-          if (version === '2.0.0-lite.1') {
+          if (version === '2.0.0-lite.2') {
             // 固定引用发布标签中的截图，避免分支更新后历史版本展示不同界面。
             const imageBase = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/raw/refs/tags/${encodeURIComponent(process.env.GITHUB_REF_NAME)}/docs/screenshots`;
             body.push('## 界面预览 / Screenshots', '', '截图使用虚构账户和额度数据。 / Screenshots use fictional accounts and quota data.', '');
-            for (const [label, file] of [['账户用量', 'dashboard-light-zh.png'], ['账户管理', 'accounts-zh.png'], ['账户登录', 'account-login-zh.png'], ['设置', 'settings-connection-zh.png']]) {
+            for (const [label, file] of [['悬浮额度球', 'quota-orb-light-zh.png'], ['悬浮额度球（深色）', 'quota-orb-dark-en.png'], ['账户用量', 'dashboard-light-zh.png'], ['账户管理', 'accounts-zh.png'], ['账户登录', 'account-login-zh.png'], ['设置', 'settings-connection-zh.png']]) {
               body.push(`![${label}](${imageBase}/${file})`, '');
             }
           }

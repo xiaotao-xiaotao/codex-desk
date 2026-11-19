@@ -1,26 +1,31 @@
 {
-  "version": "2.0.0-lite.1",
-  "publishedAt": "2026-11-18",
+  "version": "2.0.0-lite.2",
+  "publishedAt": "2026-11-19",
   "releaseNotes": {
     "zh-CN": [
-      "新增订阅有效期与续订时间显示。",
-      "支持拖动窗口边缘调整大小，优化账户用量布局和滚动条。"
+      "悬浮额度球改为胶囊样式，显示剩余额度、额度周期和重置倒计时，收起后回到展开前的位置。",
+      "悬浮球和主额度卡片按用量阈值变色，避免重复发送通知，发送失败后可重试。",
+      "优化额度刷新失败时的提示，全部查询失败时显示错误原因和重试倒计时，部分失败时保留可用账户的额度。"
     ],
     "zh-TW": [
-      "新增訂閱有效期與續訂時間顯示。",
-      "支援拖曳視窗邊緣調整大小，最佳化帳戶用量版面與捲動條。"
+      "浮動額度球改為膠囊樣式，顯示剩餘額度、額度週期和重設倒數，收合後回到展開前的位置。",
+      "浮動球和主要額度卡片依用量門檻變色，避免重複傳送通知，傳送失敗後可重試。",
+      "改善額度重新整理失敗時的提示，全部查詢失敗時顯示錯誤原因和重試倒數，部分失敗時保留可用帳戶的額度。"
     ],
     "en": [
-      "Added subscription expiration and renewal time display.",
-      "Added window resizing from its edges and improved the account usage layout and scrollbar."
+      "Redesigned the floating quota indicator as a pill showing remaining quota, the quota period, and a reset countdown. It returns to its previous position when collapsed.",
+      "The floating indicator and primary quota cards change color at usage thresholds. Duplicate notifications are suppressed, and failed sends can be retried.",
+      "When all quota requests fail, the dashboard shows the reason and a retry countdown. Successful results remain visible when only some requests fail."
     ],
     "ja": [
-      "サブスクリプションの有効期限と更新日時を表示します。",
-      "ウィンドウの端でのサイズ変更に対応し、アカウント使用量のレイアウトとスクロールバーを改善しました。"
+      "フローティングのクォータ表示をピル型に変更し、残量、対象期間、リセットまでの時間を表示します。折りたたむと展開前の位置に戻ります。",
+      "フローティング表示とメインのクォータカードは使用量のしきい値に応じて色が変わります。重複通知を防ぎ、送信に失敗した場合は再試行できます。",
+      "クォータの取得がすべて失敗した場合は、エラーの原因と再試行までの時間を表示します。一部だけ失敗した場合は、取得できたアカウントのクォータを表示します。"
     ],
     "ko": [
-      "구독 만료일과 갱신 시간을 표시합니다.",
-      "창 가장자리 크기 조절을 지원하고 계정 사용량 화면과 스크롤바를 개선했습니다."
+      "플로팅 한도 표시를 캡슐 형태로 바꾸고 남은 한도, 한도 기간, 초기화까지 남은 시간을 표시합니다. 접으면 펼치기 전 위치로 돌아갑니다.",
+      "플로팅 표시와 기본 한도 카드의 색상이 사용량 기준에 따라 바뀝니다. 중복 알림을 방지하며 전송에 실패한 알림은 다시 시도할 수 있습니다.",
+      "한도 조회가 모두 실패하면 오류 원인과 재시도까지 남은 시간을 표시합니다. 일부만 실패하면 조회에 성공한 계정의 한도는 계속 표시합니다."
     ]
   }
 }
