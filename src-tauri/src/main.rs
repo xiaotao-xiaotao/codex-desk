@@ -352,8 +352,20 @@ fn resize_float_window(
         target_position.x = target_position.x.clamp(work_area.position.x, max_x);
         target_position.y = target_position.y.clamp(work_area.position.y, max_y);
     }
+    // Windows 可能在缩放时拉伸 WebView 的旧画面，先隐藏窗口再调整。
+    let hide_during_resize = cfg!(target_os = "windows")
+        && expanded
+        && placement.compact
+        && window
+            .is_visible()
+            .map_err(|error| format!("无法读取悬浮窗可见状态：{error}"))?;
+    if hide_during_resize {
+        window
+            .hide()
+            .map_err(|error| format!("无法隐藏悬浮窗：{error}"))?;
+    }
     // 收起前解除最小尺寸限制，展开后恢复；悬浮球不能被手动拉伸。
-    window
+    let resize_result = window
         // 从最大化状态收起后必须先还原，才能可靠地设置为悬浮球或默认展开尺寸。
         .unmaximize()
         .and_then(|_| window.set_min_size(None::<Size>))
@@ -370,12 +382,21 @@ fn resize_float_window(
                 Ok(())
             }
         })
-        .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"))?;
+        .map_err(|error| format!("无法调整悬浮窗尺寸：{error}"));
+    // 即使调整失败也恢复窗口，避免用户只能从托盘找回。
+    let show_result = if hide_during_resize {
+        window
+            .show()
+            .map_err(|error| format!("无法恢复悬浮窗：{error}"))
+    } else {
+        Ok(())
+    };
+    resize_result?;
     if expanded && placement.compact {
         placement.compact_position = Some(previous_position);
     }
     placement.compact = !expanded;
-    Ok(())
+    show_result
 }
 
 #[tauri::command]
