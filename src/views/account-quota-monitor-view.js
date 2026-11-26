@@ -3,7 +3,6 @@ import { displayEmail } from "../utils/email-privacy.js";
 const QUOTA_WARNING_REMAINING_PERCENT = 20;
 const QUOTA_CRITICAL_REMAINING_PERCENT = 10;
 const RESET_CARD_PREVIEW_LIMIT = 4;
-const RESET_CREDIT_TONE_FADE_PERCENT = 65;
 
 /** 多账户额度监控。只接收后端脱敏快照，单账户刷新仍通过同一批查询完成。 */
 export function createAccountQuotaMonitorView({
@@ -25,15 +24,20 @@ export function createAccountQuotaMonitorView({
     <div class="account-quota-featured-heading" hidden><h2></h2></div>
     <div class="account-quota-feedback" role="status" hidden></div>
     <section class="account-quota-featured" aria-live="polite"></section>
+    <div class="account-quota-list-header" hidden><h2></h2><div class="account-quota-filters" role="group"></div></div>
     <div class="account-quota-list" aria-live="polite" aria-busy="false"></div>`;
   page.prepend(monitor);
 
   const feedback = monitor.querySelector(".account-quota-feedback");
   const featuredHeading = monitor.querySelector(".account-quota-featured-heading h2");
   const featuredHeadingContainer = monitor.querySelector(".account-quota-featured-heading");
+  const listHeader = monitor.querySelector(".account-quota-list-header");
+  const filters = monitor.querySelector(".account-quota-filters");
   const list = monitor.querySelector(".account-quota-list");
   const featured = monitor.querySelector(".account-quota-featured");
   let snapshots = [];
+  let selectedPlan = "all";
+  let filterSignature = "";
   // 等待启动配置恢复时也属于未完成状态，不能提前判定为没有账户。
   let queryState = "pending";
   // 展开状态按区域和账户隔离，刷新额度或切换语言时保留用户的选择。
@@ -63,6 +67,7 @@ export function createAccountQuotaMonitorView({
   function renderWindow(window, index, { showAlert = false } = {}) {
     const card = document.createElement("div");
     card.className = "account-quota-window";
+    card.classList.toggle("is-long-window", Number(window.durationMinutes) >= 1_440);
     const alertLevel = showAlert ? getAlertLevel(window.usedPercent) : 0;
     if (alertLevel) card.dataset.alertLevel = String(alertLevel);
     const heading = document.createElement("div");
@@ -133,6 +138,7 @@ export function createAccountQuotaMonitorView({
     // 免费套餐没有订阅有效期，用账户类型说明替代未知提示。
     if (typeof snapshot.planType === "string" && snapshot.planType.trim().toLowerCase() === "free") {
       const label = document.createElement("span");
+      label.className = "account-quota-free-description";
       label.textContent = t("accountFreePlanDescription");
       expiry.append(label);
       return expiry;
@@ -175,7 +181,7 @@ export function createAccountQuotaMonitorView({
     }
     const count = snapshot.resetCredits ?? snapshot.resetCreditDetails?.length ?? 0;
     const expansionKey = `${featured ? "featured" : "list"}:${snapshot.id}`;
-    // 先显示最早到期的重置卡，让卡片深浅和实际到期先后保持一致。
+    // 先显示最早到期的重置卡。
     const creditDetails = [...(snapshot.resetCreditDetails ?? [])].sort((a, b) => {
       const expiryA = Number.isFinite(a?.expiresAt) ? a.expiresAt : Number.POSITIVE_INFINITY;
       const expiryB = Number.isFinite(b?.expiresAt) ? b.expiresAt : Number.POSITIVE_INFINITY;
@@ -184,7 +190,11 @@ export function createAccountQuotaMonitorView({
     if (count <= RESET_CARD_PREVIEW_LIMIT) expandedCreditAccounts.delete(expansionKey);
     if (!snapshot.success || count <= 0) return null;
 
-    const footer = document.createElement("span"); footer.className = `account-quota-list-credits${featured ? " account-quota-featured-credits" : ""}`;
+    const footer = document.createElement("span"); footer.className = `account-quota-list-credits account-quota-credits${featured ? " account-quota-featured-credits" : ""}`;
+    const title = document.createElement("strong");
+    title.className = "account-quota-credits-title";
+    title.textContent = t("accountQuotaResetCardsTitle");
+    footer.append(title);
     const entries = document.createElement("span"); entries.className = "account-quota-list-credit-entries";
     entries.id = `account-quota-${featured ? "featured" : "list"}-credits-${snapshot.id}`;
     footer.append(entries);
@@ -202,9 +212,8 @@ export function createAccountQuotaMonitorView({
       entries.replaceChildren();
       for (let index = 0; index < visibleCount; index += 1) {
         const credit = document.createElement("span"); credit.className = "account-quota-list-credit";
-        const toneStrength = Math.round(100 - (index / Math.max(visibleCount - 1, 1)) * RESET_CREDIT_TONE_FADE_PERCENT);
-        credit.style.setProperty("--credit-accent-mix", `${toneStrength}%`);
         const label = document.createElement("span"); label.textContent = t("accountQuotaResetCardLabel", { index: index + 1 });
+        label.className = "visually-hidden";
         const expiry = document.createElement("time");
         const expiresAt = creditDetails[index]?.expiresAt;
         expiry.textContent = expiresAt ? formatResetAt(expiresAt) : t("accountQuotaCreditsExpiryUnknown");
@@ -236,7 +245,38 @@ export function createAccountQuotaMonitorView({
     list.replaceChildren();
     featured.replaceChildren();
     // 当前登录已在顶部展示；没有其他账户时连同列表标题一起隐藏。
-    list.classList.toggle("is-empty", snapshots.every((snapshot) => snapshot.selected));
+    const otherAccounts = snapshots.filter((snapshot) => !snapshot.selected);
+    list.classList.toggle("is-empty", !otherAccounts.length);
+    listHeader.hidden = !otherAccounts.length;
+    const planKey = (snapshot) => `plan:${typeof snapshot.planType === "string" ? snapshot.planType.trim().toLowerCase() : ""}`;
+    const plans = new Map();
+    for (const snapshot of otherAccounts) {
+      const key = planKey(snapshot);
+      const plan = plans.get(key) || { label: (typeof snapshot.planType === "string" && snapshot.planType.trim()) || t("accountPlanUnavailable"), count: 0 };
+      plan.count += 1;
+      plans.set(key, plan);
+    }
+    if (selectedPlan !== "all" && !plans.has(selectedPlan)) selectedPlan = "all";
+    const options = [["all", { label: t("accountQuotaFilterAll"), count: otherAccounts.length }], ...plans];
+    const signature = JSON.stringify(options.map(([key]) => key));
+    if (signature !== filterSignature) {
+      filters.replaceChildren();
+      for (const [key] of options) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.plan = key;
+        button.addEventListener("click", () => { selectedPlan = key; renderList(); });
+        filters.append(button);
+      }
+      filterSignature = signature;
+    }
+    listHeader.querySelector("h2").textContent = t("accountQuotaListTitle");
+    filters.setAttribute("aria-label", t("accountQuotaFilterLabel"));
+    [...filters.children].forEach((button, index) => {
+      const [key, option] = options[index];
+      button.textContent = `${option.label} ${option.count}`;
+      button.setAttribute("aria-pressed", String(key === selectedPlan));
+    });
     if (!snapshots.length) {
       const empty = document.createElement("div");
       empty.className = "account-quota-empty";
@@ -311,7 +351,7 @@ export function createAccountQuotaMonitorView({
       featured.append(detail);
     }
 
-    ordered.filter((snapshot) => !snapshot.selected).forEach((snapshot) => {
+    ordered.filter((snapshot) => !snapshot.selected && (selectedPlan === "all" || planKey(snapshot) === selectedPlan)).forEach((snapshot) => {
       const row = document.createElement("div");
       row.className = `account-quota-list-row${snapshot.success ? "" : " is-unavailable"}`;
       const rowIdentity = document.createElement("span"); rowIdentity.className = "account-quota-list-identity";
@@ -387,7 +427,7 @@ export function createAccountQuotaMonitorView({
   }
 
   function updateLanguage() {
-    featuredHeading.textContent = "当前登录";
+    featuredHeading.textContent = t("currentSignInHeading");
     renderList();
   }
 

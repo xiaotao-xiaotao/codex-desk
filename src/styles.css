@@ -28,13 +28,13 @@
 
 /* 精简版工作区：把账户用量与账户管理放在清晰的双入口骨架里。 */
 :root {
-  --lite-ground: #f4f7fb;
-  --lite-surface: #ffffff;
-  --lite-ink: #172b46;
-  --lite-muted: #71839a;
-  --lite-accent: #1266d6;
-  --lite-accent-soft: #e1efff;
-  --lite-border: #dce6f1;
+  --lite-ground: #f3f6fd;
+  --lite-surface: #fbfcff;
+  --lite-ink: #172646;
+  --lite-muted: #667a99;
+  --lite-accent: #165ce7;
+  --lite-accent-soft: #e1ebff;
+  --lite-border: #d8e3f7;
 }
 
 .panel {
@@ -55,22 +55,23 @@
 .panel-header {
   min-height: 54px;
   padding: 9px 18px;
-  border-bottom: 0;
-  background: var(--lite-surface);
+  border-bottom: 1px solid var(--lite-border);
+  background: linear-gradient(105deg, var(--lite-surface), var(--lite-accent-soft));
 }
+.title-row { align-items: center; gap: 12px; }
+.title-row .eyebrow { position: relative; top: 2px; }
+.title-row h1 { display: flex; align-items: center; gap: 9px; color: var(--lite-ink); }
+.title-row h1::before { width: 20px; height: 20px; flex: 0 0 20px; border-radius: 50%; background: repeating-linear-gradient(135deg, #ffffffb3 0 2px, transparent 2px 5px) 0 100% / 65% 65% no-repeat, radial-gradient(circle at 30% 22%, #c9e6ff, #6ba9ff 34%, #2362e5 70%, #1746ac); content: ""; }
+.header-actions .icon-button, .header-actions .language-picker { background: transparent; }
 
-.dashboard-layout { grid-template-columns: 188px minmax(0, 1fr); }
+.dashboard-layout { grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr); }
 .dashboard-sidebar {
-  gap: 28px;
-  padding: 28px 14px 20px;
-  border-right: 0;
-  background: var(--lite-surface);
+  gap: 14px;
+  padding: 8px 10px 20px;
+  border-right: 1px solid var(--lite-border);
+  background: radial-gradient(ellipse 180% 30% at -40% 82%, color-mix(in srgb, var(--lite-accent) 18%, transparent) 0 60%, transparent 61%), linear-gradient(160deg, var(--lite-surface), var(--lite-accent-soft));
 }
-.sidebar-brand { min-height: 38px; padding-inline: 8px; color: var(--lite-muted); font-size: 13px; }
-.sidebar-brand-name { margin-left: 0; gap: 8px; }
-.sidebar-brand strong { color: var(--lite-ink); }
-.sidebar-brand-icon { width: 20px; height: 20px; color: var(--lite-accent); stroke: currentColor; }
-.sidebar-toggle { top: 30px; right: -12px; width: 24px; height: 34px; border-color: var(--lite-border); border-radius: 9px; color: var(--lite-muted); box-shadow: none; }
+.sidebar-toggle { top: 5px; right: -12px; width: 24px; height: 34px; border-color: var(--lite-border); border-radius: 9px; color: var(--lite-muted); box-shadow: none; }
 .sidebar-toggle:hover { border-color: #9fc3ee; color: var(--lite-accent); background: var(--lite-accent-soft); box-shadow: none; }
 .dashboard-nav { gap: 6px; }
 .dashboard-nav .dashboard-nav-button {
@@ -83,6 +84,7 @@
   font-weight: 650;
 }
 .dashboard-nav .dashboard-nav-button svg { width: 19px; height: 19px; }
+.dashboard-nav #nav-account svg { width: 18px; height: 18px; stroke-width: 1.8; }
 .dashboard-nav-button:hover { color: var(--lite-accent); background: #f0f6fd; }
 .dashboard-nav-button.is-active { color: var(--lite-accent); background: var(--lite-accent-soft); }
 .dashboard-nav-button.is-active::before { top: 12px; bottom: 12px; left: 0; width: 4px; border-radius: 0 4px 4px 0; background: var(--lite-accent); }
@@ -94,9 +96,21 @@
 .sidebar-utilities #settings-button > svg { display: block; }
 .sidebar-utilities #theme-label { display: none; }
 
-.dashboard-workspace { padding: 26px 30px 18px; }
+.dashboard-workspace { padding: 12px 26px 18px; }
 .dashboard-page.quota-section { gap: 18px; }
 .dashboard-status { margin-top: 16px; padding-top: 10px; border-top: 0; }
+
+:root .dashboard-page.accounts-page {
+  background: radial-gradient(ellipse 55% 30% at 100% 110%, var(--dark-wave-color, color-mix(in srgb, var(--lite-accent) 7%, transparent)) 0 55%, transparent 56%);
+}
+.accounts-page .accounts-row,
+.account-quota-list-row {
+  background-image: radial-gradient(ellipse var(--wave-size, 30% 130%) at var(--wave-position, 100% 120%), var(--dark-wave-color, color-mix(in srgb, var(--lite-accent) 13%, transparent)) 0 55%, transparent 56%) !important;
+}
+.accounts-page .accounts-row:nth-child(3n + 2),
+.account-quota-list-row:nth-child(3n + 2) { --wave-size: 25% 150%; --wave-position: 0% 120%; }
+.accounts-page .accounts-row:nth-child(3n),
+.account-quota-list-row:nth-child(3n) { --wave-size: 38% 110%; --wave-position: 80% 130%; }
 
 /* 设置弹窗也使用相同的留白和色阶，减少精简版里的视觉噪声。 */
 .settings-dialog { border: 0; border-radius: 20px; background: var(--lite-surface); box-shadow: 0 24px 80px rgba(27, 55, 89, .2); }
@@ -113,26 +127,35 @@
 .is-sidebar-collapsed .dashboard-nav .dashboard-nav-button { padding-inline: 0; }
 
 :root[data-theme="dark"] {
-  --lite-ground: #101923;
-  --lite-surface: #172331;
-  --lite-ink: #e7f0fa;
-  --lite-muted: #9aacc0;
-  --lite-accent: #8dc5ff;
-  --lite-accent-soft: #1d3b5d;
-  --lite-border: #2b3e54;
+  --lite-ground: #0b1424;
+  --lite-surface: #101d31;
+  --lite-ink: #e7efff;
+  --lite-muted: #a1b1ca;
+  --lite-accent: #55aeff;
+  --lite-accent-soft: #1a365b;
+  --lite-border: #29415f;
+  --dark-wave-color: #164990;
 }
 :root[data-theme="dark"] .panel,
 :root[data-theme="dark"] .dashboard-sidebar { background: var(--lite-ground); }
-:root[data-theme="dark"] .panel-header,
-:root[data-theme="dark"] .dashboard-sidebar,
+:root[data-theme="dark"] .panel-header { background: linear-gradient(105deg, #0c172a, #132a50); }
+:root[data-theme="dark"] .dashboard-sidebar { background: radial-gradient(ellipse 180% 30% at -40% 82%, var(--dark-wave-color) 0 60%, transparent 61%), linear-gradient(160deg, #0c1729, #10264a); }
 :root[data-theme="dark"] .settings-dialog { background: var(--lite-surface); }
+:root[data-theme="dark"] .header-actions .icon-button,
+:root[data-theme="dark"] .header-actions .language-picker { background: transparent; }
 :root[data-theme="dark"] .dashboard-nav-button:hover { color: var(--lite-accent); background: #1a314b; }
 :root[data-theme="dark"] .dashboard-nav-button.is-active { color: var(--lite-accent); background: var(--lite-accent-soft); }
 :root[data-theme="dark"] .settings-tabs,
 :root[data-theme="dark"] .settings-group { background: var(--lite-ground); }
 
+:root .settings-group,
+:root[data-theme="dark"] .settings-group {
+  background-image: radial-gradient(ellipse var(--settings-wave-size, 40% 100%) at var(--settings-wave-position, 100% 120%), var(--dark-wave-color, color-mix(in srgb, var(--lite-accent) 10%, transparent)) 0 55%, transparent 56%);
+}
+.settings-group:nth-child(even) { --settings-wave-size: 32% 120%; --settings-wave-position: 0% 115%; }
+
 @media (max-width: 760px) {
-  .dashboard-workspace { padding: 18px 16px 12px; }
+  .dashboard-workspace { padding: 8px 16px 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

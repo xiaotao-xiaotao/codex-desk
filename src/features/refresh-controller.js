@@ -71,7 +71,7 @@ export function createRefreshController({
 
     if (!latestQuota) return;
 
-    const plan = latestQuota.planType ? t("planPrefix", { plan: latestQuota.planType }) : "";
+    const plan = latestQuota.planType ? t("planPrefix", { plan: latestQuota.planType[0].toUpperCase() + latestQuota.planType.slice(1) }) : "";
     statusElement.replaceChildren(
       document.createTextNode(t("syncedStatusPrefix", { plan })),
       document.createTextNode(t("autoRefreshCountdownPrefix")),

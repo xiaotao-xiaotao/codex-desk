@@ -36,7 +36,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       <p class="accounts-intro"></p>
       <div class="accounts-feedback" role="status" hidden></div>
       <div class="accounts-list-pane">
-        <div class="accounts-current"><div><span class="accounts-current-caption"></span><strong class="accounts-current-email"></strong></div><button class="accounts-button accounts-save" type="button">${icon("save")}<span></span></button></div>
+        <div class="accounts-current"><div><span class="accounts-current-caption"></span><strong class="accounts-current-name" hidden></strong><span class="accounts-current-email"></span></div><button class="accounts-button accounts-save" type="button">${icon("save")}<span></span></button></div>
         <div class="accounts-list-heading"><h3></h3><span class="accounts-count"></span><button class="accounts-row-button accounts-reload" type="button">${icon("switch")}</button></div>
         <div class="accounts-list" aria-busy="false"></div>
         <div class="accounts-storage" hidden><p></p><button class="accounts-button accounts-enable" type="button"></button></div>
@@ -105,7 +105,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       <div class="accounts-scene-card accounts-scene-source">${icon("account")}<strong data-account-flow-i18n="accountsFlowSaved"></strong><small class="accounts-flow-current-label"></small></div>
       <div class="accounts-scene-hub">${icon("switch")}<small data-account-flow-i18n="accountsFlowSwitchLocal"></small></div>
       <div class="accounts-scene-card accounts-scene-target"><span class="accounts-scene-check">✓</span><strong>Codex</strong><small data-account-flow-i18n="accountsFlowSceneTarget"></small></div>
-      <div class="accounts-scene-route"><div class="accounts-scene-runner"><code>auth.json</code><svg class="accounts-scene-brand" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" opacity=".22"/><path d="M12 3a9 9 0 1 1-8.6 6.3M12 7.5V12l3.5 2"/></svg></div></div>
+      <div class="accounts-scene-route"><div class="accounts-scene-runner"><code>auth.json</code><svg class="accounts-scene-brand" viewBox="0 0 24 24"><metadata>Copyright (c) 2026 Lucide Icons and Contributors. Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.</metadata><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg></div></div>
     </div>
     <div class="accounts-scene-progress" aria-hidden="true"><span data-account-flow-i18n="accountsFlowStepOne"></span><span data-account-flow-i18n="accountsFlowStepTwo"></span><span data-account-flow-i18n="accountsFlowStepThree"></span></div>
     <ol class="accounts-flow-steps">
@@ -153,8 +153,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     newAccountBadge.classList.toggle("is-credentials-changed", changed && !unsaved);
     newAccountBadge.textContent = unsaved ? "+1" : "";
     newAccountBadge.title = hint;
-    navigation.setAttribute("aria-label", unsaved || changed ? `${t("accountsTitle")}，${hint}` : t("accountsTitle"));
-    navigation.title = unsaved || changed ? hint : t("accountsTitle");
+    navigation.title = unsaved || changed ? `${t("navAccounts")} — ${hint}` : t("navAccounts");
+    navigation.setAttribute("aria-label", navigation.title);
     find(".accounts-current-caption").textContent = t(unsaved ? "accountsUnsavedCaption" : changed ? "accountsCredentialsChangedCaption" : "accountsCurrentCaption");
     find(".accounts-save span").textContent = t(changed ? "accountsUpdateSave" : "accountsSave");
   }
@@ -176,8 +176,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
       // 文件可能正在被 CLI 替换，清除过期提示，下一轮继续检查。
       if (version === requestVersion && !busy && !loading && !dialog.open) {
         newAccountBadge.hidden = true;
-        navigation.setAttribute("aria-label", t("accountsTitle"));
-        navigation.title = t("accountsTitle");
+        navigation.setAttribute("aria-label", t("navAccounts"));
+        navigation.title = t("navAccounts");
       }
     } finally {
       checking = false;
@@ -281,10 +281,14 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
 
   function renderList() {
     renderAccountHint();
-    const currentLabel = snapshot?.accounts.find((account) => account.selected)?.label ?? t("accountsFlowSelect");
+    const selectedLabel = snapshot?.accounts.find((account) => account.selected)?.label;
+    const currentLabel = selectedLabel ?? t("accountsFlowSelect");
     flow.querySelector(".accounts-flow-current-label").textContent = currentLabel;
     flow.querySelector(".accounts-flow-current-label").title = currentLabel;
     flow.querySelector(".accounts-flow-saved-count").textContent = t("accountsCount", { count: snapshot?.accounts.length ?? 0 });
+    const currentName = find(".accounts-current-name");
+    currentName.hidden = loading || !selectedLabel;
+    currentName.textContent = currentName.title = loading ? "" : selectedLabel ?? "";
     find(".accounts-current-email").textContent = loading ? t("accountsLoading") : displayEmail(snapshot?.currentEmail, getHideEmails()) ?? t("accountsCurrentUnknown");
     find(".accounts-save").disabled = busy || loading || !snapshot?.canSaveCurrent;
     loginButton.disabled = busy || loading || Boolean(loginSession);

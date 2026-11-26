@@ -7,7 +7,7 @@ globalThis.document = {
   createTextNode: (textContent) => ({ textContent }),
 };
 
-function setup(read) {
+function setup(read, t = (key) => key) {
   const calls = [];
   const state = { snapshots: [], rendered: null, notified: [], error: null };
   const status = {
@@ -34,13 +34,25 @@ function setup(read) {
     onAvailabilityChange: (available) => { state.available = available; },
     onRetryStatusChange: (retryStatus) => { state.retryStatus = retryStatus; },
     statusElement: status,
-    t: (key) => key,
+    t,
     getAutoRefreshIntervalMs: () => 180_000,
   });
   return { controller, state, status, calls };
 }
 
 const current = (overrides = {}) => ({ id: "current", accountId: "workspace", selected: true, success: true, queriedAt: 1_700_000_000, windows: [{ remainingPercent: 70 }], ...overrides });
+
+test("同步状态将套餐名称首字母大写，且不修改账户数据", async () => {
+  let planType;
+  const t = (key, values = {}) => key === "planPrefix" ? ` · ${values.plan}` : key === "syncedStatusPrefix" ? `账户额度已更新${values.plan}` : "";
+  const { controller, status } = setup(() => [current({ planType })], t);
+  for (const [input, expected] of [["plus", " · Plus"], ["pro", " · Pro"], ["Plus", " · Plus"], [null, ""]]) {
+    planType = input;
+    await controller.refreshQuota();
+    assert.ok(status.textContent.startsWith(`账户额度已更新${expected}`));
+    assert.equal(controller.getLatestQuota().planType, input);
+  }
+});
 
 test("每轮只查询一次，顶部、列表、提醒使用同一快照；其他账户失败不影响当前账户", async () => {
   const snapshot = current();
