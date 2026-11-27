@@ -1,31 +1,31 @@
 {
-  "version": "2.0.0-lite.2",
-  "publishedAt": "2026-11-19",
+  "version": "2.0.0-lite.3",
+  "publishedAt": "2026-11-27",
   "releaseNotes": {
     "zh-CN": [
-      "悬浮额度球改为胶囊样式，显示剩余额度、额度周期和重置倒计时，收起后回到展开前的位置。",
-      "悬浮球和主额度卡片按用量阈值变色，避免重复发送通知，发送失败后可重试。",
-      "优化额度刷新失败时的提示，全部查询失败时显示错误原因和重试倒计时，部分失败时保留可用账户的额度。"
+      "账户额度列表支持按套餐筛选，并优化主界面和侧栏布局。",
+      "账户切换时显示进度，方便了解当前状态。",
+      "修复 Windows 悬浮球展开时的画面拉伸，并修复图标变更后未触发重新构建的问题。"
     ],
     "zh-TW": [
-      "浮動額度球改為膠囊樣式，顯示剩餘額度、額度週期和重設倒數，收合後回到展開前的位置。",
-      "浮動球和主要額度卡片依用量門檻變色，避免重複傳送通知，傳送失敗後可重試。",
-      "改善額度重新整理失敗時的提示，全部查詢失敗時顯示錯誤原因和重試倒數，部分失敗時保留可用帳戶的額度。"
+      "帳戶額度清單支援按方案篩選，並改善主畫面和側欄版面。",
+      "切換帳戶時顯示進度，方便了解目前狀態。",
+      "修復 Windows 浮動球展開時的畫面拉伸，以及圖示變更後未觸發重新建置的問題。"
     ],
     "en": [
-      "Redesigned the floating quota indicator as a pill showing remaining quota, the quota period, and a reset countdown. It returns to its previous position when collapsed.",
-      "The floating indicator and primary quota cards change color at usage thresholds. Duplicate notifications are suppressed, and failed sends can be retried.",
-      "When all quota requests fail, the dashboard shows the reason and a retry countdown. Successful results remain visible when only some requests fail."
+      "Filter the account quota list by plan, with improvements to the main screen and sidebar layout.",
+      "Account switching now shows progress.",
+      "Fixed stretched visuals when expanding the floating indicator on Windows and ensured icon changes trigger a rebuild."
     ],
     "ja": [
-      "フローティングのクォータ表示をピル型に変更し、残量、対象期間、リセットまでの時間を表示します。折りたたむと展開前の位置に戻ります。",
-      "フローティング表示とメインのクォータカードは使用量のしきい値に応じて色が変わります。重複通知を防ぎ、送信に失敗した場合は再試行できます。",
-      "クォータの取得がすべて失敗した場合は、エラーの原因と再試行までの時間を表示します。一部だけ失敗した場合は、取得できたアカウントのクォータを表示します。"
+      "アカウントのクォータ一覧をプランで絞り込めるようにし、メイン画面とサイドバーのレイアウトを改善しました。",
+      "アカウントの切り替え中に進行状況を表示します。",
+      "Windows でフローティング表示を展開した際の画面の引き伸ばしと、アイコン変更時に再ビルドされない問題を修正しました。"
     ],
     "ko": [
-      "플로팅 한도 표시를 캡슐 형태로 바꾸고 남은 한도, 한도 기간, 초기화까지 남은 시간을 표시합니다. 접으면 펼치기 전 위치로 돌아갑니다.",
-      "플로팅 표시와 기본 한도 카드의 색상이 사용량 기준에 따라 바뀝니다. 중복 알림을 방지하며 전송에 실패한 알림은 다시 시도할 수 있습니다.",
-      "한도 조회가 모두 실패하면 오류 원인과 재시도까지 남은 시간을 표시합니다. 일부만 실패하면 조회에 성공한 계정의 한도는 계속 표시합니다."
+      "계정 한도 목록을 요금제로 필터링할 수 있으며 메인 화면과 사이드바 구성을 개선했습니다.",
+      "계정을 전환하는 동안 진행 상태를 표시합니다.",
+      "Windows에서 플로팅 표시를 펼칠 때 화면이 늘어나는 문제와 아이콘 변경 시 다시 빌드되지 않는 문제를 수정했습니다."
     ]
   }
 }
