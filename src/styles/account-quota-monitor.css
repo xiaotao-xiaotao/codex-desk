@@ -118,7 +118,6 @@
 .account-quota-empty p { margin: 8px 0 0; color: var(--lite-muted); font-size: 11px; }
 .accounts-management-panel { margin: 0; padding: 0; }
 .accounts-management-panel .accounts-page-header { padding-top: 0; }
-.accounts-management-panel > .accounts-feedback { margin-bottom: 10px; padding: 6px 10px; border-radius: 7px; font-size: 11px; }
 
 :root[data-theme="dark"] .account-quota-featured-link { border-color: #315f90; color: #8dc5ff; background: #152b43; }
 :root[data-theme="dark"] .account-quota-featured-link:hover { border-color: #4c85b8; color: #c7e2ff; background: #1b3857; }

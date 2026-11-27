@@ -15,7 +15,7 @@
 .account-switch-dialog::backdrop { background: #142b4b47; backdrop-filter: blur(3px); }
 .account-switch-dialog [hidden], .accounts-page [hidden] { display: none !important; }
 .accounts-page { --accounts-ink: #30445f; --accounts-muted: #64748b; --accounts-line: #e5edf6; --accounts-surface: #f7faff; --accounts-bg: #fff; overflow-y: auto; color: var(--accounts-ink); }
-.accounts-page-header { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.accounts-page-header { position: relative; display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
 .accounts-page-header .accounts-save { margin: 0; }
 .accounts-page { container: accounts-page / inline-size; }
 .accounts-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -119,7 +119,7 @@
 .accounts-page .accounts-empty-icon { grid-row: 1 / 3; width: 32px; height: 32px; margin: 0; border-radius: 9px; }
 .accounts-page .accounts-empty p { grid-column: 2; max-width: none; margin: 0; }
 .accounts-page .accounts-footer { min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; font-size: var(--font-caption); line-height: 1.6; overflow-wrap: anywhere; }
-.accounts-page > .accounts-feedback { margin-bottom: 10px; padding: 6px 10px; border-radius: 7px; font-size: 11px; }
+.accounts-page-header > .accounts-feedback { position: absolute; z-index: 5; top: calc(100% + 6px); right: 0; width: max-content; max-width: min(360px, 100%); max-height: min(240px, 40vh); margin: 0; padding: 10px 14px; overflow-y: auto; box-shadow: 0 8px 24px #18365b24; }
 .accounts-page svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .accounts-page button:focus-visible { outline: 2px solid #91caff; outline-offset: 3px; }
 .accounts-page button:disabled { opacity: .45; cursor: default; }
@@ -195,6 +195,8 @@
 .accounts-restart strong { font-size: 12px; font-weight: 550; }
 .accounts-restart span { color: var(--accounts-muted); font-size: 11px; line-height: 1.65; }
 .accounts-editor-actions, .settings-action-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+.accounts-switch-progress { display: grid; gap: 8px; margin-top: 16px; color: var(--accounts-ink); font-size: 12px; }
+.accounts-switch-progress progress { width: 100%; height: 8px; accent-color: #1677ff; }
 .accounts-editor-actions { margin-top: 24px; }
 .account-switch-trigger:focus-visible, .account-switch-dialog button:focus-visible, .account-switch-dialog input:focus-visible { outline: 2px solid #91caff; outline-offset: 3px; }
 .account-switch-dialog button:disabled { opacity: .45; cursor: default; }

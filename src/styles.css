@@ -71,12 +71,12 @@
   border-right: 1px solid var(--lite-border);
   background: radial-gradient(ellipse 180% 30% at -40% 82%, color-mix(in srgb, var(--lite-accent) 18%, transparent) 0 60%, transparent 61%), linear-gradient(160deg, var(--lite-surface), var(--lite-accent-soft));
 }
-.sidebar-toggle { top: 5px; right: -12px; width: 24px; height: 34px; border-color: var(--lite-border); border-radius: 9px; color: var(--lite-muted); box-shadow: none; }
+.sidebar-toggle { top: 15px; right: -12px; width: 24px; height: 34px; border-color: var(--lite-border); border-radius: 9px; color: var(--lite-muted); box-shadow: none; }
 .sidebar-toggle:hover { border-color: #9fc3ee; color: var(--lite-accent); background: var(--lite-accent-soft); box-shadow: none; }
 .dashboard-nav { gap: 6px; }
 .dashboard-nav .dashboard-nav-button {
   min-height: 48px;
-  padding: 12px 14px;
+  padding: 12px 10px;
   border: 0;
   border-radius: 12px;
   color: #64778f;
@@ -84,15 +84,17 @@
   font-weight: 650;
 }
 .dashboard-nav .dashboard-nav-button svg { width: 19px; height: 19px; }
+:root:lang(ja) .dashboard-layout:not(.is-sidebar-collapsed) .dashboard-nav .dashboard-nav-button { gap: 6px; padding-inline: 4px; }
 .dashboard-nav #nav-account svg { width: 18px; height: 18px; stroke-width: 1.8; }
 .dashboard-nav-button:hover { color: var(--lite-accent); background: #f0f6fd; }
 .dashboard-nav-button.is-active { color: var(--lite-accent); background: var(--lite-accent-soft); }
 .dashboard-nav-button.is-active::before { top: 12px; bottom: 12px; left: 0; width: 4px; border-radius: 0 4px 4px 0; background: var(--lite-accent); }
 .sidebar-bottom { gap: 12px; }
-.sidebar-utilities { gap: 8px; padding: 0; }
+.sidebar-utilities { gap: 4px; padding: 0; }
 .sidebar-utility-button { min-height: 42px; border-radius: 11px; }
-.sidebar-utilities #theme-button { width: 42px; flex-basis: 42px; }
-.sidebar-utilities #settings-button { padding-inline: 10px; }
+.sidebar-utilities #theme-button { width: 32px; flex-basis: 32px; }
+.sidebar-utilities #settings-button { flex: 0 1 auto; padding-inline: 4px; }
+.dashboard-layout:not(.is-sidebar-collapsed) .sidebar-utilities #settings-button { margin-inline-start: auto; }
 .sidebar-utilities #settings-button > svg { display: block; }
 .sidebar-utilities #theme-label { display: none; }
 

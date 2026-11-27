@@ -60,6 +60,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
           <button class="accounts-button accounts-login-browser" type="button"></button>
         </section>
         <div class="accounts-target" hidden><span class="accounts-avatar"></span><div><strong></strong><span></span></div></div>
+        <div class="accounts-switch-progress" hidden><span role="status"></span><progress max="3" value="0"></progress></div>
         <div class="accounts-editor-actions"><button class="cancel-button accounts-cancel" type="button"></button><button class="primary-action-button accounts-submit" type="submit"></button></div>
       </form>
     </div>
@@ -82,7 +83,8 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   loginButton.innerHTML = `${icon("login")}<span></span>`;
   headerActions.append(page.querySelector(".accounts-save"), loginButton);
   pageHeader.append(headerActions);
-  management.append(dialog.querySelector(".accounts-feedback"), dialog.querySelector(".accounts-list-pane"), dialog.querySelector(".accounts-footer"));
+  pageHeader.append(dialog.querySelector(".accounts-feedback"));
+  management.append(dialog.querySelector(".accounts-list-pane"), dialog.querySelector(".accounts-footer"));
   management.querySelector(".accounts-list-heading h3").after(management.querySelector(".accounts-footer"));
   const guide = document.createElement("section");
   guide.className = "accounts-switch-guide";
@@ -144,6 +146,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
   let checking = false;
   let loginSession = null;
   let loginTimer = null;
+  let switchStep = 0;
 
   function renderAccountHint() {
     const unsaved = Boolean(snapshot?.canSaveCurrent && !snapshot.accounts.some((account) => account.selected));
@@ -248,6 +251,14 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     find(".accounts-name-label").textContent = t(kind === "login" ? "accountsLoginNameLabel" : "accountsNameLabel");
     input.placeholder = t(kind === "login" ? "accountsLoginNamePlaceholder" : "accountsNamePlaceholder");
     find(".accounts-target").hidden = !account;
+    const progress = find(".accounts-switch-progress");
+    progress.hidden = kind !== "switch" || !busy;
+    if (!progress.hidden) {
+      const label = t(["accountsSwitchPreparing", "accountsSwitchApplying", "accountsSwitchSyncing"][switchStep]);
+      progress.querySelector("span").textContent = label;
+      progress.querySelector("progress").value = switchStep;
+      progress.querySelector("progress").setAttribute("aria-label", label);
+    }
     find(".accounts-editor-title").textContent = t(`accounts${kind[0].toUpperCase() + kind.slice(1)}Title`);
     // 常规账户操作由正文说明即可；隐藏标题仅作为弹窗的无障碍名称。
     find(".accounts-editor-title").hidden = kind !== "enable";
@@ -356,6 +367,7 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
     if ((kind === "save" || kind === "rename" || kind === "login") && ((!label && kind !== "login") || [...label].length > 48 || /[\u0000-\u001f\u007f]/.test(label))) {
       setFeedback("accountsNameInvalid", {}, "error"); input.focus(); return;
     }
+    switchStep = 0;
     setFeedback(null); setBusy(true);
     let changed = false;
     try {
@@ -364,18 +376,21 @@ export function createAccountSwitchView({ t, invoke, getHideEmails = () => false
         scheduleLoginPoll();
       } else if (kind === "switch") {
         await onBeforeSwitch();
+        switchStep = 1; renderEditor();
         const result = await invoke("switch_saved_account", { id: account.id });
         changed = true;
         snapshot = result.snapshot ?? snapshot;
+        switchStep = 2; renderEditor();
+        // 凭据已提交，展示刷新失败不能被报告成切换失败。
+        let syncFailed = false;
+        try { await onAfterSwitch({ changed: true }); }
+        catch { syncFailed = true; }
         showList();
         setFeedback(
-          result.restartError ? "accountsRestartFailed" : result.restarted ? "accountsRestarted" : "accountsSwitched",
+          result.restartError ? "accountsRestartFailed" : syncFailed ? "accountsSyncFailed" : result.restarted ? "accountsRestarted" : "accountsSwitched",
           { error: result.restartError },
-          result.restartError ? "pending" : "success",
+          result.restartError || syncFailed ? "pending" : "success",
         );
-        // 凭据已提交，展示刷新失败不能被报告成切换失败。
-        try { await onAfterSwitch({ changed: true }); }
-        catch { if (!result.restartError) setFeedback("accountsSyncFailed", {}, "pending"); }
       } else {
         const commands = { save: "save_current_account", rename: "rename_saved_account", remove: "remove_saved_account", enable: "enable_account_file_storage" };
         snapshot = await invoke(commands[kind], { ...(account ? { id: account.id } : {}), ...(kind === "save" || kind === "rename" ? { label } : {}) });

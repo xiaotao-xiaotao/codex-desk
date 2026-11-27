@@ -9,7 +9,7 @@
   --control-radius: 6px;
   --space-xs: 4px;
   --space-md: 12px;
-  --dashboard-sidebar-width: 134px;
+  --dashboard-sidebar-width: 120px;
   /* Lucide 的 ISC 许可写入 SVG 元数据，随构建产物保留。 */
   --sync-icon-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cmetadata%3ECopyright (c) 2026 Lucide Icons and Contributors. Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.%3C/metadata%3E%3Cpath d='M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16M16 16h5v5'/%3E%3C/svg%3E");
   font-size: 16px;
@@ -84,8 +84,8 @@ h2 { margin: 0; color: #1f2329; font-size: var(--font-section); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
 
 /* 导航与内容共享固定窗口；滚动留在各栏目内部，侧栏和全局操作始终可用。 */
-/* 中文菜单更短，收紧侧栏；其他语言保留完整名称的单行空间。 */
-:root:lang(en), :root:lang(ja), :root:lang(ko) { --dashboard-sidebar-width: 156px; }
+/* 英语菜单较长，保留完整名称的单行空间。 */
+:root:lang(en) { --dashboard-sidebar-width: 156px; }
 .dashboard-layout { display: grid; grid-template-columns: var(--dashboard-sidebar-width) minmax(0, 1fr); flex: 1 1 auto; min-height: 0; transition: grid-template-columns .18s ease; }
 .dashboard-sidebar { position: relative; display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 18px; padding: 24px 6px 18px; border-right: 1px solid #e4ecf7; background: linear-gradient(165deg, #f1f7ff, #f8faff 70%); }
 .sidebar-toggle { position: absolute; z-index: 2; top: 24px; right: -11px; display: grid; width: 22px; height: 32px; padding: 0; place-items: center; border: 1px solid #dce7f5; border-radius: 8px; color: #7b8ea8; background: #fff; box-shadow: 0 2px 6px #2347730a; cursor: pointer; transition: color .15s, background .15s, border-color .15s, box-shadow .15s; }
