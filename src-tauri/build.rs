@@ -5,6 +5,7 @@ fn main() {
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("缺少 Cargo 清单目录"));
     let version_path = manifest_dir.join("../version.json");
     println!("cargo:rerun-if-changed={}", version_path.display());
+    println!("cargo:rerun-if-changed={}", manifest_dir.join("icons").display());
 
     let version_json = fs::read_to_string(&version_path).expect("无法读取 version.json");
     let version_file: serde_json::Value =
